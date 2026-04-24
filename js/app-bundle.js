@@ -56,26 +56,38 @@ var limpiarTodo = window.limpiarTodo;
 // COMPONENTE: ProfileSetup
 // =============================================
 function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBack, tienePlan }) {
-  const [perfil, setPerfil] = React.useState(perfilInicial || {
-    edad: "",
-    genero: "masculino",
-    peso: "",
-    altura: "",
-    nivelActividad: "moderada",
-    objetivo: "mantenimiento",
-    sinGluten: false,
-    sinLactosa: false,
-    vegetariano: false,
-    ingredientesExcluidos: [],
-    ingredientesExcluidosTexto: "",
-    macros: { ...MACROS_PREDETERMINADOS.mantenimiento },
-    caloriasManual: "",
-    numSemanas: 1,
-    // Fase 4 extra: modo "recetas rápidas" <= 25 min totales
-    soloRapidas: false,
-    maxTiempoMin: 25,
-    // Fase 4 - Punto 16: modo sobras (cena día N → almuerzo día N+1)
-    modoSobras: false
+  const [perfil, setPerfil] = React.useState(() => {
+    // v20260418x: sincronizar fatLossMode con objetivo='perdida' si venía de una versión anterior
+    if (perfilInicial) {
+      const fatLossInferido = perfilInicial.fatLossMode !== undefined
+        ? perfilInicial.fatLossMode
+        : perfilInicial.objetivo === 'perdida';
+      // FL fuerza macros 33/38/29 para coincidir con proteinaTarget (2.2 g/kg)
+      const macrosSync = fatLossInferido
+        ? { proteinas: 33, carbohidratos: 38, grasas: 29 }
+        : perfilInicial.macros;
+      return { ...perfilInicial, fatLossMode: fatLossInferido, macros: macrosSync };
+    }
+    return {
+      edad: "",
+      genero: "masculino",
+      peso: "",
+      altura: "",
+      nivelActividad: "moderada",
+      objetivo: "mantenimiento",
+      sinGluten: false,
+      sinLactosa: false,
+      vegetariano: false,
+      ingredientesExcluidos: [],
+      ingredientesExcluidosTexto: "",
+      macros: { ...MACROS_PREDETERMINADOS.mantenimiento },
+      caloriasManual: "",
+      numSemanas: 1,
+      fatLossMode: false,
+      soloRapidas: false,
+      maxTiempoMin: 25,
+      modoSobras: false
+    };
   });
 
   const [tdeeInfo, setTdeeInfo] = React.useState(null);
@@ -84,10 +96,14 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   const [usarCaloriasManual, setUsarCaloriasManual] = React.useState(
     perfilInicial && perfilInicial.caloriasManual ? true : false
   );
+  // v20260418x: Fat Loss Mode preview
+  const [roadmapPreview, setRoadmapPreview] = React.useState(null);
 
   React.useEffect(() => {
     const { peso, altura, edad, genero, nivelActividad, objetivo } = perfil;
-    if (peso > 0 && altura > 0 && edad > 0) {
+    // v20260418y: guard defensivo — nivelActividad inválida crashea FACTORES_ACTIVIDAD lookup
+    const nivelValido = nivelActividad && FACTORES_ACTIVIDAD[nivelActividad];
+    if (peso > 0 && altura > 0 && edad > 0 && nivelValido) {
       const bmr = calcularBMR(parseFloat(peso), parseFloat(altura), parseFloat(edad), genero);
       const tdee = calcularTDEE(parseFloat(peso), parseFloat(altura), parseFloat(edad), genero, nivelActividad);
       const caloriasCalculadas = calcularCaloriasObjetivo(tdee, objetivo);
@@ -116,12 +132,48 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     }
   }, [perfil.macros]);
 
+  // v20260418x: Preview del roadmap de Fat Loss en vivo mientras el usuario ajusta inputs
+  React.useEffect(() => {
+    if (!perfil.fatLossMode || !window.NP_Roadmap) { setRoadmapPreview(null); return; }
+    if (!perfil.peso || !perfil.altura || !perfil.edad) { setRoadmapPreview(null); return; }
+    const tieneNavy = perfil.cintura && perfil.cuello;
+    const tieneBF = perfil.bfOverride && parseFloat(perfil.bfOverride) > 0;
+    if (!tieneNavy && !tieneBF) { setRoadmapPreview(null); return; }
+    if (!perfil.pesoTarget && !perfil.bfTarget) { setRoadmapPreview(null); return; }
+    try {
+      const factorInfo = FACTORES_ACTIVIDAD[perfil.nivelActividad];
+      const factorNum = factorInfo ? factorInfo.valor : 1.45;
+      const preview = window.NP_Roadmap.generar({
+        peso: parseFloat(perfil.peso),
+        altura: parseFloat(perfil.altura),
+        edad: parseFloat(perfil.edad),
+        genero: perfil.genero === 'femenino' ? 'F' : 'M',
+        cintura: perfil.cintura ? parseFloat(perfil.cintura) : null,
+        cuello: perfil.cuello ? parseFloat(perfil.cuello) : null,
+        cadera: perfil.cadera ? parseFloat(perfil.cadera) : null,
+        bfOverride: perfil.bfOverride || null,
+        factorActividad: factorNum,
+        pesoTarget: perfil.pesoTarget ? parseFloat(perfil.pesoTarget) : null,
+        bfTarget: perfil.bfTarget ? parseFloat(perfil.bfTarget) : null,
+        tasaPerdida: perfil.tasaPerdida || 'moderada',
+        timelineMesesDeseado: perfil.timelineMesesDeseado ? parseFloat(perfil.timelineMesesDeseado) : null
+      });
+      setRoadmapPreview(preview);
+    } catch (e) {
+      console.warn('[FatLoss] preview error:', e.message);
+      setRoadmapPreview(null);
+    }
+  }, [perfil.fatLossMode, perfil.peso, perfil.altura, perfil.edad, perfil.genero, perfil.cintura, perfil.cuello, perfil.cadera, perfil.bfOverride, perfil.nivelActividad, perfil.pesoTarget, perfil.bfTarget, perfil.tasaPerdida, perfil.timelineMesesDeseado]);
+
   const handleObjetivoChange = (objetivo) => {
+    const esFatLoss = objetivo === 'perdida';
     const macrosCustom = cargarMacrosCustom();
-    const macros = (macrosCustom && macrosCustom[objetivo])
-      ? macrosCustom[objetivo]
-      : { ...MACROS_PREDETERMINADOS[objetivo] };
-    setPerfil(prev => ({ ...prev, objetivo, macros }));
+    const macros = esFatLoss
+      ? { proteinas: 33, carbohidratos: 38, grasas: 29 }
+      : (macrosCustom && macrosCustom[objetivo])
+        ? macrosCustom[objetivo]
+        : { ...MACROS_PREDETERMINADOS[objetivo] };
+    setPerfil(prev => ({ ...prev, objetivo, macros, fatLossMode: esFatLoss }));
   };
 
   const handleMacroChange = (macro, valor) => {
@@ -139,15 +191,23 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
   const validar = () => {
     const err = {};
-    if (!usarCaloriasManual) {
+    // Fat Loss Mode requiere siempre datos corporales completos (para BMR + Navy)
+    if (perfil.fatLossMode) {
+      if (!perfil.edad || perfil.edad < 15 || perfil.edad > 100) err.edad = "Edad debe ser entre 15 y 100 años";
+      if (!perfil.peso || perfil.peso < 30 || perfil.peso > 300) err.peso = "Peso debe ser entre 30 y 300 kg";
+      if (!perfil.altura || perfil.altura < 100 || perfil.altura > 250) err.altura = "Altura debe ser entre 100 y 250 cm";
+    } else if (!usarCaloriasManual) {
       if (!perfil.edad || perfil.edad < 15 || perfil.edad > 100) err.edad = "Edad debe ser entre 15 y 100 años";
       if (!perfil.peso || perfil.peso < 30 || perfil.peso > 300) err.peso = "Peso debe ser entre 30 y 300 kg";
       if (!perfil.altura || perfil.altura < 100 || perfil.altura > 250) err.altura = "Altura debe ser entre 100 y 250 cm";
     } else {
       if (!perfil.caloriasManual || perfil.caloriasManual < 800 || perfil.caloriasManual > 6000) err.caloriasManual = "Calorías debe ser entre 800 y 6000 kcal";
     }
-    const sumaMacros = perfil.macros.proteinas + perfil.macros.carbohidratos + perfil.macros.grasas;
-    if (sumaMacros !== 100) err.macros = "Los macros deben sumar exactamente 100%";
+    // Macros se validan solo fuera de Fat Loss Mode (FL los fija automáticamente)
+    if (!perfil.fatLossMode) {
+      const sumaMacros = perfil.macros.proteinas + perfil.macros.carbohidratos + perfil.macros.grasas;
+      if (sumaMacros !== 100) err.macros = "Los macros deben sumar exactamente 100%";
+    }
     setErrores(err);
     return Object.keys(err).length === 0;
   };
@@ -157,14 +217,61 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     if (!validar()) return;
     const excluidos = perfil.ingredientesExcluidosTexto
       .split(",").map(i => i.trim()).filter(i => i.length > 0);
+
+    // v20260418x: si Fat Loss Mode activo, delegar al orquestador
+    if (perfil.fatLossMode && window.NP_FatLoss && roadmapPreview) {
+      try {
+        const factorInfo = FACTORES_ACTIVIDAD[perfil.nivelActividad];
+        const factorNum = factorInfo ? factorInfo.valor : 1.45;
+        const perfilPrevioMerge = {
+          ...perfil,
+          edad: parseFloat(perfil.edad),
+          peso: parseFloat(perfil.peso),
+          altura: parseFloat(perfil.altura),
+          ingredientesExcluidos: excluidos,
+          numSemanas: perfil.numSemanas || 1
+        };
+        // Persistir datos generales antes de activar (activar sobrescribe campos base)
+        guardarPerfil(perfilPrevioMerge);
+        guardarMacrosCustom({ [perfil.objetivo]: perfil.macros });
+        window.NP_FatLoss.activar({
+          peso: parseFloat(perfil.peso),
+          altura: parseFloat(perfil.altura),
+          edad: parseFloat(perfil.edad),
+          genero: perfil.genero === 'femenino' ? 'F' : 'M',
+          cintura: perfil.cintura ? parseFloat(perfil.cintura) : null,
+          cuello: perfil.cuello ? parseFloat(perfil.cuello) : null,
+          cadera: perfil.cadera ? parseFloat(perfil.cadera) : null,
+          bfOverride: perfil.bfOverride || null,
+          factorActividad: factorNum,
+          pesoTarget: perfil.pesoTarget ? parseFloat(perfil.pesoTarget) : null,
+          bfTarget: perfil.bfTarget ? parseFloat(perfil.bfTarget) : null,
+          tasaPerdida: perfil.tasaPerdida || 'moderada',
+          timelineMesesDeseado: perfil.timelineMesesDeseado ? parseFloat(perfil.timelineMesesDeseado) : null,
+          complementoPreferido: perfil.complementoPreferido || 'whey'
+        });
+        const nuevoPerfil = cargarPerfil();
+        // Recalcular caloriasObjetivo con las calorías de la fase activa
+        nuevoPerfil.caloriasObjetivo = window.NP_FatLoss.caloriasEfectivas() || nuevoPerfil.caloriasManual;
+        nuevoPerfil.tdee = nuevoPerfil.roadmap ? nuevoPerfil.roadmap.calculados.tdee : tdeeInfo.tdee;
+        guardarPerfil(nuevoPerfil);
+        onComplete(nuevoPerfil);
+        return;
+      } catch (err) {
+        console.error('[FatLoss] Error al activar:', err);
+        alert('Error al activar Fat Loss Mode: ' + err.message + '\nSe guardará el perfil estándar.');
+        // Cae al flujo normal
+      }
+    }
+
     const perfilFinal = {
       ...perfil,
       edad: perfil.edad ? parseFloat(perfil.edad) : 0,
       peso: perfil.peso ? parseFloat(perfil.peso) : 0,
       altura: perfil.altura ? parseFloat(perfil.altura) : 0,
       ingredientesExcluidos: excluidos,
-      tdee: tdeeInfo.tdee,
-      caloriasObjetivo: tdeeInfo.caloriasObjetivo,
+      tdee: tdeeInfo ? tdeeInfo.tdee : 0,
+      caloriasObjetivo: tdeeInfo ? tdeeInfo.caloriasObjetivo : 0,
       caloriasManual: usarCaloriasManual ? parseFloat(perfil.caloriasManual) : "",
       numSemanas: perfil.numSemanas || 1
     };
@@ -287,7 +394,210 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           </div>
 
-          {/* Calorías Objetivo Manual */}
+          {/* v20260418y: Fat Loss Mode — inmediatamente después de Objetivo cuando se elige "Pérdida de peso" */}
+          {perfil.fatLossMode && (
+          <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+            <div className="flex items-center gap-3 mb-4">
+              <i className="fas fa-fire text-orange-500 text-xl"></i>
+              <div>
+                <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Plan Fat Loss — Precision Nutrition</h2>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Completá las medidas y objetivos para generar tu roadmap por fases con diet breaks</p>
+              </div>
+            </div>
+
+              <div className={`space-y-4`}>
+                {/* Medidas corporales */}
+                <div>
+                  <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Medidas corporales</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cintura (cm)</label>
+                      <input type="number" step="0.5" value={perfil.cintura || ''} onChange={(e) => handleChange("cintura", e.target.value)}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="85" />
+                    </div>
+                    <div>
+                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cuello (cm)</label>
+                      <input type="number" step="0.5" value={perfil.cuello || ''} onChange={(e) => handleChange("cuello", e.target.value)}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="40" />
+                    </div>
+                    {perfil.genero === 'femenino' && (
+                      <div>
+                        <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cadera (cm)</label>
+                        <input type="number" step="0.5" value={perfil.cadera || ''} onChange={(e) => handleChange("cadera", e.target.value)}
+                          className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
+                      </div>
+                    )}
+                    <div className={perfil.genero === 'femenino' ? '' : 'sm:col-span-1'}>
+                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BF% manual (opcional)</label>
+                      <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange("bfOverride", e.target.value)}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Sino: Navy auto" />
+                    </div>
+                  </div>
+                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                    <i className="fas fa-info-circle mr-1"></i>
+                    Navy calcula BF% con cintura + cuello{perfil.genero === 'femenino' ? ' + cadera' : ''}. Si tenés medición por bioimpedancia o caliper, completá "BF% manual" y se usa ese.
+                  </p>
+                </div>
+
+                {/* Targets */}
+                <div>
+                  <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Objetivos</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Peso target (kg)</label>
+                      <input type="number" step="0.1" value={perfil.pesoTarget || ''} onChange={(e) => handleChange("pesoTarget", e.target.value)}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="72" />
+                    </div>
+                    <div>
+                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BF% target</label>
+                      <input type="number" step="0.1" value={perfil.bfTarget || ''} onChange={(e) => handleChange("bfTarget", e.target.value)}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="10" />
+                    </div>
+                  </div>
+                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Basta con uno de los dos. El otro se calcula asumiendo que preservás masa magra.</p>
+                </div>
+
+                {/* Tasa de pérdida */}
+                <div>
+                  <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tasa de pérdida</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      {k: 'conservadora', l: 'Conservadora', s: '0.4 kg/sem · déficit 300'},
+                      {k: 'moderada',     l: 'Moderada',     s: '0.6 kg/sem · déficit 450'},
+                      {k: 'agresiva',     l: 'Agresiva',     s: '0.8 kg/sem · déficit 600'}
+                    ].map(t => {
+                      const activo = (perfil.tasaPerdida || 'moderada') === t.k;
+                      return (
+                        <button key={t.k} type="button" onClick={() => handleChange("tasaPerdida", t.k)}
+                          className={`px-3 py-2 rounded-lg text-xs border transition-colors ${
+                            activo
+                              ? 'bg-orange-500 text-white border-orange-500'
+                              : darkMode ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                          }`}>
+                          <div className="font-semibold">{t.l}</div>
+                          <div className={`text-[10px] mt-0.5 ${activo ? 'text-orange-100' : darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{t.s}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Timeline opcional */}
+                <div>
+                  <label className={`block text-xs font-semibold mb-1 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Timeline deseado (meses, opcional)</label>
+                  <input type="number" min="2" max="24" step="1" value={perfil.timelineMesesDeseado || ''} onChange={(e) => handleChange("timelineMesesDeseado", e.target.value)}
+                    className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Ej: 10. Dejá vacío para cálculo automático." />
+                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Si ingresás un timeline, el motor ajusta el déficit para cumplirlo (siempre dentro de rangos seguros 200-800 kcal/día).</p>
+                </div>
+
+                {/* Complemento preferido */}
+                <div>
+                  <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Fuente proteica de rescate</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      {k: 'whey', l: 'Whey', s: '1 scoop · 25g P'},
+                      {k: 'yogur_griego', l: 'Yogur griego', s: '200g · 20g P'},
+                      {k: 'cottage', l: 'Cottage light', s: '150g · 18g P'},
+                      {k: 'claras', l: 'Claras (6)', s: '180g · 22g P'}
+                    ].map(f => {
+                      const activo = (perfil.complementoPreferido || 'whey') === f.k;
+                      return (
+                        <button key={f.k} type="button" onClick={() => handleChange("complementoPreferido", f.k)}
+                          className={`px-2 py-2 rounded-lg text-xs border transition-colors ${
+                            activo
+                              ? 'bg-blue-500 text-white border-blue-500'
+                              : darkMode ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                          }`}>
+                          <div className="font-semibold">{f.l}</div>
+                          <div className={`text-[10px] mt-0.5 ${activo ? 'text-blue-100' : darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{f.s}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Si algún día queda corto de proteína, la app sugiere esta fuente para completar el target.</p>
+                </div>
+
+                {/* Preview del roadmap */}
+                {roadmapPreview && (
+                  <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-xl p-5 text-white">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-xs font-bold tracking-wider opacity-90">ROADMAP PREVIEW</div>
+                      <div className="text-[10px] opacity-75">{roadmapPreview.calculados.semanasActivas}w activas + {roadmapPreview.calculados.cantDietBreaks} diet breaks</div>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                      <div className="bg-white/20 rounded-lg p-2 text-center">
+                        <div className="text-[10px] opacity-80">BMR</div>
+                        <div className="text-lg font-bold">{roadmapPreview.calculados.bmr}</div>
+                        <div className="text-[9px] opacity-70">kcal</div>
+                      </div>
+                      <div className="bg-white/20 rounded-lg p-2 text-center">
+                        <div className="text-[10px] opacity-80">TDEE</div>
+                        <div className="text-lg font-bold">{roadmapPreview.calculados.tdee}</div>
+                        <div className="text-[9px] opacity-70">kcal</div>
+                      </div>
+                      <div className="bg-white/30 rounded-lg p-2 text-center">
+                        <div className="text-[10px] opacity-80">CORTE</div>
+                        <div className="text-lg font-bold">{roadmapPreview.calculados.caloriasCorte}</div>
+                        <div className="text-[9px] opacity-70">-{roadmapPreview.calculados.deficitDiario}</div>
+                      </div>
+                      <div className="bg-white/20 rounded-lg p-2 text-center">
+                        <div className="text-[10px] opacity-80">PROTEÍNA</div>
+                        <div className="text-lg font-bold">{roadmapPreview.calculados.proteinaTarget}g</div>
+                        <div className="text-[9px] opacity-70">2.2g/kg</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-[11px] mb-3">
+                      <div className="bg-white/10 rounded p-2">
+                        <span className="opacity-75">BF actual:</span> <b>{roadmapPreview.calculados.bfActual}%</b>
+                        {roadmapPreview.calculados.bfCalculadoNavy != null && roadmapPreview.inputs.bfOverride != null && (
+                          <span className="opacity-60 block text-[10px]">Navy calculado: {roadmapPreview.calculados.bfCalculadoNavy}% · override manual aplicado</span>
+                        )}
+                      </div>
+                      <div className="bg-white/10 rounded p-2">
+                        <span className="opacity-75">BF target:</span> <b>{roadmapPreview.calculados.bfTarget}%</b>
+                      </div>
+                      <div className="bg-white/10 rounded p-2">
+                        <span className="opacity-75">Grasa a perder:</span> <b>{roadmapPreview.calculados.grasaAPerder} kg</b>
+                      </div>
+                      <div className="bg-white/10 rounded p-2">
+                        <span className="opacity-75">Duración:</span> <b>~{roadmapPreview.calculados.mesesTotales} meses</b>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <div className="text-[10px] font-bold tracking-wider opacity-80 mb-2">FASES</div>
+                      <div className="space-y-1">
+                        {roadmapPreview.fases.map((f, idx) => (
+                          <div key={idx} className={`flex items-center justify-between rounded px-2 py-1.5 text-[11px] ${f.tipo === 'dietBreak' ? 'bg-white/30' : 'bg-white/10'}`}>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold opacity-90">M{f.mesInicio}{f.mesFin !== f.mesInicio ? '-'+f.mesFin : ''}</span>
+                              <span className={f.tipo === 'dietBreak' ? 'font-semibold' : ''}>{f.nombre}</span>
+                              {f.tipo === 'dietBreak' && <i className="fas fa-pause-circle text-[10px]"></i>}
+                            </div>
+                            <div className="flex items-center gap-2 opacity-90">
+                              <span>{f.calorias} kcal</span>
+                              <span className="opacity-70">·</span>
+                              <span>{f.targetPasos.toLocaleString()} pasos</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Mensaje si falta data para preview */}
+                {!roadmapPreview && (
+                  <div className={`text-xs p-3 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-50 text-gray-500'}`}>
+                    <i className="fas fa-spinner mr-2"></i>
+                    Completá medidas corporales (cintura + cuello o BF% manual) y al menos un target (peso o BF%) para ver el roadmap.
+                  </div>
+                )}
+              </div>
+          </div>
+          )}
+
+          {/* Calorías Objetivo Manual - oculto cuando Fat Loss Mode, lo define el roadmap */}
+          {!perfil.fatLossMode && (
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-fire-flame-curved text-green-500"></i>
@@ -336,8 +646,10 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               )}
             </div>
           </div>
+          )}
 
-          {/* Macros Editables */}
+          {/* Macros Editables - oculto cuando Fat Loss Mode, los fija automáticamente */}
+          {!perfil.fatLossMode && (
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-chart-pie text-green-500"></i>
@@ -383,6 +695,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               </div>
             )}
           </div>
+          )}
 
           {/* Restricciones */}
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
@@ -495,8 +808,8 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </p>
           </div>
 
-          {/* Panel TDEE */}
-          {tdeeInfo && (
+          {/* Panel TDEE - oculto cuando Fat Loss Mode, lo reemplaza el roadmap preview */}
+          {tdeeInfo && !perfil.fatLossMode && (
             <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg animate-scaleIn">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <i className="fas fa-calculator"></i>
@@ -547,14 +860,16 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           )}
 
-          <button type="submit" disabled={!tdeeInfo || macroError}
+          <button type="submit" disabled={perfil.fatLossMode ? !roadmapPreview : (!tdeeInfo || macroError)}
             className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all ${
-              tdeeInfo && !macroError
-                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-200 hover:shadow-xl hover:shadow-green-300 active:scale-[0.98]'
+              (perfil.fatLossMode ? !!roadmapPreview : (tdeeInfo && !macroError))
+                ? (perfil.fatLossMode
+                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-200 hover:shadow-xl hover:shadow-orange-300 active:scale-[0.98]'
+                    : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-200 hover:shadow-xl hover:shadow-green-300 active:scale-[0.98]')
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}>
-            <i className="fas fa-calendar-alt mr-2"></i>
-            {tienePlan ? 'Guardar y Regenerar Plan' : 'Generar Plan Semanal'}
+            <i className={`fas ${perfil.fatLossMode ? 'fa-fire' : 'fa-calendar-alt'} mr-2`}></i>
+            {tienePlan ? 'Guardar y Regenerar Plan' : (perfil.fatLossMode ? 'Activar Fat Loss Mode' : 'Generar Plan Semanal')}
           </button>
         </form>
       </div>
@@ -1433,8 +1748,75 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
     onSwapRecipe(dia, tipoComida, semanaActiva);
   };
 
+  // v20260418x: Banner de fase de Fat Loss Mode
+  const faseInfo = (window.NP_FatLoss && perfil && perfil.fatLossMode)
+    ? window.NP_FatLoss.banner()
+    : null;
+  const desincronizacion = (window.NP_FatLoss && perfil && perfil.fatLossMode)
+    ? window.NP_FatLoss.desincronizado()
+    : null;
+
   return (
     <div className="animate-fadeIn">
+      {/* v20260418x: Banner Fat Loss Mode */}
+      {faseInfo && (
+        <div className={`mb-4 rounded-2xl p-4 text-white shadow-lg ${
+          faseInfo.tipoFase === 'dietBreak'
+            ? 'bg-gradient-to-r from-purple-500 to-pink-500'
+            : 'bg-gradient-to-r from-orange-500 to-red-500'
+        }`}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <i className={`fas ${faseInfo.tipoFase === 'dietBreak' ? 'fa-pause-circle' : 'fa-fire'} text-lg`}></i>
+                <div className="text-xs font-bold tracking-wider opacity-90 uppercase">Fat Loss Mode</div>
+                {faseInfo.completado && <span className="px-2 py-0.5 bg-white/30 rounded-full text-[10px] font-bold">COMPLETADO</span>}
+                {faseInfo.porEmpezar && <span className="px-2 py-0.5 bg-white/30 rounded-full text-[10px] font-bold">PROGRAMADO</span>}
+              </div>
+              <div className="text-lg font-bold leading-tight">{faseInfo.nombreFase}</div>
+              <div className="text-xs opacity-90 mt-0.5">
+                Día {faseInfo.diaDentroDeFase} de fase · Mes {faseInfo.mesInicio}{faseInfo.mesFin !== faseInfo.mesInicio ? '-'+faseInfo.mesFin : ''}
+                {faseInfo.diasRestantesEnFase > 0 && ' · ' + faseInfo.diasRestantesEnFase + 'd restantes'}
+              </div>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <div className="text-[10px] opacity-80">OBJETIVO</div>
+              <div className="text-2xl font-extrabold leading-none">{faseInfo.calorias}</div>
+              <div className="text-[10px] opacity-80">kcal · {faseInfo.targetPasos.toLocaleString()} pasos</div>
+            </div>
+          </div>
+          {faseInfo.foco && (
+            <div className="mt-2 text-[11px] opacity-90 bg-white/10 rounded-lg px-3 py-2">
+              <i className="fas fa-bullseye mr-1 opacity-70"></i>{faseInfo.foco}
+            </div>
+          )}
+          {faseInfo.proximoHito && (
+            <div className="mt-2 flex items-center gap-2 text-[11px] bg-white/15 rounded-lg px-3 py-1.5">
+              <i className="fas fa-forward opacity-70"></i>
+              <span className="opacity-80">Próximo:</span>
+              <b>{faseInfo.proximoHito.nombre}</b>
+              <span className="opacity-80">en {faseInfo.proximoHito.enDias} días</span>
+            </div>
+          )}
+          {desincronizacion && desincronizacion.desincronizado && (
+            <div className="mt-2 flex items-center justify-between gap-2 text-[11px] bg-yellow-400 text-yellow-900 rounded-lg px-3 py-2">
+              <div>
+                <i className="fas fa-exclamation-triangle mr-1"></i>
+                <b>Plan desincronizado.</b> La fase actual pide {desincronizacion.caloriasNuevaFase} kcal, pero el plan está a {desincronizacion.caloriasActuales}.
+              </div>
+              <button onClick={() => {
+                if (window.NP_FatLoss) {
+                  window.NP_FatLoss.sincronizar();
+                  if (typeof onRegenerate === 'function') onRegenerate();
+                }
+              }} className="px-3 py-1 bg-yellow-900 text-yellow-100 rounded-lg text-[11px] font-bold hover:bg-yellow-800 whitespace-nowrap">
+                Regenerar plan
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Fase 3.3: Panel de comensales */}
       {window.perfilesMulti && (
         <ComensalesPanel darkMode={darkMode}
@@ -3009,6 +3391,472 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
+// COMPONENTE: FatLossTab (v20260418aa)
+// Tab con 3 sub-vistas: Roadmap, Métricas, Pasos
+// =============================================
+function FatLossTab({ perfil, darkMode }) {
+  const [subVista, setSubVista] = React.useState('roadmap');
+  const [refresh, setRefresh] = React.useState(0);
+
+  if (!perfil || !perfil.fatLossMode || !perfil.roadmap) {
+    return (
+      <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>
+        <i className="fas fa-fire text-4xl text-orange-400 mb-3"></i>
+        <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Fat Loss Mode no activado</h3>
+        <p className="text-sm">Andá a tu perfil y elegí "Pérdida de peso" como objetivo para configurar tu roadmap.</p>
+      </div>
+    );
+  }
+
+  const subs = [
+    { k: 'roadmap', l: 'Roadmap', icon: 'fa-route' },
+    { k: 'metricas', l: 'Métricas', icon: 'fa-weight-scale' },
+    { k: 'pasos', l: 'Pasos', icon: 'fa-person-walking' }
+  ];
+
+  return (
+    <div className="animate-fadeIn">
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        {subs.map(s => (
+          <button key={s.k} onClick={() => setSubVista(s.k)}
+            className={`py-2.5 px-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${
+              subVista === s.k
+                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md'
+                : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+            }`}>
+            <i className={`fas ${s.icon}`}></i>{s.l}
+          </button>
+        ))}
+      </div>
+
+      {subVista === 'roadmap' && <FLRoadmapView perfil={perfil} darkMode={darkMode} refresh={refresh} />}
+      {subVista === 'metricas' && <FLMetricasView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
+      {subVista === 'pasos' && <FLPasosView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
+    </div>
+  );
+}
+
+// ─── Sub-vista: Roadmap (fases mes-a-mes + progreso) ───
+function FLRoadmapView({ perfil, darkMode, refresh }) {
+  const roadmap = perfil.roadmap;
+  const faseInfo = (window.NP_FatLoss && window.NP_FatLoss.banner) ? window.NP_FatLoss.banner() : null;
+  const progreso = (window.NP_BodyComp && window.NP_BodyComp.progreso) ? window.NP_BodyComp.progreso() : null;
+
+  return (
+    <div className="space-y-4">
+      {/* Progreso global */}
+      {progreso && (
+        <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+          <h3 className={`text-sm font-bold uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Progreso global</h3>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div>
+              <div className="text-[10px] text-gray-400 uppercase">Inicial</div>
+              <div className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{progreso.pesoInicial} kg</div>
+              {progreso.bfInicial != null && <div className="text-xs text-gray-400">{progreso.bfInicial}% BF</div>}
+            </div>
+            <div>
+              <div className="text-[10px] text-orange-500 uppercase font-bold">Actual{!progreso.pesoActualEsReal && ' (estim.)'}</div>
+              <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{progreso.pesoActual} kg</div>
+              {progreso.bfActual != null && <div className="text-xs text-orange-500">{progreso.bfActual}% BF</div>}
+            </div>
+            <div>
+              <div className="text-[10px] text-gray-400 uppercase">Target</div>
+              <div className={`text-xl font-bold ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{progreso.pesoTarget} kg</div>
+              {progreso.bfTarget != null && <div className="text-xs text-gray-400">{progreso.bfTarget}% BF</div>}
+            </div>
+          </div>
+          <div className={`w-full h-3 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+            <div className="h-full transition-all"
+              style={{ width: progreso.pctPeso + '%', backgroundImage: 'linear-gradient(to right, #f97316, #ef4444)' }}></div>
+          </div>
+          <div className="flex justify-between text-xs mt-1">
+            <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>{progreso.kgPerdidos} kg perdidos</span>
+            <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{progreso.pctPeso}% del camino</span>
+            <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>{progreso.kgRestantes} kg para target</span>
+          </div>
+          {progreso.tendencia && progreso.tendencia.deltaSemanal != null && (
+            <div className="mt-3 text-xs flex items-center gap-2">
+              <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Tendencia 14d:</span>
+              <b className={progreso.tendencia.deltaSemanal < 0 ? 'text-green-500' : progreso.tendencia.deltaSemanal > 0 ? 'text-red-500' : 'text-gray-400'}>
+                {progreso.tendencia.deltaSemanal > 0 ? '+' : ''}{progreso.tendencia.deltaSemanal} kg/sem
+              </b>
+              <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>· target: -{roadmap.calculados.tasaSemanal} kg/sem</span>
+            </div>
+          )}
+        </div>
+      )}
+      {!progreso && (
+        <div className={`rounded-xl p-4 text-xs ${darkMode ? 'bg-gray-800 text-gray-400 border border-gray-700' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+          <i className="fas fa-info-circle mr-2"></i>Registrá tu peso en la pestaña <b>Métricas</b> para ver progreso real vs roadmap.
+        </div>
+      )}
+
+      {/* Fases tabla */}
+      <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+          <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Fases del plan</h3>
+          <p className={`text-xs mt-0.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{roadmap.calculados.semanasTotales} semanas totales · {roadmap.calculados.cantDietBreaks} diet breaks · ~{roadmap.calculados.mesesTotales} meses</p>
+        </div>
+        <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
+          {roadmap.fases.map((f, idx) => {
+            const esActiva = faseInfo && faseInfo.numeroFase === f.numero;
+            const esDietBreak = f.tipo === 'dietBreak';
+            return (
+              <div key={idx} className={`px-5 py-3 transition-colors ${
+                esActiva
+                  ? darkMode ? 'bg-orange-900/30 border-l-4 border-orange-500' : 'bg-orange-50 border-l-4 border-orange-500'
+                  : esDietBreak
+                    ? darkMode ? 'bg-purple-900/10' : 'bg-purple-50/50'
+                    : ''
+              }`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                        esDietBreak
+                          ? 'bg-purple-500 text-white'
+                          : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                      }`}>Mes {f.mesInicio}{f.mesFin !== f.mesInicio ? '-'+f.mesFin : ''}</span>
+                      <span className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{f.nombre}</span>
+                      {esActiva && <span className="px-2 py-0.5 bg-orange-500 text-white text-[10px] font-bold rounded animate-pulse">ACTUAL</span>}
+                      {esDietBreak && <i className="fas fa-pause-circle text-purple-500 text-xs"></i>}
+                    </div>
+                    <div className={`text-[11px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{f.foco}</div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className={`text-lg font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{f.calorias}</div>
+                    <div className="text-[10px] text-gray-400 uppercase">kcal · {f.targetPasos.toLocaleString()} pasos</div>
+                    <div className="text-[10px] text-gray-400">{f.pesoInicio}→{f.pesoFin} kg</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Próximo hito */}
+      {faseInfo && faseInfo.proximoHito && (
+        <div className={`rounded-xl p-3 text-sm flex items-center gap-3 ${
+          faseInfo.proximoHito.tipo === 'dietBreak'
+            ? darkMode ? 'bg-purple-900/40 text-purple-200 border border-purple-700' : 'bg-purple-50 text-purple-700 border border-purple-200'
+            : darkMode ? 'bg-blue-900/40 text-blue-200 border border-blue-700' : 'bg-blue-50 text-blue-700 border border-blue-200'
+        }`}>
+          <i className="fas fa-forward text-lg"></i>
+          <div>
+            <div className="font-semibold">Próximo: {faseInfo.proximoHito.nombre}</div>
+            <div className="text-xs opacity-80">En {faseInfo.proximoHito.enDias} días</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-vista: Métricas (log peso + medidas) ───
+function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
+  const [pesoInput, setPesoInput] = React.useState('');
+  const [medidas, setMedidas] = React.useState({ cintura: '', cuello: '', cadera: '', muslo: '' });
+  const [mostrarMedidas, setMostrarMedidas] = React.useState(false);
+  const [bfManualInput, setBfManualInput] = React.useState('');
+
+  const entries = (window.NP_BodyComp && window.NP_BodyComp.cargar) ? window.NP_BodyComp.cargar() : [];
+  const ultima = (window.NP_BodyComp && window.NP_BodyComp.ultima) ? window.NP_BodyComp.ultima(entries) : null;
+  const tendencia = (window.NP_BodyComp && window.NP_BodyComp.tendencia) ? window.NP_BodyComp.tendencia(entries, 'peso') : null;
+  const promedio7 = (window.NP_BodyComp && window.NP_BodyComp.promedio) ? window.NP_BodyComp.promedio(entries, 'peso', 7) : null;
+
+  const hoy = new Date().toISOString().split('T')[0];
+  const entradaHoy = entries.find(e => e.fecha === hoy);
+
+  const registrarPeso = () => {
+    if (!pesoInput || isNaN(parseFloat(pesoInput))) return;
+    window.NP_BodyComp.registrar({
+      fecha: hoy,
+      peso: parseFloat(pesoInput),
+      _genero: perfil.genero === 'femenino' ? 'F' : 'M',
+      _altura: perfil.altura
+    });
+    setPesoInput('');
+    onRefresh();
+  };
+
+  const registrarMedidas = () => {
+    const body = { fecha: hoy, _genero: perfil.genero === 'femenino' ? 'F' : 'M', _altura: perfil.altura };
+    if (medidas.cintura) body.cintura = parseFloat(medidas.cintura);
+    if (medidas.cuello) body.cuello = parseFloat(medidas.cuello);
+    if (medidas.cadera) body.cadera = parseFloat(medidas.cadera);
+    if (medidas.muslo) body.muslo = parseFloat(medidas.muslo);
+    if (bfManualInput) body.bf = parseFloat(bfManualInput);
+    window.NP_BodyComp.registrar(body);
+    setMedidas({ cintura: '', cuello: '', cadera: '', muslo: '' });
+    setBfManualInput('');
+    setMostrarMedidas(false);
+    onRefresh();
+  };
+
+  const ultimas14 = entries.slice(-14).reverse();
+
+  return (
+    <div className="space-y-4">
+      {/* Registro rápido de peso */}
+      <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <h3 className={`text-sm font-bold uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Peso de hoy</h3>
+        {entradaHoy && entradaHoy.peso != null ? (
+          <div className="flex items-center justify-between">
+            <div>
+              <div className={`text-3xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{entradaHoy.peso} kg</div>
+              <div className="text-xs text-gray-400">Registrado hoy</div>
+            </div>
+            <button onClick={() => { window.NP_BodyComp.eliminar(hoy); onRefresh(); }}
+              className={`text-xs px-3 py-1.5 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+              <i className="fas fa-pen mr-1"></i>Cambiar
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <input type="number" step="0.1" value={pesoInput} onChange={e => setPesoInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') registrarPeso(); }}
+              className={`flex-1 px-4 py-3 rounded-xl border text-lg font-semibold ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
+              placeholder="Ej: 82.3" />
+            <button onClick={registrarPeso} disabled={!pesoInput}
+              className={`px-5 py-3 rounded-xl font-semibold ${pesoInput ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+              <i className="fas fa-check"></i>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Promedio + tendencia */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+          <div className="text-[10px] text-gray-400 uppercase font-bold">Promedio 7 días</div>
+          <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{promedio7 != null ? promedio7 + ' kg' : '—'}</div>
+        </div>
+        <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+          <div className="text-[10px] text-gray-400 uppercase font-bold">Tendencia 14d</div>
+          <div className={`text-2xl font-extrabold ${tendencia && tendencia.deltaSemanal != null ? (tendencia.deltaSemanal < 0 ? 'text-green-500' : tendencia.deltaSemanal > 0 ? 'text-red-500' : 'text-gray-400') : 'text-gray-400'}`}>
+            {tendencia && tendencia.deltaSemanal != null ? (tendencia.deltaSemanal > 0 ? '+' : '') + tendencia.deltaSemanal + ' kg/sem' : '—'}
+          </div>
+        </div>
+      </div>
+
+      {/* Medidas + BF */}
+      <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Medidas (semanal)</h3>
+          <button onClick={() => setMostrarMedidas(!mostrarMedidas)}
+            className={`text-xs px-3 py-1.5 rounded-lg ${mostrarMedidas ? 'bg-orange-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+            {mostrarMedidas ? 'Cancelar' : '+ Registrar'}
+          </button>
+        </div>
+        {mostrarMedidas ? (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cintura (cm)</label>
+                <input type="number" step="0.5" value={medidas.cintura} onChange={e => setMedidas({...medidas, cintura: e.target.value})}
+                  className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder={perfil.cintura || '85'} />
+              </div>
+              <div>
+                <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cuello (cm)</label>
+                <input type="number" step="0.5" value={medidas.cuello} onChange={e => setMedidas({...medidas, cuello: e.target.value})}
+                  className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder={perfil.cuello || '40'} />
+              </div>
+              {perfil.genero === 'femenino' && (
+                <div>
+                  <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cadera (cm)</label>
+                  <input type="number" step="0.5" value={medidas.cadera} onChange={e => setMedidas({...medidas, cadera: e.target.value})}
+                    className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
+                </div>
+              )}
+              <div>
+                <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Muslo (cm)</label>
+                <input type="number" step="0.5" value={medidas.muslo} onChange={e => setMedidas({...medidas, muslo: e.target.value})}
+                  className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="55" />
+              </div>
+              <div className="col-span-2">
+                <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BF% manual (opcional — sino se calcula Navy)</label>
+                <input type="number" step="0.1" value={bfManualInput} onChange={e => setBfManualInput(e.target.value)}
+                  className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="Ej: 18.5" />
+              </div>
+            </div>
+            <button onClick={registrarMedidas}
+              className="w-full py-2.5 rounded-xl font-semibold bg-gradient-to-r from-orange-500 to-red-500 text-white">
+              <i className="fas fa-check mr-2"></i>Guardar medidas
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            {['cintura', 'cuello', 'cadera', 'muslo'].map(campo => {
+              const last = window.NP_BodyComp.ultima(entries, campo);
+              if (perfil.genero !== 'femenino' && campo === 'cadera') return null;
+              return (
+                <div key={campo} className={`rounded-lg p-2 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                  <div className="text-[10px] text-gray-400 uppercase">{campo}</div>
+                  <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{last && last[campo] != null ? last[campo] + ' cm' : '—'}</div>
+                </div>
+              );
+            })}
+            {(() => {
+              const lastBF = window.NP_BodyComp.ultima(entries, 'bf');
+              return (
+                <div className={`col-span-2 rounded-lg p-2 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                  <div className="text-[10px] text-gray-400 uppercase">BF%</div>
+                  <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                    {lastBF && lastBF.bf != null ? lastBF.bf + '%' : '—'}
+                    {lastBF && lastBF.bfCalculado != null && lastBF.bf !== lastBF.bfCalculado && (
+                      <span className="text-[10px] text-gray-400 ml-2">(Navy: {lastBF.bfCalculado}%)</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+      </div>
+
+      {/* Historial */}
+      {ultimas14.length > 0 && (
+        <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+          <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Últimas 14 entradas</h3>
+          </div>
+          <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
+            {ultimas14.map((e, i) => (
+              <div key={i} className={`px-5 py-2 flex items-center justify-between ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <span className="text-xs text-gray-400">{e.fecha}</span>
+                <div className="flex items-center gap-3">
+                  {e.peso != null && <span><b>{e.peso}</b> kg</span>}
+                  {e.bf != null && <span className="text-xs text-gray-400">{e.bf}% BF</span>}
+                  {e.cintura != null && <span className="text-xs text-gray-400">C:{e.cintura}</span>}
+                  <button onClick={() => { window.NP_BodyComp.eliminar(e.fecha); onRefresh(); }}
+                    className="text-xs text-red-400 hover:text-red-600">
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-vista: Pasos ───
+function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
+  const [pasosInput, setPasosInput] = React.useState('');
+
+  const hoy = (window.NP_Steps && window.NP_Steps.hoy) ? window.NP_Steps.hoy() : { pasos: 0, target: null };
+  const target = (window.NP_Steps && window.NP_Steps.targetHoy) ? window.NP_Steps.targetHoy() : null;
+  const prom7 = (window.NP_Steps && window.NP_Steps.promedio7) ? window.NP_Steps.promedio7() : 0;
+  const racha = (window.NP_Steps && window.NP_Steps.racha) ? window.NP_Steps.racha() : 0;
+  const ultimos = (window.NP_Steps && window.NP_Steps.ultimos) ? window.NP_Steps.ultimos(14) : [];
+
+  const setPasos = (n) => {
+    window.NP_Steps.registrar(null, n, target);
+    setPasosInput('');
+    onRefresh();
+  };
+  const sumar = (n) => {
+    window.NP_Steps.sumar(n, target);
+    onRefresh();
+  };
+
+  const pct = target ? Math.min(100, (hoy.pasos / target) * 100) : 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Hoy */}
+      <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Hoy</h3>
+          <span className="text-xs text-gray-400">Target: <b className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{target ? target.toLocaleString() : '—'}</b></span>
+        </div>
+        <div className={`text-5xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'} text-center mb-3`}>
+          {hoy.pasos.toLocaleString()}
+        </div>
+        {target > 0 && (
+          <>
+            <div className={`w-full h-3 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+              <div className="h-full transition-all"
+                style={{
+                  width: pct + '%',
+                  backgroundImage: pct >= 100
+                    ? 'linear-gradient(to right, #22c55e, #10b981)'
+                    : 'linear-gradient(to right, #f97316, #ef4444)'
+                }}></div>
+            </div>
+            <div className="text-center text-xs mt-1 text-gray-400">{Math.round(pct)}% del target{pct >= 100 ? ' ✓' : ''}</div>
+          </>
+        )}
+        <div className="flex gap-2 mt-4">
+          {[1000, 2000, 5000].map(n => (
+            <button key={n} onClick={() => sumar(n)}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+              +{n.toLocaleString()}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2 mt-2">
+          <input type="number" value={pasosInput} onChange={e => setPasosInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && pasosInput) setPasos(parseInt(pasosInput)); }}
+            className={`flex-1 px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
+            placeholder="Set exacto (ej: 8450)" />
+          <button onClick={() => pasosInput && setPasos(parseInt(pasosInput))} disabled={!pasosInput}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold ${pasosInput ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+            Set
+          </button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+          <div className="text-[10px] text-gray-400 uppercase font-bold">Promedio 7 días</div>
+          <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{prom7.toLocaleString()}</div>
+        </div>
+        <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+          <div className="text-[10px] text-gray-400 uppercase font-bold">Racha actual</div>
+          <div className={`text-2xl font-extrabold ${racha > 0 ? 'text-orange-500' : darkMode ? 'text-white' : 'text-gray-800'}`}>
+            {racha} {racha === 1 ? 'día' : 'días'}{racha >= 3 ? ' 🔥' : ''}
+          </div>
+        </div>
+      </div>
+
+      {/* Historial 14d */}
+      {ultimos.length > 0 && (
+        <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+          <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Últimos 14 días</h3>
+          </div>
+          <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
+            {ultimos.slice().reverse().map((e, i) => {
+              const tgt = e.target || 8000;
+              const pctDia = Math.min(100, (e.pasos / tgt) * 100);
+              const cumplido = e.pasos >= tgt;
+              return (
+                <div key={i} className="px-5 py-2.5">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-gray-400">{e.fecha}</span>
+                    <span className={`text-sm font-bold ${cumplido ? 'text-green-500' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      {e.pasos.toLocaleString()} {cumplido && '✓'}
+                    </span>
+                  </div>
+                  <div className={`w-full h-1.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                    <div className={`h-full ${cumplido ? 'bg-green-500' : 'bg-orange-500'}`} style={{ width: pctDia + '%' }}></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =============================================
 // COMPONENTE PRINCIPAL: App (MEJORA 5: dark mode)
 // =============================================
 // =============================================
@@ -3388,6 +4236,7 @@ function App() {
           <div className="flex gap-1 py-2">
             {[
               { id: "plan", label: "Plan", icon: "fa-calendar-days" },
+              ...(perfil && perfil.fatLossMode ? [{ id: "fatloss", label: "Fat Loss", icon: "fa-fire" }] : []),
               { id: "cocinar", label: "¿Qué cocino?", icon: "fa-magnifying-glass" },
               { id: "generador", label: "Crear receta", icon: "fa-wand-magic-sparkles" },
               { id: "despensa", label: "Despensa", icon: "fa-warehouse" },
@@ -3414,6 +4263,9 @@ function App() {
             onSwapRecipe={handleSwapRecipe}
             darkMode={darkMode}
             swapping={swapping} />
+        )}
+        {pantalla === "fatloss" && (
+          <FatLossTab perfil={perfil} darkMode={darkMode} />
         )}
         {pantalla === "cocinar" && (
           <ReverseSearch darkMode={darkMode} onRecipeClick={(r) => setRecetaSeleccionada(r)} />

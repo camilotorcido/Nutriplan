@@ -10,7 +10,7 @@
 (function cargarLazyLoader() {
   var cargado = false;
   var promesaCarga = null;
-  var VERSION = 'v=20260418w';
+  var VERSION = 'v=20260418ac';
 
   function cargarScript(src) {
     return new Promise(function(resolve, reject) {
