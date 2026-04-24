@@ -3391,7 +3391,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418an — split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418ao — split en 2 secciones)
 // seccion="entrenamiento" → Pasos + Entreno
 // seccion="progreso" → Roadmap + Métricas
 // =============================================
@@ -4176,6 +4176,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
 function AlcoholCard({ darkMode, refresh, onRefresh }) {
   const [expandido, setExpandido] = React.useState(false);
   const [modoCustom, setModoCustom] = React.useState(false);
+  const [mostrarMas, setMostrarMas] = React.useState(false);
   const [customMl, setCustomMl] = React.useState('');
   const [customPct, setCustomPct] = React.useState('');
   const [customNombre, setCustomNombre] = React.useState('');
@@ -4300,25 +4301,26 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
               {modoCustom ? 'Cancelar' : '+ Custom (ml + %)'}
             </button>
             {presets.length > 6 && (
-              <details className="flex-1 relative">
-                <summary className={`list-none cursor-pointer text-sm py-2 px-2 rounded-lg text-center font-semibold ${darkMode ? 'bg-gray-700/50 text-gray-300 hover:bg-gray-700' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>
-                  Más ({presets.length - 6}) <i className="fas fa-chevron-down text-xs"></i>
-                </summary>
-                <div className={`absolute right-0 top-full mt-1 w-72 z-10 rounded-xl p-2 shadow-lg ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-                  <div className="grid grid-cols-1 gap-1 max-h-72 overflow-y-auto">
-                    {presets.slice(6).map((p, i) => (
-                      <button key={i} onClick={() => agregar(p)}
-                        className={`text-left px-3 py-2 rounded-lg ${darkMode ? 'hover:bg-gray-700 text-gray-200' : 'hover:bg-gray-100 text-gray-700'}`}>
-                        <div className="text-sm font-semibold">{p.nombre}</div>
-                        <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{p.ml} ml · {p.kcal} kcal</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </details>
+              <button onClick={() => setMostrarMas(!mostrarMas)}
+                className={`flex-1 text-sm py-2 rounded-lg font-semibold ${darkMode ? 'bg-gray-700/50 text-gray-300 hover:bg-gray-700' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>
+                {mostrarMas ? 'Menos' : `Más (${presets.length - 6})`} <i className={`fas fa-chevron-${mostrarMas ? 'up' : 'down'} text-xs ml-1`}></i>
+              </button>
             )}
           </div>
         </div>
+
+        {/* Más bebidas (expandido inline) */}
+        {mostrarMas && presets.length > 6 && (
+          <div className="grid grid-cols-2 gap-2">
+            {presets.slice(6).map((p, i) => (
+              <button key={i} onClick={() => { agregar(p); setMostrarMas(false); }}
+                className={`text-left px-3 py-2 rounded-lg transition-colors ${darkMode ? 'bg-gray-700/50 hover:bg-gray-700 text-gray-200' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'}`}>
+                <div className="text-sm font-semibold truncate">{p.nombre}</div>
+                <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{p.ml} ml · {p.kcal} kcal</div>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Custom form */}
         {modoCustom && (
