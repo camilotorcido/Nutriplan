@@ -98,7 +98,7 @@ const ALCOHOL_BEBIDAS = [
   { nombre: 'Vino tinto', ml: 150, kcal: 125, alcohol_pct: 12 },
   { nombre: 'Vino blanco', ml: 150, kcal: 120, alcohol_pct: 12 },
   { nombre: 'Cerveza estándar', ml: 355, kcal: 150, alcohol_pct: 5 },
-  { nombre: 'Piscola', ml: 250, kcal: 195, alcohol_pct: 8 },
+  { nombre: 'Piscola (zero)', ml: 250, kcal: 110, alcohol_pct: 8 },
   { nombre: 'Pisco sour', ml: 200, kcal: 280, alcohol_pct: 15 },
   { nombre: 'Gin tonic', ml: 250, kcal: 180, alcohol_pct: 10 },
   { nombre: 'Cerveza IPA/artesanal', ml: 355, kcal: 210, alcohol_pct: 7 },
