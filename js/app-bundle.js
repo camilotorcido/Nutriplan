@@ -3761,7 +3761,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
 
   if (!est.deteccion.datosSuficientes && est.pasoActual === 0) {
     return (
-      <div className={`rounded-xl p-3 text-xs ${darkMode ? 'bg-gray-800 text-gray-500 border border-gray-700' : 'bg-gray-50 text-gray-500 border border-gray-200'}`}>
+      <div className={`rounded-xl p-4 text-sm ${darkMode ? 'bg-gray-800 text-gray-500 border border-gray-700' : 'bg-gray-50 text-gray-500 border border-gray-200'}`}>
         <i className="fas fa-radar mr-2"></i>
         Detector de meseta: necesita ≥14 días de peso registrado para activarse.
       </div>
@@ -3811,63 +3811,64 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
   }
 
   return (
-    <div className={`rounded-2xl p-4 border ${bannerCls}`}>
-      <div className="flex items-center justify-between mb-2">
+    <div className={`rounded-2xl p-5 border ${bannerCls}`}>
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <i className={`fas fa-radar ${iconCls}`}></i>
-          <span className={`text-[10px] font-bold uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Detector de meseta</span>
+          <span className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Detector de meseta</span>
         </div>
         <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${iconCls} ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>{ribbon}</span>
       </div>
 
       {/* Stats de detección */}
       {est.deteccion.datosSuficientes && (
-        <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="grid grid-cols-3 gap-3 mb-3">
           <div>
-            <div className="text-[9px] text-gray-400 uppercase">Δ semanal</div>
-            <div className={`text-sm font-bold ${delta == null ? 'text-gray-400' : delta < -0.25 ? 'text-green-500' : delta > 0.25 ? 'text-red-500' : 'text-amber-500'}`}>
-              {delta == null ? '—' : (delta > 0 ? '+' : '') + delta + ' kg'}
+            <div className="text-[10px] text-gray-400 uppercase font-bold">Δ semanal</div>
+            <div className={`text-2xl font-extrabold ${delta == null ? 'text-gray-400' : delta < -0.25 ? 'text-green-500' : delta > 0.25 ? 'text-red-500' : 'text-amber-500'}`}>
+              {delta == null ? '—' : (delta > 0 ? '+' : '') + delta}
+              {delta != null && <span className="text-sm font-semibold opacity-70 ml-0.5">kg</span>}
             </div>
           </div>
           <div>
-            <div className="text-[9px] text-gray-400 uppercase">Ventana</div>
-            <div className={`text-sm font-bold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{est.deteccion.diasVentana}d</div>
+            <div className="text-[10px] text-gray-400 uppercase font-bold">Ventana</div>
+            <div className={`text-2xl font-extrabold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{est.deteccion.diasVentana}<span className="text-sm font-semibold opacity-70 ml-0.5">d</span></div>
           </div>
           <div>
-            <div className="text-[9px] text-gray-400 uppercase">Umbral</div>
-            <div className={`text-sm font-bold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>±0.25 kg/sem</div>
+            <div className="text-[10px] text-gray-400 uppercase font-bold">Umbral</div>
+            <div className={`text-sm font-bold mt-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>±0.25 kg/sem</div>
           </div>
         </div>
       )}
 
       {/* Paso activo */}
       {hayPasoActivo && est.pasoDef && (
-        <div className={`rounded-lg p-3 mb-3 ${darkMode ? 'bg-gray-900/40' : 'bg-white/70'}`}>
+        <div className={`rounded-lg p-4 mb-3 ${darkMode ? 'bg-gray-900/40' : 'bg-white/70'}`}>
           <div className="flex items-start justify-between gap-2 mb-1">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500 text-white`}>PASO {est.pasoActual}/6</span>
-                <span className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{est.pasoDef.accion}</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500 text-white`}>PASO {est.pasoActual}/6</span>
+                <span className={`text-base font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{est.pasoDef.accion}</span>
               </div>
-              <div className="text-[10px] text-gray-400 mt-0.5">
+              <div className="text-xs text-gray-400 mt-1">
                 Día {est.diasEnPaso} · Duración sugerida: {est.pasoDef.duracion}
               </div>
             </div>
           </div>
-          <div className={`text-xs mt-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{est.pasoDef.detalle}</div>
+          <div className={`text-sm mt-2 leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{est.pasoDef.detalle}</div>
           <div className="flex gap-2 mt-3">
             <button onClick={resolver}
-              className="flex-1 py-2 rounded-lg text-xs font-semibold bg-green-500 text-white hover:bg-green-600">
-              <i className="fas fa-check mr-1"></i>Este paso funcionó
+              className="flex-1 py-2 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600">
+              <i className="fas fa-check mr-1"></i>Funcionó
             </button>
             {est.pasoActual < 6 && (
               <button onClick={avanzar}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold ${darkMode ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-amber-500 text-white hover:bg-amber-600'}`}>
-                <i className="fas fa-forward mr-1"></i>Avanzar a paso {est.pasoActual + 1}
+                className={`flex-1 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-amber-500 text-white hover:bg-amber-600'}`}>
+                <i className="fas fa-forward mr-1"></i>Paso {est.pasoActual + 1}
               </button>
             )}
             <button onClick={cancelar}
-              className={`px-3 py-2 rounded-lg text-xs ${darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+              className={`px-3 py-2 rounded-lg text-sm ${darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
               <i className="fas fa-times"></i>
             </button>
           </div>
@@ -3876,57 +3877,57 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
 
       {/* Sugerencia de iniciar protocolo */}
       {esSugerencia && !hayPasoActivo && (
-        <div className={`rounded-lg p-3 mb-3 ${darkMode ? 'bg-red-900/40' : 'bg-white/70'}`}>
-          <div className={`text-xs mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+        <div className={`rounded-lg p-4 mb-3 ${darkMode ? 'bg-red-900/40' : 'bg-white/70'}`}>
+          <div className={`text-sm mb-3 leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
             Tu peso lleva ≥14 días dentro del umbral de meseta. Aplicá el primer paso del protocolo antes de tocar calorías: <b>auditar tracking</b>.
           </div>
           <button onClick={aplicarPaso1}
-            className="w-full py-2 rounded-lg text-xs font-semibold bg-red-500 text-white hover:bg-red-600">
-            <i className="fas fa-play mr-1"></i>Iniciar protocolo — Paso 1
+            className="w-full py-2 rounded-lg text-sm font-semibold bg-red-500 text-white hover:bg-red-600">
+            <i className="fas fa-play mr-2"></i>Iniciar protocolo — Paso 1
           </button>
         </div>
       )}
 
       {/* Estado normal */}
       {!hayPasoActivo && !esSugerencia && est.deteccion.datosSuficientes && (
-        <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+        <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           Sin meseta. El peso se mueve a {delta > 0 ? '+' : ''}{delta} kg/sem — fuera del rango de estancamiento.
         </div>
       )}
 
       {/* Toggle protocolo completo */}
       <button onClick={() => setVerProtocolo(!verProtocolo)}
-        className={`w-full mt-2 text-[11px] py-1.5 rounded ${darkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-white'}`}>
+        className={`w-full mt-3 text-xs py-2 rounded ${darkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-white'}`}>
         <i className={`fas fa-chevron-${verProtocolo ? 'up' : 'down'} mr-1`}></i>
         {verProtocolo ? 'Ocultar' : 'Ver'} protocolo completo (6 pasos)
       </button>
 
       {verProtocolo && (
-        <div className="mt-2 space-y-1.5">
+        <div className="mt-2 space-y-2">
           {protocolo.map(p => {
             const esActivo = p.paso === est.pasoActual;
             const esHistorico = (est.historial || []).some(h => h.paso === p.paso);
             return (
-              <div key={p.paso} className={`rounded-lg p-2.5 text-xs ${
+              <div key={p.paso} className={`rounded-lg p-3 ${
                 esActivo
                   ? darkMode ? 'bg-amber-900/40 border border-amber-700' : 'bg-amber-100 border border-amber-300'
                   : esHistorico
                     ? darkMode ? 'bg-gray-900/60 opacity-60' : 'bg-gray-100 opacity-70'
                     : darkMode ? 'bg-gray-900/40' : 'bg-white/60'
               }`}>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                <div className="flex items-center justify-between mb-1.5 gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
                       esActivo ? 'bg-amber-500 text-white' : darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-600'
                     }`}>PASO {p.paso}</span>
-                    <span className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{p.accion}</span>
+                    <span className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{p.accion}</span>
                   </div>
-                  <span className="text-[10px] text-gray-400">{p.duracion}</span>
+                  <span className="text-xs text-gray-400 flex-shrink-0">{p.duracion}</span>
                 </div>
-                <div className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-[11px]`}>{p.detalle}</div>
+                <div className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm leading-relaxed`}>{p.detalle}</div>
                 {!esActivo && !esHistorico && hayPasoActivo && p.paso > est.pasoActual && (
                   <button onClick={() => { window.NP_Plateau.aplicarPaso(p.paso); onRefresh(); }}
-                    className={`mt-2 text-[10px] px-2 py-1 rounded ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                    className={`mt-2 text-xs px-3 py-1.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                     Saltar a este paso →
                   </button>
                 )}
@@ -3992,94 +3993,94 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
   if (!debeExpandir) {
     return (
       <button onClick={() => setExpandido(true)}
-        className={`w-full rounded-xl p-3 flex items-center justify-between border transition-colors ${darkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-750' : 'bg-white border-gray-100 shadow-sm hover:bg-gray-50'}`}>
+        className={`w-full rounded-xl p-4 flex items-center justify-between border transition-colors ${darkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-750' : 'bg-white border-gray-100 shadow-sm hover:bg-gray-50'}`}>
         <div className="flex items-center gap-2">
-          <i className={`fas fa-wine-glass text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
-          <span className={`text-xs font-semibold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Alcohol 7d</span>
-          <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>sin registros</span>
+          <i className={`fas fa-wine-glass ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
+          <span className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Alcohol 7d</span>
+          <span className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>sin registros</span>
         </div>
-        <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>+ Registrar <i className="fas fa-chevron-down ml-1"></i></span>
+        <span className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>+ Registrar <i className="fas fa-chevron-down ml-1"></i></span>
       </button>
     );
   }
 
   return (
-    <div className={`rounded-2xl p-4 border ${colorNivel}`}>
-      <div className="flex items-center justify-between mb-2">
+    <div className={`rounded-2xl p-5 border ${colorNivel}`}>
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <i className="fas fa-wine-glass text-sm"></i>
-          <span className="text-[10px] font-bold uppercase tracking-wider">Alcohol · últimos 7 días</span>
+          <i className="fas fa-wine-glass"></i>
+          <span className="text-sm font-bold uppercase tracking-wider">Alcohol · últimos 7 días</span>
         </div>
         {impacto && (
-          <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase ${darkMode ? 'bg-gray-900/60' : 'bg-white'}`}>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${darkMode ? 'bg-gray-900/60' : 'bg-white'}`}>
             {impacto.nivel}
           </span>
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mb-3">
+      <div className="grid grid-cols-3 gap-3 mb-4">
         <div>
-          <div className="text-[9px] opacity-60 uppercase">Tragos</div>
-          <div className="text-lg font-extrabold">{resumen.tragos}</div>
+          <div className="text-[10px] opacity-60 uppercase font-bold">Tragos</div>
+          <div className="text-2xl font-extrabold">{resumen.tragos}</div>
         </div>
         <div>
-          <div className="text-[9px] opacity-60 uppercase">Kcal</div>
-          <div className="text-lg font-extrabold">{resumen.kcal}</div>
+          <div className="text-[10px] opacity-60 uppercase font-bold">Kcal</div>
+          <div className="text-2xl font-extrabold">{resumen.kcal}</div>
         </div>
         <div>
-          <div className="text-[9px] opacity-60 uppercase">Días activos</div>
-          <div className="text-lg font-extrabold">{resumen.dias}/7</div>
+          <div className="text-[10px] opacity-60 uppercase font-bold">Días activos</div>
+          <div className="text-2xl font-extrabold">{resumen.dias}<span className="text-sm font-semibold opacity-70">/7</span></div>
         </div>
       </div>
 
       {impacto && (
-        <div className={`rounded-lg p-3 mb-3 text-xs ${darkMode ? 'bg-gray-900/40' : 'bg-white/70'}`}>
-          <div className={`font-semibold mb-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{impacto.escenario}</div>
-          <div className={`grid grid-cols-2 gap-2 mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-            <div className="text-[11px]">
+        <div className={`rounded-lg p-4 mb-4 ${darkMode ? 'bg-gray-900/40' : 'bg-white/70'}`}>
+          <div className={`text-base font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{impacto.escenario}</div>
+          <div className={`grid grid-cols-2 gap-3 mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            <div className="text-sm leading-snug">
               <i className="fas fa-fire-flame-simple mr-1 opacity-60"></i>
               Oxidación grasa pausada <b>{impacto.horasPausaOxidacion}h</b>
-              {pausaH > 0 && <span className="block text-[10px] opacity-70">({pausaH}h restantes)</span>}
+              {pausaH > 0 && <span className="block text-xs opacity-70 mt-0.5">({pausaH}h restantes)</span>}
             </div>
-            <div className="text-[11px]">
+            <div className="text-sm leading-snug">
               <i className="fas fa-dumbbell mr-1 opacity-60"></i>
               Síntesis proteica: <b>{impacto.impactoSintesisProteica}</b>
             </div>
           </div>
-          <div className={`text-[11px] italic border-l-2 pl-2 ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}>
+          <div className={`text-sm italic border-l-2 pl-3 leading-relaxed ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}>
             {impacto.estrategia}
           </div>
         </div>
       )}
 
-      <div className="mb-2">
-        <div className={`text-[10px] uppercase font-bold mb-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Registrar bebida</div>
-        <div className="grid grid-cols-2 gap-1.5">
+      <div className="mb-3">
+        <div className={`text-xs uppercase font-bold mb-2 tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Registrar bebida</div>
+        <div className="grid grid-cols-2 gap-2">
           {presets.slice(0, 6).map((p, i) => (
             <button key={i} onClick={() => agregar(p)}
-              className={`text-left px-2 py-1.5 rounded-lg text-[11px] transition-colors ${darkMode ? 'bg-gray-900/40 hover:bg-gray-700 text-gray-200' : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200'}`}>
-              <div className="font-semibold truncate">{p.nombre}</div>
-              <div className="text-[9px] opacity-70">{p.ml} ml · {p.kcal} kcal</div>
+              className={`text-left px-3 py-2 rounded-lg transition-colors ${darkMode ? 'bg-gray-900/40 hover:bg-gray-700 text-gray-200' : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200'}`}>
+              <div className="text-sm font-semibold truncate">{p.nombre}</div>
+              <div className="text-xs opacity-70 mt-0.5">{p.ml} ml · {p.kcal} kcal</div>
             </button>
           ))}
         </div>
-        <div className="flex gap-2 mt-1.5">
+        <div className="flex gap-2 mt-2">
           <button onClick={() => setModoCustom(!modoCustom)}
-            className={`flex-1 text-[10px] py-1.5 rounded-lg ${modoCustom ? 'bg-orange-500 text-white' : darkMode ? 'bg-gray-900/40 text-gray-300 hover:bg-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>
+            className={`flex-1 text-sm py-2 rounded-lg font-semibold ${modoCustom ? 'bg-orange-500 text-white' : darkMode ? 'bg-gray-900/40 text-gray-300 hover:bg-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>
             {modoCustom ? 'Cancelar' : '+ Custom (ml + %)'}
           </button>
           {presets.length > 6 && (
             <details className="flex-1 relative">
-              <summary className={`list-none cursor-pointer text-[10px] py-1.5 px-2 rounded-lg text-center ${darkMode ? 'bg-gray-900/40 text-gray-300 hover:bg-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>
-                Más ({presets.length - 6}) <i className="fas fa-chevron-down text-[9px]"></i>
+              <summary className={`list-none cursor-pointer text-sm py-2 px-2 rounded-lg text-center font-semibold ${darkMode ? 'bg-gray-900/40 text-gray-300 hover:bg-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>
+                Más ({presets.length - 6}) <i className="fas fa-chevron-down text-xs"></i>
               </summary>
-              <div className={`absolute right-0 top-full mt-1 w-64 z-10 rounded-lg p-2 shadow-lg ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-                <div className="grid grid-cols-1 gap-1 max-h-60 overflow-y-auto">
+              <div className={`absolute right-0 top-full mt-1 w-72 z-10 rounded-lg p-2 shadow-lg ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+                <div className="grid grid-cols-1 gap-1 max-h-72 overflow-y-auto">
                   {presets.slice(6).map((p, i) => (
                     <button key={i} onClick={() => agregar(p)}
-                      className={`text-left px-2 py-1.5 rounded text-[11px] ${darkMode ? 'hover:bg-gray-700 text-gray-200' : 'hover:bg-gray-100 text-gray-700'}`}>
-                      <div className="font-semibold">{p.nombre}</div>
-                      <div className="text-[9px] opacity-70">{p.ml} ml · {p.kcal} kcal</div>
+                      className={`text-left px-3 py-2 rounded ${darkMode ? 'hover:bg-gray-700 text-gray-200' : 'hover:bg-gray-100 text-gray-700'}`}>
+                      <div className="text-sm font-semibold">{p.nombre}</div>
+                      <div className="text-xs opacity-70 mt-0.5">{p.ml} ml · {p.kcal} kcal</div>
                     </button>
                   ))}
                 </div>
@@ -4093,24 +4094,24 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
         <div className={`rounded-lg p-3 mb-3 ${darkMode ? 'bg-gray-900/60' : 'bg-white/90 border border-gray-200'}`}>
           <input type="text" value={customNombre} onChange={e => setCustomNombre(e.target.value)}
             placeholder="Nombre (opcional)"
-            className={`w-full px-2 py-1.5 rounded-lg border text-xs mb-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`} />
+            className={`w-full px-3 py-2 rounded-lg border text-sm mb-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`} />
           <div className="grid grid-cols-2 gap-2">
             <input type="text" inputMode="decimal" value={customMl}
               onChange={e => setCustomMl(e.target.value.replace(',', '.'))}
               placeholder="ml"
-              className={`px-2 py-1.5 rounded-lg border text-xs ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`} />
+              className={`px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`} />
             <input type="text" inputMode="decimal" value={customPct}
               onChange={e => setCustomPct(e.target.value.replace(',', '.'))}
               placeholder="% alcohol"
-              className={`px-2 py-1.5 rounded-lg border text-xs ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`} />
+              className={`px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`} />
           </div>
           {kcalCustomPreview != null && (
-            <div className={`text-[10px] mt-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               ≈ <b>{kcalCustomPreview} kcal</b> (solo alcohol puro, sin mezcladores)
             </div>
           )}
           <button onClick={agregarCustom} disabled={!customMl || !customPct}
-            className={`w-full mt-2 py-1.5 rounded-lg text-xs font-semibold ${customMl && customPct ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+            className={`w-full mt-2 py-2 rounded-lg text-sm font-semibold ${customMl && customPct ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
             Registrar
           </button>
         </div>
@@ -4118,21 +4119,21 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
 
       {resumen.entries.length > 0 && (
         <div className={`rounded-lg overflow-hidden ${darkMode ? 'bg-gray-900/30' : 'bg-white/50'}`}>
-          <div className={`px-3 py-1.5 text-[10px] uppercase font-bold tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <div className={`px-4 py-2 text-xs uppercase font-bold tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             Log 7d
           </div>
-          <div className={`divide-y text-xs ${darkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
+          <div className={`divide-y ${darkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
             {resumen.entries.slice().reverse().map(e => (
-              <div key={e.id} className="px-3 py-1.5 flex items-center justify-between">
+              <div key={e.id} className="px-4 py-2 flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] opacity-60">{e.fecha}</span>
-                  <span className="ml-2 font-semibold">{e.bebida}</span>
-                  <span className="ml-1 text-[10px] opacity-70">({e.ml} ml)</span>
+                  <span className="text-xs opacity-60">{e.fecha}</span>
+                  <span className="ml-2 text-sm font-semibold">{e.bebida}</span>
+                  <span className="ml-1 text-xs opacity-70">({e.ml} ml)</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold">{e.kcal} kcal</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold">{e.kcal} kcal</span>
                   <button onClick={() => { window.NP_Alcohol.eliminar(e.id); onRefresh(); }}
-                    className="text-red-400 hover:text-red-600 text-[10px]">
+                    className="text-red-400 hover:text-red-600 text-sm">
                     <i className="fas fa-times"></i>
                   </button>
                 </div>
@@ -4143,7 +4144,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
       )}
 
       <button onClick={() => setExpandido(false)}
-        className={`w-full mt-2 text-[10px] py-1 rounded ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}>
+        className={`w-full mt-3 text-xs py-2 rounded ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}>
         <i className="fas fa-chevron-up mr-1"></i>Colapsar
       </button>
     </div>
@@ -4346,14 +4347,14 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
       </div>
 
       {/* Selector de día */}
-      <div className={`rounded-xl p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-        <div className="flex items-center justify-between mb-2">
-          <div className={`text-[10px] uppercase font-bold tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+      <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className={`text-xs uppercase font-bold tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             Día a registrar · hoy ({diaSemana})
           </div>
           {esDescanso
-            ? <span className={`text-[10px] px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>Descanso según plan</span>
-            : <span className="text-[10px] px-2 py-0.5 rounded bg-orange-500/20 text-orange-500 font-bold">Sugerido: Día {sugerido}</span>
+            ? <span className={`text-xs px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>Descanso según plan</span>
+            : <span className="text-xs px-2 py-0.5 rounded bg-orange-500/20 text-orange-500 font-bold">Sugerido: Día {sugerido}</span>
           }
         </div>
         <div className="grid grid-cols-4 gap-2">
@@ -4362,7 +4363,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             const esSugerido = !esDescanso && sugerido === t.k;
             return (
               <button key={t.k} onClick={() => setTipoDia(t.k)}
-                className={`py-2 rounded-lg font-semibold text-xs flex flex-col items-center gap-0.5 transition-all ${
+                className={`py-2.5 rounded-lg font-semibold flex flex-col items-center gap-0.5 transition-all ${
                   activo
                     ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md'
                     : esSugerido
@@ -4370,7 +4371,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                       : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
                 }`}>
                 <span className="text-sm">Día {t.k}</span>
-                <span className="text-[9px] opacity-80">{t.corto}</span>
+                <span className="text-[11px] opacity-80">{t.corto}</span>
               </button>
             );
           })}
@@ -4379,18 +4380,18 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
 
       {/* Card del día seleccionado */}
       {protocolo && (
-        <div className={`rounded-2xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <div className="flex items-start justify-between gap-3 mb-2">
+        <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+          <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex-1 min-w-0">
-              <div className={`text-xs uppercase tracking-wider font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{protocolo.nombre}</div>
-              <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'} mt-0.5`}>{protocolo.foco}</div>
-              <div className="text-[11px] text-gray-400 mt-0.5">
+              <div className={`text-sm uppercase tracking-wider font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{protocolo.nombre}</div>
+              <div className={`text-base ${darkMode ? 'text-gray-300' : 'text-gray-700'} mt-1`}>{protocolo.foco}</div>
+              <div className="text-xs text-gray-400 mt-1">
                 <i className="fas fa-clock mr-1"></i>{protocolo.duracionMin} min · {protocolo.equipamiento}
               </div>
             </div>
             <div className="text-right flex-shrink-0">
               <div className={`text-2xl font-extrabold ${pct === 100 ? 'text-green-500' : darkMode ? 'text-white' : 'text-gray-800'}`}>{pct}%</div>
-              <div className="text-[10px] text-gray-400">{completados}/{total}</div>
+              <div className="text-xs text-gray-400">{completados}/{total}</div>
             </div>
           </div>
           <div className={`w-full h-2 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
@@ -4404,11 +4405,11 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
           </div>
           <div className="flex gap-2 mt-3">
             <button onClick={marcarTodos} disabled={pct === 100}
-              className={`flex-1 py-2 rounded-lg text-xs font-semibold ${pct === 100 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold ${pct === 100 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
               <i className="fas fa-check-double mr-1"></i>Marcar todos
             </button>
             <button onClick={limpiarSesion}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold ${darkMode ? 'bg-gray-700 text-red-400 hover:bg-gray-600' : 'bg-gray-100 text-red-500 hover:bg-gray-200'}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-gray-700 text-red-400 hover:bg-gray-600' : 'bg-gray-100 text-red-500 hover:bg-gray-200'}`}>
               <i className="fas fa-rotate-left mr-1"></i>Reset
             </button>
           </div>
@@ -4429,12 +4430,12 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             }`}>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <div className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-800'}`}>{e.nombre}</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">
+                  <div className={`font-semibold text-base ${darkMode ? 'text-white' : 'text-gray-800'}`}>{e.nombre}</div>
+                  <div className="text-xs text-gray-400 mt-1">
                     <b>{e.setsEsperado} × {e.repsEsperado}</b>
                     <span className="mx-1">·</span>{e.equipo}
                   </div>
-                  {e.nota && <div className="text-[10px] text-gray-400 italic mt-0.5">{e.nota}</div>}
+                  {e.nota && <div className="text-xs text-gray-400 italic mt-0.5">{e.nota}</div>}
                 </div>
                 <button onClick={() => toggleDone(i)}
                   className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all ${
@@ -4446,27 +4447,27 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                 </button>
               </div>
 
-              <div className="flex gap-2 mt-2">
-                <div className="relative flex-shrink-0" style={{ width: '110px' }}>
+              <div className="flex gap-2 mt-3">
+                <div className="relative flex-shrink-0" style={{ width: '120px' }}>
                   <input type="text" inputMode="decimal" value={e.peso == null ? '' : e.peso}
                     onChange={ev => setPeso(i, ev.target.value)}
-                    className={`w-full pl-2 pr-8 py-1.5 rounded-lg border text-sm font-semibold ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`}
+                    className={`w-full pl-3 pr-9 py-2 rounded-lg border text-sm font-semibold ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`}
                     placeholder={previo ? String(previo.peso) : '0'} />
-                  <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>kg</span>
+                  <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-xs pointer-events-none ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>kg</span>
                 </div>
                 <input type="text" value={e.repsReales || ''}
                   onChange={ev => setReps(i, ev.target.value)}
-                  className={`flex-1 px-2 py-1.5 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`}
+                  className={`flex-1 px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`}
                   placeholder={'Reps reales (' + e.repsEsperado + ')'} />
               </div>
 
               {previo && (
-                <div className="flex items-center justify-between mt-1.5 text-[10px]">
+                <div className="flex items-center justify-between mt-2 text-xs">
                   <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>
                     Último: <b className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{previo.peso} kg</b> × {previo.reps} <span className="opacity-60">({previo.fecha})</span>
                   </span>
                   {(mejoró || bajó) && (
-                    <span className={`font-bold ${mejoró ? 'text-green-500' : 'text-red-400'}`}>
+                    <span className={`font-bold text-sm ${mejoró ? 'text-green-500' : 'text-red-400'}`}>
                       <i className={`fas ${mejoró ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1`}></i>
                       {mejoró ? '+' : ''}{(Number(e.peso) - previo.peso).toFixed(1)} kg
                     </span>
@@ -4481,14 +4482,14 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
       {/* Principios */}
       {window.NP_RoadmapData && window.NP_RoadmapData.ENTRENO_PROTOCOLO && window.NP_RoadmapData.ENTRENO_PROTOCOLO.principios && (
         <details className={`rounded-xl ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <summary className={`px-4 py-3 cursor-pointer text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <summary className={`px-5 py-3 cursor-pointer text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             <i className="fas fa-lightbulb mr-2"></i>Principios del método
           </summary>
-          <div className={`px-4 pb-3 space-y-2 text-xs ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+          <div className={`px-5 pb-4 space-y-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
             {window.NP_RoadmapData.ENTRENO_PROTOCOLO.principios.map((p, i) => (
-              <div key={i} className={`rounded-lg p-2 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+              <div key={i} className={`rounded-lg p-3 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
                 <div className={`font-semibold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{p.titulo}</div>
-                <div className="mt-0.5">{p.texto}</div>
+                <div className="mt-1 leading-relaxed">{p.texto}</div>
               </div>
             ))}
           </div>
@@ -4507,13 +4508,13 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
               const tot = s.ejercicios.length;
               const pctS = tot > 0 ? Math.round((hechos / tot) * 100) : 0;
               return (
-                <div key={i} className="px-5 py-2.5 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs text-gray-400">{s.fecha}</span>
-                    <span className={`ml-2 text-xs font-bold px-1.5 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>Día {s.dia_tipo}</span>
+                <div key={i} className="px-5 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-400">{s.fecha}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>Día {s.dia_tipo}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`text-xs font-semibold ${s.completado ? 'text-green-500' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <span className={`text-sm font-semibold ${s.completado ? 'text-green-500' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       {hechos}/{tot} {s.completado && '✓'}
                     </span>
                     <div className={`w-16 h-1.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
