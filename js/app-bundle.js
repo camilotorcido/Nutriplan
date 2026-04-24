@@ -3391,11 +3391,23 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418ad)
-// Tab con 4 sub-vistas: Roadmap, Métricas, Pasos, Entreno
+// COMPONENTE: FatLossTab (v20260418ak — split en 2 secciones)
+// seccion="entrenamiento" → Pasos + Entreno
+// seccion="progreso" → Roadmap + Métricas
 // =============================================
-function FatLossTab({ perfil, darkMode }) {
-  const [subVista, setSubVista] = React.useState('roadmap');
+function FatLossTab({ perfil, darkMode, seccion }) {
+  const subsPorSeccion = {
+    entrenamiento: [
+      { k: 'pasos', l: 'Pasos', icon: 'fa-person-walking' },
+      { k: 'entreno', l: 'Entreno', icon: 'fa-dumbbell' }
+    ],
+    progreso: [
+      { k: 'roadmap', l: 'Roadmap', icon: 'fa-route' },
+      { k: 'metricas', l: 'Métricas', icon: 'fa-weight-scale' }
+    ]
+  };
+  const subs = subsPorSeccion[seccion] || subsPorSeccion.progreso;
+  const [subVista, setSubVista] = React.useState(subs[0].k);
   const [refresh, setRefresh] = React.useState(0);
 
   if (!perfil || !perfil.fatLossMode || !perfil.roadmap) {
@@ -3408,19 +3420,12 @@ function FatLossTab({ perfil, darkMode }) {
     );
   }
 
-  const subs = [
-    { k: 'roadmap', l: 'Roadmap', icon: 'fa-route' },
-    { k: 'metricas', l: 'Métricas', icon: 'fa-weight-scale' },
-    { k: 'pasos', l: 'Pasos', icon: 'fa-person-walking' },
-    { k: 'entreno', l: 'Entreno', icon: 'fa-dumbbell' }
-  ];
-
   return (
     <div className="animate-fadeIn">
-      <div className="grid grid-cols-4 gap-2 mb-4">
+      <div className="grid grid-cols-2 gap-2 mb-4">
         {subs.map(s => (
           <button key={s.k} onClick={() => setSubVista(s.k)}
-            className={`py-2.5 px-2 rounded-xl font-medium text-xs flex items-center justify-center gap-1.5 transition-all ${
+            className={`py-2.5 px-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${
               subVista === s.k
                 ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md'
                 : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
@@ -3434,6 +3439,35 @@ function FatLossTab({ perfil, darkMode }) {
       {subVista === 'metricas' && <FLMetricasView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
       {subVista === 'pasos' && <FLPasosView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
       {subVista === 'entreno' && <FLEntrenoView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
+    </div>
+  );
+}
+
+// =============================================
+// COMPONENTE: CocinarTab (agrupa ¿Qué cocino? + Crear receta)
+// =============================================
+function CocinarTab({ darkMode, onRecipeClick }) {
+  const [subVista, setSubVista] = React.useState('buscar');
+  const subs = [
+    { k: 'buscar', l: '¿Qué cocino?', icon: 'fa-magnifying-glass' },
+    { k: 'crear', l: 'Crear receta', icon: 'fa-wand-magic-sparkles' }
+  ];
+  return (
+    <div className="animate-fadeIn">
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        {subs.map(s => (
+          <button key={s.k} onClick={() => setSubVista(s.k)}
+            className={`py-2.5 px-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${
+              subVista === s.k
+                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
+                : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+            }`}>
+            <i className={`fas ${s.icon}`}></i>{s.l}
+          </button>
+        ))}
+      </div>
+      {subVista === 'buscar' && <ReverseSearch darkMode={darkMode} onRecipeClick={onRecipeClick} />}
+      {subVista === 'crear' && <RecipeGenerator darkMode={darkMode} onRecipeClick={onRecipeClick} />}
     </div>
   );
 }
@@ -4911,9 +4945,11 @@ function App() {
           <div className="flex gap-1 py-2">
             {[
               { id: "plan", label: "Plan", icon: "fa-calendar-days" },
-              ...(perfil && perfil.fatLossMode ? [{ id: "fatloss", label: "Fat Loss", icon: "fa-fire" }] : []),
+              ...(perfil && perfil.fatLossMode ? [
+                { id: "entrenamiento", label: "Entrenamiento", icon: "fa-dumbbell" },
+                { id: "progreso", label: "Progreso", icon: "fa-chart-line" }
+              ] : []),
               { id: "cocinar", label: "¿Qué cocino?", icon: "fa-magnifying-glass" },
-              { id: "generador", label: "Crear receta", icon: "fa-wand-magic-sparkles" },
               { id: "despensa", label: "Despensa", icon: "fa-warehouse" },
               { id: "compras", label: "Compras", icon: "fa-cart-shopping" }
             ].map(tab => (
@@ -4939,14 +4975,14 @@ function App() {
             darkMode={darkMode}
             swapping={swapping} />
         )}
-        {pantalla === "fatloss" && (
-          <FatLossTab perfil={perfil} darkMode={darkMode} />
+        {pantalla === "entrenamiento" && (
+          <FatLossTab perfil={perfil} darkMode={darkMode} seccion="entrenamiento" />
+        )}
+        {pantalla === "progreso" && (
+          <FatLossTab perfil={perfil} darkMode={darkMode} seccion="progreso" />
         )}
         {pantalla === "cocinar" && (
-          <ReverseSearch darkMode={darkMode} onRecipeClick={(r) => setRecetaSeleccionada(r)} />
-        )}
-        {pantalla === "generador" && (
-          <RecipeGenerator darkMode={darkMode} onRecipeClick={(r) => setRecetaSeleccionada(r)} />
+          <CocinarTab darkMode={darkMode} onRecipeClick={(r) => setRecetaSeleccionada(r)} />
         )}
         {pantalla === "despensa" && planSemanal && (
           <Pantry plan={planSemanal} onNavigateToShopping={() => navegarA("compras")} darkMode={darkMode} />
