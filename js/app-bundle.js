@@ -3600,6 +3600,9 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
 
   return (
     <div className="space-y-4">
+      {/* Detector de meseta (v20260418af) */}
+      <PlateauCard darkMode={darkMode} refresh={refresh} onRefresh={onRefresh} />
+
       {/* Registro rápido de peso */}
       <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
         <h3 className={`text-sm font-bold uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Peso de hoy</h3>
@@ -3739,6 +3742,194 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Componente: PlateauCard (detector + protocolo 6 pasos) ───
+function PlateauCard({ darkMode, refresh, onRefresh }) {
+  const [verProtocolo, setVerProtocolo] = React.useState(false);
+
+  if (!window.NP_Plateau) return null;
+  const est = window.NP_Plateau.estado();
+  const protocolo = window.NP_Plateau.protocolo();
+
+  if (!est.deteccion.datosSuficientes && est.pasoActual === 0) {
+    return (
+      <div className={`rounded-xl p-3 text-xs ${darkMode ? 'bg-gray-800 text-gray-500 border border-gray-700' : 'bg-gray-50 text-gray-500 border border-gray-200'}`}>
+        <i className="fas fa-radar mr-2"></i>
+        Detector de meseta: necesita ≥14 días de peso registrado para activarse.
+      </div>
+    );
+  }
+
+  const hayPlateau = est.deteccion.plateau;
+  const hayPasoActivo = est.pasoActual > 0;
+  const delta = est.deteccion.deltaSemanal;
+  const esSugerencia = est.sugerenciaInicio;
+
+  const aplicarPaso1 = () => {
+    window.NP_Plateau.aplicarPaso(1);
+    onRefresh();
+  };
+  const avanzar = () => {
+    window.NP_Plateau.avanzarPaso();
+    onRefresh();
+  };
+  const resolver = () => {
+    if (window.confirm('¿Este paso rompió la meseta? Se archivará como "funcionó" y saldrás del protocolo.')) {
+      window.NP_Plateau.marcarResuelto();
+      onRefresh();
+    }
+  };
+  const cancelar = () => {
+    if (window.confirm('¿Cancelar seguimiento del protocolo sin marcarlo como resuelto?')) {
+      window.NP_Plateau.cancelar();
+      onRefresh();
+    }
+  };
+
+  // Color del banner según estado
+  let bannerCls, iconCls, ribbon;
+  if (hayPasoActivo) {
+    bannerCls = darkMode ? 'bg-amber-900/30 border-amber-700' : 'bg-amber-50 border-amber-300';
+    iconCls = 'text-amber-500';
+    ribbon = 'PROTOCOLO ACTIVO';
+  } else if (hayPlateau) {
+    bannerCls = darkMode ? 'bg-red-900/30 border-red-700' : 'bg-red-50 border-red-300';
+    iconCls = 'text-red-500';
+    ribbon = 'MESETA DETECTADA';
+  } else {
+    bannerCls = darkMode ? 'bg-green-900/20 border-green-800' : 'bg-green-50 border-green-200';
+    iconCls = 'text-green-500';
+    ribbon = 'PROGRESO NORMAL';
+  }
+
+  return (
+    <div className={`rounded-2xl p-4 border ${bannerCls}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <i className={`fas fa-radar ${iconCls}`}></i>
+          <span className={`text-[10px] font-bold uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Detector de meseta</span>
+        </div>
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${iconCls} ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>{ribbon}</span>
+      </div>
+
+      {/* Stats de detección */}
+      {est.deteccion.datosSuficientes && (
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <div>
+            <div className="text-[9px] text-gray-400 uppercase">Δ semanal</div>
+            <div className={`text-sm font-bold ${delta == null ? 'text-gray-400' : delta < -0.25 ? 'text-green-500' : delta > 0.25 ? 'text-red-500' : 'text-amber-500'}`}>
+              {delta == null ? '—' : (delta > 0 ? '+' : '') + delta + ' kg'}
+            </div>
+          </div>
+          <div>
+            <div className="text-[9px] text-gray-400 uppercase">Ventana</div>
+            <div className={`text-sm font-bold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{est.deteccion.diasVentana}d</div>
+          </div>
+          <div>
+            <div className="text-[9px] text-gray-400 uppercase">Umbral</div>
+            <div className={`text-sm font-bold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>±0.25 kg/sem</div>
+          </div>
+        </div>
+      )}
+
+      {/* Paso activo */}
+      {hayPasoActivo && est.pasoDef && (
+        <div className={`rounded-lg p-3 mb-3 ${darkMode ? 'bg-gray-900/40' : 'bg-white/70'}`}>
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500 text-white`}>PASO {est.pasoActual}/6</span>
+                <span className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{est.pasoDef.accion}</span>
+              </div>
+              <div className="text-[10px] text-gray-400 mt-0.5">
+                Día {est.diasEnPaso} · Duración sugerida: {est.pasoDef.duracion}
+              </div>
+            </div>
+          </div>
+          <div className={`text-xs mt-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{est.pasoDef.detalle}</div>
+          <div className="flex gap-2 mt-3">
+            <button onClick={resolver}
+              className="flex-1 py-2 rounded-lg text-xs font-semibold bg-green-500 text-white hover:bg-green-600">
+              <i className="fas fa-check mr-1"></i>Este paso funcionó
+            </button>
+            {est.pasoActual < 6 && (
+              <button onClick={avanzar}
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold ${darkMode ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-amber-500 text-white hover:bg-amber-600'}`}>
+                <i className="fas fa-forward mr-1"></i>Avanzar a paso {est.pasoActual + 1}
+              </button>
+            )}
+            <button onClick={cancelar}
+              className={`px-3 py-2 rounded-lg text-xs ${darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Sugerencia de iniciar protocolo */}
+      {esSugerencia && !hayPasoActivo && (
+        <div className={`rounded-lg p-3 mb-3 ${darkMode ? 'bg-red-900/40' : 'bg-white/70'}`}>
+          <div className={`text-xs mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+            Tu peso lleva ≥14 días dentro del umbral de meseta. Aplicá el primer paso del protocolo antes de tocar calorías: <b>auditar tracking</b>.
+          </div>
+          <button onClick={aplicarPaso1}
+            className="w-full py-2 rounded-lg text-xs font-semibold bg-red-500 text-white hover:bg-red-600">
+            <i className="fas fa-play mr-1"></i>Iniciar protocolo — Paso 1
+          </button>
+        </div>
+      )}
+
+      {/* Estado normal */}
+      {!hayPasoActivo && !esSugerencia && est.deteccion.datosSuficientes && (
+        <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          Sin meseta. El peso se mueve a {delta > 0 ? '+' : ''}{delta} kg/sem — fuera del rango de estancamiento.
+        </div>
+      )}
+
+      {/* Toggle protocolo completo */}
+      <button onClick={() => setVerProtocolo(!verProtocolo)}
+        className={`w-full mt-2 text-[11px] py-1.5 rounded ${darkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-white'}`}>
+        <i className={`fas fa-chevron-${verProtocolo ? 'up' : 'down'} mr-1`}></i>
+        {verProtocolo ? 'Ocultar' : 'Ver'} protocolo completo (6 pasos)
+      </button>
+
+      {verProtocolo && (
+        <div className="mt-2 space-y-1.5">
+          {protocolo.map(p => {
+            const esActivo = p.paso === est.pasoActual;
+            const esHistorico = (est.historial || []).some(h => h.paso === p.paso);
+            return (
+              <div key={p.paso} className={`rounded-lg p-2.5 text-xs ${
+                esActivo
+                  ? darkMode ? 'bg-amber-900/40 border border-amber-700' : 'bg-amber-100 border border-amber-300'
+                  : esHistorico
+                    ? darkMode ? 'bg-gray-900/60 opacity-60' : 'bg-gray-100 opacity-70'
+                    : darkMode ? 'bg-gray-900/40' : 'bg-white/60'
+              }`}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                      esActivo ? 'bg-amber-500 text-white' : darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-600'
+                    }`}>PASO {p.paso}</span>
+                    <span className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{p.accion}</span>
+                  </div>
+                  <span className="text-[10px] text-gray-400">{p.duracion}</span>
+                </div>
+                <div className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-[11px]`}>{p.detalle}</div>
+                {!esActivo && !esHistorico && hayPasoActivo && p.paso > est.pasoActual && (
+                  <button onClick={() => { window.NP_Plateau.aplicarPaso(p.paso); onRefresh(); }}
+                    className={`mt-2 text-[10px] px-2 py-1 rounded ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                    Saltar a este paso →
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
