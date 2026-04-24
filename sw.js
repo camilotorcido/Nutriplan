@@ -6,7 +6,7 @@
    - Network-first para peticiones externas (TheMealDB, etc.)
    ============================================ */
 
-const VERSION = 'nutriplan-v20260418ac';
+const VERSION = 'nutriplan-v20260418ae';
 const CACHE_STATIC = 'nutriplan-static-' + VERSION;
 const CACHE_RUNTIME = 'nutriplan-runtime-' + VERSION;
 
@@ -28,6 +28,7 @@ const PRECACHE_URLS = [
   './js/fat-loss-integration.js',
   './js/body-comp.js',
   './js/steps.js',
+  './js/entrenamiento.js',
   './js/recipeAPI.js',
   './js/recipes-thermomix-upgrade.js',
   './js/lazy-recipes-loader.js',
