@@ -3391,7 +3391,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418am — split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418an — split en 2 secciones)
 // seccion="entrenamiento" → Pasos + Entreno
 // seccion="progreso" → Roadmap + Métricas
 // =============================================
@@ -4189,12 +4189,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
   const debeExpandir = expandido || resumen.tragos > 0;
 
   const agregar = (preset) => {
-    window.NP_Alcohol.registrar({
-      bebida: preset.nombre,
-      ml: preset.ml,
-      kcal: preset.kcal,
-      alcohol_pct: preset.alcohol_pct
-    });
+    window.NP_Alcohol.registrar({ bebida: preset.nombre, ml: preset.ml, kcal: preset.kcal, alcohol_pct: preset.alcohol_pct });
     onRefresh();
   };
 
@@ -4203,10 +4198,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
     const pct = parseFloat(customPct);
     if (!ml || !pct) return;
     const kcal = window.NP_Alcohol.calcularKcalAlcohol(ml, pct);
-    window.NP_Alcohol.registrar({
-      bebida: customNombre || 'Personalizada',
-      ml, alcohol_pct: pct, kcal
-    });
+    window.NP_Alcohol.registrar({ bebida: customNombre || 'Personalizada', ml, alcohol_pct: pct, kcal });
     setCustomMl(''); setCustomPct(''); setCustomNombre(''); setModoCustom(false);
     onRefresh();
   };
@@ -4215,21 +4207,20 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
     ? window.NP_Alcohol.calcularKcalAlcohol(parseFloat(customMl), parseFloat(customPct))
     : null;
 
-  const colorNivel = impacto ? ({
-    minimo: darkMode ? 'bg-gray-700/60 text-gray-200 border-gray-600' : 'bg-gray-100 text-gray-700 border-gray-300',
-    moderado: darkMode ? 'bg-yellow-900/40 text-yellow-300 border-yellow-700' : 'bg-yellow-50 text-yellow-700 border-yellow-300',
-    alto: darkMode ? 'bg-orange-900/40 text-orange-300 border-orange-700' : 'bg-orange-50 text-orange-700 border-orange-300',
-    critico: darkMode ? 'bg-red-900/40 text-red-300 border-red-700' : 'bg-red-50 text-red-700 border-red-300'
-  }[impacto.nivel]) : (darkMode ? 'bg-gray-800 text-gray-400 border-gray-700' : 'bg-white text-gray-500 border-gray-200');
+  const badgeNivel = impacto ? ({
+    minimo:   'bg-green-500 text-white',
+    moderado: 'bg-yellow-400 text-yellow-900',
+    alto:     'bg-orange-500 text-white',
+    critico:  'bg-red-500 text-white'
+  }[impacto.nivel]) : '';
 
   if (!debeExpandir) {
     return (
       <button onClick={() => setExpandido(true)}
-        className={`w-full rounded-xl p-4 flex items-center justify-between border transition-colors ${darkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-750' : 'bg-white border-gray-100 shadow-sm hover:bg-gray-50'}`}>
+        className={`w-full rounded-2xl p-5 flex items-center justify-between border transition-colors ${darkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-750' : 'bg-white border-gray-100 shadow-sm hover:bg-gray-50'}`}>
         <div className="flex items-center gap-2">
           <i className={`fas fa-wine-glass ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
-          <span className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Alcohol 7d</span>
-          <span className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>sin registros</span>
+          <span className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Alcohol · últimos 7 días</span>
         </div>
         <span className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>+ Registrar <i className="fas fa-chevron-down ml-1"></i></span>
       </button>
@@ -4237,146 +4228,158 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
   }
 
   return (
-    <div className={`rounded-2xl p-5 border ${colorNivel}`}>
-      <div className="flex items-center justify-between mb-3">
+    <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+
+      {/* Header */}
+      <div className={`px-5 py-3 border-b flex items-center justify-between ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
         <div className="flex items-center gap-2">
-          <i className="fas fa-wine-glass"></i>
-          <span className="text-sm font-bold uppercase tracking-wider">Alcohol · últimos 7 días</span>
+          <i className={`fas fa-wine-glass ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
+          <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Alcohol · últimos 7 días</h3>
         </div>
         {impacto && (
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${darkMode ? 'bg-gray-900/60' : 'bg-white'}`}>
-            {impacto.nivel}
-          </span>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${badgeNivel}`}>{impacto.nivel}</span>
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        <div>
-          <div className="text-[10px] opacity-60 uppercase font-bold">Tragos</div>
-          <div className="text-2xl font-extrabold">{resumen.tragos}</div>
-        </div>
-        <div>
-          <div className="text-[10px] opacity-60 uppercase font-bold">Kcal</div>
-          <div className="text-2xl font-extrabold">{resumen.kcal}</div>
-        </div>
-        <div>
-          <div className="text-[10px] opacity-60 uppercase font-bold">Días activos</div>
-          <div className="text-2xl font-extrabold">{resumen.dias}<span className="text-sm font-semibold opacity-70">/7</span></div>
-        </div>
-      </div>
+      <div className="p-5 space-y-4">
 
-      {impacto && (
-        <div className={`rounded-lg p-4 mb-4 ${darkMode ? 'bg-gray-900/40' : 'bg-white/70'}`}>
-          <div className={`text-base font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{impacto.escenario}</div>
-          <div className={`grid grid-cols-2 gap-3 mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-            <div className="text-sm leading-snug">
-              <i className="fas fa-fire-flame-simple mr-1 opacity-60"></i>
-              Oxidación grasa pausada <b>{impacto.horasPausaOxidacion}h</b>
-              {pausaH > 0 && <span className="block text-xs opacity-70 mt-0.5">({pausaH}h restantes)</span>}
-            </div>
-            <div className="text-sm leading-snug">
-              <i className="fas fa-dumbbell mr-1 opacity-60"></i>
-              Síntesis proteica: <b>{impacto.impactoSintesisProteica}</b>
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Tragos</div>
+            <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.tragos}</div>
+          </div>
+          <div>
+            <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Kcal</div>
+            <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.kcal}</div>
+          </div>
+          <div>
+            <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Días activos</div>
+            <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+              {resumen.dias}<span className={`text-sm font-semibold ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>/7</span>
             </div>
           </div>
-          <div className={`text-sm italic border-l-2 pl-3 leading-relaxed ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}>
-            {impacto.estrategia}
-          </div>
         </div>
-      )}
 
-      <div className="mb-3">
-        <div className={`text-xs uppercase font-bold mb-2 tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Registrar bebida</div>
-        <div className="grid grid-cols-2 gap-2">
-          {presets.slice(0, 6).map((p, i) => (
-            <button key={i} onClick={() => agregar(p)}
-              className={`text-left px-3 py-2 rounded-lg transition-colors ${darkMode ? 'bg-gray-900/40 hover:bg-gray-700 text-gray-200' : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200'}`}>
-              <div className="text-sm font-semibold truncate">{p.nombre}</div>
-              <div className="text-xs opacity-70 mt-0.5">{p.ml} ml · {p.kcal} kcal</div>
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2 mt-2">
-          <button onClick={() => setModoCustom(!modoCustom)}
-            className={`flex-1 text-sm py-2 rounded-lg font-semibold ${modoCustom ? 'bg-orange-500 text-white' : darkMode ? 'bg-gray-900/40 text-gray-300 hover:bg-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>
-            {modoCustom ? 'Cancelar' : '+ Custom (ml + %)'}
-          </button>
-          {presets.length > 6 && (
-            <details className="flex-1 relative">
-              <summary className={`list-none cursor-pointer text-sm py-2 px-2 rounded-lg text-center font-semibold ${darkMode ? 'bg-gray-900/40 text-gray-300 hover:bg-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>
-                Más ({presets.length - 6}) <i className="fas fa-chevron-down text-xs"></i>
-              </summary>
-              <div className={`absolute right-0 top-full mt-1 w-72 z-10 rounded-lg p-2 shadow-lg ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-                <div className="grid grid-cols-1 gap-1 max-h-72 overflow-y-auto">
-                  {presets.slice(6).map((p, i) => (
-                    <button key={i} onClick={() => agregar(p)}
-                      className={`text-left px-3 py-2 rounded ${darkMode ? 'hover:bg-gray-700 text-gray-200' : 'hover:bg-gray-100 text-gray-700'}`}>
-                      <div className="text-sm font-semibold">{p.nombre}</div>
-                      <div className="text-xs opacity-70 mt-0.5">{p.ml} ml · {p.kcal} kcal</div>
-                    </button>
-                  ))}
-                </div>
+        {/* Impacto fisiológico */}
+        {impacto && (
+          <div className={`rounded-xl p-4 space-y-3 ${darkMode ? 'bg-gray-700/40' : 'bg-gray-50'}`}>
+            <div className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{impacto.escenario}</div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className={`rounded-lg p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+                <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Oxidación grasa</div>
+                <div className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>pausada {impacto.horasPausaOxidacion}h</div>
+                {pausaH > 0 && <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{pausaH}h restantes</div>}
               </div>
-            </details>
-          )}
-        </div>
-      </div>
+              <div className={`rounded-lg p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+                <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Síntesis proteica</div>
+                <div className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{impacto.impactoSintesisProteica}</div>
+              </div>
+            </div>
+            <div className={`text-sm border-l-2 pl-3 ${darkMode ? 'text-gray-300 border-gray-600' : 'text-gray-600 border-gray-300'}`}>
+              {impacto.estrategia}
+            </div>
+          </div>
+        )}
 
-      {modoCustom && (
-        <div className={`rounded-lg p-3 mb-3 ${darkMode ? 'bg-gray-900/60' : 'bg-white/90 border border-gray-200'}`}>
-          <input type="text" value={customNombre} onChange={e => setCustomNombre(e.target.value)}
-            placeholder="Nombre (opcional)"
-            className={`w-full px-3 py-2 rounded-lg border text-sm mb-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`} />
+        {/* Registrar bebida */}
+        <div>
+          <div className={`text-xs uppercase font-bold mb-2 tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Registrar bebida</div>
           <div className="grid grid-cols-2 gap-2">
-            <input type="text" inputMode="decimal" value={customMl}
-              onChange={e => setCustomMl(e.target.value.replace(',', '.'))}
-              placeholder="ml"
-              className={`px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`} />
-            <input type="text" inputMode="decimal" value={customPct}
-              onChange={e => setCustomPct(e.target.value.replace(',', '.'))}
-              placeholder="% alcohol"
-              className={`px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`} />
-          </div>
-          {kcalCustomPreview != null && (
-            <div className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              ≈ <b>{kcalCustomPreview} kcal</b> (solo alcohol puro, sin mezcladores)
-            </div>
-          )}
-          <button onClick={agregarCustom} disabled={!customMl || !customPct}
-            className={`w-full mt-2 py-2 rounded-lg text-sm font-semibold ${customMl && customPct ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-            Registrar
-          </button>
-        </div>
-      )}
-
-      {resumen.entries.length > 0 && (
-        <div className={`rounded-lg overflow-hidden ${darkMode ? 'bg-gray-900/30' : 'bg-white/50'}`}>
-          <div className={`px-4 py-2 text-xs uppercase font-bold tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            Log 7d
-          </div>
-          <div className={`divide-y ${darkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
-            {resumen.entries.slice().reverse().map(e => (
-              <div key={e.id} className="px-4 py-2 flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <span className="text-xs opacity-60">{e.fecha}</span>
-                  <span className="ml-2 text-sm font-semibold">{e.bebida}</span>
-                  <span className="ml-1 text-xs opacity-70">({e.ml} ml)</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold">{e.kcal} kcal</span>
-                  <button onClick={() => { window.NP_Alcohol.eliminar(e.id); onRefresh(); }}
-                    className="text-red-400 hover:text-red-600 text-sm">
-                    <i className="fas fa-times"></i>
-                  </button>
-                </div>
-              </div>
+            {presets.slice(0, 6).map((p, i) => (
+              <button key={i} onClick={() => agregar(p)}
+                className={`text-left px-3 py-2 rounded-lg transition-colors ${darkMode ? 'bg-gray-700/50 hover:bg-gray-700 text-gray-200' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'}`}>
+                <div className="text-sm font-semibold truncate">{p.nombre}</div>
+                <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{p.ml} ml · {p.kcal} kcal</div>
+              </button>
             ))}
           </div>
+          <div className="flex gap-2 mt-2">
+            <button onClick={() => setModoCustom(!modoCustom)}
+              className={`flex-1 text-sm py-2 rounded-lg font-semibold ${modoCustom ? 'bg-orange-500 text-white' : darkMode ? 'bg-gray-700/50 text-gray-300 hover:bg-gray-700' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>
+              {modoCustom ? 'Cancelar' : '+ Custom (ml + %)'}
+            </button>
+            {presets.length > 6 && (
+              <details className="flex-1 relative">
+                <summary className={`list-none cursor-pointer text-sm py-2 px-2 rounded-lg text-center font-semibold ${darkMode ? 'bg-gray-700/50 text-gray-300 hover:bg-gray-700' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>
+                  Más ({presets.length - 6}) <i className="fas fa-chevron-down text-xs"></i>
+                </summary>
+                <div className={`absolute right-0 top-full mt-1 w-72 z-10 rounded-xl p-2 shadow-lg ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+                  <div className="grid grid-cols-1 gap-1 max-h-72 overflow-y-auto">
+                    {presets.slice(6).map((p, i) => (
+                      <button key={i} onClick={() => agregar(p)}
+                        className={`text-left px-3 py-2 rounded-lg ${darkMode ? 'hover:bg-gray-700 text-gray-200' : 'hover:bg-gray-100 text-gray-700'}`}>
+                        <div className="text-sm font-semibold">{p.nombre}</div>
+                        <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{p.ml} ml · {p.kcal} kcal</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </details>
+            )}
+          </div>
         </div>
-      )}
 
+        {/* Custom form */}
+        {modoCustom && (
+          <div className={`rounded-xl p-3 ${darkMode ? 'bg-gray-700/40 border border-gray-700' : 'bg-gray-50 border border-gray-200'}`}>
+            <input type="text" value={customNombre} onChange={e => setCustomNombre(e.target.value)}
+              placeholder="Nombre (opcional)"
+              className={`w-full px-3 py-2 rounded-lg border text-sm mb-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200'}`} />
+            <div className="grid grid-cols-2 gap-2">
+              <input type="text" inputMode="decimal" value={customMl}
+                onChange={e => setCustomMl(e.target.value.replace(',', '.'))}
+                placeholder="ml"
+                className={`px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200'}`} />
+              <input type="text" inputMode="decimal" value={customPct}
+                onChange={e => setCustomPct(e.target.value.replace(',', '.'))}
+                placeholder="% alcohol"
+                className={`px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200'}`} />
+            </div>
+            {kcalCustomPreview != null && (
+              <div className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                ≈ <b>{kcalCustomPreview} kcal</b> (solo alcohol puro, sin mezcladores)
+              </div>
+            )}
+            <button onClick={agregarCustom} disabled={!customMl || !customPct}
+              className={`w-full mt-2 py-2 rounded-lg text-sm font-semibold ${customMl && customPct ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+              Registrar
+            </button>
+          </div>
+        )}
+
+        {/* Log 7d */}
+        {resumen.entries.length > 0 && (
+          <div className={`rounded-xl overflow-hidden border ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <div className={`px-4 py-2 border-b text-xs uppercase font-bold tracking-wider ${darkMode ? 'bg-gray-700/30 border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>
+              Log 7d
+            </div>
+            <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
+              {resumen.entries.slice().reverse().map(e => (
+                <div key={e.id} className={`px-4 py-2.5 flex items-center justify-between ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <div className="flex-1 min-w-0">
+                    <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{e.fecha}</span>
+                    <span className="ml-2 text-sm font-semibold">{e.bebida}</span>
+                    <span className={`ml-1 text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>({e.ml} ml)</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{e.kcal} kcal</span>
+                    <button onClick={() => { window.NP_Alcohol.eliminar(e.id); onRefresh(); }}
+                      className="text-red-400 hover:text-red-600 text-sm">
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* Colapsar */}
       <button onClick={() => setExpandido(false)}
-        className={`w-full mt-3 text-xs py-2 rounded ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}>
+        className={`w-full py-2.5 text-xs border-t ${darkMode ? 'border-gray-700 text-gray-500 hover:text-gray-300' : 'border-gray-100 text-gray-400 hover:text-gray-600'}`}>
         <i className="fas fa-chevron-up mr-1"></i>Colapsar
       </button>
     </div>
