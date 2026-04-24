@@ -3391,7 +3391,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418aq — split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418ar — split en 2 secciones)
 // seccion="entrenamiento" → Pasos + Entreno
 // seccion="progreso" → Roadmap + Métricas
 // =============================================
@@ -4659,6 +4659,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
           const previo = window.NP_Training.ultimoPeso(e.nombre, hoy);
           const mejoró = previo && e.peso != null && Number(e.peso) > previo.peso;
           const bajó = previo && e.peso != null && Number(e.peso) < previo.peso;
+          const protEj = protocolo ? protocolo.ejercicios.find(p => p.nombre === e.nombre) : null;
           return (
             <div key={i} className={`rounded-xl p-3 transition-colors ${
               e.done
@@ -4668,10 +4669,19 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className={`font-semibold text-base ${darkMode ? 'text-white' : 'text-gray-800'}`}>{e.nombre}</div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    <b>{e.setsEsperado} × {e.repsEsperado}</b>
-                    <span className="mx-1">·</span>{e.equipo}
+                  <div className="flex items-center gap-2 flex-wrap mt-1">
+                    <span className="text-xs text-gray-400"><b>{e.setsEsperado} × {e.repsEsperado}</b> · {e.equipo}</span>
+                    {protEj && protEj.youtube && (
+                      <a href={protEj.youtube} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-red-400 hover:text-red-500 font-medium">
+                        <i className="fab fa-youtube"></i>
+                        <span>ver video</span>
+                      </a>
+                    )}
                   </div>
+                  {protEj && protEj.descripcion && (
+                    <div className={`text-xs mt-1 leading-snug ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{protEj.descripcion}</div>
+                  )}
                   {e.nota && <div className="text-xs text-gray-400 italic mt-0.5">{e.nota}</div>}
                 </div>
                 <button onClick={() => toggleDone(i)}
