@@ -3391,7 +3391,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418ak — split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418al — split en 2 secciones)
 // seccion="entrenamiento" → Pasos + Entreno
 // seccion="progreso" → Roadmap + Métricas
 // =============================================
@@ -3472,31 +3472,120 @@ function CocinarTab({ darkMode, onRecipeClick }) {
   );
 }
 
-// ─── Sub-vista: Roadmap (fases mes-a-mes + progreso) ───
+// ─── Sub-vista: Roadmap dinámico — conecta BodyComp + Training + Plateau + Alcohol ───
 function FLRoadmapView({ perfil, darkMode, refresh }) {
   const roadmap = perfil.roadmap;
   const faseInfo = (window.NP_FatLoss && window.NP_FatLoss.banner) ? window.NP_FatLoss.banner() : null;
   const progreso = (window.NP_BodyComp && window.NP_BodyComp.progreso) ? window.NP_BodyComp.progreso() : null;
 
+  const [semana, setSemana] = React.useState(null);
+  const [plateau, setPlateau] = React.useState(null);
+  const [alcohol, setAlcohol] = React.useState(null);
+
+  React.useEffect(() => {
+    if (window.NP_Training && window.NP_Training.resumen7) setSemana(window.NP_Training.resumen7());
+    if (window.NP_Plateau && window.NP_Plateau.detectar) setPlateau(window.NP_Plateau.detectar());
+    if (window.NP_Alcohol && window.NP_Alcohol.impactoSemanal) setAlcohol(window.NP_Alcohol.impactoSemanal());
+  }, [refresh]);
+
+  const colorAlcohol = (nivel) => {
+    if (nivel === 'critico') return 'bg-red-500 text-white';
+    if (nivel === 'alto') return 'bg-orange-500 text-white';
+    if (nivel === 'moderado') return 'bg-yellow-400 text-yellow-900';
+    return 'bg-green-500 text-white';
+  };
+
   return (
     <div className="space-y-4">
+
+      {/* Dashboard semanal */}
+      <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <h3 className={`text-sm font-bold uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Esta semana</h3>
+        <div className="grid grid-cols-3 gap-3">
+          {/* Entrenamiento */}
+          <div>
+            <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Entrenos</div>
+            {semana && semana.entrenos > 0 ? (
+              <>
+                <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                  {semana.completados}<span className={`text-sm font-normal ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>/{semana.entrenos}</span>
+                </div>
+                <div className={`text-xs ${semana.cumplimiento >= 75 ? 'text-green-500' : semana.cumplimiento >= 50 ? 'text-yellow-500' : 'text-red-400'}`}>
+                  {semana.cumplimiento}% completados
+                </div>
+              </>
+            ) : (
+              <div className={`text-sm mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Sin registros</div>
+            )}
+          </div>
+
+          {/* Tendencia peso */}
+          <div>
+            <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Peso/sem</div>
+            {progreso && progreso.tendencia && progreso.tendencia.deltaSemanal != null ? (
+              <>
+                <div className={`text-2xl font-extrabold ${
+                  progreso.tendencia.deltaSemanal < 0 ? 'text-green-500'
+                  : progreso.tendencia.deltaSemanal > 0 ? 'text-red-500'
+                  : darkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  {progreso.tendencia.deltaSemanal > 0 ? '+' : ''}{progreso.tendencia.deltaSemanal}
+                </div>
+                <div className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  target: -{roadmap.calculados.tasaSemanal} kg
+                </div>
+              </>
+            ) : (
+              <div className={`text-sm mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Sin datos</div>
+            )}
+          </div>
+
+          {/* Alcohol */}
+          <div>
+            <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Alcohol</div>
+            {alcohol ? (
+              <>
+                <div className={`text-xs font-bold px-2 py-0.5 rounded inline-block mt-1 ${colorAlcohol(alcohol.nivel)}`}>
+                  {alcohol.nivel}
+                </div>
+                <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  {alcohol._resumen.kcal} kcal · {alcohol._resumen.dias}d
+                </div>
+              </>
+            ) : (
+              <div className={`text-sm mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Sin registros</div>
+            )}
+          </div>
+        </div>
+
+        {/* Plateau badge */}
+        {plateau && plateau.plateau && (
+          <div className={`mt-3 px-3 py-2 rounded-lg text-xs flex items-center gap-2 ${
+            darkMode ? 'bg-yellow-900/30 text-yellow-300 border border-yellow-800' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+          }`}>
+            <i className="fas fa-triangle-exclamation"></i>
+            <span>Meseta detectada · {plateau.diasVentana}d · {plateau.deltaSemanal} kg/sem → ver <b>Métricas</b></span>
+          </div>
+        )}
+      </div>
+
       {/* Progreso global */}
       {progreso && (
         <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <h3 className={`text-sm font-bold uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Progreso global</h3>
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div>
-              <div className="text-[10px] text-gray-400 uppercase">Inicial</div>
+              <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Inicial</div>
               <div className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{progreso.pesoInicial} kg</div>
               {progreso.bfInicial != null && <div className="text-xs text-gray-400">{progreso.bfInicial}% BF</div>}
             </div>
             <div>
-              <div className="text-[10px] text-orange-500 uppercase font-bold">Actual{!progreso.pesoActualEsReal && ' (estim.)'}</div>
+              <div className="text-[10px] text-orange-500 uppercase font-bold tracking-wide">Actual{!progreso.pesoActualEsReal && ' (estim.)'}</div>
               <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{progreso.pesoActual} kg</div>
               {progreso.bfActual != null && <div className="text-xs text-orange-500">{progreso.bfActual}% BF</div>}
             </div>
             <div>
-              <div className="text-[10px] text-gray-400 uppercase">Target</div>
+              <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Target</div>
               <div className={`text-xl font-bold ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{progreso.pesoTarget} kg</div>
               {progreso.bfTarget != null && <div className="text-xs text-gray-400">{progreso.bfTarget}% BF</div>}
             </div>
@@ -3510,24 +3599,15 @@ function FLRoadmapView({ perfil, darkMode, refresh }) {
             <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{progreso.pctPeso}% del camino</span>
             <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>{progreso.kgRestantes} kg para target</span>
           </div>
-          {progreso.tendencia && progreso.tendencia.deltaSemanal != null && (
-            <div className="mt-3 text-xs flex items-center gap-2">
-              <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Tendencia 14d:</span>
-              <b className={progreso.tendencia.deltaSemanal < 0 ? 'text-green-500' : progreso.tendencia.deltaSemanal > 0 ? 'text-red-500' : 'text-gray-400'}>
-                {progreso.tendencia.deltaSemanal > 0 ? '+' : ''}{progreso.tendencia.deltaSemanal} kg/sem
-              </b>
-              <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>· target: -{roadmap.calculados.tasaSemanal} kg/sem</span>
-            </div>
-          )}
         </div>
       )}
       {!progreso && (
         <div className={`rounded-xl p-4 text-xs ${darkMode ? 'bg-gray-800 text-gray-400 border border-gray-700' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-          <i className="fas fa-info-circle mr-2"></i>Registrá tu peso en la pestaña <b>Métricas</b> para ver progreso real vs roadmap.
+          <i className="fas fa-info-circle mr-2"></i>Registrá tu peso en <b>Progreso → Métricas</b> para ver avance real.
         </div>
       )}
 
-      {/* Fases tabla */}
+      {/* Fases del plan */}
       <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
         <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
           <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Fases del plan</h3>
@@ -3536,18 +3616,21 @@ function FLRoadmapView({ perfil, darkMode, refresh }) {
         <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
           {roadmap.fases.map((f, idx) => {
             const esActiva = faseInfo && faseInfo.numeroFase === f.numero;
+            const esCompletada = faseInfo && f.numero < faseInfo.numeroFase;
             const esDietBreak = f.tipo === 'dietBreak';
             return (
               <div key={idx} className={`px-5 py-3 transition-colors ${
                 esActiva
                   ? darkMode ? 'bg-orange-900/30 border-l-4 border-orange-500' : 'bg-orange-50 border-l-4 border-orange-500'
-                  : esDietBreak
-                    ? darkMode ? 'bg-purple-900/10' : 'bg-purple-50/50'
-                    : ''
+                  : esCompletada
+                    ? darkMode ? 'opacity-50' : 'opacity-40'
+                    : esDietBreak
+                      ? darkMode ? 'bg-purple-900/10' : 'bg-purple-50/50'
+                      : ''
               }`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className={`text-xs font-bold px-2 py-0.5 rounded ${
                         esDietBreak
                           ? 'bg-purple-500 text-white'
@@ -3555,14 +3638,15 @@ function FLRoadmapView({ perfil, darkMode, refresh }) {
                       }`}>Mes {f.mesInicio}{f.mesFin !== f.mesInicio ? '-'+f.mesFin : ''}</span>
                       <span className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{f.nombre}</span>
                       {esActiva && <span className="px-2 py-0.5 bg-orange-500 text-white text-[10px] font-bold rounded animate-pulse">ACTUAL</span>}
+                      {esCompletada && <span className="px-1.5 py-0.5 bg-green-500 text-white text-[10px] font-bold rounded">✓</span>}
                       {esDietBreak && <i className="fas fa-pause-circle text-purple-500 text-xs"></i>}
                     </div>
-                    <div className={`text-[11px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{f.foco}</div>
+                    <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{f.foco}</div>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <div className={`text-lg font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{f.calorias}</div>
-                    <div className="text-[10px] text-gray-400 uppercase">kcal · {f.targetPasos.toLocaleString()} pasos</div>
-                    <div className="text-[10px] text-gray-400">{f.pesoInicio}→{f.pesoFin} kg</div>
+                    <div className={`text-[10px] uppercase ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>kcal · {f.targetPasos.toLocaleString()} pasos</div>
+                    <div className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{f.pesoInicio}→{f.pesoFin} kg</div>
                   </div>
                 </div>
               </div>
