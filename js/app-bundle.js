@@ -3391,7 +3391,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418al — split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418am — split en 2 secciones)
 // seccion="entrenamiento" → Pasos + Entreno
 // seccion="progreso" → Roadmap + Métricas
 // =============================================
@@ -3673,6 +3673,101 @@ function FLRoadmapView({ perfil, darkMode, refresh }) {
   );
 }
 
+// ─── Componente: WeightChart (SVG tendencia peso vs objetivo planificado) ───
+function WeightChart({ perfil, entries, darkMode }) {
+  const conPeso = entries.filter(e => e.peso != null).slice(-90);
+  if (conPeso.length < 2 || !perfil || !perfil.roadmap) return null;
+
+  const rm = perfil.roadmap;
+  const pesoInicial = rm.inputs.peso;
+  const pesoTarget = rm.calculados.pesoTarget;
+  const tasaSemanal = rm.calculados.tasaSemanal || 0.5;
+  const hoyIso = new Date().toISOString().split('T')[0];
+
+  // X
+  const t0 = new Date(conPeso[0].fecha + 'T12:00:00').getTime();
+  const t1 = new Date(hoyIso + 'T12:00:00').getTime();
+  const tRange = Math.max(t1 - t0, 86400000 * 14);
+
+  // Y: incluye peso inicial + target para contexto completo
+  const allP = conPeso.map(e => e.peso);
+  const rawMax = Math.max(pesoInicial, ...allP);
+  const rawMin = Math.min(pesoTarget, ...allP);
+  const pad = Math.max((rawMax - rawMin) * 0.08, 0.4);
+  const yTop = rawMax + pad;
+  const yBot = rawMin - pad;
+  const yRange = yTop - yBot;
+
+  const W = 340, H = 130;
+  const pL = 34, pR = 14, pT = 6, pB = 20;
+  const cW = W - pL - pR, cH = H - pT - pB;
+
+  const xOf = d => pL + Math.min(1, Math.max(0, (new Date(d + 'T12:00:00') - t0) / tRange)) * cW;
+  const yOf = p => pT + ((yTop - p) / yRange) * cH;
+
+  const pts = conPeso.map(e => [xOf(e.fecha), yOf(e.peso)]);
+  const pathD = pts.map((p, i) => (i ? `L${p[0].toFixed(1)},${p[1].toFixed(1)}` : `M${p[0].toFixed(1)},${p[1].toFixed(1)}`)).join('');
+
+  // Trayectoria planificada: desde peso inicial hasta hoy a -tasaSemanal/7 por día
+  const diasHoy = Math.max(0, Math.round((new Date(hoyIso) - new Date(conPeso[0].fecha + 'T00:00:00')) / 86400000));
+  const pesoPlaneadoHoy = Math.max(pesoTarget, pesoInicial - (tasaSemanal / 7) * diasHoy);
+  const tx0 = xOf(conPeso[0].fecha), ty0 = yOf(Math.min(yTop - 0.01, pesoInicial));
+  const tx1 = xOf(hoyIso), ty1 = yOf(Math.max(yBot + 0.01, pesoPlaneadoHoy));
+
+  const step = yRange > 8 ? 2 : 1;
+  const gridStart = Math.ceil((yBot + 0.01) / step) * step;
+  const gridLevels = [];
+  for (let v = gridStart; v <= yTop - 0.01; v += step) gridLevels.push(Math.round(v * 10) / 10);
+
+  const gridC = darkMode ? '#374151' : '#e5e7eb';
+  const labelC = darkMode ? '#6b7280' : '#9ca3af';
+  const targetC = darkMode ? '#22c55e' : '#16a34a';
+  const planC = darkMode ? '#4b5563' : '#d1d5db';
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 'auto', display: 'block' }}>
+      {gridLevels.map(v => {
+        const y = yOf(v);
+        if (y < pT - 2 || y > pT + cH + 2) return null;
+        return (
+          <g key={v}>
+            <line x1={pL} y1={y} x2={W - pR} y2={y} stroke={gridC} strokeWidth="1" />
+            <text x={pL - 3} y={y + 3.5} textAnchor="end" fontSize="8.5" fill={labelC}>{v}</text>
+          </g>
+        );
+      })}
+
+      {/* Target final (línea horizontal verde) */}
+      <line x1={pL} y1={yOf(pesoTarget)} x2={W - pR} y2={yOf(pesoTarget)}
+        stroke={targetC} strokeWidth="1.5" strokeDasharray="4 3" />
+
+      {/* Trayectoria planificada (gris) */}
+      <line x1={tx0} y1={ty0} x2={tx1} y2={ty1}
+        stroke={planC} strokeWidth="1.5" strokeDasharray="5 3" />
+
+      {/* Área bajo curva real */}
+      <path
+        d={`${pathD}L${pts[pts.length-1][0].toFixed(1)},${(pT+cH).toFixed(1)}L${pts[0][0].toFixed(1)},${(pT+cH).toFixed(1)}Z`}
+        fill={darkMode ? 'rgba(249,115,22,0.07)' : 'rgba(249,115,22,0.05)'} />
+
+      {/* Línea real */}
+      <path d={pathD} fill="none" stroke="#f97316" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+
+      {/* Puntos */}
+      {pts.map((p, i) => (
+        <circle key={i} cx={p[0].toFixed(1)} cy={p[1].toFixed(1)} r="2.5"
+          fill="#f97316" stroke={darkMode ? '#1f2937' : 'white'} strokeWidth="1.5" />
+      ))}
+
+      {/* Etiquetas X */}
+      <text x={pts[0][0]} y={H - 3} textAnchor="middle" fontSize="8.5" fill={labelC}>{conPeso[0].fecha.slice(5)}</text>
+      {pts.length > 1 && (
+        <text x={pts[pts.length-1][0]} y={H - 3} textAnchor="middle" fontSize="8.5" fill={labelC}>{conPeso[conPeso.length-1].fecha.slice(5)}</text>
+      )}
+    </svg>
+  );
+}
+
 // ─── Sub-vista: Métricas (log peso + medidas) ───
 function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
   const [pesoInput, setPesoInput] = React.useState('');
@@ -3762,6 +3857,25 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
           </div>
         </div>
       </div>
+
+      {/* Gráfico tendencia peso */}
+      {entries.filter(e => e.peso != null).length >= 2 && (
+        <div className={`rounded-2xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+          <h3 className={`text-sm font-bold uppercase tracking-wider mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tendencia de peso</h3>
+          <WeightChart perfil={perfil} entries={entries} darkMode={darkMode} />
+          <div className="flex items-center gap-5 mt-2" style={{ color: '#9ca3af', fontSize: '10px' }}>
+            <span className="flex items-center gap-1.5">
+              <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#f97316" strokeWidth="2"/></svg>Real
+            </span>
+            <span className="flex items-center gap-1.5">
+              <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#9ca3af" strokeWidth="1.5" strokeDasharray="4 2"/></svg>Plan
+            </span>
+            <span className="flex items-center gap-1.5">
+              <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#16a34a" strokeWidth="1.5" strokeDasharray="4 2"/></svg>Target
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Medidas + BF */}
       <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
