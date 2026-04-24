@@ -282,7 +282,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
   return (
     <div className={`min-h-screen py-8 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`}>
-      <div className="max-w-2xl mx-auto animate-fadeIn">
+      <div className="max-w-4xl mx-auto animate-fadeIn">
         <div className="text-center mb-8">
           <div className="flex justify-between mb-4">
             {tienePlan && onBack ? (
@@ -3391,7 +3391,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418ao — split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418ap — split en 2 secciones)
 // seccion="entrenamiento" → Pasos + Entreno
 // seccion="progreso" → Roadmap + Métricas
 // =============================================
@@ -5117,7 +5117,7 @@ function App() {
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <header className={`sticky top-0 z-40 shadow-sm border-b ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
               <i className="fas fa-seedling text-white text-sm"></i>
@@ -5144,32 +5144,32 @@ function App() {
       </header>
 
       <nav className={`border-b no-print ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="flex gap-1 py-2">
+        <div className="max-w-4xl mx-auto px-4 overflow-x-auto">
+          <div className="flex gap-1 py-2 min-w-max sm:min-w-0">
             {[
-              { id: "plan", label: "Plan", icon: "fa-calendar-days" },
+              { id: "plan",          label: "Plan",        short: "Plan",      icon: "fa-calendar-days" },
               ...(perfil && perfil.fatLossMode ? [
-                { id: "entrenamiento", label: "Entrenamiento", icon: "fa-dumbbell" },
-                { id: "progreso", label: "Progreso", icon: "fa-chart-line" }
+                { id: "entrenamiento", label: "Entreno",    short: "Entreno",   icon: "fa-dumbbell" },
+                { id: "progreso",      label: "Progreso",   short: "Progreso",  icon: "fa-chart-line" }
               ] : []),
-              { id: "cocinar", label: "¿Qué cocino?", icon: "fa-magnifying-glass" },
-              { id: "despensa", label: "Despensa", icon: "fa-warehouse" },
-              { id: "compras", label: "Compras", icon: "fa-cart-shopping" }
+              { id: "cocinar",       label: "¿Qué cocino?", short: "Cocinar",  icon: "fa-magnifying-glass" },
+              { id: "despensa",      label: "Despensa",    short: "Despensa",   icon: "fa-warehouse" },
+              { id: "compras",       label: "Compras",     short: "Compras",    icon: "fa-cart-shopping" }
             ].map(tab => (
               <button key={tab.id} onClick={() => navegarA(tab.id)}
-                className={`nav-pill flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium ${
+                className={`nav-pill flex-shrink-0 sm:flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium ${
                   pantalla === tab.id ? 'active' : darkMode ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-50'
                 }`}>
                 <i className={`fas ${tab.icon} text-xs`}></i>
                 <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden text-xs">{tab.label.split(' ')[0]}</span>
+                <span className="sm:hidden text-xs">{tab.short}</span>
               </button>
             ))}
           </div>
         </div>
       </nav>
 
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      <main className="max-w-4xl mx-auto px-4 py-6">
         {pantalla === "plan" && planSemanal && (
           <WeeklyPlan plan={planSemanal} perfil={perfil}
             onRecipeClick={(receta) => setRecetaSeleccionada(receta)}
