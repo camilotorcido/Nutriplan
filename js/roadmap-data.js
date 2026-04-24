@@ -111,6 +111,14 @@ const ALCOHOL_BEBIDAS = [
   { nombre: 'Vodka soda', ml: 200, kcal: 100, alcohol_pct: 10 }
 ];
 
+// ─── Equipamiento disponible ───
+const EQUIPOS_DISPONIBLES = [
+  { id: 'peso_corporal', nombre: 'Peso corporal', icono: '🤸', siempre: true },
+  { id: 'speediance',    nombre: 'Speediance',    icono: '🏋️', siempre: false },
+  { id: 'treadmill_plano', nombre: 'Treadmill (plano)', icono: '🏃', siempre: false },
+  { id: 'barra',         nombre: 'Barra de dominadas', icono: '⬆️', siempre: false }
+];
+
 // ─── Protocolo de entrenamiento 4 días ───
 // Hardcoded del roadmap HTML de Camilo. Editable si Camilo cambia equipo.
 const ENTRENO_PROTOCOLO = {
@@ -241,9 +249,9 @@ const ENTRENO_PROTOCOLO = {
         { nombre: 'Dead bug / hollow body', sets: 4, reps: '30 seg rondas', equipo: 'Peso corporal', nota: 'Core profundo',
           descripcion: 'Espalda pegada al suelo en todo momento. Baja brazo y pierna contraria alternando sin perder el contacto lumbar.',
           youtube: 'https://www.youtube.com/results?search_query=dead+bug+hollow+body+core+tutorial' },
-        { nombre: 'Treadmill inclinado (10%)', sets: 1, reps: '10-20 min', equipo: 'Treadmill', nota: 'Cardio suave — ritmo conversacional',
-          descripcion: 'Caminata a 5-6 km/h con 10% de inclinación. Quema grasa de baja intensidad sin impacto articular. No usar los pasamanos.',
-          youtube: 'https://www.youtube.com/results?search_query=treadmill+inclinado+caminata+fat+loss+tutorial' }
+        { nombre: 'Treadmill plano (ritmo moderado)', sets: 1, reps: '20-30 min', equipo: 'Treadmill', nota: 'Cardio suave — ritmo conversacional, sin inclinación',
+          descripcion: 'Caminata/trote ligero a 6-8 km/h en plano. 20 min queman ~90-110 kcal (vs ~150 kcal con inclinación 10%). Aumenta duración para compensar la diferencia calórica.',
+          youtube: 'https://www.youtube.com/results?search_query=treadmill+plano+caminata+fat+loss+ritmo+moderado' }
       ]
     }
   },
@@ -293,6 +301,7 @@ if (typeof window !== 'undefined') {
     PLATEAU_PROTOCOL,
     ALCOHOL_IMPACTO,
     ALCOHOL_BEBIDAS,
+    EQUIPOS_DISPONIBLES,
     ENTRENO_PROTOCOLO,
     FUENTES_PROTEICAS,
     ALIMENTOS_ALTO_VOLUMEN,

@@ -3391,7 +3391,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418as — split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418at — split en 2 secciones)
 // seccion="entrenamiento" → Pasos + Entreno
 // seccion="progreso" → Roadmap + Métricas
 // =============================================
@@ -4501,6 +4501,77 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
   );
 }
 
+// ─── Helper: mapear campo equipo → id de equipamiento ───
+function getEquipoId(equipo) {
+  if (!equipo) return 'peso_corporal';
+  const e = equipo.toLowerCase();
+  if (e.includes('speediance') || e.includes('barra/speediance')) return 'speediance';
+  if (e.includes('treadmill')) return 'treadmill_plano';
+  if (e === 'barra') return 'barra';
+  return 'peso_corporal';
+}
+
+function leerEquipos() {
+  try {
+    const g = JSON.parse(localStorage.getItem('nutriplan_equipos'));
+    return Array.isArray(g) ? g : ['peso_corporal', 'speediance', 'treadmill_plano'];
+  } catch (err) { return ['peso_corporal', 'speediance', 'treadmill_plano']; }
+}
+
+// ─── Componente: selector de equipamiento disponible ───
+function EquipamientoCard({ darkMode, onRefresh }) {
+  const equipos = (window.NP_RoadmapData && window.NP_RoadmapData.EQUIPOS_DISPONIBLES) || [];
+  const [seleccion, setSeleccion] = React.useState(leerEquipos);
+  const [abierto, setAbierto] = React.useState(false);
+
+  const toggle = (id) => {
+    const fijo = equipos.find(eq => eq.id === id);
+    if (fijo && fijo.siempre) return;
+    const nueva = seleccion.includes(id)
+      ? seleccion.filter(x => x !== id)
+      : [...seleccion, id];
+    setSeleccion(nueva);
+    localStorage.setItem('nutriplan_equipos', JSON.stringify(nueva));
+    if (onRefresh) onRefresh();
+  };
+
+  return (
+    <div className={`rounded-xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+      <button
+        onClick={() => setAbierto(!abierto)}
+        className={`w-full flex items-center justify-between px-4 py-3 text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <span><i className="fas fa-dumbbell mr-2"></i>Mi equipamiento</span>
+        <i className={`fas fa-chevron-${abierto ? 'up' : 'down'} text-xs`}></i>
+      </button>
+      {abierto && (
+        <div className={`px-4 pb-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+          <p className={`text-xs mt-2 mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Marca lo que tienes. Los ejercicios muestran aviso si falta equipo.</p>
+          <div className="flex flex-wrap gap-2">
+            {equipos.map(eq => {
+              const activo = seleccion.includes(eq.id);
+              return (
+                <button
+                  key={eq.id}
+                  onClick={() => toggle(eq.id)}
+                  disabled={eq.siempre}
+                  className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                    activo
+                      ? eq.siempre
+                        ? darkMode ? 'bg-gray-600 text-gray-300 cursor-default' : 'bg-gray-400 text-white cursor-default'
+                        : 'bg-orange-500 text-white'
+                      : darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}>
+                  {eq.icono} {eq.nombre}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Sub-vista: Entreno (log de cargas por día A/B/C/D) ───
 function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   const hoy = new Date().toISOString().split('T')[0];
@@ -4582,6 +4653,9 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
           <div className={`text-2xl font-extrabold ${resumen.cumplimiento >= 80 ? 'text-green-500' : resumen.cumplimiento >= 50 ? 'text-orange-500' : darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.cumplimiento}%</div>
         </div>
       </div>
+
+      {/* Equipamiento disponible */}
+      <EquipamientoCard darkMode={darkMode} onRefresh={onRefresh} />
 
       {/* Selector de día */}
       <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
@@ -4683,6 +4757,21 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                     <div className={`text-xs mt-1 leading-snug ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{protEj.descripcion}</div>
                   )}
                   {e.nota && <div className="text-xs text-gray-400 italic mt-0.5">{e.nota}</div>}
+                  {(() => {
+                    const eqId = getEquipoId(e.equipo);
+                    if (eqId === 'peso_corporal') return null;
+                    const equiposDisp = leerEquipos();
+                    if (equiposDisp.includes(eqId)) return null;
+                    const info = window.NP_RoadmapData && window.NP_RoadmapData.EQUIPOS_DISPONIBLES
+                      ? window.NP_RoadmapData.EQUIPOS_DISPONIBLES.find(eq => eq.id === eqId)
+                      : null;
+                    return (
+                      <div className="text-xs mt-1 font-medium text-amber-500">
+                        <i className="fas fa-exclamation-triangle mr-1"></i>
+                        {info ? `Requiere ${info.nombre} — no marcado como disponible` : 'Equipo no disponible'}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <button onClick={() => toggleDone(i)}
                   className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all ${
