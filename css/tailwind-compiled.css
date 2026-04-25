@@ -17,3 +17,5 @@
 .focus\:border-green-500:focus{--tw-border-opacity:1;border-color:rgb(34 197 94 / var(--tw-border-opacity, 1))}
 .text-red-300{--tw-text-opacity:1;color:rgb(252 165 165 / var(--tw-text-opacity, 1))}
 .border-red-800{--tw-border-opacity:1;border-color:rgb(153 27 27 / var(--tw-border-opacity, 1))}
+/* ── CuentaModal additions ── */
+.rotate-180{--tw-rotate:180deg;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}

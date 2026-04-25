@@ -5700,6 +5700,214 @@ function LoadingOverlay({ mensaje, darkMode }) {
   );
 }
 
+// =============================================
+// COMPONENTE: CuentaModal
+// =============================================
+function CuentaModal({ authUser, darkMode, onClose }) {
+  const isGoogle = (authUser.providerData?.[0]?.providerId === 'google.com');
+  const [view, setView]          = React.useState('main');
+  const [newPass, setNewPass]    = React.useState('');
+  const [confirmPass, setConfirm]= React.useState('');
+  const [showP1, setShowP1]      = React.useState(false);
+  const [showP2, setShowP2]      = React.useState(false);
+  const [loading, setLoading]    = React.useState(false);
+  const [error, setError]        = React.useState('');
+  const [success, setSuccess]    = React.useState('');
+
+  const cardCls  = darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-800';
+  const mutedCls = darkMode ? 'text-gray-400' : 'text-gray-500';
+  const inputCls = `w-full px-4 py-3 rounded-xl border text-sm transition-colors focus:outline-none focus:border-green-500 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400'}`;
+
+  const handleChangePassword = async () => {
+    setError('');
+    if (newPass.length < 6) { setError('La contraseña debe tener al menos 6 caracteres.'); return; }
+    if (newPass !== confirmPass) { setError('Las contraseñas no coinciden.'); return; }
+    setLoading(true);
+    try {
+      await firebase.auth().currentUser.updatePassword(newPass);
+      setSuccess('Contraseña actualizada correctamente.');
+      setNewPass(''); setConfirm('');
+      setView('main');
+    } catch (e) {
+      setError(e.code === 'auth/requires-recent-login'
+        ? 'Por seguridad, cerrá sesión, volvé a ingresar y repetí la acción.'
+        : 'Error al cambiar la contraseña. Intentá de nuevo.');
+    } finally { setLoading(false); }
+  };
+
+  const handleDeleteAccount = async () => {
+    setLoading(true); setError('');
+    try {
+      if (window.NP_CloudStorage) await window.NP_CloudStorage.deleteAllData();
+      await firebase.auth().currentUser.delete();
+      onClose();
+    } catch (e) {
+      setError(e.code === 'auth/requires-recent-login'
+        ? 'Por seguridad, cerrá sesión, volvé a ingresar y repetí la acción.'
+        : 'Error al eliminar la cuenta. Intentá de nuevo.');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-end pt-14 pr-4"
+      onClick={onClose}>
+      <div className={`w-80 rounded-2xl border shadow-xl p-5 animate-scaleIn ${cardCls}`}
+        onClick={e => e.stopPropagation()}>
+
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-base">Mi cuenta</h3>
+          <button onClick={onClose} aria-label="Cerrar"
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${darkMode ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-400 hover:bg-gray-100'}`}>
+            <i className="fas fa-xmark text-sm"></i>
+          </button>
+        </div>
+
+        {view === 'main' && (
+          <div>
+            <div className={`flex items-center gap-3 p-3 rounded-xl mb-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+              {authUser.photoURL
+                ? <img src={authUser.photoURL} alt="" className="w-10 h-10 rounded-full border-2 border-green-200 object-cover flex-shrink-0" referrerPolicy="no-referrer" />
+                : <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${darkMode ? 'bg-green-700 text-green-100' : 'bg-green-100 text-green-700'}`}>
+                    {(authUser.displayName || authUser.email || '?')[0].toUpperCase()}
+                  </div>
+              }
+              <div className="min-w-0">
+                {authUser.displayName && (
+                  <p className="text-sm font-medium truncate">{authUser.displayName}</p>
+                )}
+                <p className={`text-xs truncate ${mutedCls}`}>{authUser.email}</p>
+                <p className={`text-xs mt-0.5 ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                  <i className={`${isGoogle ? 'fab fa-google' : 'fas fa-envelope'} mr-1`}></i>
+                  {isGoogle ? 'Cuenta Google' : 'Email / contraseña'}
+                </p>
+              </div>
+            </div>
+
+            {success && (
+              <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm mb-3 ${darkMode ? 'bg-green-900/40 text-green-300 border border-green-800' : 'bg-green-50 text-green-700 border border-green-200'}`}>
+                <i className="fas fa-circle-check flex-shrink-0"></i>
+                <span>{success}</span>
+              </div>
+            )}
+
+            <div className="space-y-1">
+              {!isGoogle && (
+                <button onClick={() => { setView('changePass'); setError(''); setSuccess(''); }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors cursor-pointer ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                  <i className={`fas fa-lock w-4 text-center ${mutedCls}`}></i>
+                  <span>Cambiar contraseña</span>
+                  <i className={`fas fa-chevron-right ml-auto text-xs ${mutedCls}`}></i>
+                </button>
+              )}
+              {isGoogle && (
+                <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  <i className="fas fa-lock w-4 text-center"></i>
+                  <span>Contraseña gestionada por Google</span>
+                </div>
+              )}
+              <button onClick={async () => { onClose(); await window.NP_Auth.signOut(); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors cursor-pointer ${darkMode ? 'text-orange-400 hover:bg-gray-700' : 'text-orange-500 hover:bg-orange-50'}`}>
+                <i className="fas fa-arrow-right-from-bracket w-4 text-center"></i>
+                <span>Cerrar sesión</span>
+              </button>
+            </div>
+
+            <div className={`mt-4 pt-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+              <button onClick={() => { setView('deleteConfirm'); setError(''); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors cursor-pointer ${darkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-500 hover:bg-red-50'}`}>
+                <i className="fas fa-user-xmark w-4 text-center"></i>
+                <span>Eliminar mi cuenta</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {view === 'changePass' && (
+          <div>
+            <button onClick={() => setView('main')}
+              className={`flex items-center gap-1.5 text-sm mb-4 cursor-pointer transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
+              <i className="fas fa-arrow-left text-xs"></i> Volver
+            </button>
+            <h4 className="font-medium text-sm mb-4">Cambiar contraseña</h4>
+            {error && (
+              <div className={`flex items-start gap-2 px-3 py-2.5 rounded-xl text-sm mb-3 ${darkMode ? 'bg-red-900/40 text-red-300 border border-red-800' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                <i className="fas fa-circle-exclamation mt-0.5 flex-shrink-0"></i>
+                <span>{error}</span>
+              </div>
+            )}
+            <div className="space-y-3">
+              <div>
+                <label className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Nueva contraseña</label>
+                <div className="relative">
+                  <input type={showP1 ? 'text' : 'password'} value={newPass}
+                    onChange={e => { setNewPass(e.target.value); setError(''); }}
+                    placeholder="Mínimo 6 caracteres"
+                    className={`${inputCls} pr-10`} />
+                  <button type="button" onClick={() => setShowP1(p => !p)}
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded cursor-pointer ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'}`}>
+                    <i className={`fas ${showP1 ? 'fa-eye-slash' : 'fa-eye'} text-sm`}></i>
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Confirmar contraseña</label>
+                <div className="relative">
+                  <input type={showP2 ? 'text' : 'password'} value={confirmPass}
+                    onChange={e => { setConfirm(e.target.value); setError(''); }}
+                    placeholder="Repetí la contraseña"
+                    className={`${inputCls} pr-10`} />
+                  <button type="button" onClick={() => setShowP2(p => !p)}
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded cursor-pointer ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'}`}>
+                    <i className={`fas ${showP2 ? 'fa-eye-slash' : 'fa-eye'} text-sm`}></i>
+                  </button>
+                </div>
+              </div>
+              <button onClick={handleChangePassword} disabled={loading}
+                className={`w-full py-3 rounded-xl font-semibold text-sm text-white transition-all ${loading ? 'bg-green-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 active:scale-[0.98]'}`}>
+                {loading
+                  ? <span className="flex items-center justify-center gap-2"><i className="fas fa-circle-notch fa-spin"></i>Guardando…</span>
+                  : 'Guardar contraseña'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {view === 'deleteConfirm' && (
+          <div>
+            <button onClick={() => setView('main')}
+              className={`flex items-center gap-1.5 text-sm mb-4 cursor-pointer transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
+              <i className="fas fa-arrow-left text-xs"></i> Volver
+            </button>
+            <div className={`p-4 rounded-xl mb-4 border ${darkMode ? 'bg-gray-900 border-red-800' : 'bg-red-50 border-red-200'}`}>
+              <div className="flex items-start gap-3">
+                <i className={`fas fa-triangle-exclamation mt-0.5 ${darkMode ? 'text-red-400' : 'text-red-500'}`}></i>
+                <div>
+                  <p className={`text-sm font-semibold mb-1 ${darkMode ? 'text-red-300' : 'text-red-700'}`}>¿Eliminar tu cuenta?</p>
+                  <p className={`text-xs ${darkMode ? 'text-red-400' : 'text-red-600'}`}>Esta acción es irreversible. Se borrarán todos tus datos y no podrás recuperarlos.</p>
+                </div>
+              </div>
+            </div>
+            {error && (
+              <div className={`flex items-start gap-2 px-3 py-2.5 rounded-xl text-sm mb-3 ${darkMode ? 'bg-red-900/40 text-red-300 border border-red-800' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                <i className="fas fa-circle-exclamation mt-0.5 flex-shrink-0"></i>
+                <span>{error}</span>
+              </div>
+            )}
+            <button onClick={handleDeleteAccount} disabled={loading}
+              className={`w-full py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.98] ${loading ? 'bg-red-300 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}>
+              {loading
+                ? <span className="flex items-center justify-center gap-2"><i className="fas fa-circle-notch fa-spin"></i>Eliminando…</span>
+                : 'Sí, eliminar mi cuenta'}
+            </button>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [pantalla, setPantalla] = React.useState("loading");
   const [perfil, setPerfil] = React.useState(null);
@@ -5715,6 +5923,7 @@ function App() {
   // undefined = todavía cargando, null = no logueado, object = usuario logueado
   const [authUser, setAuthUser] = React.useState(undefined);
   const authUserRef = React.useRef(null); // ref para detectar cambio dentro del closure
+  const [showCuenta, setShowCuenta] = React.useState(false);
   // Fase 3.3: factor de comensales global
   const [factorComensales, setFactorComensales] = React.useState(() =>
     window.perfilesMulti ? window.perfilesMulti.factorCoccion(window.perfilesMulti.cargar()) : 1
@@ -6117,28 +6326,23 @@ function App() {
               className={`p-2 rounded-lg transition-colors ${darkMode ? 'text-gray-400 hover:text-red-400 hover:bg-gray-700' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}>
               <i className="fas fa-trash-alt text-sm"></i>
             </button>
-            {/* Avatar de usuario + logout */}
+            {/* Avatar de usuario → abre panel de cuenta */}
             {authUser && window.NP_Auth && (
-              <div className="flex items-center gap-1.5 ml-1 pl-1 border-l border-gray-200 dark:border-gray-700">
-                {authUser.photoURL
-                  ? <img src={authUser.photoURL} alt={authUser.displayName || authUser.email}
-                      className="w-7 h-7 rounded-full border-2 border-green-200 object-cover flex-shrink-0"
-                      referrerPolicy="no-referrer" />
-                  : <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${darkMode ? 'bg-green-700 text-green-100' : 'bg-green-100 text-green-700'}`}
-                      title={authUser.email}>
-                      {(authUser.displayName || authUser.email || '?')[0].toUpperCase()}
-                    </div>
-                }
+              <div className="ml-1 pl-1 border-l border-gray-200 dark:border-gray-700">
                 <button
-                  onClick={async () => {
-                    if (window.confirm('¿Cerrar sesión?')) {
-                      await window.NP_Auth.signOut();
-                    }
-                  }}
-                  aria-label="Cerrar sesión"
-                  title="Cerrar sesión"
-                  className={`p-2 rounded-lg transition-colors ${darkMode ? 'text-gray-400 hover:text-orange-400 hover:bg-gray-700' : 'text-gray-400 hover:text-orange-500 hover:bg-orange-50'}`}>
-                  <i className="fas fa-arrow-right-from-bracket text-sm"></i>
+                  onClick={() => setShowCuenta(v => !v)}
+                  aria-label="Mi cuenta"
+                  title={authUser.email}
+                  className={`flex items-center gap-1.5 p-1 rounded-lg transition-colors cursor-pointer ${showCuenta ? (darkMode ? 'bg-gray-700' : 'bg-gray-100') : (darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100')}`}>
+                  {authUser.photoURL
+                    ? <img src={authUser.photoURL} alt={authUser.displayName || authUser.email}
+                        className="w-7 h-7 rounded-full border-2 border-green-200 object-cover flex-shrink-0"
+                        referrerPolicy="no-referrer" />
+                    : <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${darkMode ? 'bg-green-700 text-green-100' : 'bg-green-100 text-green-700'}`}>
+                        {(authUser.displayName || authUser.email || '?')[0].toUpperCase()}
+                      </div>
+                  }
+                  <i className={`fas fa-chevron-down text-xs transition-transform ${showCuenta ? 'rotate-180' : ''} ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
                 </button>
               </div>
             )}
@@ -6224,6 +6428,7 @@ function App() {
       </footer>
 
       {recetaSeleccionada && <RecipeModal receta={recetaSeleccionada} onClose={() => setRecetaSeleccionada(null)} darkMode={darkMode} factorComensales={factorComensales} usaThermomix={perfil?.usaThermomix !== false} />}
+      {showCuenta && authUser && <CuentaModal authUser={authUser} darkMode={darkMode} onClose={() => setShowCuenta(false)} />}
 
       {globalOverlays}
     </div>
