@@ -3411,7 +3411,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418bb — split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418bc — split en 2 secciones)
 // seccion="entrenamiento" → Pasos + Entreno
 // seccion="progreso" → Roadmap + Métricas
 // =============================================
@@ -3459,6 +3459,288 @@ function FatLossTab({ perfil, darkMode, seccion }) {
       {subVista === 'metricas' && <FLMetricasView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
       {subVista === 'pasos' && <FLPasosView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
       {subVista === 'entreno' && <FLEntrenoView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
+    </div>
+  );
+}
+
+// =============================================
+// COMPONENTE: HoyView — Dashboard diario (v20260418bc)
+// =============================================
+function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
+  const hoy = new Date();
+  const diasJS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+  const mesesES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  const diaActual = diasJS[hoy.getDay()];
+  const fechaStr = diaActual + ' ' + hoy.getDate() + ' de ' + mesesES[hoy.getMonth()];
+  const hora = hoy.getHours();
+  const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
+  const nombreCorto = perfil && perfil.nombre ? perfil.nombre.split(' ')[0] : '';
+
+  const semanaData = React.useMemo(() => {
+    if (!planSemanal) return null;
+    const keys = Object.keys(planSemanal).filter(k => k.startsWith('semana_')).sort();
+    return keys.length > 0 ? planSemanal[keys[0]] : null;
+  }, [planSemanal]);
+
+  const comidasHoy = semanaData ? (semanaData[diaActual] || {}) : {};
+  const resumenHoy = calcularResumenDiario(comidasHoy);
+  const tiposOrden = ["desayuno", "snack_am", "almuerzo", "snack_pm", "cena"];
+  const iconosComida = { desayuno: "fa-sun", snack_am: "fa-apple-whole", almuerzo: "fa-utensils", snack_pm: "fa-cookie-bite", cena: "fa-moon" };
+  const nombresComida = { desayuno: "Desayuno", snack_am: "Snack AM", almuerzo: "Almuerzo", snack_pm: "Snack PM", cena: "Cena" };
+
+  const [refresh, setRefresh] = React.useState(0);
+  const tieneEntrenamiento = !!(perfil && perfil.fatLossMode && window.NP_Training);
+
+  const entrenoHoy = React.useMemo(() => {
+    if (!tieneEntrenamiento) return null;
+    const hoyStr = new Date().toISOString().split('T')[0];
+    const diasSemana = parseInt(localStorage.getItem('nutriplan_dias_semana') || '4');
+    const planActual = window.NP_RoadmapData && window.NP_RoadmapData.SCHEDULES_POR_DIAS
+      ? (window.NP_RoadmapData.SCHEDULES_POR_DIAS[diasSemana] || window.NP_RoadmapData.SCHEDULES_POR_DIAS[4])
+      : null;
+    const hoyDow = new Date(hoyStr + 'T12:00:00').getDay();
+    const tipo = planActual ? (planActual.schedule[hoyDow] || 'descanso') : 'descanso';
+    const sesion = window.NP_Training.obtener(hoyStr, tipo);
+    const completados = sesion.ejercicios.filter(e => e.done).length;
+    const total = sesion.ejercicios.length;
+    const tipoInfo = planActual && planActual.tipos ? planActual.tipos.find(t => t.k === tipo) : null;
+    return { tipo, tipoInfo, completados, total, esDescanso: tipo === 'descanso' };
+  }, [tieneEntrenamiento, refresh]);
+
+  const pasosHoy = React.useMemo(() => {
+    if (!tieneEntrenamiento || !window.NP_Steps || !window.NP_Steps.hoy) return null;
+    return window.NP_Steps.hoy();
+  }, [tieneEntrenamiento, refresh]);
+
+  const [pesoInput, setPesoInput] = React.useState('');
+  const [pesoGuardado, setPesoGuardado] = React.useState(false);
+
+  const necesitaPeso = React.useMemo(() => {
+    if (!tieneEntrenamiento || !window.NP_BodyComp || !window.NP_BodyComp.cargar) return false;
+    const entries = window.NP_BodyComp.cargar();
+    if (!entries || entries.length === 0) return true;
+    const hace7 = new Date(); hace7.setDate(hace7.getDate() - 7);
+    const hace7Str = hace7.toISOString().split('T')[0];
+    return !entries.some(e => e.fecha >= hace7Str && e.peso != null);
+  }, [tieneEntrenamiento, refresh]);
+
+  const guardarPeso = () => {
+    const val = parseFloat(pesoInput.replace(',', '.'));
+    if (isNaN(val) || val < 20 || val > 300) return;
+    if (window.NP_BodyComp) {
+      const hoyStr = new Date().toISOString().split('T')[0];
+      window.NP_BodyComp.registrar({
+        fecha: hoyStr, peso: val,
+        _genero: perfil && perfil.genero === 'femenino' ? 'F' : 'M',
+        _altura: perfil ? perfil.altura : null
+      });
+      setPesoGuardado(true);
+      setRefresh(r => r + 1);
+    }
+  };
+
+  const pctKcal = perfil && perfil.caloriasObjetivo && resumenHoy.calorias > 0
+    ? Math.min(100, Math.round((resumenHoy.calorias / perfil.caloriasObjetivo) * 100)) : 0;
+
+  return (
+    <div className="space-y-4 animate-fadeIn">
+      {/* Saludo */}
+      <div className="rounded-2xl px-5 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md">
+        <p className="text-sm font-medium opacity-90">{fechaStr}</p>
+        <h2 className="text-xl font-extrabold mt-0.5">{saludo}{nombreCorto ? ', ' + nombreCorto : ''} 👋</h2>
+        {perfil && (
+          <p className="text-sm opacity-80 mt-1">{perfil.caloriasObjetivo} kcal · {perfil.numSemanas > 1 ? perfil.numSemanas + ' semanas' : '1 semana'}</p>
+        )}
+      </div>
+
+      {/* Comidas del día */}
+      {planSemanal ? (
+        <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+          <div className={`px-5 py-3 flex items-center justify-between border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <i className="fas fa-utensils mr-2"></i>Comidas de hoy
+            </h3>
+            <button onClick={() => onNavigate('plan')}
+              className="text-xs text-green-500 font-semibold hover:text-green-600">
+              Ver plan →
+            </button>
+          </div>
+          {resumenHoy.calorias > 0 && (
+            <div className={`px-5 py-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-50 bg-gray-50'}`}>
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <span className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumenHoy.calorias} kcal</span>
+                <div className="flex gap-3 text-gray-400">
+                  <span><span className="text-blue-500 font-semibold">{resumenHoy.proteinas}g</span> prot</span>
+                  <span><span className="text-amber-500 font-semibold">{resumenHoy.carbohidratos}g</span> carb</span>
+                  <span><span className="text-purple-500 font-semibold">{resumenHoy.grasas}g</span> grasas</span>
+                </div>
+              </div>
+              {pctKcal > 0 && (
+                <div className={`w-full h-1.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                  <div className="h-full bg-green-500 transition-all" style={{ width: pctKcal + '%' }}></div>
+                </div>
+              )}
+            </div>
+          )}
+          <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
+            {tiposOrden.map(tipo => {
+              const comida = comidasHoy[tipo];
+              if (!comida) return null;
+              return (
+                <div key={tipo} className="px-5 py-2.5 flex items-center gap-3">
+                  <i className={`fas ${iconosComida[tipo]} text-sm w-4 text-center ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{nombresComida[tipo]}</div>
+                    <div className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{comida.nombre}</div>
+                  </div>
+                  <span className={`text-xs font-bold flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{comida.calorias} kcal</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className={`rounded-2xl p-6 text-center ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-amber-50 border border-amber-200'}`}>
+          <i className="fas fa-calendar-plus text-3xl text-amber-400 mb-3"></i>
+          <p className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-amber-800'}`}>Todavía no tenés un plan semanal</p>
+          <button onClick={() => onNavigate('plan')}
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
+            <i className="fas fa-plus mr-1.5"></i>Crear mi plan
+          </button>
+        </div>
+      )}
+
+      {/* Bloque Fitness (solo fatLossMode) */}
+      {tieneEntrenamiento && (
+        <div className="space-y-3">
+          {entrenoHoy && (
+            <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+              <div className={`px-5 py-3 flex items-center justify-between border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <i className="fas fa-dumbbell mr-2"></i>Entreno de hoy
+                </h3>
+                <button onClick={() => onNavigate('fitness')}
+                  className="text-xs text-orange-500 font-semibold hover:text-orange-600">Abrir →</button>
+              </div>
+              <div className="px-5 py-3">
+                {entrenoHoy.esDescanso ? (
+                  <div className="flex items-center gap-3">
+                    <i className="fas fa-couch text-2xl text-gray-400"></i>
+                    <div>
+                      <div className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Día de descanso</div>
+                      <div className="text-xs text-gray-400">Recuperación activa</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-extrabold text-lg">{entrenoHoy.tipo}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{entrenoHoy.tipoInfo ? entrenoHoy.tipoInfo.corto : 'Tipo ' + entrenoHoy.tipo}</div>
+                      {entrenoHoy.total > 0 && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                            <div className={`h-full ${entrenoHoy.completados === entrenoHoy.total ? 'bg-green-500' : 'bg-orange-500'}`}
+                              style={{ width: Math.round((entrenoHoy.completados / entrenoHoy.total) * 100) + '%' }}></div>
+                          </div>
+                          <span className="text-xs text-gray-400">{entrenoHoy.completados}/{entrenoHoy.total}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {pasosHoy != null && (
+            <div className={`rounded-2xl px-5 py-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <i className="fas fa-person-walking mr-2"></i>Pasos hoy
+                </h3>
+                <span className={`text-sm font-extrabold ${(pasosHoy.pasos || 0) >= (pasosHoy.target || 8000) ? 'text-green-500' : darkMode ? 'text-white' : 'text-gray-800'}`}>
+                  {(pasosHoy.pasos || 0).toLocaleString()} / {(pasosHoy.target || 8000).toLocaleString()}
+                </span>
+              </div>
+              <div className={`w-full h-2 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                <div className={`h-full rounded-full ${(pasosHoy.pasos || 0) >= (pasosHoy.target || 8000) ? 'bg-green-500' : 'bg-orange-500'}`}
+                  style={{ width: Math.min(100, Math.round(((pasosHoy.pasos || 0) / (pasosHoy.target || 8000)) * 100)) + '%' }}></div>
+              </div>
+            </div>
+          )}
+
+          {necesitaPeso && !pesoGuardado && (
+            <div className={`rounded-2xl px-5 py-4 ${darkMode ? 'bg-gray-800 border border-yellow-800/40' : 'bg-yellow-50 border border-yellow-200'}`}>
+              <h3 className={`text-sm font-bold mb-2 ${darkMode ? 'text-yellow-300' : 'text-yellow-800'}`}>
+                <i className="fas fa-weight-scale mr-2"></i>¿Cuánto pesás hoy?
+              </h3>
+              <div className="flex gap-2">
+                <input type="number" value={pesoInput} onChange={e => setPesoInput(e.target.value)}
+                  placeholder="ej: 78.5"
+                  className={`flex-1 px-3 py-2 rounded-xl border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-yellow-300 text-gray-800 placeholder-gray-400'}`} />
+                <button onClick={guardarPeso}
+                  className="px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition-colors">
+                  Guardar
+                </button>
+              </div>
+            </div>
+          )}
+          {pesoGuardado && (
+            <div className={`rounded-2xl px-5 py-3 flex items-center gap-3 ${darkMode ? 'bg-green-900/30 border border-green-800' : 'bg-green-50 border border-green-200'}`}>
+              <i className="fas fa-check-circle text-green-500"></i>
+              <span className={`text-sm font-medium ${darkMode ? 'text-green-300' : 'text-green-700'}`}>Peso registrado correctamente</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =============================================
+// COMPONENTE: FitnessTab (Entreno + Pasos + Roadmap + Registros en 4 sub-tabs)
+// =============================================
+function FitnessTab({ perfil, darkMode }) {
+  const subs = [
+    { k: 'entreno',  l: 'Entreno',   icon: 'fa-dumbbell' },
+    { k: 'pasos',    l: 'Pasos',     icon: 'fa-person-walking' },
+    { k: 'roadmap',  l: 'Roadmap',   icon: 'fa-route' },
+    { k: 'metricas', l: 'Registros', icon: 'fa-clipboard-list' }
+  ];
+  const [subVista, setSubVista] = React.useState('entreno');
+  const [refresh, setRefresh] = React.useState(0);
+
+  if (!perfil || !perfil.fatLossMode || !perfil.roadmap) {
+    return (
+      <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>
+        <i className="fas fa-fire text-4xl text-orange-400 mb-3"></i>
+        <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Modo pérdida no activado</h3>
+        <p className="text-sm">Andá a tu perfil y elegí "Pérdida de peso" como objetivo para ver tu roadmap y progreso.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="animate-fadeIn">
+      <div className="grid grid-cols-4 gap-1.5 mb-4">
+        {subs.map(s => (
+          <button key={s.k} onClick={() => setSubVista(s.k)}
+            className={`py-2 px-1 rounded-xl font-medium text-xs flex flex-col items-center justify-center gap-1 transition-all ${
+              subVista === s.k
+                ? 'bg-gradient-to-b from-orange-500 to-red-500 text-white shadow-md'
+                : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+            }`}>
+            <i className={`fas ${s.icon} text-sm`}></i>
+            <span>{s.l}</span>
+          </button>
+        ))}
+      </div>
+      {subVista === 'entreno'  && <FLEntrenoView  perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
+      {subVista === 'pasos'    && <FLPasosView    perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
+      {subVista === 'roadmap'  && <FLRoadmapView  perfil={perfil} darkMode={darkMode} refresh={refresh} onGoToRegistros={() => setSubVista('metricas')} />}
+      {subVista === 'metricas' && <FLMetricasView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
     </div>
   );
 }
@@ -4052,11 +4334,11 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
 // Mapa de acción contextual por paso: destino de navegación + label
 const _PLATEAU_ACCIONES = {
   1: { label: 'Ver mi plan semanal',         icon: 'fa-calendar-days',   destino: 'plan' },
-  2: { label: 'Ver mis pasos de hoy',        icon: 'fa-person-walking',  destino: 'entrenamiento' },
+  2: { label: 'Ver mis pasos de hoy',        icon: 'fa-person-walking',  destino: 'fitness' },
   3: { label: 'Buscar recetas bajas en carbos', icon: 'fa-magnifying-glass', destino: 'cocinar' },
   4: { label: 'Ver plan de esta semana',     icon: 'fa-calendar-days',   destino: 'plan' },
   5: { label: 'Ajustar calorías en perfil',  icon: 'fa-sliders',         destino: 'perfil' },
-  6: { label: 'Ver entreno de hoy',          icon: 'fa-dumbbell',        destino: 'entrenamiento' },
+  6: { label: 'Ver entreno de hoy',          icon: 'fa-dumbbell',        destino: 'fitness' },
 };
 
 function PlateauCard({ darkMode, refresh, onRefresh }) {
@@ -5223,7 +5505,7 @@ function App() {
     if (perfilGuardado && planGuardado) {
       setPerfil(perfilGuardado);
       setPlanSemanal(_sanitizarPlan(planGuardado, perfilGuardado));
-      setPantalla("plan");
+      setPantalla("hoy");
       // Fase 6.2: pre-cargar recipes-extra en idle para que swap/regenerar sean instantáneos
       if (window.lazyRecipes && !window.lazyRecipes.estaCargado()) {
         var dispatch = window.requestIdleCallback || function(cb) { setTimeout(cb, 2000); };
@@ -5260,7 +5542,7 @@ function App() {
       } else {
         mostrarToast("¡Plan semanal generado exitosamente!");
       }
-      setPantalla("plan");
+      setPantalla("hoy");
     } catch (e) {
       console.error("Error generando plan:", e);
       // Fallback síncrono
@@ -5268,7 +5550,7 @@ function App() {
       setPlanSemanal(plan);
       guardarPlanSemanal(plan);
       mostrarToast("Plan generado (modo offline)", "info");
-      setPantalla("plan");
+      setPantalla("hoy");
     } finally {
       setCargando(false);
       window.scrollTo(0, 0);
@@ -5426,19 +5708,19 @@ function App() {
         <div className="max-w-3xl mx-auto px-4 overflow-x-auto">
           <div className="flex gap-1 py-2 min-w-max sm:min-w-0">
             {[
-              { id: "plan",          label: "Plan",        short: "Plan",      icon: "fa-calendar-days" },
+              { id: "hoy",      label: "Hoy",          short: "Hoy",      icon: "fa-house" },
+              { id: "plan",     label: "Plan",         short: "Plan",     icon: "fa-calendar-days" },
               ...(perfil && perfil.fatLossMode ? [
-                { id: "entrenamiento", label: "Entreno",    short: "Entreno",   icon: "fa-dumbbell" },
-                { id: "progreso",      label: "Progreso",   short: "Progreso",  icon: "fa-chart-line" }
+                { id: "fitness", label: "Fitness",     short: "Fitness",  icon: "fa-dumbbell" }
               ] : []),
-              { id: "cocinar",       label: "¿Qué cocino?", short: "Cocinar",  icon: "fa-magnifying-glass" },
-              { id: "despensa",      label: "Despensa",    short: "Despensa",   icon: "fa-warehouse" },
-              { id: "compras",       label: "Compras",     short: "Compras",    icon: "fa-cart-shopping" }
+              { id: "cocinar",  label: "¿Qué cocino?", short: "Cocinar", icon: "fa-magnifying-glass" },
+              { id: "despensa", label: "Despensa",     short: "Despensa", icon: "fa-warehouse" },
+              { id: "compras",  label: "Compras",      short: "Compras",  icon: "fa-cart-shopping" }
             ].map(tab => (
               <button key={tab.id} onClick={() => navegarA(tab.id)}
                 className={`nav-pill flex-shrink-0 sm:flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                   pantalla === tab.id
-                    ? (tab.id === 'entrenamiento' || tab.id === 'progreso')
+                    ? tab.id === 'fitness'
                       ? 'bg-orange-500 text-white shadow-md'
                       : 'bg-green-500 text-white shadow-md'
                     : darkMode
@@ -5455,6 +5737,9 @@ function App() {
       </nav>
 
       <main className="max-w-3xl mx-auto px-4 py-6">
+        {pantalla === "hoy" && (
+          <HoyView perfil={perfil} darkMode={darkMode} planSemanal={planSemanal} onNavigate={navegarA} />
+        )}
         {pantalla === "plan" && planSemanal && (
           <WeeklyPlan plan={planSemanal} perfil={perfil}
             onRecipeClick={(receta) => setRecetaSeleccionada(receta)}
@@ -5463,11 +5748,8 @@ function App() {
             darkMode={darkMode}
             swapping={swapping} />
         )}
-        {pantalla === "entrenamiento" && (
-          <FatLossTab perfil={perfil} darkMode={darkMode} seccion="entrenamiento" />
-        )}
-        {pantalla === "progreso" && (
-          <FatLossTab perfil={perfil} darkMode={darkMode} seccion="progreso" />
+        {pantalla === "fitness" && (
+          <FitnessTab perfil={perfil} darkMode={darkMode} />
         )}
         {pantalla === "cocinar" && (
           <CocinarTab darkMode={darkMode} onRecipeClick={(r) => setRecetaSeleccionada(r)} plan={planSemanal} factorComensales={factorComensales} />
