@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NutriPlan Pro</title>
-    <meta name="description" content="Planificador nutricional semanal con recetas en espaÃ±ol, bÃºsqueda en vivo, cÃ¡lculo de TDEE, escalado de recetas e instrucciones Thermomix TM6">
+    <meta name="description" content="Planificador nutricional semanal con recetas en español, búsqueda en vivo, cálculo de TDEE, escalado de recetas e instrucciones Thermomix TM6">
     <!-- Cache control: prevent stale files -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -86,7 +86,7 @@
         var CACHE_DB = 'nutriplan_bundle_cache';
         var CACHE_STORE = 'compiled';
 
-        // â”€â”€â”€ IndexedDB helpers (Fase 4.3: cachÃ© de bundle compilado) â”€â”€â”€
+        // ─── IndexedDB helpers (Fase 4.3: caché de bundle compilado) ───
         function openDB() {
             return new Promise(function(resolve, reject) {
                 var req = indexedDB.open(CACHE_DB, 1);
@@ -139,14 +139,14 @@
 
         function compileAndRun() {
             var t0 = performance.now();
-            // 1) Intentar usar cachÃ© compilado
+            // 1) Intentar usar caché compilado
             getCompiledFromCache(APP_VERSION).then(function(cached) {
                 if (cached) {
-                    console.log('[Bundle Cache] HIT v=' + APP_VERSION + ' Â· ' + Math.round(performance.now() - t0) + 'ms');
+                    console.log('[Bundle Cache] HIT v=' + APP_VERSION + ' · ' + Math.round(performance.now() - t0) + 'ms');
                     runCompiledCode(cached);
                     return;
                 }
-                console.log('[Bundle Cache] MISS v=' + APP_VERSION + ' Â· compilando...');
+                console.log('[Bundle Cache] MISS v=' + APP_VERSION + ' · compilando...');
                 // 2) Fetch + compile + cache
                 fetch('js/app-bundle.js?v=' + APP_VERSION)
                     .then(function(res) { 
@@ -168,16 +168,16 @@
                             runCompiledCode(compiled);
                         } catch(e) {
                             console.error('Babel compilation error:', e);
-                            showError('Error al compilar la aplicaciÃ³n: ' + e.message);
+                            showError('Error al compilar la aplicación: ' + e.message);
                         }
                     })
                     .catch(function(e) {
                         console.error('Failed to load app:', e);
-                        // Auto-recovery: si el bundle da 404, el SW estÃ¡ sirviendo basura.
+                        // Auto-recovery: si el bundle da 404, el SW está sirviendo basura.
                         // Desregistrarlo y recargar una vez.
                         if (String(e.message).indexOf('404') !== -1 && !sessionStorage.getItem('sw_cleanup_done')) {
                             sessionStorage.setItem('sw_cleanup_done', '1');
-                            console.warn('[Auto-recovery] 404 detectado, limpiando SW y cachÃ©s...');
+                            console.warn('[Auto-recovery] 404 detectado, limpiando SW y cachés...');
                             Promise.all([
                                 navigator.serviceWorker ? navigator.serviceWorker.getRegistrations().then(function(rs) { return Promise.all(rs.map(function(r) { return r.unregister(); })); }) : Promise.resolve(),
                                 'caches' in window ? caches.keys().then(function(ks) { return Promise.all(ks.map(function(k) { return caches.delete(k); })); }) : Promise.resolve(),
@@ -187,7 +187,7 @@
                             });
                             return;
                         }
-                        showError('Error al cargar la aplicaciÃ³n: ' + e.message + ' (recarga la pÃ¡gina)');
+                        showError('Error al cargar la aplicación: ' + e.message + ' (recarga la página)');
                     });
             });
         }
@@ -196,8 +196,8 @@
             var loader = document.getElementById('app-loader');
             if (loader) {
                 loader.innerHTML = '<div style="text-align:center;padding:20px;">'
-                    + '<p style="color:#ef4444;font-weight:600;margin-bottom:8px;">âš ï¸ ' + msg + '</p>'
-                    + '<p style="font-size:14px;">Intenta recargar la pÃ¡gina</p>'
+                    + '<p style="color:#ef4444;font-weight:600;margin-bottom:8px;">⚠️ ' + msg + '</p>'
+                    + '<p style="font-size:14px;">Intenta recargar la página</p>'
                     + '<button onclick="location.reload(true)" style="margin-top:12px;padding:8px 24px;background:#22c55e;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;">Recargar</button>'
                     + '</div>';
             }
@@ -229,7 +229,7 @@
             navigator.serviceWorker.register('./sw.js')
                 .then(function(reg) {
                     console.log('[PWA] Service Worker registrado:', reg.scope);
-                    // Forzar chequeo de actualizaciÃ³n en cada carga
+                    // Forzar chequeo de actualización en cada carga
                     reg.update();
                     // Auto-activar SW nuevo y recargar una sola vez
                     var refreshing = false;
@@ -244,18 +244,17 @@
                         if (!nw) return;
                         nw.addEventListener('statechange', function() {
                             if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('[PWA] Nueva versiÃ³n lista, activando...');
+                                console.log('[PWA] Nueva versión lista, activando...');
                                 nw.postMessage({ type: 'SKIP_WAITING' });
                             }
                         });
                     });
                 })
                 .catch(function(err) {
-                    console.warn('[PWA] Registro fallÃ³:', err);
+                    console.warn('[PWA] Registro falló:', err);
                 });
         });
     }
     </script>
 </body>
 </html>
-

@@ -1,4 +1,4 @@
-﻿/* ============================================
+/* ============================================
    NutriPlan - Lazy Recipes Loader (Fase 6.2)
    Difiere la carga de recipes-extra.js (212 KB) y los upgrades
    (thermomix + metadata = ~12 KB) hasta el primer uso real.
@@ -24,7 +24,7 @@
   }
 
   /**
-   * Carga recipes-extra + upgrades. Es idempotente â€” llamadas repetidas
+   * Carga recipes-extra + upgrades. Es idempotente — llamadas repetidas
    * devuelven la misma promesa.
    * @returns {Promise<void>}
    */
@@ -46,7 +46,7 @@
         }
         var ms = Math.round(performance.now() - t0);
         var total = typeof RECETAS_DB !== 'undefined' ? RECETAS_DB.length : 0;
-        console.log('[Lazy Recipes] Listo en ' + ms + 'ms Â· RECETAS_DB total: ' + total);
+        console.log('[Lazy Recipes] Listo en ' + ms + 'ms · RECETAS_DB total: ' + total);
       })
       .catch(function(err) {
         console.error('[Lazy Recipes] Error:', err);
@@ -58,7 +58,7 @@
   }
 
   /**
-   * Chequea si las recetas extendidas ya estÃ¡n en memoria.
+   * Chequea si las recetas extendidas ya están en memoria.
    */
   function estaCargado() { return cargado; }
 
@@ -70,4 +70,3 @@
 
   console.log('[Lazy Recipes] Loader registrado (defer ~224 KB hasta primer uso)');
 })();
-

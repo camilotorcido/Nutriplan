@@ -1,4 +1,4 @@
-﻿/* ============================================
+/* ============================================
    NutriPlan - Service Worker (Fase 5.2)
    Estrategia:
    - Cache-first para JS/CSS/iconos (assets versionados con ?v=)
@@ -10,7 +10,7 @@ const VERSION = 'nutriplan-v20260418az';
 const CACHE_STATIC = 'nutriplan-static-' + VERSION;
 const CACHE_RUNTIME = 'nutriplan-runtime-' + VERSION;
 
-// Assets mÃ­nimos para el shell (Fase 6.2: recipes-extra y upgrades son lazy)
+// Assets mínimos para el shell (Fase 6.2: recipes-extra y upgrades son lazy)
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -48,17 +48,17 @@ const PRECACHE_URLS = [
 // Assets que se cachean al primer uso (runtime cache)
 // recipes-extra.js (212 KB), recipes-thermomix-upgrade.js, recipes-metadata-upgrade.js
 
-// â”€â”€â”€ Install: pre-cachear shell â”€â”€â”€
+// ─── Install: pre-cachear shell ───
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_STATIC)
       .then((cache) => cache.addAll(PRECACHE_URLS.map(u => new Request(u, { cache: 'reload' }))))
       .then(() => self.skipWaiting())
-      .catch((e) => console.warn('[SW] precache fallÃ³:', e))
+      .catch((e) => console.warn('[SW] precache falló:', e))
   );
 });
 
-// â”€â”€â”€ Activate: limpiar cachÃ©s viejos â”€â”€â”€
+// ─── Activate: limpiar cachés viejos ───
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
@@ -69,7 +69,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// â”€â”€â”€ Fetch: enrutar segÃºn tipo de recurso â”€â”€â”€
+// ─── Fetch: enrutar según tipo de recurso ───
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -77,7 +77,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   const esMismoOrigen = url.origin === self.location.origin;
 
-  // 1) API externa (TheMealDB, etc.): network-first con fallback a cachÃ©
+  // 1) API externa (TheMealDB, etc.): network-first con fallback a caché
   if (!esMismoOrigen) {
     event.respondWith(
       fetch(req)
@@ -91,7 +91,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2) NavegaciÃ³n HTML: stale-while-revalidate sobre index.html
+  // 2) Navegación HTML: stale-while-revalidate sobre index.html
   if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {
     event.respondWith(
       caches.match('./index.html').then((cached) => {
@@ -107,10 +107,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3) Assets estÃ¡ticos mismo origen: cache-first con fallback a URL sin query
+  // 3) Assets estáticos mismo origen: cache-first con fallback a URL sin query
   event.respondWith(
     caches.match(req).then((cached) => {
-      // Solo servir del cachÃ© si es una respuesta vÃ¡lida (no 404)
+      // Solo servir del caché si es una respuesta válida (no 404)
       if (cached && cached.ok) {
         fetch(req).then((resp) => {
           if (resp && resp.ok && resp.status !== 404) {
@@ -119,7 +119,7 @@ self.addEventListener('fetch', (event) => {
         }).catch(() => {});
         return cached;
       }
-      // Si no estÃ¡ o es 404, intentar sin query string
+      // Si no está o es 404, intentar sin query string
       return caches.match(req, { ignoreSearch: true }).then((cachedNoQuery) => {
         if (cachedNoQuery && cachedNoQuery.ok) return cachedNoQuery;
         // Network fallback
@@ -130,7 +130,7 @@ self.addEventListener('fetch', (event) => {
           }
           return resp;
         }).catch(() => {
-          // Ãšltimo intento: fetch sin query string
+          // Último intento: fetch sin query string
           const urlLimpia = req.url.split('?')[0];
           return fetch(urlLimpia).catch(() => cached || new Response('', { status: 404 }));
         });
@@ -139,12 +139,12 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// â”€â”€â”€ Mensaje para forzar actualizaciÃ³n (opcional) â”€â”€â”€
+// ─── Mensaje para forzar actualización (opcional) ───
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-// â”€â”€â”€ Fase 5.3: click en notificaciÃ³n â†’ abrir/enfocar la app â”€â”€â”€
+// ─── Fase 5.3: click en notificación → abrir/enfocar la app ───
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl = (event.notification.data && event.notification.data.url) || './';
@@ -157,4 +157,3 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
-
