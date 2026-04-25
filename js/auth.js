@@ -38,6 +38,7 @@
       'auth/cancelled-popup-request': '',
       'auth/popup-blocked':           'El navegador bloqueó el popup. Habilitá los popups para este sitio.',
       'auth/requires-recent-login':   'Por seguridad, cerrá sesión, volvé a ingresar y repetí la acción.',
+      'auth/operation-not-allowed':   'Este método de login no está habilitado. Activá Email/contraseña en Firebase Console.',
     };
     return map[code] || 'Error de autenticación. Intentá de nuevo.';
   }
@@ -70,6 +71,7 @@
         const result = await auth.createUserWithEmailAndPassword(email.trim(), password);
         return result.user;
       } catch (e) {
+        console.error('[NP_Auth] signUp error code:', e.code, e.message);
         throw new Error(_errMsg(e.code));
       }
     },
