@@ -6,7 +6,7 @@
    - Network-first para peticiones externas (TheMealDB, etc.)
    ============================================ */
 
-const VERSION = 'nutriplan-v20260418bk';
+const VERSION = 'nutriplan-v20260418bl';
 const CACHE_STATIC = 'nutriplan-static-' + VERSION;
 const CACHE_RUNTIME = 'nutriplan-runtime-' + VERSION;
 
@@ -18,6 +18,9 @@ const PRECACHE_URLS = [
   './css/style.css',
   './css/tailwind-compiled.css',
   './icons/icon.svg',
+  './js/firebase-config.js',
+  './js/auth.js',
+  './js/cloud-storage.js',
   './js/precios-clp.js',
   './js/recipes.js',
   './js/nutritionEngine.js',

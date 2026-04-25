@@ -53,6 +53,212 @@ var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
 // =============================================
+// COMPONENTE: LoginScreen
+// =============================================
+function LoginScreen({ darkMode, onToggleDark }) {
+  const [mode, setMode]               = React.useState('login'); // 'login' | 'signup' | 'reset'
+  const [email, setEmail]             = React.useState('');
+  const [password, setPassword]       = React.useState('');
+  const [loading, setLoading]         = React.useState(false);
+  const [googleLoading, setGoogleLoad]= React.useState(false);
+  const [error, setError]             = React.useState('');
+  const [successMsg, setSuccessMsg]   = React.useState('');
+  const [showPass, setShowPass]       = React.useState(false);
+
+  const clearMessages = () => { setError(''); setSuccessMsg(''); };
+
+  const handleSubmit = async () => {
+    clearMessages();
+    if (!email.trim()) { setError('Ingresá tu email.'); return; }
+    if (mode !== 'reset' && password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres.'); return; }
+    setLoading(true);
+    try {
+      if (mode === 'login') {
+        await window.NP_Auth.signInWithEmail(email, password);
+      } else if (mode === 'signup') {
+        await window.NP_Auth.signUpWithEmail(email, password);
+      } else {
+        await window.NP_Auth.resetPassword(email);
+        setSuccessMsg('Te enviamos un email para restablecer tu contraseña.');
+        setMode('login');
+      }
+    } catch (e) {
+      if (e.message) setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    clearMessages();
+    setGoogleLoad(true);
+    try {
+      await window.NP_Auth.signInWithGoogle();
+    } catch (e) {
+      if (e.message) setError(e.message);
+    } finally {
+      setGoogleLoad(false);
+    }
+  };
+
+  const handleKeyDown = (e) => { if (e.key === 'Enter') handleSubmit(); };
+
+  const titles = { login: 'Iniciá sesión', signup: 'Crear cuenta', reset: 'Recuperar contraseña' };
+  const subtitles = { login: 'Tu plan nutricional te espera', signup: 'Empezá a planificar tu semana', reset: 'Te enviamos un link por email' };
+  const btnLabels = { login: 'Iniciar sesión', signup: 'Crear cuenta', reset: 'Enviar email' };
+
+  return (
+    <div className={`min-h-screen flex flex-col items-center justify-center px-4 py-8 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50'}`}>
+
+      {/* Dark mode toggle */}
+      <button onClick={onToggleDark} aria-label={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+        className={`absolute top-4 right-4 p-2 rounded-lg transition-colors ${darkMode ? 'text-yellow-400 hover:bg-gray-800' : 'text-gray-400 hover:bg-white/70'}`}>
+        <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'} text-sm`}></i>
+      </button>
+
+      {/* Card */}
+      <div className={`w-full max-w-sm rounded-2xl shadow-xl p-8 animate-scaleIn ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'}`}>
+
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-200">
+            <i className="fas fa-seedling text-white text-2xl"></i>
+          </div>
+          <h1 className={`text-2xl font-bold font-display ${darkMode ? 'text-white' : 'text-gray-800'}`}>NutriPlan</h1>
+          <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{subtitles[mode]}</p>
+        </div>
+
+        {/* Title */}
+        <h2 className={`text-base font-semibold mb-5 ${darkMode ? 'text-white' : 'text-gray-700'}`}>{titles[mode]}</h2>
+
+        {/* Error / Success */}
+        {error && (
+          <div className="animate-slideDown mb-4">
+            <div className={`flex items-start gap-2 px-4 py-3 rounded-xl text-sm ${darkMode ? 'bg-red-900/40 text-red-300 border border-red-800' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+              <i className="fas fa-circle-exclamation mt-0.5 flex-shrink-0"></i>
+              <span>{error}</span>
+            </div>
+          </div>
+        )}
+        {successMsg && (
+          <div className="animate-slideDown mb-4">
+            <div className={`flex items-start gap-2 px-4 py-3 rounded-xl text-sm ${darkMode ? 'bg-green-900/40 text-green-300 border border-green-800' : 'bg-green-50 text-green-700 border border-green-200'}`}>
+              <i className="fas fa-circle-check mt-0.5 flex-shrink-0"></i>
+              <span>{successMsg}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Form */}
+        <div className="space-y-3">
+          <div>
+            <label className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Email</label>
+            <input type="email" value={email} onChange={e => { setEmail(e.target.value); clearMessages(); }}
+              onKeyDown={handleKeyDown}
+              placeholder="tu@email.com" autoComplete="email"
+              className={`w-full px-4 py-3 rounded-xl border text-sm transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400'} focus:border-green-500`} />
+          </div>
+
+          {mode !== 'reset' && (
+            <div>
+              <label className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Contraseña</label>
+              <div className="relative">
+                <input type={showPass ? 'text' : 'password'} value={password}
+                  onChange={e => { setPassword(e.target.value); clearMessages(); }}
+                  onKeyDown={handleKeyDown}
+                  placeholder={mode === 'signup' ? 'Mínimo 6 caracteres' : '••••••••'} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                  className={`w-full px-4 py-3 pr-12 rounded-xl border text-sm transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400'} focus:border-green-500`} />
+                <button type="button" onClick={() => setShowPass(p => !p)}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded cursor-pointer ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'}`}
+                  aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
+                  <i className={`fas ${showPass ? 'fa-eye-slash' : 'fa-eye'} text-sm`}></i>
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button onClick={handleSubmit} disabled={loading}
+            className={`w-full py-3 rounded-xl font-semibold text-sm text-white transition-all ${loading ? 'bg-green-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 active:scale-[0.98] shadow-md shadow-green-200'}`}>
+            {loading
+              ? <span className="flex items-center justify-center gap-2"><i className="fas fa-circle-notch fa-spin"></i>Procesando…</span>
+              : btnLabels[mode]
+            }
+          </button>
+        </div>
+
+        {/* Divider + Google */}
+        {mode !== 'reset' && (
+          <>
+            <div className="my-5 flex items-center gap-3">
+              <div className={`flex-1 h-px ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
+              <span className={`text-xs font-medium ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>o</span>
+              <div className={`flex-1 h-px ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
+            </div>
+
+            <button onClick={handleGoogle} disabled={googleLoading}
+              className={`w-full py-3 rounded-xl border font-medium text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${googleLoading ? 'opacity-60 cursor-not-allowed' : ''} ${darkMode ? 'bg-gray-700 border-gray-600 text-white hover:bg-gray-600' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm'}`}>
+              {googleLoading
+                ? <i className="fas fa-circle-notch fa-spin text-gray-400"></i>
+                : (
+                  <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                    <path fill="none" d="M0 0h48v48H0z"/>
+                  </svg>
+                )
+              }
+              Continuar con Google
+            </button>
+          </>
+        )}
+
+        {/* Navigation links */}
+        <div className={`mt-6 text-center text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          {mode === 'login' && (
+            <div className="flex flex-col gap-2">
+              <span>
+                ¿No tenés cuenta?{' '}
+                <button onClick={() => { setMode('signup'); clearMessages(); }}
+                  className="font-semibold text-green-500 hover:text-green-400 transition-colors cursor-pointer">
+                  Crear cuenta
+                </button>
+              </span>
+              <button onClick={() => { setMode('reset'); clearMessages(); }}
+                className="text-xs text-gray-400 hover:text-gray-500 transition-colors cursor-pointer underline underline-offset-2">
+                Olvidé mi contraseña
+              </button>
+            </div>
+          )}
+          {mode === 'signup' && (
+            <span>
+              ¿Ya tenés cuenta?{' '}
+              <button onClick={() => { setMode('login'); clearMessages(); }}
+                className="font-semibold text-green-500 hover:text-green-400 transition-colors cursor-pointer">
+                Iniciar sesión
+              </button>
+            </span>
+          )}
+          {mode === 'reset' && (
+            <button onClick={() => { setMode('login'); clearMessages(); }}
+              className="font-semibold text-green-500 hover:text-green-400 transition-colors cursor-pointer flex items-center gap-1.5 mx-auto">
+              <i className="fas fa-arrow-left text-xs"></i>
+              Volver al login
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <p className={`mt-6 text-xs ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>
+        Solo para amigos · Beta privada
+      </p>
+    </div>
+  );
+}
+
+// =============================================
 // COMPONENTE: ProfileSetup
 // =============================================
 function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBack, tienePlan }) {
@@ -3509,7 +3715,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260418bk)
+// COMPONENTE: HoyView — Dashboard diario (v20260418bl)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -5504,6 +5710,11 @@ function App() {
   const [cargando, setCargando] = React.useState(false);
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
+
+  // ─── Auth state ───
+  // undefined = todavía cargando, null = no logueado, object = usuario logueado
+  const [authUser, setAuthUser] = React.useState(undefined);
+  const authUserRef = React.useRef(null); // ref para detectar cambio dentro del closure
   // Fase 3.3: factor de comensales global
   const [factorComensales, setFactorComensales] = React.useState(() =>
     window.perfilesMulti ? window.perfilesMulti.factorCoccion(window.perfilesMulti.cargar()) : 1
@@ -5518,6 +5729,36 @@ function App() {
     };
     window.addEventListener('perfiles-change', handler);
     return () => window.removeEventListener('perfiles-change', handler);
+  }, []);
+
+  // ─── Suscripción al estado de auth (Firebase) ───
+  React.useEffect(() => {
+    if (!window.NP_Auth) {
+      // Firebase no configurado → modo local sin auth (sin login screen)
+      setAuthUser(null);
+      return;
+    }
+    const unsubscribe = window.NP_Auth.onAuthStateChanged(async function(user) {
+      if (user) {
+        // Instalar proxy de localStorage + hidratar desde Firestore
+        if (window.NP_CloudStorage) {
+          await window.NP_CloudStorage.onLogin(user.uid);
+        }
+        authUserRef.current = user;
+        setAuthUser(user);
+      } else {
+        // Logout: limpiar proxy y resetear app state
+        if (authUserRef.current && window.NP_CloudStorage) {
+          window.NP_CloudStorage.onLogout();
+        }
+        authUserRef.current = null;
+        setAuthUser(null);
+        setPerfil(null);
+        setPlanSemanal(null);
+        setPantalla('loading');
+      }
+    });
+    return unsubscribe;
   }, []);
 
   // Apply dark mode class to html element
@@ -5641,7 +5882,13 @@ function App() {
     return plan;
   };
 
+  // Carga de datos: re-ejecutar cuando cambia el usuario autenticado
   React.useEffect(() => {
+    // Esperar a que auth termine de inicializar
+    if (authUser === undefined) return;
+    // Sin usuario → LoginScreen (no cargar datos)
+    if (authUser === null) return;
+
     const perfilGuardado = cargarPerfil();
     const planGuardado = cargarPlanSemanal();
     if (perfilGuardado && planGuardado) {
@@ -5659,7 +5906,7 @@ function App() {
     } else {
       setPantalla("perfil");
     }
-  }, []);
+  }, [authUser?.uid]);
 
   const mostrarToast = (mensaje, tipo = "success") => {
     setToast({ mensaje, tipo });
@@ -5764,9 +6011,15 @@ function App() {
 
   const handleEditarPerfil = () => { setPantalla("perfil"); window.scrollTo(0, 0); };
   const handleVolverAlPlan = () => { setPantalla("plan"); window.scrollTo(0, 0); };
-  const handleReiniciar = () => {
+  const handleReiniciar = async () => {
     if (!window.confirm('¿Reiniciar NutriPlan? Se borrarán tu perfil, plan semanal y todos los registros. Esta acción no se puede deshacer.')) return;
-    limpiarTodo();
+    limpiarTodo(); // Limpia localStorage (con proxy: solo borra claves del usuario actual)
+    // También borrar datos en Firestore
+    if (window.NP_CloudStorage && window.NP_CloudStorage.active) {
+      window.NP_CloudStorage.deleteAllData().catch(function(e) {
+        console.warn('[Reiniciar] No se pudo limpiar Firestore:', e);
+      });
+    }
     setPerfil(null); setPlanSemanal(null); setPantalla("perfil");
     mostrarToast("Datos reiniciados correctamente", "info");
     window.scrollTo(0, 0);
@@ -5790,6 +6043,25 @@ function App() {
       )}
     </React.Fragment>
   );
+
+  // ─── Pantalla de carga mientras Firebase inicializa auth ───
+  if (authUser === undefined) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`}>
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl mb-4 shadow-lg" style={{animation: 'pulse-soft 1.5s infinite'}}>
+            <i className="fas fa-seedling text-white text-2xl"></i>
+          </div>
+          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Verificando sesión…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Login screen si no hay usuario autenticado ───
+  if (authUser === null && window.NP_Auth) {
+    return <LoginScreen darkMode={darkMode} onToggleDark={toggleDarkMode} />;
+  }
 
   if (pantalla === "loading") {
     return (
@@ -5832,7 +6104,6 @@ function App() {
             {perfil && <span className="text-xs text-gray-400 hidden sm:inline">{perfil.caloriasObjetivo} kcal/día{perfil.numSemanas > 1 ? ` · ${perfil.numSemanas} sem` : ''}</span>}
           </div>
           <div className="flex items-center gap-1">
-            {/* MEJORA 5: Dark mode toggle */}
             {/* A1: aria-label en los 3 botones icono-only del header */}
             <button onClick={toggleDarkMode} aria-label={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
               className={`p-2 rounded-lg transition-colors ${darkMode ? 'text-yellow-400 hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}>
@@ -5846,6 +6117,31 @@ function App() {
               className={`p-2 rounded-lg transition-colors ${darkMode ? 'text-gray-400 hover:text-red-400 hover:bg-gray-700' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}>
               <i className="fas fa-trash-alt text-sm"></i>
             </button>
+            {/* Avatar de usuario + logout */}
+            {authUser && window.NP_Auth && (
+              <div className="flex items-center gap-1.5 ml-1 pl-1 border-l border-gray-200 dark:border-gray-700">
+                {authUser.photoURL
+                  ? <img src={authUser.photoURL} alt={authUser.displayName || authUser.email}
+                      className="w-7 h-7 rounded-full border-2 border-green-200 object-cover flex-shrink-0"
+                      referrerPolicy="no-referrer" />
+                  : <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${darkMode ? 'bg-green-700 text-green-100' : 'bg-green-100 text-green-700'}`}
+                      title={authUser.email}>
+                      {(authUser.displayName || authUser.email || '?')[0].toUpperCase()}
+                    </div>
+                }
+                <button
+                  onClick={async () => {
+                    if (window.confirm('¿Cerrar sesión?')) {
+                      await window.NP_Auth.signOut();
+                    }
+                  }}
+                  aria-label="Cerrar sesión"
+                  title="Cerrar sesión"
+                  className={`p-2 rounded-lg transition-colors ${darkMode ? 'text-gray-400 hover:text-orange-400 hover:bg-gray-700' : 'text-gray-400 hover:text-orange-500 hover:bg-orange-50'}`}>
+                  <i className="fas fa-arrow-right-from-bracket text-sm"></i>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>

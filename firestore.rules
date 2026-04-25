@@ -1,0 +1,21 @@
+rules_version = '2';
+
+// ─── NutriPlan Firestore Security Rules ───
+// Cada usuario solo puede leer y escribir sus propios datos.
+// Estructura: /users/{userId}/data/{key}
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Acceso total a la sub-colección "data" del propio usuario
+    match /users/{userId}/data/{document} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
+    }
+
+    // Bloquear cualquier otro acceso por defecto
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
