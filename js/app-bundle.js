@@ -3391,7 +3391,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418ay â€” split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418az â€” split en 2 secciones)
 // seccion="entrenamiento" â†’ Pasos + Entreno
 // seccion="progreso" â†’ Roadmap + MÃ©tricas
 // =============================================
@@ -4818,8 +4818,8 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
       <div className="space-y-2">
         {sesion.ejercicios.map((e, i) => {
           const previo = window.NP_Training.ultimoPeso(e.nombre, hoy);
-          const mejorÃ³ = previo && e.peso != null && Number(e.peso) > previo.peso;
-          const bajÃ³ = previo && e.peso != null && Number(e.peso) < previo.peso;
+          const mejoro = previo && e.peso != null && Number(e.peso) > previo.peso;
+          const bajo = previo && e.peso != null && Number(e.peso) < previo.peso;
           // Lookup en el pool global (cubre protocolo base + extras de rotaciÃ³n)
           const protEj = (window.NP_RoadmapData && window.NP_RoadmapData.buscarEjercicio)
             ? window.NP_RoadmapData.buscarEjercicio(e.nombre)
@@ -4891,10 +4891,10 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                   <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>
                     Ãšltimo: <b className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{previo.peso} kg</b> Ã— {previo.reps} <span className="opacity-60">({previo.fecha})</span>
                   </span>
-                  {(mejorÃ³ || bajÃ³) && (
-                    <span className={`font-bold text-sm ${mejorÃ³ ? 'text-green-500' : 'text-red-400'}`}>
-                      <i className={`fas ${mejorÃ³ ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1`}></i>
-                      {mejorÃ³ ? '+' : ''}{(Number(e.peso) - previo.peso).toFixed(1)} kg
+                  {(mejoro || bajo) && (
+                    <span className={`font-bold text-sm ${mejoro ? 'text-green-500' : 'text-red-400'}`}>
+                      <i className={`fas ${mejoro ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1`}></i>
+                      {mejoro ? '+' : ''}{(Number(e.peso) - previo.peso).toFixed(1)} kg
                     </span>
                   )}
                 </div>
