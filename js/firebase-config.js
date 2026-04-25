@@ -22,12 +22,13 @@
    ============================================ */
 
 const firebaseConfig = {
-  apiKey:            "REEMPLAZAR_CON_TU_API_KEY",
-  authDomain:        "REEMPLAZAR.firebaseapp.com",
-  projectId:         "REEMPLAZAR_CON_TU_PROJECT_ID",
-  storageBucket:     "REEMPLAZAR.appspot.com",
-  messagingSenderId: "REEMPLAZAR_CON_MESSAGING_ID",
-  appId:             "REEMPLAZAR_CON_APP_ID"
+  apiKey:            "AIzaSyBILIccQWWurCynxxHiM7VAH2NFEp_pCbc",
+  authDomain:        "nutriplan-6b3d4.firebaseapp.com",
+  projectId:         "nutriplan-6b3d4",
+  storageBucket:     "nutriplan-6b3d4.firebasestorage.app",
+  messagingSenderId: "562790715660",
+  appId:             "1:562790715660:web:dd092bdaf4d5e3e5383929",
+  measurementId:     "G-V03NEHRCTS"
 };
 
 // ─── Inicializar Firebase ───
