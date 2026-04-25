@@ -2586,7 +2586,6 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
                       </span>
                     </div>
                     {estaAbierto && tieneSustitutos && (
-                      {/* L2: min-w-0 para evitar overflow en pantallas angostas */}
                       <div className={`ml-3 mt-1 mb-2 p-3 rounded-lg border-l-2 border-indigo-400 min-w-0 ${darkMode ? 'bg-indigo-950/30' : 'bg-indigo-50/70'}`}>
                         <div className="text-[11px] uppercase tracking-wide font-semibold text-indigo-500 mb-2">
                           Sustituir por ({sustitutos[0]?.categoria || 'similar'})
@@ -3510,7 +3509,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260418bg)
+// COMPONENTE: HoyView — Dashboard diario (v20260418bh)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();

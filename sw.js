@@ -6,7 +6,7 @@
    - Network-first para peticiones externas (TheMealDB, etc.)
    ============================================ */
 
-const VERSION = 'nutriplan-v20260418bg';
+const VERSION = 'nutriplan-v20260418bh';
 const CACHE_STATIC = 'nutriplan-static-' + VERSION;
 const CACHE_RUNTIME = 'nutriplan-runtime-' + VERSION;
 
