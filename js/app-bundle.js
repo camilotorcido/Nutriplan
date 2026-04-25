@@ -87,7 +87,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
       soloRapidas: false,
       maxTiempoMin: 25,
       modoSobras: false,
-      usaThermomix: true
+      usaThermomix: false
     };
   });
 
@@ -1346,7 +1346,8 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
       if (typeof RECETAS_DB !== 'undefined') {
         RECETAS_DB.push(receta);
       }
-      alert(`"${receta.nombre}" guardada. Estará disponible en tu próximo plan.`);
+      if (window._NP_toast) window._NP_toast(`"${receta.nombre}" guardada — disponible en tu próximo plan`);
+      else alert(`"${receta.nombre}" guardada. Estará disponible en tu próximo plan.`);
     } catch (e) {
       console.error('Error guardando receta:', e);
     }
@@ -2064,10 +2065,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
         })}
       </div>
 
-      {/* Batch cooking */}
-      {typeof window.batchCooking !== 'undefined' && (
-        <BatchCookingPanel planSemanal={plan} semanaActiva={semanaActiva} darkMode={darkMode} factorComensales={factorComensales} />
-      )}
+      {/* N13: BatchCookingPanel removido de aquí — aparece únicamente en CocinarTab > Preparar para evitar estado duplicado */}
 
       {/* Adherencia semanal */}
       {typeof window.adherencia !== 'undefined' && (
@@ -2394,6 +2392,9 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
   const [tabActiva, setTabActiva] = React.useState("normal");
   const [sustitucionAbierta, setSustitucionAbierta] = React.useState(null); // nombre_normalizado del ing abierto
   const [sustitucionAplicada, setSustitucionAplicada] = React.useState(null); // preview
+  // N18: accumulated macro deltas from applied substitutions
+  const [macroAjustes, setMacroAjustes] = React.useState({ kcal: 0, proteinas: 0, carbohidratos: 0, grasas: 0 });
+  const [ingsAjustados, setIngsAjustados] = React.useState({}); // { nombre_normalizado: sustId }
 
   const factorEscala = receta.factor_escala || 1;
   const ingredientesEscalados = receta.ingredientes_escalados || [];
@@ -2455,27 +2456,35 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
               <i className="fas fa-times text-sm"></i>
             </button>
           </div>
+          {/* N18: macro totals adjusted by applied substitutions */}
           <div className="grid grid-cols-4 gap-2 mt-4">
             <div className="bg-white/15 rounded-xl p-2 text-center backdrop-blur-sm">
-              <div className="text-lg font-bold">{receta.calorias_escaladas}</div>
-              <div className="text-xs opacity-80">kcal</div>
+              <div className="text-lg font-bold">{Math.round(receta.calorias_escaladas + macroAjustes.kcal)}</div>
+              <div className="text-xs opacity-80">kcal{macroAjustes.kcal !== 0 && <span className="text-white/70"> *</span>}</div>
             </div>
             <div className="bg-blue-400/30 rounded-xl p-2 text-center backdrop-blur-sm">
-              <div className="text-lg font-bold">{receta.proteinas_escaladas}</div>
-              <div className="text-xs opacity-80">Prot. (g)</div>
+              <div className="text-lg font-bold">{Math.round(receta.proteinas_escaladas + macroAjustes.proteinas)}</div>
+              <div className="text-xs opacity-80">Prot. (g){macroAjustes.proteinas !== 0 && <span className="text-white/70"> *</span>}</div>
             </div>
             <div className="bg-amber-400/30 rounded-xl p-2 text-center backdrop-blur-sm">
-              <div className="text-lg font-bold">{receta.carbohidratos_escalados}</div>
-              <div className="text-xs opacity-80">Carb. (g)</div>
+              <div className="text-lg font-bold">{Math.round(receta.carbohidratos_escalados + macroAjustes.carbohidratos)}</div>
+              <div className="text-xs opacity-80">Carb. (g){macroAjustes.carbohidratos !== 0 && <span className="text-white/70"> *</span>}</div>
             </div>
             <div className="bg-rose-400/30 rounded-xl p-2 text-center backdrop-blur-sm">
-              <div className="text-lg font-bold">{receta.grasas_escaladas}</div>
-              <div className="text-xs opacity-80">Grasas (g)</div>
+              <div className="text-lg font-bold">{Math.round(receta.grasas_escaladas + macroAjustes.grasas)}</div>
+              <div className="text-xs opacity-80">Grasas (g){macroAjustes.grasas !== 0 && <span className="text-white/70"> *</span>}</div>
             </div>
           </div>
-          <div className="text-xs opacity-70 mt-2 text-center">
-            Factor de escala: ×{receta.factor_escala} (base: {receta.calorias_base} kcal)
-          </div>
+          {Object.keys(ingsAjustados).length > 0 && (
+            <div className="text-[10px] opacity-70 mt-1 text-center">
+              * ajustado por {Object.keys(ingsAjustados).length} sustitución{Object.keys(ingsAjustados).length > 1 ? 'es' : ''} aplicada{Object.keys(ingsAjustados).length > 1 ? 's' : ''}
+            </div>
+          )}
+          {receta.factor_escala && receta.factor_escala !== 1 && (
+            <div className="text-xs opacity-70 mt-2 text-center">
+              ×{Math.round(receta.factor_escala * 10) / 10} escala · base {receta.calorias_base} kcal
+            </div>
+          )}
           {/* Tiempo + costo en el header del modal */}
           {(receta.tiempo_total_min || receta.costo_clp) && (
             <div className="grid grid-cols-3 gap-2 mt-3">
@@ -2597,6 +2606,38 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
                                     )}
                                   </div>
                                 )}
+                                {/* N18: apply button to update macro totals */}
+                                {calc && (() => {
+                                  const yaAplicado = ingsAjustados[ing.nombre_normalizado] === s.id;
+                                  return (
+                                    <button
+                                      onClick={() => {
+                                        if (yaAplicado) {
+                                          setMacroAjustes(prev => ({
+                                            kcal: prev.kcal - calc.delta_kcal,
+                                            proteinas: prev.proteinas - calc.delta_proteinas,
+                                            carbohidratos: prev.carbohidratos - calc.delta_carbohidratos,
+                                            grasas: prev.grasas - calc.delta_grasas
+                                          }));
+                                          setIngsAjustados(prev => { const n = {...prev}; delete n[ing.nombre_normalizado]; return n; });
+                                        } else {
+                                          const prevSustId = ingsAjustados[ing.nombre_normalizado];
+                                          const prevCalc = prevSustId && window.calcularMacrosTrasSustitucion
+                                            ? window.calcularMacrosTrasSustitucion(receta, ing.nombre_normalizado, prevSustId) : null;
+                                          setMacroAjustes(prev => ({
+                                            kcal: (prev.kcal - (prevCalc ? prevCalc.delta_kcal : 0)) + calc.delta_kcal,
+                                            proteinas: (prev.proteinas - (prevCalc ? prevCalc.delta_proteinas : 0)) + calc.delta_proteinas,
+                                            carbohidratos: (prev.carbohidratos - (prevCalc ? prevCalc.delta_carbohidratos : 0)) + calc.delta_carbohidratos,
+                                            grasas: (prev.grasas - (prevCalc ? prevCalc.delta_grasas : 0)) + calc.delta_grasas
+                                          }));
+                                          setIngsAjustados(prev => ({...prev, [ing.nombre_normalizado]: s.id}));
+                                        }
+                                      }}
+                                      className={`mt-1.5 w-full text-[10px] py-1 rounded font-semibold transition-colors ${yaAplicado ? 'bg-indigo-500 text-white' : darkMode ? 'bg-gray-700 text-indigo-400 hover:bg-indigo-900/40' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}>
+                                      {yaAplicado ? '✓ Aplicado — quitar' : 'Aplicar al total'}
+                                    </button>
+                                  );
+                                })()}
                               </div>
                             );
                           })}
@@ -2705,10 +2746,11 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
                 }).join('\n\n');
                 const texto = `*${receta.nombre}*\n\n${receta.calorias_escaladas || Math.round(receta.calorias_base * factorEscala)} kcal | P: ${receta.proteinas_escaladas || Math.round(receta.proteinas_g * factorEscala)}g | C: ${receta.carbohidratos_escalados || Math.round(receta.carbohidratos_g * factorEscala)}g | G: ${receta.grasas_escaladas || Math.round(receta.grasas_g * factorEscala)}g\n\n*Ingredientes:*\n${ingredientesTexto}\n\n*Preparacion${tieneThermomix && tabActiva === 'thermomix' ? ' (Thermomix TM6)' : ''}:*\n${instrTexto}\n\n_NutriPlan_`;
                 const encoded = encodeURIComponent(texto);
-                window.location.href = 'https://api.whatsapp.com/send?text=' + encoded;
+                window.open('https://api.whatsapp.com/send?text=' + encoded, '_blank', 'noopener');
               } catch(err) {
                 console.error('Error compartiendo:', err);
-                alert('No se pudo abrir WhatsApp. Copia el texto manualmente.');
+                if (window._NP_toast) window._NP_toast('No se pudo abrir WhatsApp', 'error');
+                else alert('No se pudo abrir WhatsApp. Copia el texto manualmente.');
               }
             }}
               className={`block w-full py-3 rounded-xl font-medium text-sm text-center no-underline transition-all ${darkMode ? 'bg-green-700 hover:bg-green-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}`}>
@@ -2765,6 +2807,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
     setDespensa(n);
   };
   const desmarcarTodos = () => {
+    if (!window.confirm('¿Desmarcar todos los ingredientes de la despensa?')) return;
     const n = { ...despensa };
     ingredientesConsolidados.forEach(ing => { n[ing.id] = false; });
     setDespensa(n);
@@ -3129,7 +3172,10 @@ function ShoppingList({ plan, darkMode }) {
     // También quitar de comprados
     setComprados(prev => { const n = { ...prev }; delete n[id]; return n; });
   };
-  const limpiarComprados = () => { setComprados({}); };
+  const limpiarComprados = () => {
+    if (!window.confirm('¿Limpiar todos los ítems marcados como comprados?')) return;
+    setComprados({});
+  };
   const diasRestantes = React.useMemo(() => obtenerDiasRestantes(), []);
   const diaActual = React.useMemo(() => obtenerDiaActual(), []);
 
@@ -3388,7 +3434,8 @@ function ShoppingList({ plan, darkMode }) {
                 if (ess.length > 0) texto += "\n" + ess.map(e => e.nombre).join("\n");
                 try {
                   await navigator.clipboard.writeText(texto);
-                  alert('✓ Lista copiada. Pégala en el buscador de Jumbo/Líder (uno por línea).');
+                  if (window._NP_toast) window._NP_toast('Lista copiada — pegala en el buscador de Jumbo/Líder');
+                  else alert('✓ Lista copiada. Pégala en el buscador de Jumbo/Líder (uno por línea).');
                 } catch {
                   const ta = document.createElement('textarea');
                   ta.value = texto;
@@ -3410,61 +3457,11 @@ function ShoppingList({ plan, darkMode }) {
 }
 
 
-// =============================================
-// COMPONENTE: FatLossTab (v20260418bd — split en 2 secciones)
-// seccion="entrenamiento" → Pasos + Entreno
-// seccion="progreso" → Roadmap + Métricas
-// =============================================
-function FatLossTab({ perfil, darkMode, seccion }) {
-  const subsPorSeccion = {
-    entrenamiento: [
-      { k: 'pasos', l: 'Pasos', icon: 'fa-person-walking' },
-      { k: 'entreno', l: 'Entreno', icon: 'fa-dumbbell' }
-    ],
-    progreso: [
-      { k: 'roadmap', l: 'Roadmap', icon: 'fa-route' },
-      { k: 'metricas', l: 'Registros', icon: 'fa-clipboard-list' }
-    ]
-  };
-  const subs = subsPorSeccion[seccion] || subsPorSeccion.progreso;
-  const [subVista, setSubVista] = React.useState(subs[0].k);
-  const [refresh, setRefresh] = React.useState(0);
-
-  if (!perfil || !perfil.fatLossMode || !perfil.roadmap) {
-    return (
-      <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>
-        <i className="fas fa-fire text-4xl text-orange-400 mb-3"></i>
-        <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Modo pérdida no activado</h3>
-        <p className="text-sm">Andá a tu perfil y elegí "Pérdida de peso" como objetivo para ver tu roadmap y progreso.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="animate-fadeIn">
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        {subs.map(s => (
-          <button key={s.k} onClick={() => setSubVista(s.k)}
-            className={`py-2.5 px-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${
-              subVista === s.k
-                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md'
-                : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-            }`}>
-            <i className={`fas ${s.icon}`}></i>{s.l}
-          </button>
-        ))}
-      </div>
-
-      {subVista === 'roadmap' && <FLRoadmapView perfil={perfil} darkMode={darkMode} refresh={refresh} onGoToRegistros={() => setSubVista('metricas')} />}
-      {subVista === 'metricas' && <FLMetricasView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
-      {subVista === 'pasos' && <FLPasosView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
-      {subVista === 'entreno' && <FLEntrenoView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
-    </div>
-  );
+// FatLossTab eliminado — reemplazado por FitnessTab (N12)
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260418bd)
+// COMPONENTE: HoyView — Dashboard diario (v20260418be)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -3476,10 +3473,17 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
   const nombreCorto = perfil && perfil.nombre ? perfil.nombre.split(' ')[0] : '';
 
+  // N24: detectar la semana actual según fecha de creación del plan
   const semanaData = React.useMemo(() => {
     if (!planSemanal) return null;
     const keys = Object.keys(planSemanal).filter(k => k.startsWith('semana_')).sort();
-    return keys.length > 0 ? planSemanal[keys[0]] : null;
+    if (keys.length === 0) return null;
+    if (keys.length === 1 || !planSemanal._fechaCreacion) return planSemanal[keys[0]];
+    const creadoMs = new Date(planSemanal._fechaCreacion + 'T00:00:00').getTime();
+    const hoyMs = new Date().setHours(0, 0, 0, 0);
+    const diasTranscurridos = Math.max(0, Math.floor((hoyMs - creadoMs) / 86400000));
+    const semanaIdx = Math.min(keys.length - 1, Math.floor(diasTranscurridos / 7));
+    return planSemanal[keys[semanaIdx]];
   }, [planSemanal]);
 
   const comidasHoy = semanaData ? (semanaData[diaActual] || {}) : {};
@@ -3521,6 +3525,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
 
   const [pesoInput, setPesoInput] = React.useState('');
   const [pesoGuardado, setPesoGuardado] = React.useState(false);
+  const [pesoError, setPesoError] = React.useState(''); // N23
 
   const necesitaPeso = React.useMemo(() => {
     if (!tieneEntrenamiento || !window.NP_BodyComp || !window.NP_BodyComp.cargar) return false;
@@ -3533,7 +3538,10 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
 
   const guardarPeso = () => {
     const val = parseFloat(pesoInput.replace(',', '.'));
-    if (isNaN(val) || val < 20 || val > 300) return;
+    // N23: range validation with feedback
+    if (isNaN(val)) { setPesoError('Ingresá un número válido'); return; }
+    if (val < 20 || val > 300) { setPesoError('El peso debe estar entre 20 y 300 kg'); return; }
+    setPesoError('');
     if (window.NP_BodyComp) {
       const hoyStr = new Date().toISOString().split('T')[0];
       window.NP_BodyComp.registrar({
@@ -3593,14 +3601,36 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
             {tiposOrden.map(tipo => {
               const comida = comidasHoy[tipo];
               if (!comida) return null;
+              // N11: estado de adherencia para el día de hoy
+              const semanaActualIdx = semanaData ? 1 : 1;
+              const estadoAdh = (typeof window.adherencia !== 'undefined' && window.adherencia.estado)
+                ? window.adherencia.estado(diaActual, tipo, semanaActualIdx) : null;
+              const yaComido = estadoAdh?.comido === true;
+              const toggleAdh = () => {
+                if (typeof window.adherencia !== 'undefined' && window.adherencia.marcar) {
+                  window.adherencia.marcar(diaActual, tipo, !yaComido, {
+                    kcal_plan: comida.calorias_escaladas || comida.calorias,
+                    proteinas_plan: comida.proteinas_escaladas || comida.proteinas
+                  });
+                  setRefresh(r => r + 1);
+                }
+              };
               return (
                 <div key={tipo} className="px-5 py-2.5 flex items-center gap-3">
                   <i className={`fas ${iconosComida[tipo]} text-sm w-4 text-center ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
                   <div className="flex-1 min-w-0">
                     <div className={`text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{nombresComida[tipo]}</div>
-                    <div className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{comida.nombre}</div>
+                    <div className={`text-sm font-medium truncate ${yaComido ? 'line-through opacity-60' : ''} ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{comida.nombre}</div>
                   </div>
-                  <span className={`text-xs font-bold flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{comida.calorias} kcal</span>
+                  <span className={`text-xs font-bold flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{comida.calorias_escaladas || comida.calorias} kcal</span>
+                  {typeof window.adherencia !== 'undefined' && (
+                    <button onClick={toggleAdh}
+                      className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                        yaComido ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700 text-gray-500 hover:bg-gray-600' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                      }`} title={yaComido ? 'Marcar como no comido' : 'Marcar como comido'}>
+                      <i className={`fas ${yaComido ? 'fa-check' : 'fa-circle'} text-xs`}></i>
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -3690,14 +3720,17 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
                 <i className="fas fa-weight-scale mr-2"></i>¿Cuánto pesás hoy?
               </h3>
               <div className="flex gap-2">
-                <input type="number" value={pesoInput} onChange={e => setPesoInput(e.target.value)}
-                  placeholder="ej: 78.5"
-                  className={`flex-1 px-3 py-2 rounded-xl border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-yellow-300 text-gray-800 placeholder-gray-400'}`} />
+                <input type="number" value={pesoInput} onChange={e => { setPesoInput(e.target.value); if (pesoError) setPesoError(''); }}
+                  onKeyDown={e => { if (e.key === 'Enter') guardarPeso(); }}
+                  placeholder="ej: 78.5" min="20" max="300" step="0.1"
+                  className={`flex-1 px-3 py-2 rounded-xl border text-sm ${pesoError ? 'border-red-400' : ''} ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-yellow-300 text-gray-800 placeholder-gray-400'}`} />
                 <button onClick={guardarPeso}
                   className="px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition-colors">
                   Guardar
                 </button>
               </div>
+              {/* N23: range validation feedback */}
+              {pesoError && <p className="text-red-500 text-xs mt-1">{pesoError}</p>}
             </div>
           )}
           {pesoGuardado && (
@@ -3722,7 +3755,12 @@ function FitnessTab({ perfil, darkMode }) {
     { k: 'roadmap',  l: 'Roadmap',   icon: 'fa-route' },
     { k: 'metricas', l: 'Registros', icon: 'fa-clipboard-list' }
   ];
-  const [subVista, setSubVista] = React.useState('entreno');
+  // N5: persistir sub-tab activa para no perder posición al navegar
+  const [subVista, setSubVista] = React.useState(() => {
+    const saved = localStorage.getItem('nutriplan_fitness_subtab');
+    return saved && subs.some(s => s.k === saved) ? saved : 'entreno';
+  });
+  const cambiarSub = (k) => { setSubVista(k); localStorage.setItem('nutriplan_fitness_subtab', k); };
   const [refresh, setRefresh] = React.useState(0);
 
   if (!perfil || !perfil.fatLossMode || !perfil.roadmap) {
@@ -3739,7 +3777,7 @@ function FitnessTab({ perfil, darkMode }) {
     <div className="animate-fadeIn">
       <div className="grid grid-cols-4 gap-1.5 mb-4">
         {subs.map(s => (
-          <button key={s.k} onClick={() => setSubVista(s.k)}
+          <button key={s.k} onClick={() => cambiarSub(s.k)}
             className={`py-2 px-1 rounded-xl font-medium text-xs flex flex-col items-center justify-center gap-1 transition-all ${
               subVista === s.k
                 ? 'bg-gradient-to-b from-orange-500 to-red-500 text-white shadow-md'
@@ -3752,7 +3790,7 @@ function FitnessTab({ perfil, darkMode }) {
       </div>
       {subVista === 'entreno'  && <FLEntrenoView  perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
       {subVista === 'pasos'    && <FLPasosView    perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
-      {subVista === 'roadmap'  && <FLRoadmapView  perfil={perfil} darkMode={darkMode} refresh={refresh} onGoToRegistros={() => setSubVista('metricas')} />}
+      {subVista === 'roadmap'  && <FLRoadmapView  perfil={perfil} darkMode={darkMode} refresh={refresh} onGoToRegistros={() => cambiarSub('metricas')} />}
       {subVista === 'metricas' && <FLMetricasView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
     </div>
   );
@@ -4329,7 +4367,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
                   {e.peso != null && <span><b>{e.peso}</b> kg</span>}
                   {e.bf != null && <span className="text-xs text-gray-400">{e.bf}% BF</span>}
                   {e.cintura != null && <span className="text-xs text-gray-400">C:{e.cintura}</span>}
-                  <button onClick={() => { window.NP_BodyComp.eliminar(e.fecha); onRefresh(); }}
+                  <button onClick={() => { if (window.confirm('¿Borrar el registro del ' + e.fecha + '?')) { window.NP_BodyComp.eliminar(e.fecha); onRefresh(); } }}
                     className="text-xs text-red-400 hover:text-red-600">
                     <i className="fas fa-times"></i>
                   </button>
@@ -4542,7 +4580,13 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
                 </div>
                 <div className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm leading-relaxed`}>{p.detalle}</div>
                 {!esActivo && !esHistorico && hayPasoActivo && p.paso > est.pasoActual && (
-                  <button onClick={() => { window.NP_Plateau.aplicarPaso(p.paso); onRefresh(); }}
+                  <button onClick={() => {
+                    const omitidos = p.paso - est.pasoActual - 1;
+                    const msg = omitidos > 0
+                      ? `¿Saltar al paso ${p.paso}? Se omitirán ${omitidos} paso${omitidos > 1 ? 's' : ''} del protocolo (${est.pasoActual + 1}${omitidos > 1 ? `–${p.paso - 1}` : ''}).`
+                      : `¿Saltar al paso ${p.paso}?`;
+                    if (window.confirm(msg)) { window.NP_Plateau.aplicarPaso(p.paso); onRefresh(); }
+                  }}
                     className={`mt-2 text-xs px-3 py-1.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                     Saltar a este paso →
                   </button>
@@ -4564,6 +4608,8 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
   const [customMl, setCustomMl] = React.useState('');
   const [customPct, setCustomPct] = React.useState('');
   const [customNombre, setCustomNombre] = React.useState('');
+  // N16: date selector — defaults to today
+  const [fechaBebida, setFechaBebida] = React.useState(() => new Date().toISOString().split('T')[0]);
 
   if (!window.NP_Alcohol) return null;
   const resumen = window.NP_Alcohol.resumen7();
@@ -4574,7 +4620,8 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
   const debeExpandir = expandido || resumen.tragos > 0;
 
   const agregar = (preset) => {
-    window.NP_Alcohol.registrar({ bebida: preset.nombre, ml: preset.ml, kcal: preset.kcal, alcohol_pct: preset.alcohol_pct });
+    // N16: pass selected date
+    window.NP_Alcohol.registrar({ bebida: preset.nombre, ml: preset.ml, kcal: preset.kcal, alcohol_pct: preset.alcohol_pct, fecha: fechaBebida });
     onRefresh();
   };
 
@@ -4583,7 +4630,8 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
     const pct = parseFloat(customPct);
     if (!ml || !pct) return;
     const kcal = window.NP_Alcohol.calcularKcalAlcohol(ml, pct);
-    window.NP_Alcohol.registrar({ bebida: customNombre || 'Personalizada', ml, alcohol_pct: pct, kcal });
+    // N16: pass selected date
+    window.NP_Alcohol.registrar({ bebida: customNombre || 'Personalizada', ml, alcohol_pct: pct, kcal, fecha: fechaBebida });
     setCustomMl(''); setCustomPct(''); setCustomNombre(''); setModoCustom(false);
     onRefresh();
   };
@@ -4669,7 +4717,13 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
 
         {/* Registrar bebida */}
         <div>
-          <div className={`text-xs uppercase font-bold mb-2 tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Registrar bebida</div>
+          <div className="flex items-center justify-between mb-2">
+            <div className={`text-xs uppercase font-bold tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Registrar bebida</div>
+            {/* N16: date selector */}
+            <input type="date" value={fechaBebida} onChange={e => setFechaBebida(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className={`text-xs px-2 py-1 rounded-lg border ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-300' : 'bg-white border-gray-200 text-gray-600'}`} />
+          </div>
           <div className="grid grid-cols-2 gap-2">
             {presets.slice(0, 6).map((p, i) => (
               <button key={i} onClick={() => agregar(p)}
@@ -4750,7 +4804,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{e.kcal} kcal</span>
-                    <button onClick={() => { window.NP_Alcohol.eliminar(e.id); onRefresh(); }}
+                    <button onClick={() => { if (window.confirm('¿Borrar este registro de ' + e.bebida + '?')) { window.NP_Alcohol.eliminar(e.id); onRefresh(); } }}
                       className="text-red-400 hover:text-red-600 text-sm">
                       <i className="fas fa-times"></i>
                     </button>
@@ -4854,6 +4908,12 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
       </div>
 
       {/* Historial 14d */}
+      {ultimos.length === 0 && (
+        <div className={`rounded-xl p-5 text-center text-sm ${darkMode ? 'bg-gray-800 border border-gray-700 text-gray-400' : 'bg-gray-50 border border-gray-200 text-gray-500'}`}>
+          <i className="fas fa-person-walking text-2xl mb-2 block opacity-40"></i>
+          Aún no registraste pasos. Usá los botones de arriba para empezar.
+        </div>
+      )}
       {ultimos.length > 0 && (
         <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
@@ -5185,6 +5245,15 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
               className={`flex-1 py-2 rounded-lg text-sm font-semibold ${pct === 100 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
               <i className="fas fa-check-double mr-1"></i>Marcar todos
             </button>
+            {completados > 0 && (
+              <button onClick={() => {
+                const nueva = Object.assign({}, sesion, { ejercicios: sesion.ejercicios.map(e => Object.assign({}, e, { done: false })) });
+                window.NP_Training.guardar(nueva); onRefresh();
+              }}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                <i className="fas fa-xmark mr-1"></i>Desmarcar
+              </button>
+            )}
             <button onClick={limpiarSesion}
               className={`px-4 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-gray-700 text-red-400 hover:bg-gray-600' : 'bg-gray-100 text-red-500 hover:bg-gray-200'}`}>
               <i className="fas fa-rotate-left mr-1"></i>Reset
@@ -5520,7 +5589,7 @@ function App() {
       // Fase 6.2: pre-cargar recipes-extra en idle para que swap/regenerar sean instantáneos
       if (window.lazyRecipes && !window.lazyRecipes.estaCargado()) {
         var dispatch = window.requestIdleCallback || function(cb) { setTimeout(cb, 2000); };
-        dispatch(function() { window.lazyRecipes.cargar().catch(function(){}); });
+        dispatch(function() { window.lazyRecipes.cargar().catch(function(e){ console.warn('[lazyRecipes]', e); mostrarToast('Modo offline — swap de recetas limitado', 'info'); }); });
       }
     } else if (perfilGuardado) {
       setPerfil(perfilGuardado);
@@ -5569,6 +5638,7 @@ function App() {
   };
 
   const handleRegenerar = async () => {
+    if (!window.confirm('¿Regenerar el plan completo? Se reemplazarán todas las recetas de la semana, incluyendo los cambios manuales que hayas hecho.')) return;
     if (perfil) {
       setCargando(true);
       setMensajeCarga("Regenerando plan con recetas frescas...");
@@ -5633,14 +5703,16 @@ function App() {
   const handleEditarPerfil = () => { setPantalla("perfil"); window.scrollTo(0, 0); };
   const handleVolverAlPlan = () => { setPantalla("plan"); window.scrollTo(0, 0); };
   const handleReiniciar = () => {
+    if (!window.confirm('¿Reiniciar NutriPlan? Se borrarán tu perfil, plan semanal y todos los registros. Esta acción no se puede deshacer.')) return;
     limpiarTodo();
     setPerfil(null); setPlanSemanal(null); setPantalla("perfil");
     mostrarToast("Datos reiniciados correctamente", "info");
     window.scrollTo(0, 0);
   };
   const navegarA = (destino) => { setPantalla(destino); window.scrollTo(0, 0); };
-  // Exponer navegación global para componentes profundos (PlateauCard, etc.)
+  // Exponer navegación y toast global para componentes profundos
   window._NP_nav = navegarA;
+  window._NP_toast = mostrarToast;
 
   // ─── Elementos globales (loading overlay + toast) ───
   const globalOverlays = (
@@ -5765,11 +5837,25 @@ function App() {
         {pantalla === "cocinar" && (
           <CocinarTab darkMode={darkMode} onRecipeClick={(r) => setRecetaSeleccionada(r)} plan={planSemanal} factorComensales={factorComensales} />
         )}
-        {pantalla === "despensa" && planSemanal && (
-          <Pantry plan={planSemanal} onNavigateToShopping={() => navegarA("compras")} darkMode={darkMode} />
+        {pantalla === "despensa" && (planSemanal
+          ? <Pantry plan={planSemanal} onNavigateToShopping={() => navegarA("compras")} darkMode={darkMode} />
+          : <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-amber-50 border border-amber-200'}`}>
+              <i className="fas fa-warehouse text-3xl text-amber-400 mb-3"></i>
+              <p className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-amber-800'}`}>Primero generá tu plan semanal para ver la despensa</p>
+              <button onClick={() => navegarA('plan')} className="px-4 py-2 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
+                <i className="fas fa-calendar-days mr-1.5"></i>Ir al Plan
+              </button>
+            </div>
         )}
-        {pantalla === "compras" && planSemanal && (
-          <ShoppingList plan={planSemanal} darkMode={darkMode} />
+        {pantalla === "compras" && (planSemanal
+          ? <ShoppingList plan={planSemanal} darkMode={darkMode} />
+          : <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-amber-50 border border-amber-200'}`}>
+              <i className="fas fa-cart-shopping text-3xl text-amber-400 mb-3"></i>
+              <p className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-amber-800'}`}>Primero generá tu plan semanal para ver la lista de compras</p>
+              <button onClick={() => navegarA('plan')} className="px-4 py-2 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
+                <i className="fas fa-calendar-days mr-1.5"></i>Ir al Plan
+              </button>
+            </div>
         )}
       </main>
 
