@@ -3509,7 +3509,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260418bh)
+// COMPONENTE: HoyView — Dashboard diario (v20260418bi)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -5231,7 +5231,6 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             {[2,3,4,5,6].map(n => (
               <button key={n}
                 onClick={() => { localStorage.setItem('nutriplan_dias_semana', String(n)); setDiasSemana(n); }}
-                {/* T4: mínimo 40×40px (era 28×28px) */}
                 className={`w-10 h-10 rounded text-xs font-bold transition-all border ${
                   diasSemana === n
                     ? 'bg-orange-500 text-white border-orange-500'
