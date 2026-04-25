@@ -1,12 +1,12 @@
-/* ============================================
+﻿/* ============================================
    NutriPlan - App Bundle (todos los componentes React)
    Este archivo se procesa con Babel standalone
-   MEJORAS: Dark mode, día actual, swap individual,
-   unidades de compra, historial 14 días
+   MEJORAS: Dark mode, dÃ­a actual, swap individual,
+   unidades de compra, historial 14 dÃ­as
    ============================================ */
 
-// ─── Safety net: garantizar que storage.js haya expuesto funciones ───
-// Si storage.js no se ejecutó (SW sirvió versión corrupta o falló la red),
+// â”€â”€â”€ Safety net: garantizar que storage.js haya expuesto funciones â”€â”€â”€
+// Si storage.js no se ejecutÃ³ (SW sirviÃ³ versiÃ³n corrupta o fallÃ³ la red),
 // creamos stubs en window para que el bundle no explote con "X is not defined".
 (function restaurarAPI() {
   var fns = [
@@ -27,15 +27,15 @@
         return false;
       };
     }
-    // Copiar al scope global como var (el bundle compilado lo buscará ahí)
-    // Esto se hace porque Babel transforma `const cargarPerfil` → `var cargarPerfil`
-    // y si la declaración nunca se ejecuta (storage.js falló), queda undefined.
+    // Copiar al scope global como var (el bundle compilado lo buscarÃ¡ ahÃ­)
+    // Esto se hace porque Babel transforma `const cargarPerfil` â†’ `var cargarPerfil`
+    // y si la declaraciÃ³n nunca se ejecuta (storage.js fallÃ³), queda undefined.
   });
 })();
 
 // Hoisting manual: declarar vars globales que apunten a window.X.
-// Si storage.js las definió, estas NO sobrescriben (storage.js se cargó antes).
-// Si storage.js falló, estas toman los stubs de window.
+// Si storage.js las definiÃ³, estas NO sobrescriben (storage.js se cargÃ³ antes).
+// Si storage.js fallÃ³, estas toman los stubs de window.
 var cargarPerfil = window.cargarPerfil;
 var guardarPerfil = window.guardarPerfil;
 var cargarPlanSemanal = window.cargarPlanSemanal;
@@ -57,7 +57,7 @@ var limpiarTodo = window.limpiarTodo;
 // =============================================
 function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBack, tienePlan }) {
   const [perfil, setPerfil] = React.useState(() => {
-    // v20260418x: sincronizar fatLossMode con objetivo='perdida' si venía de una versión anterior
+    // v20260418x: sincronizar fatLossMode con objetivo='perdida' si venÃ­a de una versiÃ³n anterior
     if (perfilInicial) {
       const fatLossInferido = perfilInicial.fatLossMode !== undefined
         ? perfilInicial.fatLossMode
@@ -101,20 +101,20 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
   React.useEffect(() => {
     const { peso, altura, edad, genero, nivelActividad, objetivo } = perfil;
-    // v20260418y: guard defensivo — nivelActividad inválida crashea FACTORES_ACTIVIDAD lookup
+    // v20260418y: guard defensivo â€” nivelActividad invÃ¡lida crashea FACTORES_ACTIVIDAD lookup
     const nivelValido = nivelActividad && FACTORES_ACTIVIDAD[nivelActividad];
     if (peso > 0 && altura > 0 && edad > 0 && nivelValido) {
       const bmr = calcularBMR(parseFloat(peso), parseFloat(altura), parseFloat(edad), genero);
       const tdee = calcularTDEE(parseFloat(peso), parseFloat(altura), parseFloat(edad), genero, nivelActividad);
       const caloriasCalculadas = calcularCaloriasObjetivo(tdee, objetivo);
-      // Si hay calorías manuales activas, usarlas; sino usar las calculadas
+      // Si hay calorÃ­as manuales activas, usarlas; sino usar las calculadas
       const caloriasObj = usarCaloriasManual && perfil.caloriasManual > 0
         ? Math.max(800, Math.round(parseFloat(perfil.caloriasManual)))
         : caloriasCalculadas;
       const macrosG = calcularMacrosEnGramos(caloriasObj, perfil.macros);
       setTdeeInfo({ bmr: Math.round(bmr), tdee, caloriasObjetivo: caloriasObj, caloriasCalculadas, macrosG });
     } else if (usarCaloriasManual && perfil.caloriasManual > 0) {
-      // Permitir solo calorías manuales sin datos corporales completos
+      // Permitir solo calorÃ­as manuales sin datos corporales completos
       const caloriasObj = Math.max(800, Math.round(parseFloat(perfil.caloriasManual)));
       const macrosG = calcularMacrosEnGramos(caloriasObj, perfil.macros);
       setTdeeInfo({ bmr: null, tdee: null, caloriasObjetivo: caloriasObj, caloriasCalculadas: null, macrosG });
@@ -193,17 +193,17 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     const err = {};
     // Fat Loss Mode requiere siempre datos corporales completos (para BMR + Navy)
     if (perfil.fatLossMode) {
-      if (!perfil.edad || perfil.edad < 15 || perfil.edad > 100) err.edad = "Edad debe ser entre 15 y 100 años";
+      if (!perfil.edad || perfil.edad < 15 || perfil.edad > 100) err.edad = "Edad debe ser entre 15 y 100 aÃ±os";
       if (!perfil.peso || perfil.peso < 30 || perfil.peso > 300) err.peso = "Peso debe ser entre 30 y 300 kg";
       if (!perfil.altura || perfil.altura < 100 || perfil.altura > 250) err.altura = "Altura debe ser entre 100 y 250 cm";
     } else if (!usarCaloriasManual) {
-      if (!perfil.edad || perfil.edad < 15 || perfil.edad > 100) err.edad = "Edad debe ser entre 15 y 100 años";
+      if (!perfil.edad || perfil.edad < 15 || perfil.edad > 100) err.edad = "Edad debe ser entre 15 y 100 aÃ±os";
       if (!perfil.peso || perfil.peso < 30 || perfil.peso > 300) err.peso = "Peso debe ser entre 30 y 300 kg";
       if (!perfil.altura || perfil.altura < 100 || perfil.altura > 250) err.altura = "Altura debe ser entre 100 y 250 cm";
     } else {
-      if (!perfil.caloriasManual || perfil.caloriasManual < 800 || perfil.caloriasManual > 6000) err.caloriasManual = "Calorías debe ser entre 800 y 6000 kcal";
+      if (!perfil.caloriasManual || perfil.caloriasManual < 800 || perfil.caloriasManual > 6000) err.caloriasManual = "CalorÃ­as debe ser entre 800 y 6000 kcal";
     }
-    // Macros se validan solo fuera de Fat Loss Mode (FL los fija automáticamente)
+    // Macros se validan solo fuera de Fat Loss Mode (FL los fija automÃ¡ticamente)
     if (!perfil.fatLossMode) {
       const sumaMacros = perfil.macros.proteinas + perfil.macros.carbohidratos + perfil.macros.grasas;
       if (sumaMacros !== 100) err.macros = "Los macros deben sumar exactamente 100%";
@@ -251,7 +251,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           complementoPreferido: perfil.complementoPreferido || 'whey'
         });
         const nuevoPerfil = cargarPerfil();
-        // Recalcular caloriasObjetivo con las calorías de la fase activa
+        // Recalcular caloriasObjetivo con las calorÃ­as de la fase activa
         nuevoPerfil.caloriasObjetivo = window.NP_FatLoss.caloriasEfectivas() || nuevoPerfil.caloriasManual;
         nuevoPerfil.tdee = nuevoPerfil.roadmap ? nuevoPerfil.roadmap.calculados.tdee : tdeeInfo.tdee;
         guardarPerfil(nuevoPerfil);
@@ -259,7 +259,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
         return;
       } catch (err) {
         console.error('[FatLoss] Error al activar:', err);
-        alert('Error al activar Fat Loss Mode: ' + err.message + '\nSe guardará el perfil estándar.');
+        alert('Error al activar Fat Loss Mode: ' + err.message + '\nSe guardarÃ¡ el perfil estÃ¡ndar.');
         // Cae al flujo normal
       }
     }
@@ -298,7 +298,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             <i className="fas fa-seedling text-white text-2xl"></i>
           </div>
           <h1 className={`text-3xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>NutriPlan</h1>
-          <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{tienePlan ? 'Editá tu perfil nutricional' : 'Configurá tu perfil nutricional para comenzar'}</p>
+          <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{tienePlan ? 'EditÃ¡ tu perfil nutricional' : 'ConfigurÃ¡ tu perfil nutricional para comenzar'}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -310,14 +310,14 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Edad (años)</label>
+                <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Edad (aÃ±os)</label>
                 <input type="number" value={perfil.edad} onChange={(e) => handleChange("edad", e.target.value)}
                   className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} ${errores.edad ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
                   placeholder="25" min="15" max="100" />
                 {errores.edad && <p className="text-red-500 text-xs mt-1">{errores.edad}</p>}
               </div>
               <div>
-                <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Género</label>
+                <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>GÃ©nero</label>
                 <select value={perfil.genero} onChange={(e) => handleChange("genero", e.target.value)}
                   className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200 bg-white'} focus:border-green-500`}>
                   <option value="masculino">Masculino</option>
@@ -363,7 +363,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   </div>
                   <div>
                     <span className={`text-sm font-medium ${darkMode && perfil.nivelActividad !== key ? 'text-gray-200' : 'text-gray-700'}`}>{info.label}</span>
-                    <span className="text-xs text-gray-400 ml-2">(×{info.valor})</span>
+                    <span className="text-xs text-gray-400 ml-2">(Ã—{info.valor})</span>
                   </div>
                 </label>
               ))}
@@ -384,7 +384,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                       ? 'bg-green-500 text-white shadow-lg shadow-green-200'
                       : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                   }`}>
-                  <div className="text-2xl mb-1">{key === 'perdida' ? '📉' : key === 'mantenimiento' ? '⚖️' : '📈'}</div>
+                  <div className="text-2xl mb-1">{key === 'perdida' ? 'ðŸ“‰' : key === 'mantenimiento' ? 'âš–ï¸' : 'ðŸ“ˆ'}</div>
                   <div className="font-medium text-sm">{info.label}</div>
                   <div className={`text-xs mt-1 ${perfil.objetivo === key ? 'text-green-100' : 'text-gray-400'}`}>
                     {info.valor > 0 ? '+' : ''}{info.valor} kcal
@@ -394,14 +394,14 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           </div>
 
-          {/* v20260418y: Fat Loss Mode — inmediatamente después de Objetivo cuando se elige "Pérdida de peso" */}
+          {/* v20260418y: Fat Loss Mode â€” inmediatamente despuÃ©s de Objetivo cuando se elige "PÃ©rdida de peso" */}
           {perfil.fatLossMode && (
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <div className="flex items-center gap-3 mb-4">
               <i className="fas fa-fire text-orange-500 text-xl"></i>
               <div>
-                <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Plan Fat Loss — Precision Nutrition</h2>
-                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Completá las medidas y objetivos para generar tu roadmap por fases con diet breaks</p>
+                <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Plan Fat Loss â€” Precision Nutrition</h2>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>CompletÃ¡ las medidas y objetivos para generar tu roadmap por fases con diet breaks</p>
               </div>
             </div>
 
@@ -435,7 +435,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   </div>
                   <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                     <i className="fas fa-info-circle mr-1"></i>
-                    Navy calcula BF% con cintura + cuello{perfil.genero === 'femenino' ? ' + cadera' : ''}. Si tenés medición por bioimpedancia o caliper, completá "BF% manual" y se usa ese.
+                    Navy calcula BF% con cintura + cuello{perfil.genero === 'femenino' ? ' + cadera' : ''}. Si tenÃ©s mediciÃ³n por bioimpedancia o caliper, completÃ¡ "BF% manual" y se usa ese.
                   </p>
                 </div>
 
@@ -454,17 +454,17 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                         className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="10" />
                     </div>
                   </div>
-                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Basta con uno de los dos. El otro se calcula asumiendo que preservás masa magra.</p>
+                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Basta con uno de los dos. El otro se calcula asumiendo que preservÃ¡s masa magra.</p>
                 </div>
 
-                {/* Tasa de pérdida */}
+                {/* Tasa de pÃ©rdida */}
                 <div>
-                  <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tasa de pérdida</div>
+                  <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tasa de pÃ©rdida</div>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      {k: 'conservadora', l: 'Conservadora', s: '0.4 kg/sem · déficit 300'},
-                      {k: 'moderada',     l: 'Moderada',     s: '0.6 kg/sem · déficit 450'},
-                      {k: 'agresiva',     l: 'Agresiva',     s: '0.8 kg/sem · déficit 600'}
+                      {k: 'conservadora', l: 'Conservadora', s: '0.4 kg/sem Â· dÃ©ficit 300'},
+                      {k: 'moderada',     l: 'Moderada',     s: '0.6 kg/sem Â· dÃ©ficit 450'},
+                      {k: 'agresiva',     l: 'Agresiva',     s: '0.8 kg/sem Â· dÃ©ficit 600'}
                     ].map(t => {
                       const activo = (perfil.tasaPerdida || 'moderada') === t.k;
                       return (
@@ -486,8 +486,8 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 <div>
                   <label className={`block text-xs font-semibold mb-1 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Timeline deseado (meses, opcional)</label>
                   <input type="number" min="2" max="24" step="1" value={perfil.timelineMesesDeseado || ''} onChange={(e) => handleChange("timelineMesesDeseado", e.target.value)}
-                    className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Ej: 10. Dejá vacío para cálculo automático." />
-                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Si ingresás un timeline, el motor ajusta el déficit para cumplirlo (siempre dentro de rangos seguros 200-800 kcal/día).</p>
+                    className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Ej: 10. DejÃ¡ vacÃ­o para cÃ¡lculo automÃ¡tico." />
+                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Si ingresÃ¡s un timeline, el motor ajusta el dÃ©ficit para cumplirlo (siempre dentro de rangos seguros 200-800 kcal/dÃ­a).</p>
                 </div>
 
                 {/* Complemento preferido */}
@@ -495,10 +495,10 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Fuente proteica de rescate</div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
-                      {k: 'whey', l: 'Whey', s: '1 scoop · 25g P'},
-                      {k: 'yogur_griego', l: 'Yogur griego', s: '200g · 20g P'},
-                      {k: 'cottage', l: 'Cottage light', s: '150g · 18g P'},
-                      {k: 'claras', l: 'Claras (6)', s: '180g · 22g P'}
+                      {k: 'whey', l: 'Whey', s: '1 scoop Â· 25g P'},
+                      {k: 'yogur_griego', l: 'Yogur griego', s: '200g Â· 20g P'},
+                      {k: 'cottage', l: 'Cottage light', s: '150g Â· 18g P'},
+                      {k: 'claras', l: 'Claras (6)', s: '180g Â· 22g P'}
                     ].map(f => {
                       const activo = (perfil.complementoPreferido || 'whey') === f.k;
                       return (
@@ -514,7 +514,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                       );
                     })}
                   </div>
-                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Si algún día queda corto de proteína, la app sugiere esta fuente para completar el target.</p>
+                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Si algÃºn dÃ­a queda corto de proteÃ­na, la app sugiere esta fuente para completar el target.</p>
                 </div>
 
                 {/* Preview del roadmap */}
@@ -541,7 +541,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                         <div className="text-[9px] opacity-70">-{roadmapPreview.calculados.deficitDiario}</div>
                       </div>
                       <div className="bg-white/20 rounded-lg p-2 text-center">
-                        <div className="text-[10px] opacity-80">PROTEÍNA</div>
+                        <div className="text-[10px] opacity-80">PROTEÃNA</div>
                         <div className="text-lg font-bold">{roadmapPreview.calculados.proteinaTarget}g</div>
                         <div className="text-[9px] opacity-70">2.2g/kg</div>
                       </div>
@@ -550,7 +550,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                       <div className="bg-white/10 rounded p-2">
                         <span className="opacity-75">BF actual:</span> <b>{roadmapPreview.calculados.bfActual}%</b>
                         {roadmapPreview.calculados.bfCalculadoNavy != null && roadmapPreview.inputs.bfOverride != null && (
-                          <span className="opacity-60 block text-[10px]">Navy calculado: {roadmapPreview.calculados.bfCalculadoNavy}% · override manual aplicado</span>
+                          <span className="opacity-60 block text-[10px]">Navy calculado: {roadmapPreview.calculados.bfCalculadoNavy}% Â· override manual aplicado</span>
                         )}
                       </div>
                       <div className="bg-white/10 rounded p-2">
@@ -560,7 +560,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                         <span className="opacity-75">Grasa a perder:</span> <b>{roadmapPreview.calculados.grasaAPerder} kg</b>
                       </div>
                       <div className="bg-white/10 rounded p-2">
-                        <span className="opacity-75">Duración:</span> <b>~{roadmapPreview.calculados.mesesTotales} meses</b>
+                        <span className="opacity-75">DuraciÃ³n:</span> <b>~{roadmapPreview.calculados.mesesTotales} meses</b>
                       </div>
                     </div>
                     <div className="mt-3">
@@ -575,7 +575,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                             </div>
                             <div className="flex items-center gap-2 opacity-90">
                               <span>{f.calorias} kcal</span>
-                              <span className="opacity-70">·</span>
+                              <span className="opacity-70">Â·</span>
                               <span>{f.targetPasos.toLocaleString()} pasos</span>
                             </div>
                           </div>
@@ -589,19 +589,19 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 {!roadmapPreview && (
                   <div className={`text-xs p-3 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-50 text-gray-500'}`}>
                     <i className="fas fa-spinner mr-2"></i>
-                    Completá medidas corporales (cintura + cuello o BF% manual) y al menos un target (peso o BF%) para ver el roadmap.
+                    CompletÃ¡ medidas corporales (cintura + cuello o BF% manual) y al menos un target (peso o BF%) para ver el roadmap.
                   </div>
                 )}
               </div>
           </div>
           )}
 
-          {/* Calorías Objetivo Manual - oculto cuando Fat Loss Mode, lo define el roadmap */}
+          {/* CalorÃ­as Objetivo Manual - oculto cuando Fat Loss Mode, lo define el roadmap */}
           {!perfil.fatLossMode && (
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-fire-flame-curved text-green-500"></i>
-              Calorías Objetivo
+              CalorÃ­as Objetivo
             </h2>
             <div className="flex flex-col gap-4">
               <div className="flex gap-3">
@@ -611,7 +611,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                       ? 'bg-green-500 text-white shadow-lg shadow-green-200'
                       : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                   }`}>
-                  <i className="fas fa-calculator mr-1.5"></i>Calcular automáticamente
+                  <i className="fas fa-calculator mr-1.5"></i>Calcular automÃ¡ticamente
                 </button>
                 <button type="button" onClick={() => setUsarCaloriasManual(true)}
                   className={`flex-1 p-3 rounded-xl text-center text-sm font-medium transition-all ${
@@ -625,7 +625,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               {usarCaloriasManual && (
                 <div className="animate-fadeIn">
                   <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Calorías diarias objetivo (kcal)
+                    CalorÃ­as diarias objetivo (kcal)
                   </label>
                   <input type="number" value={perfil.caloriasManual}
                     onChange={(e) => handleChange("caloriasManual", e.target.value)}
@@ -634,32 +634,32 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   {errores.caloriasManual && <p className="text-red-500 text-xs mt-1">{errores.caloriasManual}</p>}
                   <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                     <i className="fas fa-info-circle mr-1"></i>
-                    Ingresá directamente tu objetivo calórico sin depender del cálculo TDEE. Rango: 800–6000 kcal.
+                    IngresÃ¡ directamente tu objetivo calÃ³rico sin depender del cÃ¡lculo TDEE. Rango: 800â€“6000 kcal.
                   </p>
                 </div>
               )}
               {!usarCaloriasManual && (
                 <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                   <i className="fas fa-info-circle mr-1"></i>
-                  Las calorías se calculan según tus datos personales, nivel de actividad y objetivo.
+                  Las calorÃ­as se calculan segÃºn tus datos personales, nivel de actividad y objetivo.
                 </p>
               )}
             </div>
           </div>
           )}
 
-          {/* Macros Editables - oculto cuando Fat Loss Mode, los fija automáticamente */}
+          {/* Macros Editables - oculto cuando Fat Loss Mode, los fija automÃ¡ticamente */}
           {!perfil.fatLossMode && (
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-chart-pie text-green-500"></i>
-              Distribución de Macros
+              DistribuciÃ³n de Macros
               <span className="text-xs font-normal text-gray-400">(deben sumar 100%)</span>
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                  <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-1"></span>Proteínas (%)
+                  <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-1"></span>ProteÃ­nas (%)
                 </label>
                 <input type="number" value={perfil.macros.proteinas} onChange={(e) => handleMacroChange("proteinas", e.target.value)}
                   className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'} focus:border-blue-500`} min="10" max="60" />
@@ -705,9 +705,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </h2>
             <div className="flex flex-wrap gap-3 mb-4">
               {[
-                { key: "sinGluten", label: "Sin gluten", icon: "🌾" },
-                { key: "sinLactosa", label: "Sin lactosa", icon: "🥛" },
-                { key: "vegetariano", label: "Vegetariano", icon: "🥬" }
+                { key: "sinGluten", label: "Sin gluten", icon: "ðŸŒ¾" },
+                { key: "sinLactosa", label: "Sin lactosa", icon: "ðŸ¥›" },
+                { key: "vegetariano", label: "Vegetariano", icon: "ðŸ¥¬" }
               ].map(({ key, label, icon }) => (
                 <label key={key} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all ${
                   perfil[key] ? 'bg-green-100 border-2 border-green-400 text-green-800'
@@ -727,10 +727,10 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               <textarea value={perfil.ingredientesExcluidosTexto}
                 onChange={(e) => handleChange("ingredientesExcluidosTexto", e.target.value)}
                 className={`w-full px-4 py-3 rounded-xl border transition-colors resize-none ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} focus:border-green-500`}
-                rows="2" placeholder="Ej: maní, camarones, apio..." />
+                rows="2" placeholder="Ej: manÃ­, camarones, apio..." />
             </div>
 
-            {/* Fase 4 - Punto 14: filtro solo rápidas */}
+            {/* Fase 4 - Punto 14: filtro solo rÃ¡pidas */}
             <div className="mt-4 pt-4 border-t border-dashed border-gray-300 dark:border-gray-600">
               <h3 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                 <i className="fas fa-bolt text-amber-500"></i>
@@ -741,17 +741,17 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   : darkMode ? 'bg-gray-700 border-2 border-transparent text-gray-300 hover:bg-gray-600' : 'bg-gray-50 border-2 border-transparent text-gray-600 hover:bg-gray-100'
               }`}>
                 <input type="checkbox" checked={!!perfil.soloRapidas} onChange={(e) => handleChange("soloRapidas", e.target.checked)} className="sr-only" />
-                <span className="text-xl">⚡</span>
+                <span className="text-xl">âš¡</span>
                 <div className="flex-1">
-                  <div className="text-sm font-medium">Solo recetas rápidas (almuerzo y cena)</div>
-                  <div className="text-xs opacity-75">Descarta recetas con tiempo total superior al máximo</div>
+                  <div className="text-sm font-medium">Solo recetas rÃ¡pidas (almuerzo y cena)</div>
+                  <div className="text-xs opacity-75">Descarta recetas con tiempo total superior al mÃ¡ximo</div>
                 </div>
                 {perfil.soloRapidas && <i className="fas fa-check text-amber-700"></i>}
               </label>
               {perfil.soloRapidas && (
                 <div className="mt-3 flex items-center gap-3">
                   <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Tiempo máximo:
+                    Tiempo mÃ¡ximo:
                   </label>
                   <div className="flex gap-2">
                     {[15, 20, 25, 30, 40].map(min => (
@@ -774,10 +774,10 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   : darkMode ? 'bg-gray-700 border-2 border-transparent text-gray-300 hover:bg-gray-600' : 'bg-gray-50 border-2 border-transparent text-gray-600 hover:bg-gray-100'
               }`}>
                 <input type="checkbox" checked={!!perfil.modoSobras} onChange={(e) => handleChange("modoSobras", e.target.checked)} className="sr-only" />
-                <span className="text-xl">♻️</span>
+                <span className="text-xl">â™»ï¸</span>
                 <div className="flex-1">
                   <div className="text-sm font-medium">Modo sobras (cocinar 1 vez, comer 2)</div>
-                  <div className="text-xs opacity-75">La cena del día N pasa como almuerzo del día N+1. Ahorra 6 cocciones por semana.</div>
+                  <div className="text-xs opacity-75">La cena del dÃ­a N pasa como almuerzo del dÃ­a N+1. Ahorra 6 cocciones por semana.</div>
                 </div>
                 {perfil.modoSobras && <i className="fas fa-check text-indigo-700"></i>}
               </label>
@@ -788,7 +788,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-calendar-week text-green-500"></i>
-              Duración del Plan
+              DuraciÃ³n del Plan
             </h2>
             <div className="flex gap-2">
               {[1, 2, 3, 4].map(n => (
@@ -804,7 +804,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
             <p className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               <i className="fas fa-info-circle mr-1"></i>
-              {perfil.numSemanas > 1 ? `Se generarán ${perfil.numSemanas} semanas con recetas distintas. La lista de compras incluirá ingredientes de todas las semanas.` : 'Plan estándar de 7 días.'}
+              {perfil.numSemanas > 1 ? `Se generarÃ¡n ${perfil.numSemanas} semanas con recetas distintas. La lista de compras incluirÃ¡ ingredientes de todas las semanas.` : 'Plan estÃ¡ndar de 7 dÃ­as.'}
             </p>
           </div>
 
@@ -813,7 +813,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg animate-scaleIn">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <i className="fas fa-calculator"></i>
-                {usarCaloriasManual ? 'Tu Objetivo Nutricional' : 'Tu Cálculo Nutricional'}
+                {usarCaloriasManual ? 'Tu Objetivo Nutricional' : 'Tu CÃ¡lculo Nutricional'}
               </h2>
               {!usarCaloriasManual && tdeeInfo.bmr != null ? (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -828,21 +828,21 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                     <div className="text-xs opacity-80">kcal</div>
                   </div>
                   <div className="bg-white/30 rounded-xl p-3 text-center backdrop-blur-sm col-span-2 sm:col-span-2">
-                    <div className="text-xs opacity-80">Calorías Objetivo</div>
+                    <div className="text-xs opacity-80">CalorÃ­as Objetivo</div>
                     <div className="text-3xl font-extrabold">{tdeeInfo.caloriasObjetivo}</div>
-                    <div className="text-xs opacity-80">kcal/día</div>
+                    <div className="text-xs opacity-80">kcal/dÃ­a</div>
                   </div>
                 </div>
               ) : (
                 <div className="bg-white/30 rounded-xl p-4 text-center backdrop-blur-sm">
-                  <div className="text-xs opacity-80">Calorías Objetivo (manual)</div>
+                  <div className="text-xs opacity-80">CalorÃ­as Objetivo (manual)</div>
                   <div className="text-4xl font-extrabold mt-1">{tdeeInfo.caloriasObjetivo}</div>
-                  <div className="text-xs opacity-80 mt-1">kcal/día</div>
+                  <div className="text-xs opacity-80 mt-1">kcal/dÃ­a</div>
                 </div>
               )}
               <div className="grid grid-cols-3 gap-3 mt-4">
                 <div className="bg-blue-500/30 rounded-xl p-3 text-center">
-                  <div className="text-xs opacity-80">Proteínas</div>
+                  <div className="text-xs opacity-80">ProteÃ­nas</div>
                   <div className="text-lg font-bold">{tdeeInfo.macrosG.proteinas_g}g</div>
                 </div>
                 <div className="bg-amber-500/30 rounded-xl p-3 text-center">
@@ -855,7 +855,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 </div>
               </div>
               <div className="mt-4 text-xs opacity-70 text-center">
-                Distribución diaria: Desayuno 25% · Snack AM 10% · Almuerzo 35% · Snack PM 10% · Cena 20%
+                DistribuciÃ³n diaria: Desayuno 25% Â· Snack AM 10% Â· Almuerzo 35% Â· Snack PM 10% Â· Cena 20%
               </div>
             </div>
           )}
@@ -879,7 +879,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
 
 // =============================================
-// COMPONENTE: BatchCookingView (Fase 3 - cocción en lote)
+// COMPONENTE: BatchCookingView (Fase 3 - cocciÃ³n en lote)
 // =============================================
 function BatchCookingView({ plan, darkMode }) {
   const [semanaActiva, setSemanaActiva] = React.useState(1);
@@ -947,7 +947,7 @@ function BatchCookingView({ plan, darkMode }) {
       {resultado.total_bases === 0 && (
         <div className={`text-center py-12 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
           <i className="fas fa-circle-info text-3xl mb-2"></i>
-          <p className="text-sm">No hay ingredientes repetidos ≥2 veces esta semana</p>
+          <p className="text-sm">No hay ingredientes repetidos â‰¥2 veces esta semana</p>
           <p className="text-xs mt-2">Regenera el plan para aumentar repeticiones</p>
         </div>
       )}
@@ -968,7 +968,7 @@ function BatchCookingView({ plan, darkMode }) {
                         <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${color.bg} ${color.text}`}>
                           <i className={`fas ${color.icon} mr-1`}></i>{base.categoria}
                         </span>
-                        <span className="text-[10px] text-gray-400">{base.num_usos} usos · {base.tiempo_batch_min} min</span>
+                        <span className="text-[10px] text-gray-400">{base.num_usos} usos Â· {base.tiempo_batch_min} min</span>
                       </div>
                       <h4 className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                         {base.nombre_display}
@@ -1010,7 +1010,7 @@ function BatchCookingView({ plan, darkMode }) {
               <i className="fas fa-lightbulb mr-1"></i>Tip del chef
             </div>
             <p className={`text-xs leading-relaxed ${darkMode ? 'text-amber-200' : 'text-amber-900'}`}>
-              Programa 2-3 horas el domingo en la tarde. Empieza por las legumbres (tardan más), mientras se cocinan asa los vegetales al horno. En paralelo cocina el arroz. La proteína al final. Enfría todo rápido y refrigera en porciones individuales.
+              Programa 2-3 horas el domingo en la tarde. Empieza por las legumbres (tardan mÃ¡s), mientras se cocinan asa los vegetales al horno. En paralelo cocina el arroz. La proteÃ­na al final. EnfrÃ­a todo rÃ¡pido y refrigera en porciones individuales.
             </p>
           </div>
         </>
@@ -1020,7 +1020,7 @@ function BatchCookingView({ plan, darkMode }) {
 }
 
 // =============================================
-// COMPONENTE: ComensalesPanel (Fase 3.3 - perfiles múltiples)
+// COMPONENTE: ComensalesPanel (Fase 3.3 - perfiles mÃºltiples)
 // =============================================
 function ComensalesPanel({ darkMode, onChange }) {
   const [estado, setEstado] = React.useState(() =>
@@ -1054,7 +1054,7 @@ function ComensalesPanel({ darkMode, onChange }) {
   };
 
   const agregarAdulto = () => refresh(pm.agregarComensal(estado, { nombre: 'Adulto', tipo: 'adulto', factor: 0.85 }));
-  const agregarNino = () => refresh(pm.agregarComensal(estado, { nombre: 'Niño/a', tipo: 'nino', factor: 0.5 }));
+  const agregarNino = () => refresh(pm.agregarComensal(estado, { nombre: 'NiÃ±o/a', tipo: 'nino', factor: 0.5 }));
 
   return (
     <div className={`mb-4 rounded-2xl border overflow-hidden ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
@@ -1069,7 +1069,7 @@ function ComensalesPanel({ darkMode, onChange }) {
               Cocino para {nAct} {nAct === 1 ? 'persona' : 'personas'}
             </div>
             <div className="text-[11px] text-gray-400">
-              Factor ×{factor.toFixed(2)} sobre ingredientes y compras
+              Factor Ã—{factor.toFixed(2)} sobre ingredientes y compras
             </div>
           </div>
         </div>
@@ -1078,13 +1078,13 @@ function ComensalesPanel({ darkMode, onChange }) {
 
       {expandido && (
         <div className={`px-3 pb-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-          <div className={`text-[10px] uppercase font-semibold my-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Presets rápidos</div>
+          <div className={`text-[10px] uppercase font-semibold my-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Presets rÃ¡pidos</div>
           <div className="grid grid-cols-4 gap-1 mb-3">
             {[
-              { k: 'solo', l: 'Solo', f: '×1.0' },
-              { k: 'pareja', l: 'Pareja', f: '×1.85' },
-              { k: 'familia_2_1', l: '2A+1N', f: '×2.35' },
-              { k: 'familia_2_2', l: '2A+2N', f: '×2.85' }
+              { k: 'solo', l: 'Solo', f: 'Ã—1.0' },
+              { k: 'pareja', l: 'Pareja', f: 'Ã—1.85' },
+              { k: 'familia_2_1', l: '2A+1N', f: 'Ã—2.35' },
+              { k: 'familia_2_2', l: '2A+2N', f: 'Ã—2.85' }
             ].map(p => (
               <button key={p.k} onClick={() => aplicarPresetLocal(p.k)}
                 className={`py-1.5 rounded-lg text-[11px] font-medium transition-colors ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
@@ -1104,7 +1104,7 @@ function ComensalesPanel({ darkMode, onChange }) {
                 </button>
                 <div className="flex-1 min-w-0">
                   <div className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{c.nombre}</div>
-                  <div className="text-[10px] text-gray-400">{c.tipo === 'nino' ? 'Niño/a' : 'Adulto'} · ×{c.factor}</div>
+                  <div className="text-[10px] text-gray-400">{c.tipo === 'nino' ? 'NiÃ±o/a' : 'Adulto'} Â· Ã—{c.factor}</div>
                 </div>
                 {c.id !== 'camilo' && (
                   <button onClick={() => quitar(c.id)} className="text-gray-400 hover:text-red-500 text-xs">
@@ -1122,13 +1122,13 @@ function ComensalesPanel({ darkMode, onChange }) {
             </button>
             <button onClick={agregarNino}
               className={`flex-1 py-2 rounded-lg text-xs font-medium ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}`}>
-              <i className="fas fa-plus mr-1"></i>Niño/a
+              <i className="fas fa-plus mr-1"></i>NiÃ±o/a
             </button>
           </div>
 
           <div className={`mt-3 p-2 rounded-lg text-[11px] ${darkMode ? 'bg-amber-900/30 text-amber-300' : 'bg-amber-50 text-amber-700'}`}>
             <i className="fas fa-circle-info mr-1"></i>
-            Calorías y macros siguen siendo para ti. El factor sólo escala ingredientes y costo de lista de compras.
+            CalorÃ­as y macros siguen siendo para ti. El factor sÃ³lo escala ingredientes y costo de lista de compras.
           </div>
         </div>
       )}
@@ -1188,7 +1188,7 @@ function BatchCookingPanel({ planSemanal, semanaActiva, darkMode, factorComensal
   }[cat] || 'fa-circle text-gray-400');
 
   const labelCategoria = (cat) => ({
-    proteina: 'Proteína', legumbre: 'Legumbre', carbohidrato: 'Carbohidrato', vegetal: 'Vegetal'
+    proteina: 'ProteÃ­na', legumbre: 'Legumbre', carbohidrato: 'Carbohidrato', vegetal: 'Vegetal'
   }[cat] || cat);
 
   return (
@@ -1204,7 +1204,7 @@ function BatchCookingPanel({ planSemanal, semanaActiva, darkMode, factorComensal
               Batch Cooking Domingo
             </div>
             <div className="text-[11px] text-gray-400">
-              {plan.total_bases} base{plan.total_bases !== 1 ? 's' : ''} · ~{plan.tiempo_batch_min} min prep · ahorra ~{plan.ahorro_min} min/semana ({plan.ahorro_porcentaje}%)
+              {plan.total_bases} base{plan.total_bases !== 1 ? 's' : ''} Â· ~{plan.tiempo_batch_min} min prep Â· ahorra ~{plan.ahorro_min} min/semana ({plan.ahorro_porcentaje}%)
             </div>
           </div>
         </div>
@@ -1215,15 +1215,15 @@ function BatchCookingPanel({ planSemanal, semanaActiva, darkMode, factorComensal
         <div className={`px-4 pb-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
           <div className={`grid grid-cols-3 gap-2 my-3 text-center text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             <div className={`rounded-lg p-2 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
-              <div className="font-bold text-base text-orange-500">{plan.tiempo_batch_min}′</div>
+              <div className="font-bold text-base text-orange-500">{plan.tiempo_batch_min}â€²</div>
               <div>Prep domingo</div>
             </div>
             <div className={`rounded-lg p-2 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
-              <div className="font-bold text-base text-gray-500 line-through">{plan.tiempo_sin_batch_min}′</div>
+              <div className="font-bold text-base text-gray-500 line-through">{plan.tiempo_sin_batch_min}â€²</div>
               <div>Sin batch</div>
             </div>
             <div className={`rounded-lg p-2 ${darkMode ? 'bg-emerald-900/40' : 'bg-emerald-50'}`}>
-              <div className="font-bold text-base text-emerald-600">−{plan.ahorro_min}′</div>
+              <div className="font-bold text-base text-emerald-600">âˆ’{plan.ahorro_min}â€²</div>
               <div>Ahorro</div>
             </div>
           </div>
@@ -1242,12 +1242,12 @@ function BatchCookingPanel({ planSemanal, semanaActiva, darkMode, factorComensal
                           {base.nombre_display}
                         </div>
                         <div className="text-[10px] text-gray-400">
-                          {Math.round(base.cantidad_total)} {base.unidad} · {base.num_usos} usos · {labelCategoria(base.categoria)}
+                          {Math.round(base.cantidad_total)} {base.unidad} Â· {base.num_usos} usos Â· {labelCategoria(base.categoria)}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-orange-500 font-semibold">{base.tiempo_batch_min}′</span>
+                      <span className="text-[10px] text-orange-500 font-semibold">{base.tiempo_batch_min}â€²</span>
                       <i className={`fas fa-chevron-${estaExpandido ? 'up' : 'down'} text-gray-400 text-xs`}></i>
                     </div>
                   </button>
@@ -1255,7 +1255,7 @@ function BatchCookingPanel({ planSemanal, semanaActiva, darkMode, factorComensal
                   {estaExpandido && (
                     <div className={`px-3 pb-3 border-t ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
                       <div className={`text-[10px] uppercase font-semibold mt-2 mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Preparación en lote:
+                        PreparaciÃ³n en lote:
                       </div>
                       <ol className={`space-y-1 text-xs ${darkMode ? 'text-gray-300' : 'text-gray-700'} list-decimal list-inside`}>
                         {base.instrucciones_batch.map((step, i) => (
@@ -1267,7 +1267,7 @@ function BatchCookingPanel({ planSemanal, semanaActiva, darkMode, factorComensal
                         <div className="flex flex-wrap gap-1 mt-1">
                           {base.apariciones.map((ap, i) => (
                             <span key={i} className={`px-2 py-0.5 rounded text-[10px] ${darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-600 border border-gray-200'}`}>
-                              {ap.dia.slice(0,3)} · {ap.tipo} · {Math.round(ap.cantidad)}{base.unidad}
+                              {ap.dia.slice(0,3)} Â· {ap.tipo} Â· {Math.round(ap.cantidad)}{base.unidad}
                             </span>
                           ))}
                         </div>
@@ -1281,7 +1281,7 @@ function BatchCookingPanel({ planSemanal, semanaActiva, darkMode, factorComensal
 
           <div className={`mt-3 p-3 rounded-lg text-[11px] ${darkMode ? 'bg-indigo-900/30 text-indigo-200' : 'bg-indigo-50 text-indigo-700'}`}>
             <i className="fas fa-lightbulb mr-1"></i>
-            <strong>Tip:</strong> Dedica ~{Math.round(plan.tiempo_batch_min / 60 * 10) / 10}h el domingo. Entre semana solo calientas + combinas con vegetales frescos. Fideos y pescado del día prefiéralos al momento.
+            <strong>Tip:</strong> Dedica ~{Math.round(plan.tiempo_batch_min / 60 * 10) / 10}h el domingo. Entre semana solo calientas + combinas con vegetales frescos. Fideos y pescado del dÃ­a prefiÃ©ralos al momento.
           </div>
         </div>
       )}
@@ -1290,7 +1290,7 @@ function BatchCookingPanel({ planSemanal, semanaActiva, darkMode, factorComensal
 }
 
 // =============================================
-// COMPONENTE: RecipeGenerator (Fase 3 - generador paramétrico)
+// COMPONENTE: RecipeGenerator (Fase 3 - generador paramÃ©trico)
 // =============================================
 function RecipeGenerator({ darkMode, onRecipeClick }) {
   const gen = window.generadorRecetas;
@@ -1327,11 +1327,11 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
       const existing = JSON.parse(localStorage.getItem('nutriplan_recetas_generadas') || '[]');
       existing.push(receta);
       localStorage.setItem('nutriplan_recetas_generadas', JSON.stringify(existing));
-      // También añadir a RECETAS_DB en runtime para que aparezca en plan
+      // TambiÃ©n aÃ±adir a RECETAS_DB en runtime para que aparezca en plan
       if (typeof RECETAS_DB !== 'undefined') {
         RECETAS_DB.push(receta);
       }
-      alert(`"${receta.nombre}" guardada. Estará disponible en tu próximo plan.`);
+      alert(`"${receta.nombre}" guardada. EstarÃ¡ disponible en tu prÃ³ximo plan.`);
     } catch (e) {
       console.error('Error guardando receta:', e);
     }
@@ -1346,7 +1346,7 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
           <i className="fas fa-wand-magic-sparkles text-purple-500 mr-2"></i>Generador de recetas
         </h3>
         <p className="text-xs text-gray-400 mb-4">
-          {totalCombos.toLocaleString('es-CL')} combinaciones posibles · proteína × carbo × vegetal × técnica × cocina
+          {totalCombos.toLocaleString('es-CL')} combinaciones posibles Â· proteÃ­na Ã— carbo Ã— vegetal Ã— tÃ©cnica Ã— cocina
         </p>
 
         <div className="grid grid-cols-2 gap-2 mb-3">
@@ -1367,7 +1367,7 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
             </select>
           </div>
           <div>
-            <label className="text-[11px] text-gray-400 block mb-1">Técnica</label>
+            <label className="text-[11px] text-gray-400 block mb-1">TÃ©cnica</label>
             <select value={filtros.tecnica} onChange={(e) => setFiltros({...filtros, tecnica: e.target.value})} className={selectClass}>
               <option value="">Cualquiera</option>
               {Object.entries(gen.catalogos.tecnicas).map(([k, v]) => (
@@ -1376,7 +1376,7 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
             </select>
           </div>
           <div>
-            <label className="text-[11px] text-gray-400 block mb-1">Proteína</label>
+            <label className="text-[11px] text-gray-400 block mb-1">ProteÃ­na</label>
             <select value={filtros.proteina} onChange={(e) => setFiltros({...filtros, proteina: e.target.value})} className={selectClass}>
               <option value="">Cualquiera</option>
               {Object.entries(gen.catalogos.proteinas).map(([k, v]) => (
@@ -1402,7 +1402,7 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
       {recetasGeneradas.length === 0 && (
         <div className={`text-center py-12 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
           <i className="fas fa-seedling text-4xl mb-3"></i>
-          <p className="text-sm">Ajusta filtros (o déjalos libres) y genera recetas únicas</p>
+          <p className="text-sm">Ajusta filtros (o dÃ©jalos libres) y genera recetas Ãºnicas</p>
         </div>
       )}
 
@@ -1441,7 +1441,7 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
                       <span className="text-blue-500">P: {r.proteinas_g}g</span>
                       <span className="text-amber-600">C: {r.carbohidratos_g}g</span>
                       <span className="text-rose-500">G: {r.grasas_g}g</span>
-                      <span className="text-indigo-500"><i className="fas fa-clock mr-1"></i>{r.tiempo_total_min}′</span>
+                      <span className="text-indigo-500"><i className="fas fa-clock mr-1"></i>{r.tiempo_total_min}â€²</span>
                       {r.costo_clp > 0 && (
                         <span className="text-emerald-600"><i className="fas fa-coins mr-1"></i>${r.costo_clp.toLocaleString('es-CL')}</span>
                       )}
@@ -1449,7 +1449,7 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
                   </div>
                   <button onClick={(e) => { e.stopPropagation(); guardarReceta(r); }}
                     className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${darkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`}
-                    title="Guardar en mi catálogo">
+                    title="Guardar en mi catÃ¡logo">
                     <i className="fas fa-bookmark text-sm"></i>
                   </button>
                 </div>
@@ -1484,7 +1484,7 @@ function AdherenceWidget({ darkMode, forceUpdate }) {
     <div className={`mt-6 rounded-2xl p-4 border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
       <div className="flex items-center justify-between mb-3">
         <div className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-          <i className="fas fa-clipboard-check mr-1"></i>Adherencia 7 días
+          <i className="fas fa-clipboard-check mr-1"></i>Adherencia 7 dÃ­as
         </div>
         <div className={`text-2xl font-bold text-${color}-500`}>{stats.porcentaje}%</div>
       </div>
@@ -1495,14 +1495,14 @@ function AdherenceWidget({ darkMode, forceUpdate }) {
         </div>
         <div className={`px-2 py-1.5 rounded-lg text-center ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
           <div className={`font-bold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{stats.kcal_cumplidas.toLocaleString('es-CL')}</div>
-          <div className="text-[10px] text-gray-400">kcal ✓</div>
+          <div className="text-[10px] text-gray-400">kcal âœ“</div>
         </div>
         <div className={`px-2 py-1.5 rounded-lg text-center ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
           <div className="font-bold text-rose-500">{stats.kcal_perdidas.toLocaleString('es-CL')}</div>
           <div className="text-[10px] text-gray-400">kcal perdidas</div>
         </div>
       </div>
-      {/* Mini gráfico 7 días */}
+      {/* Mini grÃ¡fico 7 dÃ­as */}
       <div className="flex items-end justify-between gap-1 h-14">
         {historial.map((d, idx) => {
           const altura = d.porcentaje != null ? Math.max(4, d.porcentaje * 0.5) : 0;
@@ -1524,7 +1524,7 @@ function AdherenceWidget({ darkMode, forceUpdate }) {
 }
 
 // =============================================
-// COMPONENTE: ReverseSearch (Fase 2 - búsqueda inversa)
+// COMPONENTE: ReverseSearch (Fase 2 - bÃºsqueda inversa)
 // =============================================
 function ReverseSearch({ darkMode, onRecipeClick }) {
   const [ingredientesSeleccionados, setIngredientesSeleccionados] = React.useState([]);
@@ -1564,7 +1564,7 @@ function ReverseSearch({ darkMode, onRecipeClick }) {
     <div className="animate-fadeIn">
       <div className={`rounded-2xl p-5 border mb-4 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
         <h3 className={`font-semibold text-lg mb-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-          <i className="fas fa-magnifying-glass text-green-500 mr-2"></i>¿Qué cocino con lo que tengo?
+          <i className="fas fa-magnifying-glass text-green-500 mr-2"></i>Â¿QuÃ© cocino con lo que tengo?
         </h3>
         <p className="text-xs text-gray-400 mb-4">Agrega los ingredientes disponibles en tu cocina</p>
         
@@ -1606,13 +1606,13 @@ function ReverseSearch({ darkMode, onRecipeClick }) {
         )}
 
         <div className="mt-4 flex items-center gap-2">
-          <label className="text-xs text-gray-400">Match mínimo:</label>
+          <label className="text-xs text-gray-400">Match mÃ­nimo:</label>
           <select value={minMatch} onChange={(e) => setMinMatch(parseFloat(e.target.value))}
             className={`text-xs px-2 py-1 rounded-lg border ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-200 text-gray-700'}`}>
-            <option value="0.2">20% (más resultados)</option>
+            <option value="0.2">20% (mÃ¡s resultados)</option>
             <option value="0.4">40% (recomendado)</option>
             <option value="0.6">60%</option>
-            <option value="0.8">80% (más estricto)</option>
+            <option value="0.8">80% (mÃ¡s estricto)</option>
           </select>
         </div>
       </div>
@@ -1628,7 +1628,7 @@ function ReverseSearch({ darkMode, onRecipeClick }) {
         <div className={`text-center py-12 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
           <i className="fas fa-face-frown text-4xl mb-3"></i>
           <p className="text-sm">Ninguna receta coincide con los filtros</p>
-          <p className="text-xs mt-2">Prueba bajar el "Match mínimo" o agregar más ingredientes</p>
+          <p className="text-xs mt-2">Prueba bajar el "Match mÃ­nimo" o agregar mÃ¡s ingredientes</p>
         </div>
       )}
 
@@ -1665,7 +1665,7 @@ function ReverseSearch({ darkMode, onRecipeClick }) {
                       <div className="flex flex-wrap gap-2 mt-1.5 text-[10px]">
                         <span className="text-gray-500"><i className="fas fa-fire text-orange-400 mr-1"></i>{r.receta.calorias_base} kcal</span>
                         {r.receta.tiempo_total_min > 0 && (
-                          <span className="text-indigo-500"><i className="fas fa-clock mr-1"></i>{r.receta.tiempo_total_min}′</span>
+                          <span className="text-indigo-500"><i className="fas fa-clock mr-1"></i>{r.receta.tiempo_total_min}â€²</span>
                         )}
                         {r.receta.costo_clp > 0 && (
                           <span className="text-emerald-600"><i className="fas fa-coins mr-1"></i>${r.receta.costo_clp.toLocaleString('es-CL')}</span>
@@ -1674,7 +1674,7 @@ function ReverseSearch({ darkMode, onRecipeClick }) {
                       {r.faltantes.length > 0 && (
                         <div className={`text-[10px] mt-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                           <span className="font-medium">Te falta:</span> {r.faltantes.slice(0, 4).join(', ')}
-                          {r.faltantes.length > 4 && ` +${r.faltantes.length - 4} más`}
+                          {r.faltantes.length > 4 && ` +${r.faltantes.length - 4} mÃ¡s`}
                         </div>
                       )}
                     </div>
@@ -1775,14 +1775,14 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
               </div>
               <div className="text-lg font-bold leading-tight">{faseInfo.nombreFase}</div>
               <div className="text-xs opacity-90 mt-0.5">
-                Día {faseInfo.diaDentroDeFase} de fase · Mes {faseInfo.mesInicio}{faseInfo.mesFin !== faseInfo.mesInicio ? '-'+faseInfo.mesFin : ''}
-                {faseInfo.diasRestantesEnFase > 0 && ' · ' + faseInfo.diasRestantesEnFase + 'd restantes'}
+                DÃ­a {faseInfo.diaDentroDeFase} de fase Â· Mes {faseInfo.mesInicio}{faseInfo.mesFin !== faseInfo.mesInicio ? '-'+faseInfo.mesFin : ''}
+                {faseInfo.diasRestantesEnFase > 0 && ' Â· ' + faseInfo.diasRestantesEnFase + 'd restantes'}
               </div>
             </div>
             <div className="text-right flex-shrink-0">
               <div className="text-[10px] opacity-80">OBJETIVO</div>
               <div className="text-2xl font-extrabold leading-none">{faseInfo.calorias}</div>
-              <div className="text-[10px] opacity-80">kcal · {faseInfo.targetPasos.toLocaleString()} pasos</div>
+              <div className="text-[10px] opacity-80">kcal Â· {faseInfo.targetPasos.toLocaleString()} pasos</div>
             </div>
           </div>
           {faseInfo.foco && (
@@ -1793,16 +1793,16 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
           {faseInfo.proximoHito && (
             <div className="mt-2 flex items-center gap-2 text-[11px] bg-white/15 rounded-lg px-3 py-1.5">
               <i className="fas fa-forward opacity-70"></i>
-              <span className="opacity-80">Próximo:</span>
+              <span className="opacity-80">PrÃ³ximo:</span>
               <b>{faseInfo.proximoHito.nombre}</b>
-              <span className="opacity-80">en {faseInfo.proximoHito.enDias} días</span>
+              <span className="opacity-80">en {faseInfo.proximoHito.enDias} dÃ­as</span>
             </div>
           )}
           {desincronizacion && desincronizacion.desincronizado && (
             <div className="mt-2 flex items-center justify-between gap-2 text-[11px] bg-yellow-400 text-yellow-900 rounded-lg px-3 py-2">
               <div>
                 <i className="fas fa-exclamation-triangle mr-1"></i>
-                <b>Plan desincronizado.</b> La fase actual pide {desincronizacion.caloriasNuevaFase} kcal, pero el plan está a {desincronizacion.caloriasActuales}.
+                <b>Plan desincronizado.</b> La fase actual pide {desincronizacion.caloriasNuevaFase} kcal, pero el plan estÃ¡ a {desincronizacion.caloriasActuales}.
               </div>
               <button onClick={() => {
                 if (window.NP_FatLoss) {
@@ -1830,7 +1830,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
         </div>
       )}
 
-      {/* Selector de semanas (solo si hay más de 1) */}
+      {/* Selector de semanas (solo si hay mÃ¡s de 1) */}
       {numSemanas > 1 && (
         <div className="mb-4">
           <div className="flex gap-2">
@@ -1889,7 +1889,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
             <div className="text-xs text-gray-400">de {caloriasObj} kcal objetivo</div>
           </div>
         </div>
-        {/* Tiempo y costo del día */}
+        {/* Tiempo y costo del dÃ­a */}
         <div className={`grid grid-cols-2 gap-3 mb-4 pb-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
             <i className="fas fa-clock text-indigo-400"></i>
@@ -1898,7 +1898,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                 {resumen.tiempo_total_min} min
               </div>
               <div className="text-[10px] text-gray-400">
-                Prep {resumen.tiempo_prep_min}′ + Cocción {resumen.tiempo_coccion_min}′
+                Prep {resumen.tiempo_prep_min}â€² + CocciÃ³n {resumen.tiempo_coccion_min}â€²
               </div>
             </div>
           </div>
@@ -1908,13 +1908,13 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
               <div className={`text-sm font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>
                 ${resumen.costo_clp.toLocaleString('es-CL')} CLP
               </div>
-              <div className="text-[10px] text-gray-400">Costo estimado del día</div>
+              <div className="text-[10px] text-gray-400">Costo estimado del dÃ­a</div>
             </div>
           </div>
         </div>
         <div className="space-y-3">
           {[
-            { label: "Proteínas", color: "blue", actual: resumen.proteinas, objetivo: macrosObj.proteinas_g },
+            { label: "ProteÃ­nas", color: "blue", actual: resumen.proteinas, objetivo: macrosObj.proteinas_g },
             { label: "Carbohidratos", color: "amber", actual: resumen.carbohidratos, objetivo: macrosObj.carbohidratos_g },
             { label: "Grasas", color: "rose", actual: resumen.grasas, objetivo: macrosObj.grasas_g }
           ].map(macro => (
@@ -1990,13 +1990,13 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                       <span className="thermomix-badge">TM6</span>
                     )}
                     {comida.es_sobra && (
-                      <span className="px-2 py-0.5 rounded-lg text-xs font-medium bg-indigo-100 text-indigo-700 border border-indigo-300" title={`De la cena del ${comida.sobra_origen?.dia || 'día anterior'}`}>
-                        ♻️ Sobra
+                      <span className="px-2 py-0.5 rounded-lg text-xs font-medium bg-indigo-100 text-indigo-700 border border-indigo-300" title={`De la cena del ${comida.sobra_origen?.dia || 'dÃ­a anterior'}`}>
+                        â™»ï¸ Sobra
                       </span>
                     )}
                     {comida.genera_sobra && (
-                      <span className="px-2 py-0.5 rounded-lg text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-300" title="Cocina doble porción: una para hoy y otra para mañana">
-                        ×2 porciones
+                      <span className="px-2 py-0.5 rounded-lg text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-300" title="Cocina doble porciÃ³n: una para hoy y otra para maÃ±ana">
+                        Ã—2 porciones
                       </span>
                     )}
                   </div>
@@ -2018,12 +2018,12 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                       {comida.costo_clp > 0 && (
                         <span className="text-xs text-emerald-600">
                           <i className="fas fa-coins mr-1"></i>${Math.round((comida.costo_clp || 0) * (comida.factor_escala || 1) * factorComensales).toLocaleString('es-CL')}
-                          {factorComensales !== 1 && <span className="text-[9px] text-teal-500 ml-1">×{factorComensales.toFixed(2)}</span>}
+                          {factorComensales !== 1 && <span className="text-[9px] text-teal-500 ml-1">Ã—{factorComensales.toFixed(2)}</span>}
                         </span>
                       )}
-                      {/* % del objetivo calórico diario */}
+                      {/* % del objetivo calÃ³rico diario */}
                       <span className="text-xs text-gray-400">
-                        {Math.round((comida.calorias_escaladas / caloriasObj) * 100)}% del día
+                        {Math.round((comida.calorias_escaladas / caloriasObj) * 100)}% del dÃ­a
                       </span>
                     </div>
                   )}
@@ -2072,7 +2072,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                 {Math.floor(totalesSemana.tiempo_total_min / 60)}h {totalesSemana.tiempo_total_min % 60}min
               </div>
               <div className="text-[10px] text-gray-400">
-                Prep {totalesSemana.tiempo_prep_min}′ + Cocción {totalesSemana.tiempo_coccion_min}′
+                Prep {totalesSemana.tiempo_prep_min}â€² + CocciÃ³n {totalesSemana.tiempo_coccion_min}â€²
               </div>
             </div>
           </div>
@@ -2083,8 +2083,8 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                 ${Math.round(totalesSemana.costo_clp * factorComensales).toLocaleString('es-CL')}
               </div>
               <div className="text-[10px] text-gray-400">
-                ~${Math.round(totalesSemana.costo_clp * factorComensales / 7).toLocaleString('es-CL')}/día
-                {factorComensales !== 1 && <span className="ml-1 text-teal-500">(×{factorComensales.toFixed(2)})</span>}
+                ~${Math.round(totalesSemana.costo_clp * factorComensales / 7).toLocaleString('es-CL')}/dÃ­a
+                {factorComensales !== 1 && <span className="ml-1 text-teal-500">(Ã—{factorComensales.toFixed(2)})</span>}
               </div>
             </div>
           </div>
@@ -2148,7 +2148,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                   }}
                   className={`w-full text-left px-4 py-3 text-sm border-b transition-colors ${darkMode ? 'border-gray-700 hover:bg-gray-700 text-gray-200' : 'border-gray-100 hover:bg-indigo-50 text-gray-700'}`}>
                   <div className="font-semibold"><i className="fas fa-compress mr-1 text-indigo-500"></i>Compacto</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">1 evento/día con las 5 comidas adentro</div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">1 evento/dÃ­a con las 5 comidas adentro</div>
                 </button>
                 <button onClick={(e) => {
                     e.currentTarget.parentElement.classList.add('hidden');
@@ -2156,14 +2156,14 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                   }}
                   className={`w-full text-left px-4 py-3 text-sm transition-colors ${darkMode ? 'hover:bg-gray-700 text-gray-200' : 'hover:bg-indigo-50 text-gray-700'}`}>
                   <div className="font-semibold"><i className="fas fa-list mr-1 text-indigo-500"></i>Detallado</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">5 eventos/día en horarios de comida</div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">5 eventos/dÃ­a en horarios de comida</div>
                 </button>
               </div>
             </div>
           )}
         </div>
         <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-          <i className="fas fa-info-circle mr-1"></i>El calendario exporta desde el próximo lunes. Abre el .ics con Google Calendar, Apple Calendar u Outlook.
+          <i className="fas fa-info-circle mr-1"></i>El calendario exporta desde el prÃ³ximo lunes. Abre el .ics con Google Calendar, Apple Calendar u Outlook.
         </p>
       </div>
     </div>
@@ -2173,39 +2173,39 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
 
 // =============================================
 // UTILIDAD: Reescalar cantidades dentro del texto de instrucciones
-// Fase 3.3 (ampliada): cubre dígitos, palabras, fracciones Unicode y ASCII
+// Fase 3.3 (ampliada): cubre dÃ­gitos, palabras, fracciones Unicode y ASCII
 // =============================================
 
-// Números en palabras → valor numérico
+// NÃºmeros en palabras â†’ valor numÃ©rico
 const PALABRAS_NUMERO = {
   'un': 1, 'una': 1, 'uno': 1,
   'dos': 2, 'tres': 3, 'cuatro': 4, 'cinco': 5, 'seis': 6,
   'siete': 7, 'ocho': 8, 'nueve': 9, 'diez': 10,
   'once': 11, 'doce': 12, 'trece': 13, 'catorce': 14, 'quince': 15,
-  'dieciseis': 16, 'dieciséis': 16, 'diecisiete': 17, 'dieciocho': 18, 'diecinueve': 19,
+  'dieciseis': 16, 'diecisÃ©is': 16, 'diecisiete': 17, 'dieciocho': 18, 'diecinueve': 19,
   'veinte': 20, 'veinticinco': 25, 'treinta': 30,
   'medio': 0.5, 'media': 0.5,
   'cuarto': 0.25, 'cuarta': 0.25,
   'tercio': 0.333, 'tercia': 0.333
 };
 
-// Fracciones Unicode → valor
+// Fracciones Unicode â†’ valor
 const FRACCIONES_UNICODE = {
-  '½': 0.5, '⅓': 0.333, '⅔': 0.667,
-  '¼': 0.25, '¾': 0.75,
-  '⅕': 0.2, '⅖': 0.4, '⅗': 0.6, '⅘': 0.8,
-  '⅙': 0.167, '⅚': 0.833,
-  '⅛': 0.125, '⅜': 0.375, '⅝': 0.625, '⅞': 0.875
+  'Â½': 0.5, 'â…“': 0.333, 'â…”': 0.667,
+  'Â¼': 0.25, 'Â¾': 0.75,
+  'â…•': 0.2, 'â…–': 0.4, 'â…—': 0.6, 'â…˜': 0.8,
+  'â…™': 0.167, 'â…š': 0.833,
+  'â…›': 0.125, 'â…œ': 0.375, 'â…': 0.625, 'â…ž': 0.875
 };
 
-// Convierte un número a palabra si es práctico (para mantener naturalidad del texto)
+// Convierte un nÃºmero a palabra si es prÃ¡ctico (para mantener naturalidad del texto)
 function numeroAPalabraSiAplica(n) {
   const mapa = { 1: 'una', 2: 'dos', 3: 'tres', 4: 'cuatro', 5: 'cinco', 6: 'seis', 7: 'siete', 8: 'ocho', 9: 'nueve', 10: 'diez' };
   if (mapa[n]) return mapa[n];
   return null;
 }
 
-// Redondea según tipo de unidad de forma natural
+// Redondea segÃºn tipo de unidad de forma natural
 function redondearPorUnidad(valor, unidad) {
   const u = unidad.toLowerCase();
   if (valor <= 0) return 0;
@@ -2216,24 +2216,24 @@ function redondearPorUnidad(valor, unidad) {
   if (/^(kg|kilogramos?|l|litros?)\b/.test(u)) {
     return Math.round(valor * 10) / 10;
   }
-  // Piezas discretas: mínimo 1 y entero
-  if (/^(dientes?|unidad|huevos?|rodajas?|hojas?|rebanadas?|filetes?|pechugas?|muslos?|piezas?|porciones?|cubos?|ramas?|ramitas?|tallos?|vainas?|pimient|cebolla|tomate|zanahoria|papa|camote|limon|limón|manzana|naranja|platano|plátano|palta|aguacate)/.test(u)) {
+  // Piezas discretas: mÃ­nimo 1 y entero
+  if (/^(dientes?|unidad|huevos?|rodajas?|hojas?|rebanadas?|filetes?|pechugas?|muslos?|piezas?|porciones?|cubos?|ramas?|ramitas?|tallos?|vainas?|pimient|cebolla|tomate|zanahoria|papa|camote|limon|limÃ³n|manzana|naranja|platano|plÃ¡tano|palta|aguacate)/.test(u)) {
     return Math.max(1, Math.round(valor));
   }
   // Medidas de cuchara/taza: medio en medio
-  if (/^(cdas?|cucharadas?|cdtas?|cucharaditas?|tazas?|pizcas?|chorros?|gotas?|pu[ñn]ados?)/.test(u)) {
+  if (/^(cdas?|cucharadas?|cdtas?|cucharaditas?|tazas?|pizcas?|chorros?|gotas?|pu[Ã±n]ados?)/.test(u)) {
     return Math.round(valor * 2) / 2;
   }
   return Math.round(valor * 10) / 10;
 }
 
-// Formatea cantidad numérica a string elegante: 0.5 → "½", 1.5 → "1 ½", 2 → "2"
+// Formatea cantidad numÃ©rica a string elegante: 0.5 â†’ "Â½", 1.5 â†’ "1 Â½", 2 â†’ "2"
 function formatearCantidadNatural(valor, unidad) {
   if (valor === 0) return '0';
   const entero = Math.floor(valor);
   const fraccion = valor - entero;
-  const FRACC_TO_TXT = { 0.25: '¼', 0.333: '⅓', 0.5: '½', 0.667: '⅔', 0.75: '¾' };
-  // Busca la fracción más cercana
+  const FRACC_TO_TXT = { 0.25: 'Â¼', 0.333: 'â…“', 0.5: 'Â½', 0.667: 'â…”', 0.75: 'Â¾' };
+  // Busca la fracciÃ³n mÃ¡s cercana
   let mejorFrac = null, mejorDif = 0.05;
   for (const [key, sym] of Object.entries(FRACC_TO_TXT)) {
     const dif = Math.abs(fraccion - parseFloat(key));
@@ -2241,12 +2241,12 @@ function formatearCantidadNatural(valor, unidad) {
   }
   if (entero === 0 && mejorFrac) return mejorFrac;
   if (entero > 0 && mejorFrac) return `${entero} ${mejorFrac}`;
-  // Sin fracción limpia
+  // Sin fracciÃ³n limpia
   if (Math.abs(fraccion) < 0.05) return `${entero}`;
   return `${Math.round(valor * 10) / 10}`.replace('.', ',');
 }
 
-// Pluraliza/singulariza según cantidad
+// Pluraliza/singulariza segÃºn cantidad
 function ajustarPluralUnidad(unidad, cantidad) {
   const u = unidad.toLowerCase();
   const esSingular = cantidad === 1 || Math.abs(cantidad - 0.5) < 0.05 || Math.abs(cantidad - 0.25) < 0.05;
@@ -2257,16 +2257,16 @@ function ajustarPluralUnidad(unidad, cantidad) {
 
   // Plural irregular
   const IRREGULARES = {
-    'limon': 'limones', 'limón': 'limones', 'limones': 'limones',
+    'limon': 'limones', 'limÃ³n': 'limones', 'limones': 'limones',
     'unidad': 'unidades', 'unidades': 'unidades'
   };
   if (IRREGULARES[u]) return esSingular ? u.replace(/es$/, '') : IRREGULARES[u];
 
-  // Regla simple: termina en s → plural, si no → singular
+  // Regla simple: termina en s â†’ plural, si no â†’ singular
   const terminaS = /s$/.test(u);
   if (esSingular && terminaS) {
     // Quitar s final (taza <- tazas, dientes <- diente? no, dientes queda)
-    // Pero dientes singular es diente. Palabras que terminan en consonante + "es" → quitar "es"
+    // Pero dientes singular es diente. Palabras que terminan en consonante + "es" â†’ quitar "es"
     if (/[^aeiou]es$/.test(u)) return unidad.slice(0, -2);
     return unidad.slice(0, -1);
   }
@@ -2282,13 +2282,13 @@ function reescalarInstruccionesPorFactor(instrucciones, factor) {
   if (!instrucciones || !Array.isArray(instrucciones) || factor === 1) return instrucciones;
 
   // Unidades reconocidas (grupo capturado)
-  const UNIDADES = '(g|gr|gramos?|kg|kilogramos?|ml|l|litros?|tazas?|cdas?|cucharadas?|cdtas?|cucharaditas?|pizcas?|chorros?|gotas?|pu[ñn]ados?|dientes?|unidades?|rodajas?|hojas?|porciones?|piezas?|cubos?|rebanadas?|filetes?|pechugas?|muslos?|huevos?|ramas?|ramitas?|tallos?|vainas?|pimentones?|cebollas?|tomates?|zanahorias?|papas?|camotes?|limones?|limon|limón|manzanas?|naranjas?|pl[áa]tanos?|paltas?|aguacates?)';
+  const UNIDADES = '(g|gr|gramos?|kg|kilogramos?|ml|l|litros?|tazas?|cdas?|cucharadas?|cdtas?|cucharaditas?|pizcas?|chorros?|gotas?|pu[Ã±n]ados?|dientes?|unidades?|rodajas?|hojas?|porciones?|piezas?|cubos?|rebanadas?|filetes?|pechugas?|muslos?|huevos?|ramas?|ramitas?|tallos?|vainas?|pimentones?|cebollas?|tomates?|zanahorias?|papas?|camotes?|limones?|limon|limÃ³n|manzanas?|naranjas?|pl[Ã¡a]tanos?|paltas?|aguacates?)';
 
   const PALABRAS_KEYS = Object.keys(PALABRAS_NUMERO).join('|');
-  const FRAC_UNI_CHARS = '½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞';
+  const FRAC_UNI_CHARS = 'Â½â…“â…”Â¼Â¾â…•â…–â…—â…˜â…™â…šâ…›â…œâ…â…ž';
 
   // Una sola regex alternadora que captura CUALQUIER tipo de cantidad + unidad
-  // Grupos: 1=mixta_entero 2=mixta_num 3=mixta_den | 4=ascii_num 5=ascii_den | 6=decimal 7=frac_uni_opt | 8=frac_uni_sola | 9=palabra | [después] de? + unidad
+  // Grupos: 1=mixta_entero 2=mixta_num 3=mixta_den | 4=ascii_num 5=ascii_den | 6=decimal 7=frac_uni_opt | 8=frac_uni_sola | 9=palabra | [despuÃ©s] de? + unidad
   const RX_TODO = new RegExp(
     `(?:` +
       // A: mixta "1 1/2"
@@ -2297,10 +2297,10 @@ function reescalarInstruccionesPorFactor(instrucciones, factor) {
       // B: ascii "1/2"
       `(\\d+)\\/(\\d+)` +
       `|` +
-      // C: decimal con fracción unicode opcional "1 ½" o "180"
+      // C: decimal con fracciÃ³n unicode opcional "1 Â½" o "180"
       `(\\d+(?:[\\.,]\\d+)?)\\s*([${FRAC_UNI_CHARS}])?` +
       `|` +
-      // D: fracción unicode sola "½"
+      // D: fracciÃ³n unicode sola "Â½"
       `([${FRAC_UNI_CHARS}])` +
       `|` +
       // E: palabra "media", "un", "dos"...
@@ -2312,7 +2312,7 @@ function reescalarInstruccionesPorFactor(instrucciones, factor) {
     'gi'
   );
 
-  const ES_TIEMPO_O_TEMP = /\b\d+\s*(min|minuto|segundo|hora|°c|°f|grados)/i;
+  const ES_TIEMPO_O_TEMP = /\b\d+\s*(min|minuto|segundo|hora|Â°c|Â°f|grados)/i;
   const ES_COMANDO_TM = /(velocidad|vel\.|varoma|sonda|giro|rpm)/i;
 
   function esContextoProtegido(offset, match, fullStr) {
@@ -2355,7 +2355,7 @@ function reescalarInstruccionesPorFactor(instrucciones, factor) {
 
       const unidadAjustada = ajustarPluralUnidad(unidad, nuevo);
 
-      // Si el original era palabra y el resultado es entero pequeño, mantener formato palabra
+      // Si el original era palabra y el resultado es entero pequeÃ±o, mantener formato palabra
       if (palabraOriginal && nuevo === Math.floor(nuevo) && nuevo <= 10) {
         const palabraNueva = numeroAPalabraSiAplica(nuevo);
         if (palabraNueva) {
@@ -2383,7 +2383,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales }) {
   const factorEscala = receta.factor_escala || 1;
   const ingredientesEscalados = receta.ingredientes_escalados || [];
 
-  // Asegurar instrucciones en español + convertir a medidas caseras + escalar por comensales
+  // Asegurar instrucciones en espaÃ±ol + convertir a medidas caseras + escalar por comensales
   const instruccionesTraducidas = React.useMemo(() => {
     let instr = receta.instrucciones;
     if (typeof asegurarInstruccionesEspanol === 'function') {
@@ -2459,27 +2459,27 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales }) {
             </div>
           </div>
           <div className="text-xs opacity-70 mt-2 text-center">
-            Factor de escala: ×{receta.factor_escala} (base: {receta.calorias_base} kcal)
+            Factor de escala: Ã—{receta.factor_escala} (base: {receta.calorias_base} kcal)
           </div>
           {/* Tiempo + costo en el header del modal */}
           {(receta.tiempo_total_min || receta.costo_clp) && (
             <div className="grid grid-cols-3 gap-2 mt-3">
               {receta.tiempo_prep_min != null && (
                 <div className="bg-white/15 rounded-lg p-2 text-center backdrop-blur-sm">
-                  <div className="text-sm font-bold"><i className="fas fa-knife-kitchen mr-1 text-xs"></i>{receta.tiempo_prep_min}′</div>
-                  <div className="text-[10px] opacity-80">Preparación</div>
+                  <div className="text-sm font-bold"><i className="fas fa-knife-kitchen mr-1 text-xs"></i>{receta.tiempo_prep_min}â€²</div>
+                  <div className="text-[10px] opacity-80">PreparaciÃ³n</div>
                 </div>
               )}
               {receta.tiempo_coccion_min != null && (
                 <div className="bg-white/15 rounded-lg p-2 text-center backdrop-blur-sm">
-                  <div className="text-sm font-bold"><i className="fas fa-fire mr-1 text-xs"></i>{receta.tiempo_coccion_min}′</div>
-                  <div className="text-[10px] opacity-80">Cocción</div>
+                  <div className="text-sm font-bold"><i className="fas fa-fire mr-1 text-xs"></i>{receta.tiempo_coccion_min}â€²</div>
+                  <div className="text-[10px] opacity-80">CocciÃ³n</div>
                 </div>
               )}
               {receta.costo_clp > 0 && (
                 <div className="bg-white/15 rounded-lg p-2 text-center backdrop-blur-sm">
                   <div className="text-sm font-bold">${Math.round((receta.costo_clp || 0) * (receta.factor_escala || 1) * factor).toLocaleString('es-CL')}</div>
-                  <div className="text-[10px] opacity-80">CLP{factor !== 1 ? ` · ×${factor.toFixed(2)}` : ''}</div>
+                  <div className="text-[10px] opacity-80">CLP{factor !== 1 ? ` Â· Ã—${factor.toFixed(2)}` : ''}</div>
                 </div>
               )}
             </div>
@@ -2487,7 +2487,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales }) {
           {factor !== 1 && (
             <div className="mt-2 p-2 bg-white/15 rounded-lg text-center text-[11px] backdrop-blur-sm">
               <i className="fas fa-users mr-1"></i>
-              Cantidades e ingredientes escalados para <strong>{factor.toFixed(2)} porciones</strong> · kcal/macros siguen siendo tu porción individual
+              Cantidades e ingredientes escalados para <strong>{factor.toFixed(2)} porciones</strong> Â· kcal/macros siguen siendo tu porciÃ³n individual
             </div>
           )}
         </div>
@@ -2504,7 +2504,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales }) {
             <h3 className={`font-semibold mb-3 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-list-check text-green-500"></i>Ingredientes
               <span className="text-xs font-normal text-gray-400">
-                {factor === 1 ? '(cantidades escaladas)' : `(×${factor.toFixed(2)} para ${factor.toFixed(2)} porciones)`}
+                {factor === 1 ? '(cantidades escaladas)' : `(Ã—${factor.toFixed(2)} para ${factor.toFixed(2)} porciones)`}
               </span>
             </h3>
             <div className="space-y-2">
@@ -2636,7 +2636,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales }) {
               <div>
                 <div className={`rounded-xl p-3 mb-4 text-xs flex items-start gap-2 ${darkMode ? 'bg-indigo-900/40 border border-indigo-700 text-indigo-300' : 'bg-indigo-50 border border-indigo-200 text-indigo-700'}`}>
                   <i className="fas fa-blender mt-0.5"></i>
-                  <span><strong>Receta profesional para Thermomix TM6.</strong> Incluye mise en place, técnica detallada, comandos completos (tiempo / temperatura / velocidad / giro), uso de accesorios y controles de cocción. Vaso 2.2 L: respetar cantidades máximas.</span>
+                  <span><strong>Receta profesional para Thermomix TM6.</strong> Incluye mise en place, tÃ©cnica detallada, comandos completos (tiempo / temperatura / velocidad / giro), uso de accesorios y controles de cocciÃ³n. Vaso 2.2 L: respetar cantidades mÃ¡ximas.</span>
                 </div>
                 <ol className="space-y-4">
                   {instruccionesThermomixEscaladas.map((paso, idx) => {
@@ -2662,7 +2662,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales }) {
                 </ol>
                 <div className={`mt-5 rounded-xl p-3 text-xs flex items-start gap-2 ${darkMode ? 'bg-gray-700/50 border border-gray-600 text-gray-300' : 'bg-amber-50 border border-amber-200 text-amber-800'}`}>
                   <i className="fas fa-lightbulb mt-0.5"></i>
-                  <span><strong>Tips del chef:</strong> preparar siempre el mise en place antes de encender la máquina; usar solo la espátula TM para bajar restos del vaso; el giro inverso protege ingredientes delicados; nunca abrir el Varoma sin retirarlo primero del vaso (el condensado cae en la preparación).</span>
+                  <span><strong>Tips del chef:</strong> preparar siempre el mise en place antes de encender la mÃ¡quina; usar solo la espÃ¡tula TM para bajar restos del vaso; el giro inverso protege ingredientes delicados; nunca abrir el Varoma sin retirarlo primero del vaso (el condensado cae en la preparaciÃ³n).</span>
                 </div>
               </div>
             )}
@@ -2670,9 +2670,9 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales }) {
 
           <div className="px-5 pb-5">
             <div className="flex flex-wrap gap-2 mb-3">
-              {receta.es_sin_gluten && <span className="bg-green-100 text-green-700 px-2.5 py-1 rounded-lg text-xs font-medium">🌾 Sin gluten</span>}
-              {receta.es_sin_lactosa && <span className="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-lg text-xs font-medium">🥛 Sin lactosa</span>}
-              {receta.es_vegetariana && <span className="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-lg text-xs font-medium">🥬 Vegetariana</span>}
+              {receta.es_sin_gluten && <span className="bg-green-100 text-green-700 px-2.5 py-1 rounded-lg text-xs font-medium">ðŸŒ¾ Sin gluten</span>}
+              {receta.es_sin_lactosa && <span className="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-lg text-xs font-medium">ðŸ¥› Sin lactosa</span>}
+              {receta.es_vegetariana && <span className="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-lg text-xs font-medium">ðŸ¥¬ Vegetariana</span>}
             </div>
             <a href="#" onClick={(e) => {
               e.preventDefault();
@@ -2740,7 +2740,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
     setDespensa(prev => { const n = { ...prev }; delete n[id]; return n; });
   };
 
-  // Fase 7.2: fechas de caducidad eliminadas — no aportaban valor al flujo real.
+  // Fase 7.2: fechas de caducidad eliminadas â€” no aportaban valor al flujo real.
   const toggleDespensa = (id) => {
     setDespensa(prev => ({ ...prev, [id]: !prev[id] }));
   };
@@ -2799,10 +2799,10 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
             <div className="flex items-center gap-2">
               <i className={`fas fa-calendar-alt text-sm ${soloRestantes ? 'text-blue-500' : 'text-gray-400'}`}></i>
               <span className={`text-sm font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                Solo desde mañana
+                Solo desde maÃ±ana
               </span>
               <span className={`text-xs px-2 py-0.5 rounded-full ${soloRestantes ? 'bg-blue-100 text-blue-600' : darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
-                {soloRestantes ? `${diasRestantes.length} días` : `${diasRestantes.length + 1} días`}
+                {soloRestantes ? `${diasRestantes.length} dÃ­as` : `${diasRestantes.length + 1} dÃ­as`}
               </span>
             </div>
             <button onClick={() => setSoloRestantes(!soloRestantes)}
@@ -2940,14 +2940,14 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
 // Persistido en localStorage['nutriplan_esenciales'].
 // =============================================
 const ESENCIALES_SEED = [
-  { nombre: "Papel higiénico", activo: false },
+  { nombre: "Papel higiÃ©nico", activo: false },
   { nombre: "Detergente ropa", activo: false },
   { nombre: "Lavaloza", activo: false },
-  { nombre: "Jabón de manos", activo: false },
+  { nombre: "JabÃ³n de manos", activo: false },
   { nombre: "Shampoo", activo: false },
   { nombre: "Pasta de dientes", activo: false },
-  { nombre: "Café", activo: false },
-  { nombre: "Azúcar", activo: false },
+  { nombre: "CafÃ©", activo: false },
+  { nombre: "AzÃºcar", activo: false },
   { nombre: "Sal", activo: false },
   { nombre: "Aceite de oliva", activo: false },
   { nombre: "Huevos", activo: false },
@@ -3010,7 +3010,7 @@ function EsencialesRecurrentes({ darkMode }) {
       {expandido && (
         <div className={`px-4 py-3 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
           <p className={`text-xs mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            Items que siempre compras. Marca los que necesites esta semana y se sumarán al texto de la lista.
+            Items que siempre compras. Marca los que necesites esta semana y se sumarÃ¡n al texto de la lista.
           </p>
           <div className="flex gap-2 mb-3">
             <input
@@ -3111,7 +3111,7 @@ function ShoppingList({ plan, darkMode }) {
     const nuevaDespensa = { ...despensa, [id]: true };
     setDespensa(nuevaDespensa);
     guardarDespensa(nuevaDespensa);
-    // También quitar de comprados
+    // TambiÃ©n quitar de comprados
     setComprados(prev => { const n = { ...prev }; delete n[id]; return n; });
   };
   const limpiarComprados = () => { setComprados({}); };
@@ -3120,62 +3120,62 @@ function ShoppingList({ plan, darkMode }) {
 
   const categorias = React.useMemo(() => {
     const cats = {
-      "🥩 Proteínas": [], "🥬 Frutas y Verduras": [],
-      "🥛 Lácteos": [], "🥤 Líquidos y Bebidas": [], "🥜 Frutos Secos y Semillas": [],
-      "🏪 Despensa": [], "📦 Otros": []
+      "ðŸ¥© ProteÃ­nas": [], "ðŸ¥¬ Frutas y Verduras": [],
+      "ðŸ¥› LÃ¡cteos": [], "ðŸ¥¤ LÃ­quidos y Bebidas": [], "ðŸ¥œ Frutos Secos y Semillas": [],
+      "ðŸª Despensa": [], "ðŸ“¦ Otros": []
     };
     const clasificar = (nombre) => {
       const n = nombre.toLowerCase();
-      // ── Excepciones tempranas (ingredientes ambiguos) ──
-      if (n.includes("nuez moscada")) return "🏪 Despensa";
-      if ((n.includes("arandano") || n.includes("arándano")) && (n.includes("deshid") || n.includes("seco"))) return "🥜 Frutos Secos y Semillas";
-      if (n.includes("salsa de tomate") || n.includes("puré de tomate") || n.includes("pasta de tomate") || n.includes("tomate enlatado")) return "🏪 Despensa";
-      if (n.includes("poroto verde") || n.includes("porotos verdes")) return "🥬 Frutas y Verduras";
-      // Ingredientes que el usuario pidió mover explícitamente a Despensa:
-      if (n.includes("coco rallado") || n.includes("dátil") || n.includes("datil") || n.includes("mantequilla de almendra") || n.includes("alcapar") || n.includes("crackers") || n.includes("gelatina") || n.includes("café instantáneo") || n.includes("cafe instantaneo") || n.includes("café instant") || n.includes("muffin inglés") || n.includes("muffin ingles") || n.includes("muffin") || n.includes("masa para empanada") || n.includes("masa de empanada") || n.includes("masa empanada") || n.includes("frijoles") || n.includes("frijol negro") || n.includes("frijol rojo") || n.includes("frejol") || n.includes("habichuela") || n.includes("lata de ") || n.includes("enlatado") || n.includes("ají ") || n === "ají" || n.startsWith("aji ") || n === "aji" || n.includes("chile en polvo") || n.includes("chile seco") || n.includes("chile_polvo") || n.includes("hojuelas de chile") || n.includes("jalape")) return "🏪 Despensa";
-      if (n.includes("quesillo") || n.includes("queso gruy") || n.includes("gruyère") || n.includes("mozzarella") || n.includes("mozarella") || n.includes("cottage") || n.includes("queso cottage") || n.includes("queso blanco untable") || n.includes("ricota") || n.includes("ricotta") || n.includes("queso ricotta")) return "🥛 Lácteos";
-      // ── Líquidos y Bebidas (leches vegetales, caldos, jugos, agua, infusiones, alcohol) ──
-      if (n === "agua" || n.startsWith("agua ") || n.includes("bebida de ") || n.includes("bebida vegetal") || (n.includes("leche") && (n.includes("coco") || n.includes("almendra") || n.includes("avena") || n.includes("soja") || n.includes("soya") || n.includes("arroz"))) || n.includes("caldo") || n.includes("agua mineral") || n.includes("agua con gas") || n.includes("jugo") || n.includes("zumo") || n.includes("gaseosa") || n.includes("refresco") || n.includes("bebida") || n.includes("té ") || n === "té" || n.startsWith("te ") || n.includes("infusión") || n.includes("infusion") || n.includes("café") || n.includes("cafe") || n.includes("mate") || n.includes("vino") || n.includes("cerveza") || n.includes("pisco") || n.includes("ron") || n.includes("whisky") || n.includes("vodka")) return "🥤 Líquidos y Bebidas";
-      // ── Frutas y Verduras (antes de Proteínas para evitar "repollo" → "pollo") ──
-      if (n.includes("lechuga") || n.includes("tomate") || n.includes("cebolla") || n.includes("cebollín") || n.includes("cebollin") || n.includes("pimentón") || n.includes("pimenton") || n.includes("pimiento") || n.includes("zapallo") || n.includes("zanahoria") || n.includes("papa") || n.includes("camote") || n.includes("pepino") || n.includes("espinaca") || n.includes("apio") || n.includes("espárrago") || n.includes("esparrago") || n.includes("champiñón") || n.includes("champiñon") || n.includes("plátano") || n.includes("platano") || n.includes("mango") || n.includes("frutilla") || n.includes("arándano") || n.includes("arandano") || n.includes("manzana") || n.includes("palta") || n.includes("aguacate") || n.includes("limón") || n.includes("limon") || n.includes("chile") || n.includes("cilantro") || n.includes("perejil") || n.includes("romero") || n.includes("tomillo") || n.includes("eneldo") || n.includes("albahaca") || n.includes("menta") || n.includes("cherry") || n.includes("choclo") || n.includes("brócoli") || n.includes("brocoli") || n.includes("coliflor") || n.includes("repollo") || n.includes("arveja") || n.includes("aceituna") || n.includes("piña") || n.includes("pina") || n.includes("naranja") || n.includes("uva") || n.includes("kale") || n.includes("puerro") || n.includes("berenjena") || n.includes("calabacín") || n.includes("calabacin") || n.includes("durazno") || n.includes("higo") || n.includes("jengibre") || n.includes("kiwi") || n.includes("pera") || n.includes("sandía") || n.includes("sandia") || n.includes("melón") || n.includes("melon") || n.includes("frutilla") || n.includes("fresa") || n.includes("bok choy") || n.includes("pak choi") || n.includes("açaí") || n.includes("acai") || n.includes("shiitake") || n.includes("portobello") || n.includes("ostra") && n.includes("hongo") || (n.includes("ajo") && !n.includes("polvo") && !n.includes("ajo_polvo"))) return "🥬 Frutas y Verduras";
-      // ── Proteínas (incluye chorizo, salchichas, tocino, sardinas) ──
-      if (n.includes("pollo") || n.includes("carne") || n.includes("salmón") || n.includes("salmon") || n.includes("atún") || n.includes("atun") || n.includes("huevo") || n.includes("proteína") || n.includes("pavo") || n.includes("cerdo") || n.includes("pescado") || n.includes("merluza") || n.includes("camar") || n.includes("tofu") || n.includes("jamón") || n.includes("jamon") || n.includes("chorizo") || n.includes("salchicha") || n.includes("tocino") || n.includes("panceta") || n.includes("sardina") || n.includes("caballa") || n.includes("trucha") || n.includes("anchoa")) return "🥩 Proteínas";
-      // ── Lácteos (solo vaca: leche, yogur, queso, crema, mantequilla) ──
-      if (n.includes("leche") || n.includes("yogur") || n.includes("queso") || n.includes("crema") || (n.includes("mantequilla") && !n.includes("maní") && !n.includes("almendra"))) return "🥛 Lácteos";
-      // ── Frutos Secos y Semillas ──
-      if (n.includes("almendra") || n.includes("nuez") || n.includes("nueces") || n.includes("maní") || n.includes("mani") || n.includes("semilla") || n.includes("chía") || n.includes("chia") || n.includes("pasa") || n.includes("deshidratado") || n.includes("piñón") || n.includes("piñones") || n.includes("pinon") || n.includes("pinones")) return "🥜 Frutos Secos y Semillas";
-      // ── Despensa (granos, cereales, legumbres, aceites, miel, condimentos, salsas, especias, pan, masas, fideos, hummus) ──
-      if (n.includes("arroz") || n.includes("avena") || n.includes("quinoa") || n.includes("lenteja") || n.includes("poroto") || n.includes("garbanzo") || n.includes("granola") || n.includes("maíz") || n.includes("maiz") || n.includes("edamame") || n.includes("aceite") || (n === "sal" || n.startsWith("sal ")) || n.includes("pimienta") || n.includes("comino") || n.includes("orégano") || n.includes("oregano") || n.includes("ajo en polvo") || n.includes("ajo_polvo") || n.includes("laurel") || n.includes("canela") || n.includes("curry") || n.includes("salsa") || n.includes("miel") || n.includes("vinagre") || n.includes("maple") || n.includes("tahini") || n.includes("sésamo") || n.includes("sesamo") || n.includes("cacao") || n.includes("polvo para") || n.includes("hojuela") || n.includes("chocolate") || n.includes("azúcar") || n.includes("azucar") || n.includes("mostaza") || n.includes("ketchup") || n.includes("mayonesa") || (n.includes("coco") && !n.includes("leche")) || n.includes("pan ") || n.includes("pan pita") || n.includes("pan integral") || n.includes("pan rallado") || n.includes("tortilla") || n.includes("harina") || n.includes("fideo") || n.includes("pasta") || n.includes("espagueti") || n.includes("macarron") || n.includes("lasaña") || n.includes("hummus")) return "🏪 Despensa";
-      return "📦 Otros";
+      // â”€â”€ Excepciones tempranas (ingredientes ambiguos) â”€â”€
+      if (n.includes("nuez moscada")) return "ðŸª Despensa";
+      if ((n.includes("arandano") || n.includes("arÃ¡ndano")) && (n.includes("deshid") || n.includes("seco"))) return "ðŸ¥œ Frutos Secos y Semillas";
+      if (n.includes("salsa de tomate") || n.includes("purÃ© de tomate") || n.includes("pasta de tomate") || n.includes("tomate enlatado")) return "ðŸª Despensa";
+      if (n.includes("poroto verde") || n.includes("porotos verdes")) return "ðŸ¥¬ Frutas y Verduras";
+      // Ingredientes que el usuario pidiÃ³ mover explÃ­citamente a Despensa:
+      if (n.includes("coco rallado") || n.includes("dÃ¡til") || n.includes("datil") || n.includes("mantequilla de almendra") || n.includes("alcapar") || n.includes("crackers") || n.includes("gelatina") || n.includes("cafÃ© instantÃ¡neo") || n.includes("cafe instantaneo") || n.includes("cafÃ© instant") || n.includes("muffin inglÃ©s") || n.includes("muffin ingles") || n.includes("muffin") || n.includes("masa para empanada") || n.includes("masa de empanada") || n.includes("masa empanada") || n.includes("frijoles") || n.includes("frijol negro") || n.includes("frijol rojo") || n.includes("frejol") || n.includes("habichuela") || n.includes("lata de ") || n.includes("enlatado") || n.includes("ajÃ­ ") || n === "ajÃ­" || n.startsWith("aji ") || n === "aji" || n.includes("chile en polvo") || n.includes("chile seco") || n.includes("chile_polvo") || n.includes("hojuelas de chile") || n.includes("jalape")) return "ðŸª Despensa";
+      if (n.includes("quesillo") || n.includes("queso gruy") || n.includes("gruyÃ¨re") || n.includes("mozzarella") || n.includes("mozarella") || n.includes("cottage") || n.includes("queso cottage") || n.includes("queso blanco untable") || n.includes("ricota") || n.includes("ricotta") || n.includes("queso ricotta")) return "ðŸ¥› LÃ¡cteos";
+      // â”€â”€ LÃ­quidos y Bebidas (leches vegetales, caldos, jugos, agua, infusiones, alcohol) â”€â”€
+      if (n === "agua" || n.startsWith("agua ") || n.includes("bebida de ") || n.includes("bebida vegetal") || (n.includes("leche") && (n.includes("coco") || n.includes("almendra") || n.includes("avena") || n.includes("soja") || n.includes("soya") || n.includes("arroz"))) || n.includes("caldo") || n.includes("agua mineral") || n.includes("agua con gas") || n.includes("jugo") || n.includes("zumo") || n.includes("gaseosa") || n.includes("refresco") || n.includes("bebida") || n.includes("tÃ© ") || n === "tÃ©" || n.startsWith("te ") || n.includes("infusiÃ³n") || n.includes("infusion") || n.includes("cafÃ©") || n.includes("cafe") || n.includes("mate") || n.includes("vino") || n.includes("cerveza") || n.includes("pisco") || n.includes("ron") || n.includes("whisky") || n.includes("vodka")) return "ðŸ¥¤ LÃ­quidos y Bebidas";
+      // â”€â”€ Frutas y Verduras (antes de ProteÃ­nas para evitar "repollo" â†’ "pollo") â”€â”€
+      if (n.includes("lechuga") || n.includes("tomate") || n.includes("cebolla") || n.includes("cebollÃ­n") || n.includes("cebollin") || n.includes("pimentÃ³n") || n.includes("pimenton") || n.includes("pimiento") || n.includes("zapallo") || n.includes("zanahoria") || n.includes("papa") || n.includes("camote") || n.includes("pepino") || n.includes("espinaca") || n.includes("apio") || n.includes("espÃ¡rrago") || n.includes("esparrago") || n.includes("champiÃ±Ã³n") || n.includes("champiÃ±on") || n.includes("plÃ¡tano") || n.includes("platano") || n.includes("mango") || n.includes("frutilla") || n.includes("arÃ¡ndano") || n.includes("arandano") || n.includes("manzana") || n.includes("palta") || n.includes("aguacate") || n.includes("limÃ³n") || n.includes("limon") || n.includes("chile") || n.includes("cilantro") || n.includes("perejil") || n.includes("romero") || n.includes("tomillo") || n.includes("eneldo") || n.includes("albahaca") || n.includes("menta") || n.includes("cherry") || n.includes("choclo") || n.includes("brÃ³coli") || n.includes("brocoli") || n.includes("coliflor") || n.includes("repollo") || n.includes("arveja") || n.includes("aceituna") || n.includes("piÃ±a") || n.includes("pina") || n.includes("naranja") || n.includes("uva") || n.includes("kale") || n.includes("puerro") || n.includes("berenjena") || n.includes("calabacÃ­n") || n.includes("calabacin") || n.includes("durazno") || n.includes("higo") || n.includes("jengibre") || n.includes("kiwi") || n.includes("pera") || n.includes("sandÃ­a") || n.includes("sandia") || n.includes("melÃ³n") || n.includes("melon") || n.includes("frutilla") || n.includes("fresa") || n.includes("bok choy") || n.includes("pak choi") || n.includes("aÃ§aÃ­") || n.includes("acai") || n.includes("shiitake") || n.includes("portobello") || n.includes("ostra") && n.includes("hongo") || (n.includes("ajo") && !n.includes("polvo") && !n.includes("ajo_polvo"))) return "ðŸ¥¬ Frutas y Verduras";
+      // â”€â”€ ProteÃ­nas (incluye chorizo, salchichas, tocino, sardinas) â”€â”€
+      if (n.includes("pollo") || n.includes("carne") || n.includes("salmÃ³n") || n.includes("salmon") || n.includes("atÃºn") || n.includes("atun") || n.includes("huevo") || n.includes("proteÃ­na") || n.includes("pavo") || n.includes("cerdo") || n.includes("pescado") || n.includes("merluza") || n.includes("camar") || n.includes("tofu") || n.includes("jamÃ³n") || n.includes("jamon") || n.includes("chorizo") || n.includes("salchicha") || n.includes("tocino") || n.includes("panceta") || n.includes("sardina") || n.includes("caballa") || n.includes("trucha") || n.includes("anchoa")) return "ðŸ¥© ProteÃ­nas";
+      // â”€â”€ LÃ¡cteos (solo vaca: leche, yogur, queso, crema, mantequilla) â”€â”€
+      if (n.includes("leche") || n.includes("yogur") || n.includes("queso") || n.includes("crema") || (n.includes("mantequilla") && !n.includes("manÃ­") && !n.includes("almendra"))) return "ðŸ¥› LÃ¡cteos";
+      // â”€â”€ Frutos Secos y Semillas â”€â”€
+      if (n.includes("almendra") || n.includes("nuez") || n.includes("nueces") || n.includes("manÃ­") || n.includes("mani") || n.includes("semilla") || n.includes("chÃ­a") || n.includes("chia") || n.includes("pasa") || n.includes("deshidratado") || n.includes("piÃ±Ã³n") || n.includes("piÃ±ones") || n.includes("pinon") || n.includes("pinones")) return "ðŸ¥œ Frutos Secos y Semillas";
+      // â”€â”€ Despensa (granos, cereales, legumbres, aceites, miel, condimentos, salsas, especias, pan, masas, fideos, hummus) â”€â”€
+      if (n.includes("arroz") || n.includes("avena") || n.includes("quinoa") || n.includes("lenteja") || n.includes("poroto") || n.includes("garbanzo") || n.includes("granola") || n.includes("maÃ­z") || n.includes("maiz") || n.includes("edamame") || n.includes("aceite") || (n === "sal" || n.startsWith("sal ")) || n.includes("pimienta") || n.includes("comino") || n.includes("orÃ©gano") || n.includes("oregano") || n.includes("ajo en polvo") || n.includes("ajo_polvo") || n.includes("laurel") || n.includes("canela") || n.includes("curry") || n.includes("salsa") || n.includes("miel") || n.includes("vinagre") || n.includes("maple") || n.includes("tahini") || n.includes("sÃ©samo") || n.includes("sesamo") || n.includes("cacao") || n.includes("polvo para") || n.includes("hojuela") || n.includes("chocolate") || n.includes("azÃºcar") || n.includes("azucar") || n.includes("mostaza") || n.includes("ketchup") || n.includes("mayonesa") || (n.includes("coco") && !n.includes("leche")) || n.includes("pan ") || n.includes("pan pita") || n.includes("pan integral") || n.includes("pan rallado") || n.includes("tortilla") || n.includes("harina") || n.includes("fideo") || n.includes("pasta") || n.includes("espagueti") || n.includes("macarron") || n.includes("lasaÃ±a") || n.includes("hummus")) return "ðŸª Despensa";
+      return "ðŸ“¦ Otros";
     };
     ingredientesFaltantes.forEach(ing => { cats[clasificar(ing.nombre)].push(ing); });
     return Object.entries(cats).filter(([_, items]) => items.length > 0);
   }, [ingredientesFaltantes]);
 
   const generarTextoLista = () => {
-    let texto = "🛒 LISTA DE COMPRAS - NutriPlan\n";
-    texto += "═══════════════════════════\n";
+    let texto = "ðŸ›’ LISTA DE COMPRAS - NutriPlan\n";
+    texto += "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
     if (soloRestantes && diasRestantes.length > 0) {
-      texto += `📅 Solo para: ${diasRestantes.join(', ')}\n`;
+      texto += `ðŸ“… Solo para: ${diasRestantes.join(', ')}\n`;
     }
     texto += "\n";
     if (agrupado) {
       categorias.forEach(([cat, items]) => {
-        texto += `${cat}\n───────────────────\n`;
+        texto += `${cat}\nâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n`;
         items.forEach(ing => {
-          texto += `☐ ${ing.nombre} — ${formatearCompra(ing)}\n`;
+          texto += `â˜ ${ing.nombre} â€” ${formatearCompra(ing)}\n`;
         });
         texto += "\n";
       });
     } else {
       ingredientesFaltantes.forEach(ing => {
-        texto += `☐ ${ing.nombre} — ${formatearCompra(ing)}\n`;
+        texto += `â˜ ${ing.nombre} â€” ${formatearCompra(ing)}\n`;
       });
     }
     const esenciales = esencialesActivos();
     if (esenciales.length > 0) {
-      texto += `🏠 Esenciales recurrentes\n───────────────────\n`;
-      esenciales.forEach(e => { texto += `☐ ${e.nombre}\n`; });
+      texto += `ðŸ  Esenciales recurrentes\nâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n`;
+      esenciales.forEach(e => { texto += `â˜ ${e.nombre}\n`; });
       texto += "\n";
     }
     texto += `\nTotal: ${ingredientesFaltantes.length} items del plan + ${esenciales.length} esenciales`;
@@ -3202,8 +3202,8 @@ function ShoppingList({ plan, darkMode }) {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
             <i className="fas fa-check-circle text-green-500 text-4xl"></i>
           </div>
-          <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>¡Tenés todo!</h3>
-          <p className="text-gray-500 mb-6">Tu despensa está completa para la semana.</p>
+          <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Â¡TenÃ©s todo!</h3>
+          <p className="text-gray-500 mb-6">Tu despensa estÃ¡ completa para la semana.</p>
         </div>
         <EsencialesRecurrentes darkMode={darkMode} />
       </div>
@@ -3234,10 +3234,10 @@ function ShoppingList({ plan, darkMode }) {
             <div className="flex items-center gap-2">
               <i className={`fas fa-calendar-alt text-sm ${soloRestantes ? 'text-blue-500' : 'text-gray-400'}`}></i>
               <span className={`text-sm font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                Solo desde mañana
+                Solo desde maÃ±ana
               </span>
               <span className={`text-xs px-2 py-0.5 rounded-full ${soloRestantes ? 'bg-blue-100 text-blue-600' : darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
-                {soloRestantes ? `${diasRestantes.length} días` : `${diasRestantes.length + 1} días`}
+                {soloRestantes ? `${diasRestantes.length} dÃ­as` : `${diasRestantes.length + 1} dÃ­as`}
               </span>
             </div>
             <button onClick={() => setSoloRestantes(!soloRestantes)}
@@ -3340,7 +3340,7 @@ function ShoppingList({ plan, darkMode }) {
           copiado ? 'bg-green-500 text-white shadow-lg shadow-green-200' : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-200 hover:shadow-xl'
         }`}>
         {copiado
-          ? <span><i className="fas fa-check mr-2"></i>¡Copiado al Portapapeles!</span>
+          ? <span><i className="fas fa-check mr-2"></i>Â¡Copiado al Portapapeles!</span>
           : <span><i className="fas fa-copy mr-2"></i>Copiar Lista al Portapapeles</span>}
       </button>
 
@@ -3369,19 +3369,19 @@ function ShoppingList({ plan, darkMode }) {
               if (ess.length > 0) texto += "\n" + ess.map(e => e.nombre).join("\n");
               try {
                 await navigator.clipboard.writeText(texto);
-                alert('✓ Lista copiada. Pégala en el buscador de Jumbo/Líder (uno por línea).');
+                alert('âœ“ Lista copiada. PÃ©gala en el buscador de Jumbo/LÃ­der (uno por lÃ­nea).');
               } catch {
                 const ta = document.createElement('textarea');
                 ta.value = texto;
                 document.body.appendChild(ta); ta.select(); document.execCommand('copy');
                 document.body.removeChild(ta);
-                alert('✓ Lista copiada');
+                alert('âœ“ Lista copiada');
               }
             }}
             className={`py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] ${
               darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
             }`}>
-            <i className="fas fa-cart-shopping text-blue-500 mr-2"></i>Formato Jumbo/Líder
+            <i className="fas fa-cart-shopping text-blue-500 mr-2"></i>Formato Jumbo/LÃ­der
           </button>
         </div>
       )}
@@ -3391,9 +3391,9 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418ax — split en 2 secciones)
-// seccion="entrenamiento" → Pasos + Entreno
-// seccion="progreso" → Roadmap + Métricas
+// COMPONENTE: FatLossTab (v20260418ay â€” split en 2 secciones)
+// seccion="entrenamiento" â†’ Pasos + Entreno
+// seccion="progreso" â†’ Roadmap + MÃ©tricas
 // =============================================
 function FatLossTab({ perfil, darkMode, seccion }) {
   const subsPorSeccion = {
@@ -3403,7 +3403,7 @@ function FatLossTab({ perfil, darkMode, seccion }) {
     ],
     progreso: [
       { k: 'roadmap', l: 'Roadmap', icon: 'fa-route' },
-      { k: 'metricas', l: 'Métricas', icon: 'fa-weight-scale' }
+      { k: 'metricas', l: 'MÃ©tricas', icon: 'fa-weight-scale' }
     ]
   };
   const subs = subsPorSeccion[seccion] || subsPorSeccion.progreso;
@@ -3415,7 +3415,7 @@ function FatLossTab({ perfil, darkMode, seccion }) {
       <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>
         <i className="fas fa-fire text-4xl text-orange-400 mb-3"></i>
         <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Fat Loss Mode no activado</h3>
-        <p className="text-sm">Andá a tu perfil y elegí "Pérdida de peso" como objetivo para configurar tu roadmap.</p>
+        <p className="text-sm">AndÃ¡ a tu perfil y elegÃ­ "PÃ©rdida de peso" como objetivo para configurar tu roadmap.</p>
       </div>
     );
   }
@@ -3444,12 +3444,12 @@ function FatLossTab({ perfil, darkMode, seccion }) {
 }
 
 // =============================================
-// COMPONENTE: CocinarTab (agrupa ¿Qué cocino? + Crear receta)
+// COMPONENTE: CocinarTab (agrupa Â¿QuÃ© cocino? + Crear receta)
 // =============================================
 function CocinarTab({ darkMode, onRecipeClick }) {
   const [subVista, setSubVista] = React.useState('buscar');
   const subs = [
-    { k: 'buscar', l: '¿Qué cocino?', icon: 'fa-magnifying-glass' },
+    { k: 'buscar', l: 'Â¿QuÃ© cocino?', icon: 'fa-magnifying-glass' },
     { k: 'crear', l: 'Crear receta', icon: 'fa-wand-magic-sparkles' }
   ];
   return (
@@ -3472,7 +3472,7 @@ function CocinarTab({ darkMode, onRecipeClick }) {
   );
 }
 
-// ─── Sub-vista: Roadmap dinámico — conecta BodyComp + Training + Plateau + Alcohol ───
+// â”€â”€â”€ Sub-vista: Roadmap dinÃ¡mico â€” conecta BodyComp + Training + Plateau + Alcohol â”€â”€â”€
 function FLRoadmapView({ perfil, darkMode, refresh }) {
   const roadmap = perfil.roadmap;
   const faseInfo = (window.NP_FatLoss && window.NP_FatLoss.banner) ? window.NP_FatLoss.banner() : null;
@@ -3549,7 +3549,7 @@ function FLRoadmapView({ perfil, darkMode, refresh }) {
                   {alcohol.nivel}
                 </div>
                 <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                  {alcohol._resumen.kcal} kcal · {alcohol._resumen.dias}d
+                  {alcohol._resumen.kcal} kcal Â· {alcohol._resumen.dias}d
                 </div>
               </>
             ) : (
@@ -3564,7 +3564,7 @@ function FLRoadmapView({ perfil, darkMode, refresh }) {
             darkMode ? 'bg-yellow-900/30 text-yellow-300 border border-yellow-800' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
           }`}>
             <i className="fas fa-triangle-exclamation"></i>
-            <span>Meseta detectada · {plateau.diasVentana}d · {plateau.deltaSemanal} kg/sem → ver <b>Métricas</b></span>
+            <span>Meseta detectada Â· {plateau.diasVentana}d Â· {plateau.deltaSemanal} kg/sem â†’ ver <b>MÃ©tricas</b></span>
           </div>
         )}
       </div>
@@ -3603,7 +3603,7 @@ function FLRoadmapView({ perfil, darkMode, refresh }) {
       )}
       {!progreso && (
         <div className={`rounded-xl p-4 text-xs ${darkMode ? 'bg-gray-800 text-gray-400 border border-gray-700' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-          <i className="fas fa-info-circle mr-2"></i>Registrá tu peso en <b>Progreso → Métricas</b> para ver avance real.
+          <i className="fas fa-info-circle mr-2"></i>RegistrÃ¡ tu peso en <b>Progreso â†’ MÃ©tricas</b> para ver avance real.
         </div>
       )}
 
@@ -3611,7 +3611,7 @@ function FLRoadmapView({ perfil, darkMode, refresh }) {
       <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
         <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
           <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Fases del plan</h3>
-          <p className={`text-xs mt-0.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{roadmap.calculados.semanasTotales} semanas totales · {roadmap.calculados.cantDietBreaks} diet breaks · ~{roadmap.calculados.mesesTotales} meses</p>
+          <p className={`text-xs mt-0.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{roadmap.calculados.semanasTotales} semanas totales Â· {roadmap.calculados.cantDietBreaks} diet breaks Â· ~{roadmap.calculados.mesesTotales} meses</p>
         </div>
         <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
           {roadmap.fases.map((f, idx) => {
@@ -3638,15 +3638,15 @@ function FLRoadmapView({ perfil, darkMode, refresh }) {
                       }`}>Mes {f.mesInicio}{f.mesFin !== f.mesInicio ? '-'+f.mesFin : ''}</span>
                       <span className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{f.nombre}</span>
                       {esActiva && <span className="px-2 py-0.5 bg-orange-500 text-white text-[10px] font-bold rounded animate-pulse">ACTUAL</span>}
-                      {esCompletada && <span className="px-1.5 py-0.5 bg-green-500 text-white text-[10px] font-bold rounded">✓</span>}
+                      {esCompletada && <span className="px-1.5 py-0.5 bg-green-500 text-white text-[10px] font-bold rounded">âœ“</span>}
                       {esDietBreak && <i className="fas fa-pause-circle text-purple-500 text-xs"></i>}
                     </div>
                     <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{f.foco}</div>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <div className={`text-lg font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{f.calorias}</div>
-                    <div className={`text-[10px] uppercase ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>kcal · {f.targetPasos.toLocaleString()} pasos</div>
-                    <div className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{f.pesoInicio}→{f.pesoFin} kg</div>
+                    <div className={`text-[10px] uppercase ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>kcal Â· {f.targetPasos.toLocaleString()} pasos</div>
+                    <div className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{f.pesoInicio}â†’{f.pesoFin} kg</div>
                   </div>
                 </div>
               </div>
@@ -3655,7 +3655,7 @@ function FLRoadmapView({ perfil, darkMode, refresh }) {
         </div>
       </div>
 
-      {/* Próximo hito */}
+      {/* PrÃ³ximo hito */}
       {faseInfo && faseInfo.proximoHito && (
         <div className={`rounded-xl p-3 text-sm flex items-center gap-3 ${
           faseInfo.proximoHito.tipo === 'dietBreak'
@@ -3664,8 +3664,8 @@ function FLRoadmapView({ perfil, darkMode, refresh }) {
         }`}>
           <i className="fas fa-forward text-lg"></i>
           <div>
-            <div className="font-semibold">Próximo: {faseInfo.proximoHito.nombre}</div>
-            <div className="text-xs opacity-80">En {faseInfo.proximoHito.enDias} días</div>
+            <div className="font-semibold">PrÃ³ximo: {faseInfo.proximoHito.nombre}</div>
+            <div className="text-xs opacity-80">En {faseInfo.proximoHito.enDias} dÃ­as</div>
           </div>
         </div>
       )}
@@ -3673,7 +3673,7 @@ function FLRoadmapView({ perfil, darkMode, refresh }) {
   );
 }
 
-// ─── Componente: WeightChart (SVG tendencia peso vs objetivo planificado) ───
+// â”€â”€â”€ Componente: WeightChart (SVG tendencia peso vs objetivo planificado) â”€â”€â”€
 function WeightChart({ perfil, entries, darkMode }) {
   const conPeso = entries.filter(e => e.peso != null).slice(-90);
   if (conPeso.length < 2 || !perfil || !perfil.roadmap) return null;
@@ -3708,7 +3708,7 @@ function WeightChart({ perfil, entries, darkMode }) {
   const pts = conPeso.map(e => [xOf(e.fecha), yOf(e.peso)]);
   const pathD = pts.map((p, i) => (i ? `L${p[0].toFixed(1)},${p[1].toFixed(1)}` : `M${p[0].toFixed(1)},${p[1].toFixed(1)}`)).join('');
 
-  // Trayectoria planificada: desde peso inicial hasta hoy a -tasaSemanal/7 por día
+  // Trayectoria planificada: desde peso inicial hasta hoy a -tasaSemanal/7 por dÃ­a
   const diasHoy = Math.max(0, Math.round((new Date(hoyIso) - new Date(conPeso[0].fecha + 'T00:00:00')) / 86400000));
   const pesoPlaneadoHoy = Math.max(pesoTarget, pesoInicial - (tasaSemanal / 7) * diasHoy);
   const tx0 = xOf(conPeso[0].fecha), ty0 = yOf(Math.min(yTop - 0.01, pesoInicial));
@@ -3737,7 +3737,7 @@ function WeightChart({ perfil, entries, darkMode }) {
         );
       })}
 
-      {/* Target final (línea horizontal verde) */}
+      {/* Target final (lÃ­nea horizontal verde) */}
       <line x1={pL} y1={yOf(pesoTarget)} x2={W - pR} y2={yOf(pesoTarget)}
         stroke={targetC} strokeWidth="1.5" strokeDasharray="4 3" />
 
@@ -3745,12 +3745,12 @@ function WeightChart({ perfil, entries, darkMode }) {
       <line x1={tx0} y1={ty0} x2={tx1} y2={ty1}
         stroke={planC} strokeWidth="1.5" strokeDasharray="5 3" />
 
-      {/* Área bajo curva real */}
+      {/* Ãrea bajo curva real */}
       <path
         d={`${pathD}L${pts[pts.length-1][0].toFixed(1)},${(pT+cH).toFixed(1)}L${pts[0][0].toFixed(1)},${(pT+cH).toFixed(1)}Z`}
         fill={darkMode ? 'rgba(249,115,22,0.07)' : 'rgba(249,115,22,0.05)'} />
 
-      {/* Línea real */}
+      {/* LÃ­nea real */}
       <path d={pathD} fill="none" stroke="#f97316" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
 
       {/* Puntos */}
@@ -3768,7 +3768,7 @@ function WeightChart({ perfil, entries, darkMode }) {
   );
 }
 
-// ─── Sub-vista: Métricas (log peso + medidas) ───
+// â”€â”€â”€ Sub-vista: MÃ©tricas (log peso + medidas) â”€â”€â”€
 function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
   const [pesoInput, setPesoInput] = React.useState('');
   const [medidas, setMedidas] = React.useState({ cintura: '', cuello: '', cadera: '', muslo: '' });
@@ -3816,7 +3816,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
       {/* Detector de meseta (v20260418af) */}
       <PlateauCard darkMode={darkMode} refresh={refresh} onRefresh={onRefresh} />
 
-      {/* Registro rápido de peso */}
+      {/* Registro rÃ¡pido de peso */}
       <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
         <h3 className={`text-sm font-bold uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Peso de hoy</h3>
         {entradaHoy && entradaHoy.peso != null ? (
@@ -3847,18 +3847,18 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
       {/* Promedio + tendencia */}
       <div className="grid grid-cols-2 gap-3">
         <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <div className="text-[10px] text-gray-400 uppercase font-bold">Promedio 7 días</div>
-          <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{promedio7 != null ? promedio7 + ' kg' : '—'}</div>
+          <div className="text-[10px] text-gray-400 uppercase font-bold">Promedio 7 dÃ­as</div>
+          <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{promedio7 != null ? promedio7 + ' kg' : 'â€”'}</div>
         </div>
         <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <div className="text-[10px] text-gray-400 uppercase font-bold">Tendencia 14d</div>
           <div className={`text-2xl font-extrabold ${tendencia && tendencia.deltaSemanal != null ? (tendencia.deltaSemanal < 0 ? 'text-green-500' : tendencia.deltaSemanal > 0 ? 'text-red-500' : 'text-gray-400') : 'text-gray-400'}`}>
-            {tendencia && tendencia.deltaSemanal != null ? (tendencia.deltaSemanal > 0 ? '+' : '') + tendencia.deltaSemanal + ' kg/sem' : '—'}
+            {tendencia && tendencia.deltaSemanal != null ? (tendencia.deltaSemanal > 0 ? '+' : '') + tendencia.deltaSemanal + ' kg/sem' : 'â€”'}
           </div>
         </div>
       </div>
 
-      {/* Gráfico tendencia peso */}
+      {/* GrÃ¡fico tendencia peso */}
       {entries.filter(e => e.peso != null).length >= 2 && (
         <div className={`rounded-2xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <h3 className={`text-sm font-bold uppercase tracking-wider mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tendencia de peso</h3>
@@ -3912,7 +3912,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
                   className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="55" />
               </div>
               <div className="col-span-2">
-                <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BF% manual (opcional — sino se calcula Navy)</label>
+                <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BF% manual (opcional â€” sino se calcula Navy)</label>
                 <input type="number" step="0.1" value={bfManualInput} onChange={e => setBfManualInput(e.target.value)}
                   className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="Ej: 18.5" />
               </div>
@@ -3930,7 +3930,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
               return (
                 <div key={campo} className={`rounded-lg p-2 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
                   <div className="text-[10px] text-gray-400 uppercase">{campo}</div>
-                  <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{last && last[campo] != null ? last[campo] + ' cm' : '—'}</div>
+                  <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{last && last[campo] != null ? last[campo] + ' cm' : 'â€”'}</div>
                 </div>
               );
             })}
@@ -3940,7 +3940,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
                 <div className={`col-span-2 rounded-lg p-2 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
                   <div className="text-[10px] text-gray-400 uppercase">BF%</div>
                   <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                    {lastBF && lastBF.bf != null ? lastBF.bf + '%' : '—'}
+                    {lastBF && lastBF.bf != null ? lastBF.bf + '%' : 'â€”'}
                     {lastBF && lastBF.bfCalculado != null && lastBF.bf !== lastBF.bfCalculado && (
                       <span className="text-[10px] text-gray-400 ml-2">(Navy: {lastBF.bfCalculado}%)</span>
                     )}
@@ -3959,7 +3959,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
       {ultimas14.length > 0 && (
         <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Últimas 14 entradas</h3>
+            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ãšltimas 14 entradas</h3>
           </div>
           <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
             {ultimas14.map((e, i) => (
@@ -3983,7 +3983,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
   );
 }
 
-// ─── Componente: PlateauCard (detector + protocolo 6 pasos) ───
+// â”€â”€â”€ Componente: PlateauCard (detector + protocolo 6 pasos) â”€â”€â”€
 function PlateauCard({ darkMode, refresh, onRefresh }) {
   const [verProtocolo, setVerProtocolo] = React.useState(false);
 
@@ -3995,7 +3995,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
     return (
       <div className={`rounded-xl p-4 text-sm ${darkMode ? 'bg-gray-800 text-gray-500 border border-gray-700' : 'bg-gray-50 text-gray-500 border border-gray-200'}`}>
         <i className="fas fa-radar mr-2"></i>
-        Detector de meseta: necesita ≥14 días de peso registrado para activarse.
+        Detector de meseta: necesita â‰¥14 dÃ­as de peso registrado para activarse.
       </div>
     );
   }
@@ -4014,19 +4014,19 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
     onRefresh();
   };
   const resolver = () => {
-    if (window.confirm('¿Este paso rompió la meseta? Se archivará como "funcionó" y saldrás del protocolo.')) {
+    if (window.confirm('Â¿Este paso rompiÃ³ la meseta? Se archivarÃ¡ como "funcionÃ³" y saldrÃ¡s del protocolo.')) {
       window.NP_Plateau.marcarResuelto();
       onRefresh();
     }
   };
   const cancelar = () => {
-    if (window.confirm('¿Cancelar seguimiento del protocolo sin marcarlo como resuelto?')) {
+    if (window.confirm('Â¿Cancelar seguimiento del protocolo sin marcarlo como resuelto?')) {
       window.NP_Plateau.cancelar();
       onRefresh();
     }
   };
 
-  // Color del banner según estado
+  // Color del banner segÃºn estado
   let bannerCls, iconCls, ribbon;
   if (hayPasoActivo) {
     bannerCls = darkMode ? 'bg-amber-900/30 border-amber-700' : 'bg-amber-50 border-amber-300';
@@ -4052,13 +4052,13 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
         <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${iconCls} ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>{ribbon}</span>
       </div>
 
-      {/* Stats de detección */}
+      {/* Stats de detecciÃ³n */}
       {est.deteccion.datosSuficientes && (
         <div className="grid grid-cols-3 gap-3 mb-3">
           <div>
-            <div className="text-[10px] text-gray-400 uppercase font-bold">Δ semanal</div>
+            <div className="text-[10px] text-gray-400 uppercase font-bold">Î” semanal</div>
             <div className={`text-2xl font-extrabold ${delta == null ? 'text-gray-400' : delta < -0.25 ? 'text-green-500' : delta > 0.25 ? 'text-red-500' : 'text-amber-500'}`}>
-              {delta == null ? '—' : (delta > 0 ? '+' : '') + delta}
+              {delta == null ? 'â€”' : (delta > 0 ? '+' : '') + delta}
               {delta != null && <span className="text-sm font-semibold opacity-70 ml-0.5">kg</span>}
             </div>
           </div>
@@ -4068,7 +4068,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
           </div>
           <div>
             <div className="text-[10px] text-gray-400 uppercase font-bold">Umbral</div>
-            <div className={`text-sm font-bold mt-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>±0.25 kg/sem</div>
+            <div className={`text-sm font-bold mt-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Â±0.25 kg/sem</div>
           </div>
         </div>
       )}
@@ -4083,7 +4083,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
                 <span className={`text-base font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{est.pasoDef.accion}</span>
               </div>
               <div className="text-xs text-gray-400 mt-1">
-                Día {est.diasEnPaso} · Duración sugerida: {est.pasoDef.duracion}
+                DÃ­a {est.diasEnPaso} Â· DuraciÃ³n sugerida: {est.pasoDef.duracion}
               </div>
             </div>
           </div>
@@ -4091,7 +4091,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
           <div className="flex gap-2 mt-3">
             <button onClick={resolver}
               className="flex-1 py-2 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600">
-              <i className="fas fa-check mr-1"></i>Funcionó
+              <i className="fas fa-check mr-1"></i>FuncionÃ³
             </button>
             {est.pasoActual < 6 && (
               <button onClick={avanzar}
@@ -4111,11 +4111,11 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
       {esSugerencia && !hayPasoActivo && (
         <div className={`rounded-lg p-4 mb-3 ${darkMode ? 'bg-red-900/40' : 'bg-white/70'}`}>
           <div className={`text-sm mb-3 leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-            Tu peso lleva ≥14 días dentro del umbral de meseta. Aplicá el primer paso del protocolo antes de tocar calorías: <b>auditar tracking</b>.
+            Tu peso lleva â‰¥14 dÃ­as dentro del umbral de meseta. AplicÃ¡ el primer paso del protocolo antes de tocar calorÃ­as: <b>auditar tracking</b>.
           </div>
           <button onClick={aplicarPaso1}
             className="w-full py-2 rounded-lg text-sm font-semibold bg-red-500 text-white hover:bg-red-600">
-            <i className="fas fa-play mr-2"></i>Iniciar protocolo — Paso 1
+            <i className="fas fa-play mr-2"></i>Iniciar protocolo â€” Paso 1
           </button>
         </div>
       )}
@@ -4123,7 +4123,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
       {/* Estado normal */}
       {!hayPasoActivo && !esSugerencia && est.deteccion.datosSuficientes && (
         <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          Sin meseta. El peso se mueve a {delta > 0 ? '+' : ''}{delta} kg/sem — fuera del rango de estancamiento.
+          Sin meseta. El peso se mueve a {delta > 0 ? '+' : ''}{delta} kg/sem â€” fuera del rango de estancamiento.
         </div>
       )}
 
@@ -4160,7 +4160,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
                 {!esActivo && !esHistorico && hayPasoActivo && p.paso > est.pasoActual && (
                   <button onClick={() => { window.NP_Plateau.aplicarPaso(p.paso); onRefresh(); }}
                     className={`mt-2 text-xs px-3 py-1.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
-                    Saltar a este paso →
+                    Saltar a este paso â†’
                   </button>
                 )}
               </div>
@@ -4172,7 +4172,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
   );
 }
 
-// ─── Componente: AlcoholCard (log bebidas + impacto semanal) ───
+// â”€â”€â”€ Componente: AlcoholCard (log bebidas + impacto semanal) â”€â”€â”€
 function AlcoholCard({ darkMode, refresh, onRefresh }) {
   const [expandido, setExpandido] = React.useState(false);
   const [modoCustom, setModoCustom] = React.useState(false);
@@ -4221,7 +4221,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
         className={`w-full rounded-2xl p-5 flex items-center justify-between border transition-colors ${darkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-750' : 'bg-white border-gray-100 shadow-sm hover:bg-gray-50'}`}>
         <div className="flex items-center gap-2">
           <i className={`fas fa-wine-glass ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
-          <span className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Alcohol · últimos 7 días</span>
+          <span className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Alcohol Â· Ãºltimos 7 dÃ­as</span>
         </div>
         <span className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>+ Registrar <i className="fas fa-chevron-down ml-1"></i></span>
       </button>
@@ -4235,7 +4235,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
       <div className={`px-5 py-3 border-b flex items-center justify-between ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
         <div className="flex items-center gap-2">
           <i className={`fas fa-wine-glass ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
-          <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Alcohol · últimos 7 días</h3>
+          <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Alcohol Â· Ãºltimos 7 dÃ­as</h3>
         </div>
         {impacto && (
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${badgeNivel}`}>{impacto.nivel}</span>
@@ -4255,25 +4255,25 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
             <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.kcal}</div>
           </div>
           <div>
-            <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Días activos</div>
+            <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>DÃ­as activos</div>
             <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               {resumen.dias}<span className={`text-sm font-semibold ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>/7</span>
             </div>
           </div>
         </div>
 
-        {/* Impacto fisiológico */}
+        {/* Impacto fisiolÃ³gico */}
         {impacto && (
           <div className={`rounded-xl p-4 space-y-3 ${darkMode ? 'bg-gray-700/40' : 'bg-gray-50'}`}>
             <div className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{impacto.escenario}</div>
             <div className="grid grid-cols-2 gap-2">
               <div className={`rounded-lg p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-                <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Oxidación grasa</div>
+                <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>OxidaciÃ³n grasa</div>
                 <div className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>pausada {impacto.horasPausaOxidacion}h</div>
                 {pausaH > 0 && <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{pausaH}h restantes</div>}
               </div>
               <div className={`rounded-lg p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-                <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Síntesis proteica</div>
+                <div className={`text-[10px] uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>SÃ­ntesis proteica</div>
                 <div className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{impacto.impactoSintesisProteica}</div>
               </div>
             </div>
@@ -4291,7 +4291,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
               <button key={i} onClick={() => agregar(p)}
                 className={`text-left px-3 py-2 rounded-lg transition-colors ${darkMode ? 'bg-gray-700/50 hover:bg-gray-700 text-gray-200' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'}`}>
                 <div className="text-sm font-semibold truncate">{p.nombre}</div>
-                <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{p.ml} ml · {p.kcal} kcal</div>
+                <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{p.ml} ml Â· {p.kcal} kcal</div>
               </button>
             ))}
           </div>
@@ -4303,20 +4303,20 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
             {presets.length > 6 && (
               <button onClick={() => setMostrarMas(!mostrarMas)}
                 className={`flex-1 text-sm py-2 rounded-lg font-semibold ${darkMode ? 'bg-gray-700/50 text-gray-300 hover:bg-gray-700' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>
-                {mostrarMas ? 'Menos' : `Más (${presets.length - 6})`} <i className={`fas fa-chevron-${mostrarMas ? 'up' : 'down'} text-xs ml-1`}></i>
+                {mostrarMas ? 'Menos' : `MÃ¡s (${presets.length - 6})`} <i className={`fas fa-chevron-${mostrarMas ? 'up' : 'down'} text-xs ml-1`}></i>
               </button>
             )}
           </div>
         </div>
 
-        {/* Más bebidas (expandido inline) */}
+        {/* MÃ¡s bebidas (expandido inline) */}
         {mostrarMas && presets.length > 6 && (
           <div className="grid grid-cols-2 gap-2">
             {presets.slice(6).map((p, i) => (
               <button key={i} onClick={() => { agregar(p); setMostrarMas(false); }}
                 className={`text-left px-3 py-2 rounded-lg transition-colors ${darkMode ? 'bg-gray-700/50 hover:bg-gray-700 text-gray-200' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'}`}>
                 <div className="text-sm font-semibold truncate">{p.nombre}</div>
-                <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{p.ml} ml · {p.kcal} kcal</div>
+                <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{p.ml} ml Â· {p.kcal} kcal</div>
               </button>
             ))}
           </div>
@@ -4340,7 +4340,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
             </div>
             {kcalCustomPreview != null && (
               <div className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                ≈ <b>{kcalCustomPreview} kcal</b> (solo alcohol puro, sin mezcladores)
+                â‰ˆ <b>{kcalCustomPreview} kcal</b> (solo alcohol puro, sin mezcladores)
               </div>
             )}
             <button onClick={agregarCustom} disabled={!customMl || !customPct}
@@ -4388,7 +4388,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
   );
 }
 
-// ─── Sub-vista: Pasos ───
+// â”€â”€â”€ Sub-vista: Pasos â”€â”€â”€
 function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
   const [pasosInput, setPasosInput] = React.useState('');
 
@@ -4416,7 +4416,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
       <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
         <div className="flex items-center justify-between mb-3">
           <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Hoy</h3>
-          <span className="text-xs text-gray-400">Target: <b className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{target ? target.toLocaleString() : '—'}</b></span>
+          <span className="text-xs text-gray-400">Target: <b className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{target ? target.toLocaleString() : 'â€”'}</b></span>
         </div>
         <div className={`text-5xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'} text-center mb-3`}>
           {hoy.pasos.toLocaleString()}
@@ -4432,7 +4432,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
                     : 'linear-gradient(to right, #f97316, #ef4444)'
                 }}></div>
             </div>
-            <div className="text-center text-xs mt-1 text-gray-400">{Math.round(pct)}% del target{pct >= 100 ? ' ✓' : ''}</div>
+            <div className="text-center text-xs mt-1 text-gray-400">{Math.round(pct)}% del target{pct >= 100 ? ' âœ“' : ''}</div>
           </>
         )}
         <div className="flex gap-2 mt-4">
@@ -4458,13 +4458,13 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
         <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <div className="text-[10px] text-gray-400 uppercase font-bold">Promedio 7 días</div>
+          <div className="text-[10px] text-gray-400 uppercase font-bold">Promedio 7 dÃ­as</div>
           <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{prom7.toLocaleString()}</div>
         </div>
         <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <div className="text-[10px] text-gray-400 uppercase font-bold">Racha actual</div>
           <div className={`text-2xl font-extrabold ${racha > 0 ? 'text-orange-500' : darkMode ? 'text-white' : 'text-gray-800'}`}>
-            {racha} {racha === 1 ? 'día' : 'días'}{racha >= 3 ? ' 🔥' : ''}
+            {racha} {racha === 1 ? 'dÃ­a' : 'dÃ­as'}{racha >= 3 ? ' ðŸ”¥' : ''}
           </div>
         </div>
       </div>
@@ -4473,7 +4473,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
       {ultimos.length > 0 && (
         <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Últimos 14 días</h3>
+            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ãšltimos 14 dÃ­as</h3>
           </div>
           <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
             {ultimos.slice().reverse().map((e, i) => {
@@ -4485,7 +4485,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-gray-400">{e.fecha}</span>
                     <span className={`text-sm font-bold ${cumplido ? 'text-green-500' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                      {e.pasos.toLocaleString()} {cumplido && '✓'}
+                      {e.pasos.toLocaleString()} {cumplido && 'âœ“'}
                     </span>
                   </div>
                   <div className={`w-full h-1.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
@@ -4501,11 +4501,11 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
   );
 }
 
-// ─── Helper: mapear campo equipo → id de equipamiento ───
+// â”€â”€â”€ Helper: mapear campo equipo â†’ id de equipamiento â”€â”€â”€
 function getEquipoId(equipo) {
   if (!equipo) return 'peso_corporal';
   const e = equipo.toLowerCase();
-  // Speediance incluye modo remo/remadora — son el mismo equipo
+  // Speediance incluye modo remo/remadora â€” son el mismo equipo
   if (e.includes('speediance') || e.includes('barra/speediance')) return 'speediance';
   if (e.includes('treadmill')) return 'treadmill_plano';
   if (e === 'barra') return 'barra';
@@ -4519,7 +4519,7 @@ function leerEquipos() {
   } catch (err) { return ['peso_corporal', 'speediance', 'treadmill_plano']; }
 }
 
-// ─── Componente: selector de equipamiento disponible ───
+// â”€â”€â”€ Componente: selector de equipamiento disponible â”€â”€â”€
 function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
   const equipos = (window.NP_RoadmapData && window.NP_RoadmapData.EQUIPOS_DISPONIBLES) || [];
   const [seleccion, setSeleccion] = React.useState(leerEquipos);
@@ -4577,11 +4577,11 @@ function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
   );
 }
 
-// ─── Sub-vista: Entreno (log de cargas por día A/B/C/D) ───
+// â”€â”€â”€ Sub-vista: Entreno (log de cargas por dÃ­a A/B/C/D) â”€â”€â”€
 function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   const hoy = new Date().toISOString().split('T')[0];
 
-  // ── Días/semana: persiste en localStorage, modifica todo el plan ──
+  // â”€â”€ DÃ­as/semana: persiste en localStorage, modifica todo el plan â”€â”€
   const [diasSemana, setDiasSemana] = React.useState(() =>
     parseInt(localStorage.getItem('nutriplan_dias_semana') || '4')
   );
@@ -4606,10 +4606,10 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   }, [diasSemana]);
 
   if (!window.NP_Training) {
-    return <div className={`rounded-xl p-6 text-sm ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-amber-50 text-amber-700'}`}>Módulo de entreno no disponible.</div>;
+    return <div className={`rounded-xl p-6 text-sm ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-amber-50 text-amber-700'}`}>MÃ³dulo de entreno no disponible.</div>;
   }
 
-  // ── Protocolo dinámico: ejercicios rotan semana a semana ──
+  // â”€â”€ Protocolo dinÃ¡mico: ejercicios rotan semana a semana â”€â”€
   const semanaNum = window.NP_RoadmapData ? window.NP_RoadmapData.semanaActual(hoy) : 0;
   // equiposDisp como estado: permite re-render inmediato al cambiar equipamiento
   const [equiposDisp, setEquiposDisp] = React.useState(leerEquipos);
@@ -4617,13 +4617,13 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
     ? window.NP_RoadmapData.generarProtocoloDia(tipoDia, semanaNum, equiposDisp)
     : (window.NP_Training ? window.NP_Training.protocoloDia(tipoDia) : null);
 
-  // ── Sesión del día: siempre refleja el protocolo dinámico actual ──
+  // â”€â”€ SesiÃ³n del dÃ­a: siempre refleja el protocolo dinÃ¡mico actual â”€â”€
   // Los datos ya logueados se preservan por nombre de ejercicio.
-  // Así, al cambiar equipamiento los ejercicios se actualizan de inmediato
+  // AsÃ­, al cambiar equipamiento los ejercicios se actualizan de inmediato
   // sin borrar el progreso de los ejercicios que permanezcan en el plan.
   let sesion = window.NP_Training.obtener(hoy, tipoDia);
   if (protocolo) {
-    // Mapa nombre → datos logueados de la sesión guardada
+    // Mapa nombre â†’ datos logueados de la sesiÃ³n guardada
     const logMap = {};
     sesion.ejercicios.forEach(e => {
       logMap[e.nombre] = { done: e.done, peso: e.peso, repsReales: e.repsReales };
@@ -4659,10 +4659,10 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
 
   const toggleDone = (idx) => patch(idx, { done: !sesion.ejercicios[idx].done });
   const setPeso = (idx, v) => {
-    // Permitir string parcial ("1.", "1,5") sin bloquear; parseo final solo si es número válido
+    // Permitir string parcial ("1.", "1,5") sin bloquear; parseo final solo si es nÃºmero vÃ¡lido
     if (v === '' || v == null) return patch(idx, { peso: null });
     const limpio = String(v).replace(',', '.');
-    if (!/^-?\d*\.?\d*$/.test(limpio)) return; // ignorar caracteres inválidos
+    if (!/^-?\d*\.?\d*$/.test(limpio)) return; // ignorar caracteres invÃ¡lidos
     const num = parseFloat(limpio);
     patch(idx, { peso: isNaN(num) ? limpio : num });
   };
@@ -4677,7 +4677,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   };
 
   const limpiarSesion = () => {
-    if (window.confirm('¿Borrar el registro de este entreno?')) {
+    if (window.confirm('Â¿Borrar el registro de este entreno?')) {
       window.NP_Training.eliminar(hoy, tipoDia);
       onRefresh();
     }
@@ -4687,9 +4687,9 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   const total = sesion.ejercicios.length;
   const pct = total > 0 ? Math.round((completados / total) * 100) : 0;
 
-  // tipos ya está definido arriba desde planActual
-  const gridCols = tipos.length <= 4 ? tipos.length : 3; // 5-6 días → 2 filas de 3
-  const diaSemana = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][new Date(hoy + 'T12:00:00').getDay()];
+  // tipos ya estÃ¡ definido arriba desde planActual
+  const gridCols = tipos.length <= 4 ? tipos.length : 3; // 5-6 dÃ­as â†’ 2 filas de 3
+  const diaSemana = ['Dom','Lun','Mar','MiÃ©','Jue','Vie','SÃ¡b'][new Date(hoy + 'T12:00:00').getDay()];
 
   return (
     <div className="space-y-4">
@@ -4712,23 +4712,23 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
       {/* Equipamiento disponible */}
       <EquipamientoCard darkMode={darkMode} onEquiposChange={setEquiposDisp} onRefresh={onRefresh} />
 
-      {/* Selector de día */}
+      {/* Selector de dÃ­a */}
       <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
         <div className="flex items-center justify-between mb-2">
           <div className={`text-xs uppercase font-bold tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            Día a registrar · hoy ({diaSemana})
+            DÃ­a a registrar Â· hoy ({diaSemana})
           </div>
           {esDescanso
-            ? <span className={`text-xs px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>Descanso según plan</span>
+            ? <span className={`text-xs px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>Descanso segÃºn plan</span>
             : <span className="text-xs px-2 py-0.5 rounded bg-orange-500/20 text-orange-500 font-bold">
-                Sugerido: Día {(tipos.find(t => t.k === sugerido) || {}).short || sugerido}
+                Sugerido: DÃ­a {(tipos.find(t => t.k === sugerido) || {}).short || sugerido}
               </span>
           }
         </div>
 
-        {/* Selector días/semana */}
+        {/* Selector dÃ­as/semana */}
         <div className="flex items-center gap-2 mb-3">
-          <span className={`text-xs font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Días/sem:</span>
+          <span className={`text-xs font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>DÃ­as/sem:</span>
           <div className="flex gap-1">
             {[2,3,4,5,6].map(n => (
               <button key={n}
@@ -4747,7 +4747,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
           {planActual && <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{planActual.label}</span>}
         </div>
 
-        {/* Botones de tipo de día */}
+        {/* Botones de tipo de dÃ­a */}
         <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
           {tipos.map(t => {
             const activo = tipoDia === t.k;
@@ -4761,7 +4761,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                       ? darkMode ? 'bg-orange-900/30 text-orange-300 border border-orange-700' : 'bg-orange-50 text-orange-600 border border-orange-200'
                       : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
                 }`}>
-                <span className="text-sm">Día {t.short || t.k}</span>
+                <span className="text-sm">DÃ­a {t.short || t.k}</span>
                 <span className="text-[11px] opacity-80">{t.corto}</span>
               </button>
             );
@@ -4769,7 +4769,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
         </div>
       </div>
 
-      {/* Card del día seleccionado */}
+      {/* Card del dÃ­a seleccionado */}
       {protocolo && (
         <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <div className="flex items-start justify-between gap-3 mb-3">
@@ -4778,13 +4778,13 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                 <div className={`text-sm uppercase tracking-wider font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{protocolo.nombre}</div>
                 {protocolo.variante && (
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
-                    Sem {semanaNum} · var #{protocolo.variante}
+                    Sem {semanaNum} Â· var #{protocolo.variante}
                   </span>
                 )}
               </div>
               <div className={`text-base ${darkMode ? 'text-gray-300' : 'text-gray-700'} mt-1`}>{protocolo.foco}</div>
               <div className="text-xs text-gray-400 mt-1">
-                <i className="fas fa-clock mr-1"></i>{protocolo.duracionMin} min · {protocolo.equipamiento}
+                <i className="fas fa-clock mr-1"></i>{protocolo.duracionMin} min Â· {protocolo.equipamiento}
               </div>
             </div>
             <div className="text-right flex-shrink-0">
@@ -4818,9 +4818,9 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
       <div className="space-y-2">
         {sesion.ejercicios.map((e, i) => {
           const previo = window.NP_Training.ultimoPeso(e.nombre, hoy);
-          const mejoró = previo && e.peso != null && Number(e.peso) > previo.peso;
-          const bajó = previo && e.peso != null && Number(e.peso) < previo.peso;
-          // Lookup en el pool global (cubre protocolo base + extras de rotación)
+          const mejorÃ³ = previo && e.peso != null && Number(e.peso) > previo.peso;
+          const bajÃ³ = previo && e.peso != null && Number(e.peso) < previo.peso;
+          // Lookup en el pool global (cubre protocolo base + extras de rotaciÃ³n)
           const protEj = (window.NP_RoadmapData && window.NP_RoadmapData.buscarEjercicio)
             ? window.NP_RoadmapData.buscarEjercicio(e.nombre)
             : (protocolo ? protocolo.ejercicios.find(p => p.nombre === e.nombre) : null);
@@ -4834,7 +4834,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                 <div className="flex-1 min-w-0">
                   <div className={`font-semibold text-base ${darkMode ? 'text-white' : 'text-gray-800'}`}>{e.nombre}</div>
                   <div className="flex items-center gap-2 flex-wrap mt-1">
-                    <span className="text-xs text-gray-400"><b>{e.setsEsperado} × {e.repsEsperado}</b> · {e.equipo}</span>
+                    <span className="text-xs text-gray-400"><b>{e.setsEsperado} Ã— {e.repsEsperado}</b> Â· {e.equipo}</span>
                     {protEj && protEj.youtube && (
                       <a href={protEj.youtube} target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-1 text-xs text-red-400 hover:text-red-500 font-medium">
@@ -4857,7 +4857,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                     return (
                       <div className="text-xs mt-1 font-medium text-amber-500">
                         <i className="fas fa-exclamation-triangle mr-1"></i>
-                        {info ? `Requiere ${info.nombre} — no marcado como disponible` : 'Equipo no disponible'}
+                        {info ? `Requiere ${info.nombre} â€” no marcado como disponible` : 'Equipo no disponible'}
                       </div>
                     );
                   })()}
@@ -4889,12 +4889,12 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
               {previo && (
                 <div className="flex items-center justify-between mt-2 text-xs">
                   <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>
-                    Último: <b className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{previo.peso} kg</b> × {previo.reps} <span className="opacity-60">({previo.fecha})</span>
+                    Ãšltimo: <b className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{previo.peso} kg</b> Ã— {previo.reps} <span className="opacity-60">({previo.fecha})</span>
                   </span>
-                  {(mejoró || bajó) && (
-                    <span className={`font-bold text-sm ${mejoró ? 'text-green-500' : 'text-red-400'}`}>
-                      <i className={`fas ${mejoró ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1`}></i>
-                      {mejoró ? '+' : ''}{(Number(e.peso) - previo.peso).toFixed(1)} kg
+                  {(mejorÃ³ || bajÃ³) && (
+                    <span className={`font-bold text-sm ${mejorÃ³ ? 'text-green-500' : 'text-red-400'}`}>
+                      <i className={`fas ${mejorÃ³ ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1`}></i>
+                      {mejorÃ³ ? '+' : ''}{(Number(e.peso) - previo.peso).toFixed(1)} kg
                     </span>
                   )}
                 </div>
@@ -4908,7 +4908,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
       {window.NP_RoadmapData && window.NP_RoadmapData.ENTRENO_PROTOCOLO && window.NP_RoadmapData.ENTRENO_PROTOCOLO.principios && (
         <details className={`rounded-xl ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <summary className={`px-5 py-3 cursor-pointer text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            <i className="fas fa-lightbulb mr-2"></i>Principios del método
+            <i className="fas fa-lightbulb mr-2"></i>Principios del mÃ©todo
           </summary>
           <div className={`px-5 pb-4 space-y-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
             {window.NP_RoadmapData.ENTRENO_PROTOCOLO.principios.map((p, i) => (
@@ -4921,11 +4921,11 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
         </details>
       )}
 
-      {/* Historial últimas sesiones */}
+      {/* Historial Ãºltimas sesiones */}
       {ultimas.length > 0 && (
         <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Últimas sesiones</h3>
+            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ãšltimas sesiones</h3>
           </div>
           <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
             {ultimas.map((s, i) => {
@@ -4936,11 +4936,11 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                 <div key={i} className="px-5 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-400">{s.fecha}</span>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>Día {s.dia_tipo}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>DÃ­a {s.dia_tipo}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`text-sm font-semibold ${s.completado ? 'text-green-500' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {hechos}/{tot} {s.completado && '✓'}
+                      {hechos}/{tot} {s.completado && 'âœ“'}
                     </span>
                     <div className={`w-16 h-1.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
                       <div className={`h-full ${s.completado ? 'bg-green-500' : 'bg-orange-500'}`} style={{ width: pctS + '%' }}></div>
@@ -4960,7 +4960,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
 // COMPONENTE PRINCIPAL: App (MEJORA 5: dark mode)
 // =============================================
 // =============================================
-// COMPONENTE: LoadingOverlay (búsqueda en vivo)
+// COMPONENTE: LoadingOverlay (bÃºsqueda en vivo)
 // =============================================
 function LoadingOverlay({ mensaje, darkMode }) {
   return (
@@ -4970,7 +4970,7 @@ function LoadingOverlay({ mensaje, darkMode }) {
           <i className="fas fa-globe text-white text-2xl loading-spin"></i>
         </div>
         <h3 className={`text-lg font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Buscando recetas</h3>
-        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{mensaje || 'Conectando con base de datos en línea...'}</p>
+        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{mensaje || 'Conectando con base de datos en lÃ­nea...'}</p>
         <div className="mt-4 flex justify-center gap-1">
           <span className="loading-dot w-2 h-2 rounded-full bg-green-500" style={{animationDelay: '0s'}}></span>
           <span className="loading-dot w-2 h-2 rounded-full bg-green-500" style={{animationDelay: '0.2s'}}></span>
@@ -5021,14 +5021,14 @@ function App() {
     });
   };
 
-  // Migración: sanitizar instrucciones en inglés + reemplazar desayunos/snacks pesados por locales
+  // MigraciÃ³n: sanitizar instrucciones en inglÃ©s + reemplazar desayunos/snacks pesados por locales
   // Soporta formato multi-semana (_numSemanas + semana_N) y formato legacy
   const _sanitizarPlan = (planInput, perfilParam) => {
     if (!planInput) return planInput;
     // Normalizar a formato multi-semana
     const plan = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(planInput) : planInput;
     let modificado = false;
-    const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    const DIAS = ["Lunes", "Martes", "MiÃ©rcoles", "Jueves", "Viernes", "SÃ¡bado", "Domingo"];
     const TIPOS = ["desayuno", "snack_am", "almuerzo", "snack_pm", "cena"];
     const TIPOS_SOLO_LOCAL = ["desayuno", "snack_am", "snack_pm"];
     
@@ -5098,7 +5098,7 @@ function App() {
             const instrGenericas = esComidaFuerte && instr.some(p => 
               p.includes("Cocinar los ingredientes principales") || 
               p.includes("Sazonar al gusto") && p.length < 50 ||
-              p === "¡Buen provecho!"
+              p === "Â¡Buen provecho!"
             );
             
             if ((instrCortas || instrSinDetalle || instrGenericas) && typeof asegurarInstruccionesEspanol === 'function') {
@@ -5135,7 +5135,7 @@ function App() {
       setPerfil(perfilGuardado);
       setPlanSemanal(_sanitizarPlan(planGuardado, perfilGuardado));
       setPantalla("plan");
-      // Fase 6.2: pre-cargar recipes-extra en idle para que swap/regenerar sean instantáneos
+      // Fase 6.2: pre-cargar recipes-extra en idle para que swap/regenerar sean instantÃ¡neos
       if (window.lazyRecipes && !window.lazyRecipes.estaCargado()) {
         var dispatch = window.requestIdleCallback || function(cb) { setTimeout(cb, 2000); };
         dispatch(function() { window.lazyRecipes.cargar().catch(function(){}); });
@@ -5167,14 +5167,14 @@ function App() {
       setPlanSemanal(plan);
       guardarPlanSemanal(plan);
       if (plan._buscoOnline && plan._recetasOnlineUsadas > 0) {
-        mostrarToast(`¡Plan generado con ${plan._recetasOnlineUsadas} recetas de internet!`);
+        mostrarToast(`Â¡Plan generado con ${plan._recetasOnlineUsadas} recetas de internet!`);
       } else {
-        mostrarToast("¡Plan semanal generado exitosamente!");
+        mostrarToast("Â¡Plan semanal generado exitosamente!");
       }
       setPantalla("plan");
     } catch (e) {
       console.error("Error generando plan:", e);
-      // Fallback síncrono
+      // Fallback sÃ­ncrono
       const plan = generarPlanSemanal(perfilData, perfilData.caloriasObjetivo);
       setPlanSemanal(plan);
       guardarPlanSemanal(plan);
@@ -5191,7 +5191,7 @@ function App() {
       setCargando(true);
       setMensajeCarga("Regenerando plan con recetas frescas...");
       try {
-        // Fase 6.2: asegurar recipes-extra cargado (por si el usuario recargó la app)
+        // Fase 6.2: asegurar recipes-extra cargado (por si el usuario recargÃ³ la app)
         if (window.lazyRecipes && !window.lazyRecipes.estaCargado()) {
           await window.lazyRecipes.cargar();
         }
@@ -5199,9 +5199,9 @@ function App() {
         setPlanSemanal(nuevoPlan);
         guardarPlanSemanal(nuevoPlan);
         if (nuevoPlan._buscoOnline && nuevoPlan._recetasOnlineUsadas > 0) {
-          mostrarToast(`¡Plan regenerado con ${nuevoPlan._recetasOnlineUsadas} recetas de internet!`);
+          mostrarToast(`Â¡Plan regenerado con ${nuevoPlan._recetasOnlineUsadas} recetas de internet!`);
         } else {
-          mostrarToast("¡Plan regenerado con nuevas recetas!");
+          mostrarToast("Â¡Plan regenerado con nuevas recetas!");
         }
       } catch (e) {
         console.error("Error regenerando plan:", e);
@@ -5258,7 +5258,7 @@ function App() {
   };
   const navegarA = (destino) => { setPantalla(destino); window.scrollTo(0, 0); };
 
-  // ─── Elementos globales (loading overlay + toast) ───
+  // â”€â”€â”€ Elementos globales (loading overlay + toast) â”€â”€â”€
   const globalOverlays = (
     <React.Fragment>
       {cargando && <LoadingOverlay mensaje={mensajeCarga} darkMode={darkMode} />}
@@ -5311,7 +5311,7 @@ function App() {
               <i className="fas fa-seedling text-white text-sm"></i>
             </div>
             <span className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>NutriPlan</span>
-            {perfil && <span className="text-xs text-gray-400 hidden sm:inline">{perfil.caloriasObjetivo} kcal/día{perfil.numSemanas > 1 ? ` · ${perfil.numSemanas} sem` : ''}</span>}
+            {perfil && <span className="text-xs text-gray-400 hidden sm:inline">{perfil.caloriasObjetivo} kcal/dÃ­a{perfil.numSemanas > 1 ? ` Â· ${perfil.numSemanas} sem` : ''}</span>}
           </div>
           <div className="flex items-center gap-1">
             {/* MEJORA 5: Dark mode toggle */}
@@ -5340,7 +5340,7 @@ function App() {
                 { id: "entrenamiento", label: "Entreno",    short: "Entreno",   icon: "fa-dumbbell" },
                 { id: "progreso",      label: "Progreso",   short: "Progreso",  icon: "fa-chart-line" }
               ] : []),
-              { id: "cocinar",       label: "¿Qué cocino?", short: "Cocinar",  icon: "fa-magnifying-glass" },
+              { id: "cocinar",       label: "Â¿QuÃ© cocino?", short: "Cocinar",  icon: "fa-magnifying-glass" },
               { id: "despensa",      label: "Despensa",    short: "Despensa",   icon: "fa-warehouse" },
               { id: "compras",       label: "Compras",     short: "Compras",    icon: "fa-cart-shopping" }
             ].map(tab => (
@@ -5388,8 +5388,8 @@ function App() {
       </main>
 
       <footer className={`text-center py-6 text-xs no-print ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-        <p>NutriPlan · Planificador Nutricional Semanal</p>
-        <p className="mt-1">Recetas en español + búsqueda en vivo · Thermomix TM6</p>
+        <p>NutriPlan Â· Planificador Nutricional Semanal</p>
+        <p className="mt-1">Recetas en espaÃ±ol + bÃºsqueda en vivo Â· Thermomix TM6</p>
       </footer>
 
       {recetaSeleccionada && <RecipeModal receta={recetaSeleccionada} onClose={() => setRecetaSeleccionada(null)} darkMode={darkMode} factorComensales={factorComensales} />}
@@ -5399,7 +5399,7 @@ function App() {
   );
 }
 
-// ─── Error Boundary para no dejar la pantalla en blanco ───
+// â”€â”€â”€ Error Boundary para no dejar la pantalla en blanco â”€â”€â”€
 class AppErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -5416,7 +5416,7 @@ class AppErrorBoundary extends React.Component {
       return React.createElement('div', {
         style: { padding: '24px', fontFamily: 'Inter, system-ui, sans-serif', maxWidth: '600px', margin: '40px auto' }
       },
-        React.createElement('h1', { style: { color: '#ef4444', marginBottom: '12px' } }, '⚠️ Error al cargar NutriPlan'),
+        React.createElement('h1', { style: { color: '#ef4444', marginBottom: '12px' } }, 'âš ï¸ Error al cargar NutriPlan'),
         React.createElement('p', { style: { color: '#374151', marginBottom: '8px' } }, 'Mensaje: ' + (this.state.error && this.state.error.message || 'desconocido')),
         React.createElement('pre', { style: { background: '#f3f4f6', padding: '12px', borderRadius: '8px', fontSize: '12px', overflow: 'auto', maxHeight: '200px' } }, this.state.error && this.state.error.stack || ''),
         React.createElement('button', {
@@ -5436,13 +5436,14 @@ class AppErrorBoundary extends React.Component {
             } catch (e) { window.location.reload(true); }
           },
           style: { marginTop: '16px', padding: '10px 24px', background: '#22c55e', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }
-        }, '🔄 Limpiar caché y reintentar')
+        }, 'ðŸ”„ Limpiar cachÃ© y reintentar')
       );
     }
     return this.props.children;
   }
 }
 
-// ─── Mount React App ───
+// â”€â”€â”€ Mount React App â”€â”€â”€
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(AppErrorBoundary, null, React.createElement(App)));
+

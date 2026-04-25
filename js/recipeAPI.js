@@ -1236,242 +1236,213 @@ function _generarThermomixDesdeInstrucciones(ingredientes, tipo) {
   const esRes = proteina && (proteina.nombre_normalizado.includes("carne_res") || (proteina.nombre_normalizado.includes("carne") && !esMolida) || proteina.nombre_normalizado.includes("cerdo"));
 
   // ════════════════════════════════════════════════════════
-  // PASO 0: MISE EN PLACE (preparación previa)
+  // PASO 1: PREPARAR (mise en place breve)
   // ════════════════════════════════════════════════════════
-  const prepList = [];
-  if (cebolla) prepList.push(`pelar ${cebolla.nombre} y cortarla en cuartos`);
-  if (ajo) prepList.push(`pelar los dientes de ajo y retirar el germen central (evita amargor)`);
+  const prepItems = [];
+  if (cebolla) prepItems.push(`${cebolla.nombre} en cuartos`);
+  if (ajo) prepItems.push(`${ajo.nombre} pelado`);
   if (vegetales.length > 0) {
-    const cortes = vegetales.slice(0, 4).map(v => {
+    vegetales.slice(0, 4).forEach(v => {
       const n = v.nombre_normalizado;
-      if (n.includes("zanahoria")) return `pelar ${v.nombre} y cortarla en rodajas de 0.5 cm`;
-      if (n.includes("papa") || n.includes("camote")) return `pelar ${v.nombre} y cortarla en cubos de 2 cm (tamaño uniforme para cocción pareja)`;
-      if (n.includes("pimiento")) return `retirar semillas de ${v.nombre} y cortar en tiras de 1 cm`;
-      if (n.includes("brocoli") || n.includes("coliflor")) return `separar ${v.nombre} en floretes de tamaño similar (~3 cm)`;
-      if (n.includes("calabacin") || n.includes("berenjena")) return `cortar ${v.nombre} en medias lunas de 1 cm`;
-      if (n.includes("zapallo")) return `pelar ${v.nombre} y cortar en cubos de 2.5 cm`;
-      if (n.includes("espinaca") || n.includes("kale")) return `lavar ${v.nombre} y retirar tallos duros`;
-      if (n.includes("champi")) return `limpiar ${v.nombre} con papel húmedo (no sumergir) y cortar en cuartos`;
-      if (n.includes("tomate")) return `escaldar ${v.nombre} 30 seg, pelar y cortar en cubos`;
-      return `lavar y cortar ${v.nombre} en trozos uniformes`;
+      if (n.includes("zanahoria") || n.includes("papa") || n.includes("camote") || n.includes("zapallo")) prepItems.push(`${v.nombre} pelado y troceado`);
+      else if (n.includes("brocoli") || n.includes("coliflor")) prepItems.push(`${v.nombre} en floretes`);
+      else prepItems.push(`${v.nombre} troceado`);
     });
-    prepList.push(...cortes);
   }
   if (proteina && !esMolida) {
-    if (esDelicado) {
-      if (proteina.nombre_normalizado.includes("camar")) {
-        prepList.push(`pelar y desvenar ${proteina.nombre}, secar con papel absorbente`);
-      } else {
-        prepList.push(`revisar ${proteina.nombre} y retirar espinas con pinza, secar bien con papel absorbente (la humedad impide buen resultado al vapor)`);
-      }
-    } else if (esPollo) {
-      prepList.push(`cortar ${proteina.nombre} en piezas de ~150 g, salpimentar por ambos lados y dejar atemperar 10 minutos fuera del refrigerador`);
-    } else if (esRes) {
-      prepList.push(`cortar ${proteina.nombre} contra la fibra en trozos de ~150 g, salpimentar generosamente y dejar atemperar 15 minutos`);
-    }
+    if (esPollo) prepItems.push(`${proteina.nombre} troceado y salpimentado`);
+    else if (esDelicado) prepItems.push(`${proteina.nombre} seco con papel absorbente y salpimentado`);
+    else if (esRes) prepItems.push(`${proteina.nombre} troceado contra la fibra y salpimentado`);
   }
-  if (hierbas.length > 0) prepList.push(`lavar y picar ${nombresHierbas} por separado; reservar para el final`);
+  if (hierbas.length > 0) prepItems.push(`${nombresHierbas} lavado (se añade al final)`);
 
-  if (prepList.length > 0) {
-    addPaso(`**Mise en place.** Antes de encender el TM6, preparar toda la estación de trabajo: ${prepList.join("; ")}. Pesar el resto de ingredientes en cuencos separados. Tener a mano espátula TM, Varoma con bandeja y cestillo. Esta preparación evita pausas durante la cocción y asegura resultados consistentes.`);
+  if (prepItems.length > 0) {
+    const itemsMostrar = prepItems.slice(0, 5);
+    addPaso(`**Preparar.** ${itemsMostrar.map(i => `• ${i}`).join("  ")}. Pesar el resto de ingredientes y tener a mano la espátula TM, el Varoma y el cestillo.`);
   }
 
   // ════════════════════════════════════════════════════════
-  // BASE AROMÁTICA: picar finamente cebolla y ajo, luego pochar
+  // PASO 2: BASE AROMÁTICA — picar y pochar en un solo paso
   // ════════════════════════════════════════════════════════
   const baseAromatica = [];
   if (cebolla) baseAromatica.push(cebolla.nombre);
-  if (ajo) baseAromatica.push("ajo");
+  if (ajo) baseAromatica.push(ajo.nombre);
 
   if (baseAromatica.length > 0) {
-    addPaso(`**Picar la base aromática.** Colocar ${baseAromatica.join(" y ")} en el vaso limpio y seco. Programar **5 seg / Vel 5**. Retirar la tapa y bajar los restos hacia el fondo con la espátula TM (nunca con otro utensilio, puede dañar las cuchillas). El picado debe quedar fino y homogéneo; si quedaran trozos grandes, repetir 3 seg / Vel 5.`);
-
-    const aceiteNombre = aceite ? aceite.nombre : "aceite de oliva virgen extra";
-    addPaso(`**Pochar la base.** Añadir **30 g de ${aceiteNombre}** (aprox. 2 cucharadas soperas). Programar **5 min / 120°C / Vel 1** sin cubilete (así evapora el agua de la cebolla y concentra sabores). Al terminar, la mezcla debe estar translúcida, brillante y con aroma dulce, nunca marrón. Si se dora demasiado rápido, bajar a 100°C los últimos 2 min.`);
+    const aceiteNombre = aceite ? aceite.nombre : "aceite de oliva";
+    addPaso(`**Base aromática.** Poner ${baseAromatica.join(" y ")} en el vaso. Programar **5 seg | Vel 5**. Bajar restos con la espátula. Añadir **${aceiteNombre} (30 g)**. Programar **5 min | 120°C | Vel 1** sin cubilete. La base quedará translúcida y aromática — **queda en el vaso** para el siguiente paso.`);
   } else if (aceite) {
-    addPaso(`**Calentar el aceite.** Verter **20-30 g de ${aceite.nombre}** en el vaso. Programar **2 min / 120°C / Vel 1**. El aceite debe brillar sin humear; si humea, es señal de sobrecalentamiento: abrir la tapa 30 seg antes de continuar.`);
+    addPaso(`**Calentar el aceite.** Verter **${aceite.nombre} (20 g)** en el vaso. Programar **2 min | 120°C | Vel 1**.`);
   }
 
   // ════════════════════════════════════════════════════════
-  // CARNE MOLIDA: sellar y sofreír con giro inverso
-  // ════════════════════════════════════════════════════════
-  if (esMolida) {
-    addPaso(`**Sellar la carne molida.** Incorporar **${proteina.nombre}** al vaso desmenuzada con los dedos (evita grumos grandes). Programar **7 min / 120°C / Vel ⟲ Giro inverso / Vel Cuchara**, sin cubilete. El giro inverso preserva la textura; nunca usar velocidad alta con carne cocida, se convierte en puré. Al finalizar, la carne debe haber soltado sus jugos y estar dorada por fuera.`);
-
-    if (vegetales.length > 0) {
-      addPaso(`**Integrar las verduras al sofrito.** Añadir **${nombresVegetales}** ya troceadas en cubos pequeños (1 cm máximo). Programar **8 min / 100°C / Vel ⟲ Giro inverso / Vel Cuchara**, sin cubilete. El objetivo es que las verduras suelten agua y se integren con la carne; si queda muy líquido, extender 3 min más sin tapa para reducir.`);
-    }
-  }
-
-  // ════════════════════════════════════════════════════════
-  // VEGETALES SOLOS (sin proteína ni carbohidrato)
-  // ════════════════════════════════════════════════════════
-  if (vegetales.length > 0 && !proteina && !carb) {
-    addPaso(`**Cocinar las verduras.** Agregar **${nombresVegetales}** troceadas en cubos de 2 cm al vaso. Añadir una pizca de sal (libera agua y acelera cocción). Programar **12 min / 100°C / Vel ⟲ Giro inverso / Vel 1**. A mitad de cocción (minuto 6), retirar el cubilete para favorecer reducción y concentración de sabores. Las verduras deben quedar tiernas pero con ligera resistencia al pinchazo ("al dente").`);
-  }
-
-  // ════════════════════════════════════════════════════════
-  // SALSA (para carne molida o vegetariano)
-  // ════════════════════════════════════════════════════════
-  if (salsaFinal && (esMolida || !proteina)) {
-    const tipoSalsa = salsaFinal.nombre_normalizado;
-    let detalleSalsa = "";
-    if (tipoSalsa.includes("tomate")) {
-      detalleSalsa = " Si la salsa queda muy ácida, añadir una pizca de azúcar o media zanahoria rallada para equilibrar.";
-    } else if (tipoSalsa.includes("crema") || tipoSalsa.includes("leche_coco")) {
-      detalleSalsa = " Importante no superar los 90°C con lácteos/coco para evitar que se corten.";
-    }
-    const tempSalsa = (tipoSalsa.includes("crema") || tipoSalsa.includes("leche_coco")) ? "90°C" : "100°C";
-    addPaso(`**Construir la salsa.** Incorporar **${salsaFinal.nombre}**. Programar **8 min / ${tempSalsa} / Vel ⟲ Giro inverso / Vel 1**, sin cubilete (permite reducción).${detalleSalsa} La salsa está lista cuando napa el dorso de la espátula y se ve brillante.`);
-  }
-
-  // ════════════════════════════════════════════════════════
-  // LEGUMBRES (cocción controlada en el vaso)
-  // ════════════════════════════════════════════════════════
-  if (legumbre) {
-    const liqNombre = liquido ? liquido.nombre : "agua filtrada";
-    const esLenteja = legumbre.nombre_normalizado.includes("lenteja");
-    const tiempoLeg = esLenteja ? "22" : "28";
-    const nota = esLenteja
-      ? " No requieren remojo previo. Revisar que no queden piedras pequeñas antes de añadir."
-      : " Si son secas, remojar 12 h antes en agua fría con 1 cucharadita de bicarbonato, luego enjuagar. Si son de frasco, escurrir y enjuagar bajo agua fría.";
-    addPaso(`**Cocinar las legumbres.** Añadir **${legumbre.nombre}** escurridas, ${liqNombre} (cubrir 2 cm por encima, aproximadamente **500-600 ml**), 1 hoja de laurel y **NO añadir sal todavía** (la sal endurece la piel durante la cocción). Programar **${tiempoLeg} min / 100°C / Vel ⟲ Giro inverso / Vel Cuchara**.${nota} A mitad de cocción comprobar nivel de líquido: si se seca, añadir agua caliente a través del bocal.`);
-    addPaso(`**Rectificar las legumbres.** Al terminar el tiempo, probar una legumbre: debe estar tierna sin deshacerse. Si aún resisten, programar **5 min adicionales / 100°C / Vel ⟲ / Vel Cuchara**. Ahora sí salar al gusto y retirar la hoja de laurel.`);
-  }
-
-  // ════════════════════════════════════════════════════════
-  // COCCIÓN SIMULTÁNEA CON VAROMA (proteína entera)
+  // RUTA A: PROTEÍNA ENTERA → cocción al vapor con Varoma
   // ════════════════════════════════════════════════════════
   if (proteina && !esMolida) {
     const tiempoVaroma = esDelicado ? "15" : (esPollo ? "25" : "28");
 
-    // Base líquida en el vaso
+    // Montar el vaso (líquido o carb)
+    let montarVaso = "";
     if (carb) {
       const esArroz = carb.nombre_normalizado.includes("arroz");
       const esQuinoa = carb.nombre_normalizado.includes("quinoa");
       const esPasta = carb.nombre_normalizado.includes("pasta") || carb.nombre_normalizado.includes("fideo") || carb.nombre_normalizado.includes("espague");
-
       if (esArroz) {
-        addPaso(`**Preparar el arroz como base de cocción.** Lavar **${carb.nombre}** bajo agua fría hasta que el agua salga clara (retira almidón superficial y evita que se pegue). Escurrir bien. Colocar en el cestillo del vaso junto a **el doble de volumen de agua** (o mejor aún, caldo caliente), una pizca de sal gruesa y **10 g de aceite de oliva**. El cestillo DEBE encajar bien en el vaso, con el agua cubriendo apenas el arroz dentro.`);
+        montarVaso = `Lavar **${carb.nombre}** bajo el grifo hasta que el agua salga clara. Escurrir. Poner en el **cestillo** con el doble de su volumen en agua (o caldo) y una pizca de sal. Insertar el cestillo en el vaso — la base aromática queda debajo aromatizando el vapor.`;
       } else if (esQuinoa) {
-        addPaso(`**Preparar la quinoa como base.** Enjuagar **${carb.nombre}** bajo agua fría frotándola con los dedos durante 1 min (retira la saponina amarga de la superficie). Escurrir. Colocar en el cestillo con **el doble de volumen de agua** y una pizca de sal.`);
+        montarVaso = `Enjuagar **${carb.nombre}** 1 min bajo el grifo. Poner en el **cestillo** con el doble de su volumen en agua y sal. Insertar el cestillo en el vaso.`;
       } else if (esPasta) {
-        addPaso(`**Preparar agua para la pasta.** Verter **1000 ml de agua hirviendo** (se adelanta en hervidor), **10 g de sal gruesa** (la pasta debe cocerse en agua con sabor a mar) y **5 g de aceite de oliva** en el vaso. Insertar mariposa NO: la pasta se coloca directamente y el movimiento del líquido hace el resto.`);
+        montarVaso = `Añadir al vaso **800 ml de agua caliente** y **8 g de sal**. Colocar la **pasta** directamente en el vaso.`;
       } else {
-        addPaso(`**Preparar la base de cocción.** Colocar ${carb.nombre} en el cestillo con agua según indicaciones del paquete y una pizca de sal.`);
+        montarVaso = `Poner **${carb.nombre}** en el cestillo con agua según indicaciones y sal. Insertar el cestillo en el vaso.`;
       }
     } else if (liquido) {
-      addPaso(`**Preparar el líquido aromático.** Verter **${liquido.nombre}** en el vaso hasta alcanzar **mínimo 500 ml** (imprescindible para generar vapor suficiente). Añadir, si se desea, media cebolla en cuartos, 2 ramas de tomillo y 5 granos de pimienta para aromatizar el vapor que cocinará la proteína.`);
+      montarVaso = `Añadir **${liquido.nombre}** al vaso hasta completar **500 ml mínimo**. La base aromática queda en el vaso aromatizando el vapor.`;
     } else {
-      addPaso(`**Preparar el agua de cocción.** Verter **700 ml de agua** en el vaso con **5 g de sal gruesa**. Opcional pero recomendado: añadir el agua de remojo de setas secas, una rama de apio y laurel para aromatizar el vapor.`);
+      montarVaso = `Añadir **700 ml de agua** con **5 g de sal** al vaso. La base aromática queda en el vaso aromatizando el vapor.`;
     }
 
-    // Preparación de la proteína
-    if (esDelicado) {
-      if (proteina.nombre_normalizado.includes("camar")) {
-        addPaso(`**Sazonar los camarones.** Colocar **${proteina.nombre}** ya pelados y desvenados en un cuenco. Sazonar con sal fina, pimienta blanca, 1 diente de ajo rallado y ralladura de medio limón. Mezclar con suavidad y dejar marinar 10 minutos. Distribuir sobre la bandeja del Varoma forrada con papel de hornear perforado (evita que se peguen y permite paso del vapor).`);
-      } else {
-        addPaso(`**Sazonar el pescado.** Secar **${proteina.nombre}** con papel absorbente (clave para buena textura). Salpimentar por ambos lados, rociar con **unas gotas de aceite de oliva** y **zumo de medio limón**. Colocar sobre la bandeja del Varoma forrada con papel de hornear ligeramente aceitado o con una hoja de puerro/acelga debajo (evita que se rompa al retirar). Añadir encima 2 rodajas finas de limón y una rama de eneldo fresco si se tiene.`);
-      }
-    } else if (esPollo) {
-      addPaso(`**Sazonar el pollo.** Trocear **${proteina.nombre}** en piezas de ~150 g. Salpimentar generosamente por todos los lados, añadir 1 cucharadita de pimentón dulce, media cucharadita de ajo en polvo y el zumo de medio limón. Masajear 30 seg y dejar marinar mientras se prepara lo demás (mínimo 10 min, ideal 30 min). Colocar separados en la bandeja del Varoma.`);
+    // Montar el Varoma (proteína + verduras)
+    let sazonProteina = "";
+    const espNombres = nombresEspecias || "sal, pimienta y un chorrito de limón";
+    if (esPollo) {
+      sazonProteina = `Colocar **${proteina.nombre}** en la **bandeja del Varoma**. Sazonar con ${espNombres}.`;
+    } else if (esDelicado) {
+      sazonProteina = proteina.nombre_normalizado.includes("camar")
+        ? `Distribuir **${proteina.nombre}** en la **bandeja del Varoma** sobre papel de hornear perforado. Sazonar con sal, pimienta y un poco de ajo rallado.`
+        : `Colocar **${proteina.nombre}** en la **bandeja del Varoma** sobre papel de hornear ligeramente aceitado. Sazonar con sal, pimienta y unas gotas de limón.`;
     } else if (esRes) {
-      addPaso(`**Sazonar la carne.** Cortar **${proteina.nombre}** en trozos de ~150 g contra la fibra. Salpimentar con generosidad, frotar con 1 cucharadita de pimentón ahumado y 2 dientes de ajo rallado. Dejar atemperar 15 min fuera del frío (carne fría = cocción desigual). Colocar en la bandeja del Varoma sin superponer las piezas.`);
-    }
-
-    // Distribución de vegetales en Varoma
-    if (vegetales.length > 0) {
-      addPaso(`**Distribuir las verduras en el Varoma.** Colocar **${nombresVegetales}** ya troceadas en el recipiente inferior del Varoma (el más grande), dejando espacios entre piezas para que circule el vapor. Las más densas (zanahoria, papa, coliflor) abajo; las más delicadas (espárragos, brócoli, espinaca) arriba junto a la proteína. Salpimentar ligeramente.`);
-    }
-
-    // Cocción al vapor
-    const notaTiempo = esDelicado
-      ? "El pescado pasa de perfecto a seco en 2 minutos: cronometrar con rigor."
-      : (esPollo ? "Nunca reducir este tiempo con pollo: debe alcanzar 74°C en el centro por seguridad alimentaria." : "La carne queda en término medio; ajustar ±3 min según grosor de los trozos.");
-    addPaso(`**Cocción simultánea al vapor.** Encajar el Varoma sobre el vaso asegurándose de que queda bien sellado (sin huecos laterales). Programar **${tiempoVaroma} min / Varoma / Vel ⟲ Giro inverso / Vel 1** (el giro inverso protege lo que esté en el vaso, como arroz o pasta). ${notaTiempo} Durante la cocción, revisar por el visor que salga vapor constante; si no, hay poco líquido en el vaso.`);
-
-    // Verificación crítica
-    if (esDelicado) {
-      if (proteina.nombre_normalizado.includes("camar")) {
-        addPaso(`**Verificar punto del marisco.** Los camarones deben estar rosados, firmes y formando una "C" cerrada (si forman "O" están pasados). Si aún traslúcidos en el centro, tapar y programar **2 min adicionales / Varoma / Vel 1**. Retirar inmediatamente del Varoma para detener la cocción residual.`);
-      } else {
-        addPaso(`**Verificar punto del pescado.** Pinchar con un tenedor en la parte más gruesa: debe desprenderse en lascas fácilmente y estar opaco en el centro. Si aún traslúcido, tapar y programar **3 min adicionales / Varoma / Vel 1**. Retirar del Varoma inmediatamente.`);
-      }
-    } else if (esPollo) {
-      addPaso(`**Verificar cocción del pollo (seguridad alimentaria).** Insertar termómetro en la parte más gruesa: debe marcar **≥74°C**. Si no llega, programar **5 min adicionales / Varoma / Vel 1**. Sin termómetro: cortar la pieza más gruesa, el jugo debe salir transparente (nunca rosado) y la carne blanca opaca sin zonas gelatinosas.`);
+      sazonProteina = `Colocar **${proteina.nombre}** en la **bandeja del Varoma**. Frotar con sal, pimienta y pimentón ahumado.`;
     } else {
-      addPaso(`**Verificar punto de la carne.** Medir con termómetro: **63°C para término medio, 68°C para tres cuartos, 71°C para bien cocida**. Si falta, programar **4-6 min adicionales / Varoma / Vel 1**. Retirar y dejar reposar 3 min tapada con papel aluminio antes de cortar (redistribuye jugos).`);
+      sazonProteina = `Colocar **${proteina.nombre}** en la **bandeja del Varoma**. Sazonar con ${espNombres}.`;
     }
-  } else if (carb && !esMolida) {
-    // Solo carbohidrato sin proteína
+
+    let montarVaroma = sazonProteina;
+    if (vegetales.length > 0) {
+      montarVaroma += ` Añadir **${nombresVegetales}** en el **recipiente inferior del Varoma**, dejando espacio entre piezas para que circule el vapor.`;
+    }
+
+    addPaso(`**Montar el vaso y el Varoma.** ${montarVaso}  ${montarVaroma}`);
+
+    // Cocción
+    const notaSeg = esPollo ? " (el pollo debe alcanzar 74°C en el centro)" : esDelicado ? " (no superar el tiempo: el pescado se seca rápido)" : "";
+    addPaso(`**Cocción.** Encajar el Varoma sobre el vaso. Programar **${tiempoVaroma} min | Varoma | Vel ⟲ | Vel 1**${notaSeg}.`);
+
+    // Retirar — paso explícito con todas las transiciones
+    let retirar = `**Quitar el Varoma** y dejarlo sobre una superficie estable. `;
+    if (esPollo) {
+      retirar += `Sacar **${proteina.nombre}** del Varoma y **reservar tapado 3 min** (los jugos se redistribuyen). Verificar que no quede rosado al corte; si falta cocción, volver a colocar el Varoma y programar **3 min más | Varoma | Vel 1**. `;
+    } else if (esDelicado) {
+      retirar += `Sacar **${proteina.nombre}** del Varoma con cuidado — debe estar opaco y desprenderse en lascas. Si aún traslúcido en el centro, tapar y programar **2 min más | Varoma | Vel 1**. `;
+    } else if (esRes) {
+      retirar += `Sacar **${proteina.nombre}** del Varoma y **reposar tapado 3 min**. `;
+    }
+    if (vegetales.length > 0) {
+      retirar += `Sacar también las verduras del Varoma y reservar. `;
+    }
+    if (carb) {
+      const esArroz = carb.nombre_normalizado.includes("arroz");
+      retirar += esArroz
+        ? `**Levantar el cestillo** del vaso con la espátula TM y **volcar el arroz en una fuente**. `
+        : `**Levantar el cestillo** del vaso y volcar **${carb.nombre}** en una fuente. `;
+    }
+    retirar += salsaFinal
+      ? `Los jugos de cocción quedan en el vaso — base para la salsa.`
+      : `Probar el fondo del vaso y rectificar sal si es necesario.`;
+    addPaso(`**Retirar.** ${retirar}`);
+  }
+
+  // ════════════════════════════════════════════════════════
+  // RUTA B: CARNE MOLIDA
+  // ════════════════════════════════════════════════════════
+  else if (esMolida) {
+    addPaso(`**Sellar la carne.** Añadir **${proteina.nombre}** al vaso desmenuzada. Programar **7 min | 120°C | Vel ⟲ | Vel Cuchara**, sin cubilete.`);
+
+    if (vegetales.length > 0) {
+      addPaso(`**Añadir verduras.** Incorporar **${nombresVegetales}** en cubos pequeños. Programar **8 min | 100°C | Vel ⟲ | Vel Cuchara**, sin cubilete.`);
+    }
+
+    if (salsaFinal) {
+      const tipoSalsa = salsaFinal.nombre_normalizado;
+      const tempSalsa = (tipoSalsa.includes("crema") || tipoSalsa.includes("leche_coco")) ? "90°C" : "100°C";
+      addPaso(`**Añadir la salsa.** Incorporar **${salsaFinal.nombre}**. Programar **8 min | ${tempSalsa} | Vel ⟲ | Vel 1**, sin cubilete.`);
+    }
+
+    if (nombresEspecias && especias.length > 0) {
+      addPaso(`**Sazonar.** Añadir **${nombresEspecias}**. Programar **20 seg | Vel ⟲ | Vel 1**. Probar y rectificar.`);
+    }
+  }
+
+  // ════════════════════════════════════════════════════════
+  // RUTA C: LEGUMBRES
+  // ════════════════════════════════════════════════════════
+  else if (legumbre) {
+    const liqNombre = liquido ? liquido.nombre : "agua";
+    const esLenteja = legumbre.nombre_normalizado.includes("lenteja");
+    const tiempoLeg = esLenteja ? "22" : "28";
+    addPaso(`**Cocinar legumbres.** Añadir **${legumbre.nombre}** escurridas y **${liqNombre}** (cubrir 2 cm por encima, aprox. 500-600 ml). No añadir sal todavía. Programar **${tiempoLeg} min | 100°C | Vel ⟲ | Vel Cuchara**. Al terminar, probar: si aún están duras, 5 min más. Salar al gusto al final.`);
+  }
+
+  // ════════════════════════════════════════════════════════
+  // RUTA D: SOLO CARBOHIDRATO (sin proteína)
+  // ════════════════════════════════════════════════════════
+  else if (carb && !proteina) {
     const esArroz = carb.nombre_normalizado.includes("arroz");
     const esQuinoa = carb.nombre_normalizado.includes("quinoa");
     if (esArroz) {
-      addPaso(`**Cocinar el arroz.** Lavar **${carb.nombre}** bajo agua fría hasta que salga clara. Escurrir bien. Verter **el doble de volumen de agua** con sal y un chorrito de aceite en el vaso. Colocar el arroz en el cestillo dentro del vaso. Programar **16 min / 100°C / Vel 4**. Al terminar, dejar reposar 5 min con la tapa cerrada sin programar (termina de absorber humedad).`);
+      addPaso(`**Cocinar el arroz.** Lavar **${carb.nombre}** hasta que el agua salga clara. Poner en el **cestillo** con el doble de su volumen en agua y sal. Insertar el cestillo en el vaso. Programar **16 min | 100°C | Vel 4**. Al terminar, dejar reposar 3 min con la tapa puesta. **Levantar el cestillo** del vaso y volcar el arroz en una fuente.`);
     } else if (esQuinoa) {
-      addPaso(`**Cocinar la quinoa.** Enjuagar **${carb.nombre}** durante 1 min bajo agua fría. Colocar en el vaso con el doble de volumen de agua y sal. Programar **15 min / Varoma / Vel ⟲ Giro inverso / Vel 1**. Está lista cuando se ve el "anillo" del germen desprendido; si no, 2 min más.`);
+      addPaso(`**Cocinar la quinoa.** Enjuagar **${carb.nombre}** 1 min bajo el grifo. Poner en el vaso con el doble de agua y sal. Programar **15 min | Varoma | Vel ⟲ | Vel 1**. Está lista cuando aparece el anillo blanco del germen.`);
     } else {
-      addPaso(`**Cocinar el carbohidrato.** Lavar ${carb.nombre} y colocarlo en el vaso con agua según paquete, sal y un chorrito de aceite. Programar **15 min / 100°C / Vel ⟲ Giro inverso / Vel 1**.`);
+      addPaso(`**Cocinar el carbohidrato.** Poner **${carb.nombre}** en el vaso con agua según indicaciones y sal. Programar **15 min | 100°C | Vel ⟲ | Vel 1**.`);
     }
     if (vegetales.length > 0) {
-      addPaso(`**Cocer las verduras al vapor simultáneamente.** Colocar **${nombresVegetales}** troceadas en la bandeja del Varoma, separadas. Encajar sobre el vaso. Programar **12 min / Varoma / Vel ⟲ Giro inverso / Vel 1**. Las verduras deben quedar "al dente": tiernas pero con resistencia al pinchazo.`);
+      addPaso(`**Verduras al vapor.** Poner **${nombresVegetales}** en el Varoma. Encajar sobre el vaso. Programar **12 min | Varoma | Vel ⟲ | Vel 1**. Al terminar, **quitar el Varoma** y sacar las verduras.`);
     }
   }
 
   // ════════════════════════════════════════════════════════
-  // SAZÓN FINAL (integrar especias)
+  // RUTA E: SOLO VERDURAS (sin proteína ni carb)
   // ════════════════════════════════════════════════════════
-  if (nombresEspecias && especias.length > 0 && pasos.length > 0) {
-    addPaso(`**Afinar la sazón.** Retirar el Varoma (si se usó) y reservar su contenido tapado. Añadir al vaso **${nombresEspecias}** al gusto (empezar con cantidades conservadoras: se puede añadir más, no quitar). Programar **30 seg / Vel 2 / Giro inverso**. Probar y rectificar: si falta sabor, una pizca de sal; si está plano, unas gotas de limón o vinagre levantan el perfil.`);
+  else if (vegetales.length > 0) {
+    addPaso(`**Cocinar verduras.** Añadir **${nombresVegetales}** al vaso. Programar **12 min | 100°C | Vel ⟲ | Vel 1**, sin cubilete.`);
   }
 
   // ════════════════════════════════════════════════════════
-  // SALSA FINAL (si no se añadió antes y hay proteína entera)
+  // SALSA FINAL (proteína entera con salsa)
   // ════════════════════════════════════════════════════════
   if (salsaFinal && !esMolida && proteina) {
     const tipoSalsa = salsaFinal.nombre_normalizado;
     const tempSalsa = (tipoSalsa.includes("crema") || tipoSalsa.includes("leche_coco")) ? "85°C" : "95°C";
-    addPaso(`**Preparar la salsa de acompañamiento.** Usando los jugos de cocción del vaso (son oro puro, no descartarlos), incorporar **${salsaFinal.nombre}**. Programar **6 min / ${tempSalsa} / Vel ⟲ Giro inverso / Vel 2**, sin cubilete para que reduzca. La salsa debe napar la espátula: al pasar el dedo por el dorso, debe dejar un camino limpio que no se cierre inmediatamente.`);
+    addPaso(`**Salsa.** Con los jugos que quedaron en el vaso, añadir **${salsaFinal.nombre}**. Programar **6 min | ${tempSalsa} | Vel ⟲ | Vel 2**, sin cubilete.`);
   }
 
   // ════════════════════════════════════════════════════════
-  // QUESO (si aplica)
+  // QUESO
   // ════════════════════════════════════════════════════════
   if (queso) {
-    addPaso(`**Incorporar el queso.** Bajar la temperatura al mínimo antes de añadir **${queso.nombre}** rallado o en cubos pequeños. Programar **1 min / 70°C / Vel ⟲ Giro inverso / Vel 2**. El queso nunca debe hervir directamente, se corta. Si se busca costra gratinada, reservar el queso y espolvorear sobre el plato ya emplatado, pasándolo 2 min bajo grill del horno.`);
+    addPaso(`**Incorporar el queso.** Añadir **${queso.nombre}** rallado. Programar **1 min | 70°C | Vel ⟲ | Vel 2**. No dejar hervir.`);
   }
 
   // ════════════════════════════════════════════════════════
-  // REPOSO Y HIERBAS FRESCAS
+  // EMPLATAR
   // ════════════════════════════════════════════════════════
-  if (proteina && !esMolida) {
-    addPaso(`**Reposo de la proteína.** Retirar la proteína del Varoma y dejarla reposar 3-5 minutos tapada con papel aluminio. Este paso redistribuye los jugos internamente: si se corta inmediatamente, los jugos se pierden en la tabla y la carne/pescado queda seca.`);
-  }
-
-  if (nombresHierbas && hierbas.length > 0) {
-    addPaso(`**Terminar con hierbas frescas.** Picar **${nombresHierbas}** justo antes de servir (nunca antes, oxidan y pierden aroma). Reservar en un cuenco pequeño para añadir por encima al emplatar. El contraste de hierba fresca sobre preparación caliente libera aceites esenciales y aporta color.`);
-  }
-
-  // ════════════════════════════════════════════════════════
-  // EMPLATADO FINAL
-  // ════════════════════════════════════════════════════════
-  let emplatado = "**Emplatar como un profesional.** ";
+  let emplatado = "**Emplatar.** ";
   if (carb && proteina) {
-    emplatado += `Usar platos previamente entibiados (pasarlos 30 seg por el microondas o bajo agua caliente y secar). Formar una base de ${carb.nombre} en el centro con ayuda de un aro o cuchara. Colocar encima ${proteina.nombre} cortada en bisel (30°) para exponer el interior. Disponer ${vegetales.length > 0 ? nombresVegetales : "las verduras"} alrededor. ${salsaFinal ? `Salsear con un hilo fino por encima y dejar un pequeño charco lateral.` : ""} ${nombresHierbas ? `Espolvorear ${nombresHierbas} picadas por encima.` : ""} Un toque final de aceite de oliva crudo y pimienta recién molida.`;
+    emplatado += `Servir ${carb.nombre} como base, ${proteina.nombre} encima${vegetales.length > 0 ? ` y ${nombresVegetales} al lado` : ""}. ${salsaFinal ? `Salsear por encima.` : ""} ${nombresHierbas ? `Espolvorear ${nombresHierbas}.` : ""}`;
   } else if (proteina) {
-    emplatado += `Platos entibiados. Colocar ${proteina.nombre} en el centro. ${vegetales.length > 0 ? `Disponer ${nombresVegetales} alrededor en abanico.` : ""} ${salsaFinal ? `Napar con salsa sin ahogar la proteína.` : ""} ${nombresHierbas ? `Rematar con ${nombresHierbas} frescas.` : ""}`;
+    emplatado += `${proteina.nombre} en el centro. ${vegetales.length > 0 ? `${nombresVegetales} alrededor.` : ""} ${salsaFinal ? `Napar con la salsa.` : ""} ${nombresHierbas ? `${nombresHierbas} fresca por encima.` : ""}`;
   } else if (legumbre) {
-    emplatado += `Servir en cuenco hondo entibiado. Añadir un chorro de aceite de oliva virgen extra en crudo al plato (emulsiona con el caldo y eleva el sabor). ${nombresHierbas ? `Coronar con ${nombresHierbas} picadas.` : "Coronar con pimienta recién molida."} Acompañar con pan tostado rozado con ajo.`;
+    emplatado += `Servir en cuenco con un chorro de aceite de oliva crudo. ${nombresHierbas ? `Añadir ${nombresHierbas}.` : ""}`;
   } else {
-    emplatado += `Servir inmediatamente en platos entibiados. ${nombresHierbas ? `Espolvorear ${nombresHierbas} frescas por encima.` : ""} Un hilo de aceite de oliva crudo y pimienta recién molida al final.`;
+    emplatado += `Servir inmediatamente. ${nombresHierbas ? `Espolvorear ${nombresHierbas}.` : ""}`;
   }
-  emplatado += ` Servir en los 3 minutos siguientes: todo plato pierde calidad rápidamente sobre la barra.`;
-  addPaso(emplatado);
+  addPaso(emplatado.trim());
 
   // ════════════════════════════════════════════════════════
-  // LIMPIEZA EXPRESS DEL TM6 (bonus profesional)
+  // AUTOLIMPIEZA
   // ════════════════════════════════════════════════════════
-  addPaso(`**Autolimpieza del vaso.** Llenar el vaso con **1 L de agua tibia y 2 gotas de detergente**. Programar **3 min / 70°C / Vel 5**. Enjuagar. Así evitas que los restos se endurezcan mientras comes y la limpieza final toma 30 segundos.`);
+  addPaso(`**Autolimpieza.** Llenar el vaso con **1 L de agua tibia y 2 gotas de detergente**. Programar **2 min | 60°C | Vel 5**. Enjuagar.`);
 
   return pasos;
 }
