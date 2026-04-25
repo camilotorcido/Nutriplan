@@ -3411,7 +3411,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418bc — split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418bd — split en 2 secciones)
 // seccion="entrenamiento" → Pasos + Entreno
 // seccion="progreso" → Roadmap + Métricas
 // =============================================
@@ -3464,7 +3464,7 @@ function FatLossTab({ perfil, darkMode, seccion }) {
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260418bc)
+// COMPONENTE: HoyView — Dashboard diario (v20260418bd)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -3504,7 +3504,14 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
     const completados = sesion.ejercicios.filter(e => e.done).length;
     const total = sesion.ejercicios.length;
     const tipoInfo = planActual && planActual.tipos ? planActual.tipos.find(t => t.k === tipo) : null;
-    return { tipo, tipoInfo, completados, total, esDescanso: tipo === 'descanso' };
+    const semanaNum = window.NP_RoadmapData ? window.NP_RoadmapData.semanaActual(hoyStr) : 0;
+    const equiposDisp = leerEquipos();
+    const protocolo = (window.NP_RoadmapData && window.NP_RoadmapData.generarProtocoloDia && tipo !== 'descanso')
+      ? window.NP_RoadmapData.generarProtocoloDia(tipo, semanaNum, equiposDisp)
+      : null;
+    const foco = protocolo ? protocolo.foco : null;
+    const duracionMin = protocolo ? protocolo.duracionMin : null;
+    return { tipo, tipoInfo, completados, total, esDescanso: tipo === 'descanso', foco, duracionMin };
   }, [tieneEntrenamiento, refresh]);
 
   const pasosHoy = React.useMemo(() => {
@@ -3638,8 +3645,14 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{entrenoHoy.tipoInfo ? entrenoHoy.tipoInfo.corto : 'Tipo ' + entrenoHoy.tipo}</div>
+                      {entrenoHoy.foco && (
+                        <div className={`text-xs mt-0.5 font-medium ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{entrenoHoy.foco}</div>
+                      )}
+                      {entrenoHoy.duracionMin && !entrenoHoy.foco && (
+                        <div className="text-xs text-gray-400 mt-0.5"><i className="fas fa-clock mr-1"></i>{entrenoHoy.duracionMin} min</div>
+                      )}
                       {entrenoHoy.total > 0 && (
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1.5">
                           <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
                             <div className={`h-full ${entrenoHoy.completados === entrenoHoy.total ? 'bg-green-500' : 'bg-orange-500'}`}
                               style={{ width: Math.round((entrenoHoy.completados / entrenoHoy.total) * 100) + '%' }}></div>
@@ -5080,9 +5093,6 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
         </div>
       </div>
 
-      {/* Equipamiento disponible */}
-      <EquipamientoCard darkMode={darkMode} onEquiposChange={setEquiposDisp} onRefresh={onRefresh} />
-
       {/* Selector de día */}
       <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
         <div className="flex items-center justify-between mb-2">
@@ -5147,11 +5157,9 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <div className={`text-sm uppercase tracking-wider font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{protocolo.nombre}</div>
-                {protocolo.variante && (
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
-                    Sem {semanaNum} · var #{protocolo.variante}
-                  </span>
-                )}
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${darkMode ? 'bg-orange-900/40 text-orange-300' : 'bg-orange-50 text-orange-600'}`}>
+                  Semana {semanaNum}{protocolo.variante ? ' · V' + protocolo.variante : ''}
+                </span>
               </div>
               <div className={`text-base ${darkMode ? 'text-gray-300' : 'text-gray-700'} mt-1`}>{protocolo.foco}</div>
               <div className="text-xs text-gray-400 mt-1">
@@ -5184,6 +5192,9 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
           </div>
         </div>
       )}
+
+      {/* Equipamiento disponible — cerca de los ejercicios donde aplica */}
+      <EquipamientoCard darkMode={darkMode} onEquiposChange={setEquiposDisp} onRefresh={onRefresh} />
 
       {/* Lista de ejercicios */}
       <div className="space-y-2">
