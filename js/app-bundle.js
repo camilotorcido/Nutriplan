@@ -3391,7 +3391,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418aw — split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418ax — split en 2 secciones)
 // seccion="entrenamiento" → Pasos + Entreno
 // seccion="progreso" → Roadmap + Métricas
 // =============================================
@@ -4557,12 +4557,14 @@ function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
                   key={eq.id}
                   onClick={() => toggle(eq.id)}
                   disabled={eq.siempre}
-                  className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                  className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-all border ${
                     activo
                       ? eq.siempre
-                        ? darkMode ? 'bg-gray-600 text-gray-300 cursor-default' : 'bg-gray-400 text-white cursor-default'
-                        : 'bg-orange-500 text-white'
-                      : darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-green-500 text-white border-green-500 opacity-70 cursor-default'
+                        : 'bg-green-500 text-white border-green-500'
+                      : darkMode
+                        ? 'bg-transparent text-gray-500 border-gray-600 hover:border-gray-400 hover:text-gray-300'
+                        : 'bg-transparent text-gray-400 border-gray-300 hover:border-gray-500 hover:text-gray-600'
                   }`}>
                   {eq.icono} {eq.nombre}
                 </button>
@@ -4731,10 +4733,12 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             {[2,3,4,5,6].map(n => (
               <button key={n}
                 onClick={() => { localStorage.setItem('nutriplan_dias_semana', String(n)); setDiasSemana(n); }}
-                className={`w-7 h-7 rounded text-xs font-bold transition-all ${
+                className={`w-7 h-7 rounded text-xs font-bold transition-all border ${
                   diasSemana === n
-                    ? 'bg-orange-500 text-white'
-                    : darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-orange-500 text-white border-orange-500'
+                    : darkMode
+                      ? 'bg-transparent text-gray-500 border-gray-600 hover:border-gray-400 hover:text-gray-300'
+                      : 'bg-transparent text-gray-400 border-gray-300 hover:border-gray-500 hover:text-gray-600'
                 }`}>
                 {n}
               </button>
@@ -5341,8 +5345,12 @@ function App() {
               { id: "compras",       label: "Compras",     short: "Compras",    icon: "fa-cart-shopping" }
             ].map(tab => (
               <button key={tab.id} onClick={() => navegarA(tab.id)}
-                className={`nav-pill flex-shrink-0 sm:flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium ${
-                  pantalla === tab.id ? 'active' : darkMode ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-50'
+                className={`nav-pill flex-shrink-0 sm:flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  pantalla === tab.id
+                    ? 'bg-green-500 text-white shadow-md'
+                    : darkMode
+                      ? 'text-gray-500 hover:bg-gray-700 hover:text-gray-300'
+                      : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
                 }`}>
                 <i className={`fas ${tab.icon} text-xs`}></i>
                 <span className="hidden sm:inline">{tab.label}</span>
