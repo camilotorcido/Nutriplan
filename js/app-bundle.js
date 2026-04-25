@@ -3458,7 +3458,6 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
-}
 
 // =============================================
 // COMPONENTE: HoyView — Dashboard diario (v20260418be)
