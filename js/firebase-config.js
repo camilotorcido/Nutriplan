@@ -22,7 +22,7 @@
    ============================================ */
 
 const firebaseConfig = {
-  apiKey:            "AIzaSyBILIccQWWurCynxxHiM7VAH2NFEp_pCbc",
+  apiKey:            "AIzaSyBILIccQWWurCynxxHiM7VAH2NfEp_pCbc",
   authDomain:        "nutriplan-6b3d4.firebaseapp.com",
   projectId:         "nutriplan-6b3d4",
   storageBucket:     "nutriplan-6b3d4.firebasestorage.app",
