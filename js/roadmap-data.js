@@ -113,10 +113,11 @@ const ALCOHOL_BEBIDAS = [
 
 // ─── Equipamiento disponible ───
 const EQUIPOS_DISPONIBLES = [
-  { id: 'peso_corporal', nombre: 'Peso corporal', icono: '🤸', siempre: true },
-  { id: 'speediance',    nombre: 'Speediance',    icono: '🏋️', siempre: false },
-  { id: 'treadmill_plano', nombre: 'Treadmill (plano)', icono: '🏃', siempre: false },
-  { id: 'barra',         nombre: 'Barra de dominadas', icono: '⬆️', siempre: false }
+  { id: 'peso_corporal',  nombre: 'Peso corporal',       icono: '🤸', siempre: true },
+  { id: 'speediance',     nombre: 'Speediance',           icono: '🏋️', siempre: false },
+  { id: 'treadmill_plano',nombre: 'Treadmill (plano)',    icono: '🏃', siempre: false },
+  { id: 'remadora',       nombre: 'Remadora',             icono: '🚣', siempre: false },
+  { id: 'barra',          nombre: 'Barra de dominadas',   icono: '⬆️', siempre: false }
 ];
 
 // ─── Protocolo de entrenamiento 4 días ───
@@ -295,6 +296,178 @@ const FACTORES_ACTIVIDAD_FL = [
   { valor: 1.9, label: 'Extrema', desc: 'Atleta, doble sesión diaria' }
 ];
 
+// ─── Motor de rotación semanal ─────────────────────────────────────────────
+// Los ejercicios "core" (compuestos principales) siempre aparecen.
+// Los accesorios + extras rotan semana a semana usando un shuffle seeded,
+// de modo que cada semana se ven ejercicios distintos sin repetir el patrón.
+
+const _SEED_REF = new Date('2024-01-01T12:00:00').getTime();
+
+function semanaActual(fecha) {
+  const d = fecha ? new Date(fecha + 'T12:00:00') : new Date();
+  return Math.floor((d.getTime() - _SEED_REF) / (7 * 24 * 60 * 60 * 1000));
+}
+
+function _seededShuffle(arr, seed) {
+  const a = arr.slice();
+  let s = Math.abs(seed % 2147483647) || 1;
+  for (let i = a.length - 1; i > 0; i--) {
+    s = (s * 16807) % 2147483647;
+    const j = s % (i + 1);
+    const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+// ─── Ejercicios extra por día (rotan junto con los accesorios del protocolo base) ───
+// Los nombres NO deben duplicar los de ENTRENO_PROTOCOLO.
+const EJERCICIOS_POOL = {
+  A: {
+    totalSesion: 8,
+    core: ['Press pecho cables (bajo-arriba)', 'Press hombros cables bilateral', 'Tríceps pushdown cable'],
+    extra: [
+      { nombre: 'Cable crossover (alto-abajo)', sets: 3, reps: '12-15', equipo: 'Speediance', nota: 'Pectoral inferior',
+        descripcion: 'Poleas altas, cruza los brazos hacia abajo y al centro. Activa el pectoral inferior y el esternal con máxima contracción.',
+        youtube: 'https://www.youtube.com/results?search_query=cable+crossover+alto+abajo+pectoral+inferior+tutorial' },
+      { nombre: 'Tríceps overhead cable', sets: 3, reps: '12-15', equipo: 'Speediance', nota: 'Cabeza larga',
+        descripcion: 'Polea alta, codos apuntando al techo, extiende los brazos sobre la cabeza. Máximo estiramiento de la cabeza larga del tríceps.',
+        youtube: 'https://www.youtube.com/results?search_query=triceps+overhead+cable+extension+tutorial' },
+      { nombre: 'Fondos en banco (triceps dip)', sets: 3, reps: '12-15', equipo: 'Peso corporal', nota: 'Codos hacia atrás',
+        descripcion: 'Manos en el borde del banco, codos hacia atrás, baja el cuerpo hasta 90° y empuja. Activa tríceps y pectoral inferior.',
+        youtube: 'https://www.youtube.com/results?search_query=fondos+banco+triceps+dips+tutorial' },
+      { nombre: 'Rotación externa cable (hombro)', sets: 3, reps: '15 c/lado', equipo: 'Speediance', nota: 'Salud manguito rotador',
+        descripcion: 'Polea a altura de codo, rotación externa con codo fijo al costado. Prevención y rehabilitación del manguito rotador.',
+        youtube: 'https://www.youtube.com/results?search_query=rotacion+externa+cable+manguito+rotador+tutorial' },
+      { nombre: 'Flexiones declinadas', sets: 3, reps: '10-15', equipo: 'Peso corporal', nota: 'Pectoral superior',
+        descripcion: 'Pies elevados en banco, manos en el suelo. Activa el pectoral superior y el deltoides anterior más que las flexiones planas.',
+        youtube: 'https://www.youtube.com/results?search_query=flexiones+declinadas+pies+elevados+pectoral+tutorial' }
+    ]
+  },
+  B: {
+    totalSesion: 8,
+    core: ['Squat con cable frontal', 'Romanian Deadlift cable'],
+    extra: [
+      { nombre: 'Step-ups (cajón/silla)', sets: 3, reps: '12 c/pierna', equipo: 'Peso corporal', nota: 'Glúteo + cuádriceps',
+        descripcion: 'Sube al cajón impulsando exclusivamente con el talón del pie delantero. No uses el pie trasero para empujar.',
+        youtube: 'https://www.youtube.com/results?search_query=step+ups+cajon+glúteo+cuádriceps+tutorial' },
+      { nombre: 'Abductores cable (de pie)', sets: 3, reps: '15 c/lado', equipo: 'Speediance', nota: 'Glúteo medio',
+        descripcion: 'Tobillera en polea baja, eleva la pierna hacia afuera. Activa el glúteo medio y el tensor de la fascia lata.',
+        youtube: 'https://www.youtube.com/results?search_query=abductores+cable+de+pie+glúteo+medio+tutorial' },
+      { nombre: 'Sentadilla goblet', sets: 3, reps: '15-20', equipo: 'Peso corporal', nota: 'Movilidad + cuádriceps',
+        descripcion: 'Manos unidas al pecho simulando sostener un peso. Squat profundo con torso perfectamente vertical. Ideal para movilidad de cadera.',
+        youtube: 'https://www.youtube.com/results?search_query=sentadilla+goblet+squat+tutorial+movilidad' },
+      { nombre: 'Frog pumps', sets: 3, reps: '25', equipo: 'Peso corporal', nota: 'Glúteo alto volumen',
+        descripcion: 'Boca arriba, plantas de los pies juntas. Eleva la cadera apretando el glúteo. Alta activación con muy bajo impacto articular.',
+        youtube: 'https://www.youtube.com/results?search_query=frog+pumps+gluteos+ejercicio+tutorial' },
+      { nombre: 'Sentadilla pistol asistida', sets: 3, reps: '8 c/pierna', equipo: 'Peso corporal', nota: 'Fuerza unilateral',
+        descripcion: 'Sentadilla en una sola pierna sujetándote de algo fijo. Trabaja la asimetría de fuerza entre piernas.',
+        youtube: 'https://www.youtube.com/results?search_query=sentadilla+pistol+asistida+tutorial+pierna' }
+    ]
+  },
+  C: {
+    totalSesion: 8,
+    core: ['Rowing Speediance (modo remo)', 'Cable row sentado', 'Lat pulldown cable'],
+    extra: [
+      { nombre: 'Curl martillo cable', sets: 3, reps: '12-15', equipo: 'Speediance', nota: 'Braquial + bíceps',
+        descripcion: 'Agarre neutro (palma hacia el cuerpo), curla el brazo. Activa el braquial y el braquirradial además del bíceps.',
+        youtube: 'https://www.youtube.com/results?search_query=curl+martillo+cable+hammer+curl+tutorial' },
+      { nombre: 'Pullover cable', sets: 3, reps: '12-15', equipo: 'Speediance', nota: 'Dorsal + expansión torácica',
+        descripcion: 'Polea alta, brazos extendidos, jala hacia las caderas describiendo un arco. Máximo estiramiento del dorsal ancho.',
+        youtube: 'https://www.youtube.com/results?search_query=pullover+cable+dorsal+ancho+tutorial' },
+      { nombre: 'High row cable', sets: 3, reps: '12-15', equipo: 'Speediance', nota: 'Espalda alta y romboides',
+        descripcion: 'Polea alta, tira hacia la frente con codos hacia afuera. Activa romboides, trapecio medio y deltoides posterior.',
+        youtube: 'https://www.youtube.com/results?search_query=high+row+cable+espalda+alta+romboides+tutorial' },
+      { nombre: 'Shrug cable', sets: 3, reps: '15', equipo: 'Speediance', nota: 'Trapecio superior',
+        descripcion: 'De pie con cables a los lados, encoge los hombros hacia las orejas. Pausa 1 seg arriba para máxima contracción del trapecio.',
+        youtube: 'https://www.youtube.com/results?search_query=shrug+cable+trapecio+superior+tutorial' },
+      { nombre: 'Rowing remadora calentamiento', sets: 1, reps: '10-15 min', equipo: 'Remadora', nota: 'Técnica: piernas → cadera → brazos',
+        descripcion: 'En remadora: arranque con piernas, apertura de cadera y tirón de brazos en secuencia. Espalda recta durante todo el stroke.',
+        youtube: 'https://www.youtube.com/results?search_query=remadora+tecnica+correcta+rowing+machine+tutorial' }
+    ]
+  },
+  D: {
+    totalSesion: 8,
+    core: ['Burpees (o half-burpee)', 'Mountain climbers'],
+    extra: [
+      { nombre: 'Bear crawl (20m)', sets: 4, reps: '4 largos', equipo: 'Peso corporal', nota: 'Core total + coordinación',
+        descripcion: 'A 4 apoyos con rodillas a centímetros del suelo, avanza 20m manteniendo la espalda plana. Coordinación y core profundo.',
+        youtube: 'https://www.youtube.com/results?search_query=bear+crawl+ejercicio+core+coordinacion+tutorial' },
+      { nombre: 'Plank toque de hombros', sets: 3, reps: '30 seg', equipo: 'Peso corporal', nota: 'Antirotación',
+        descripcion: 'Plancha alta, alterna tocando el hombro contrario con cada mano. Las caderas no deben rotar ni oscilar.',
+        youtube: 'https://www.youtube.com/results?search_query=plank+toque+hombros+antirotacion+core+tutorial' },
+      { nombre: 'Skipping en sitio (intervals)', sets: 4, reps: '30 seg', equipo: 'Peso corporal', nota: 'Cardio HIIT',
+        descripcion: 'Carrera en el lugar elevando rodillas al máximo a ritmo rápido. Alta demanda cardiovascular sin desplazamiento ni impacto.',
+        youtube: 'https://www.youtube.com/results?search_query=skipping+en+sitio+cardio+hiit+tutorial' },
+      { nombre: 'V-ups', sets: 3, reps: '15', equipo: 'Peso corporal', nota: 'Core completo',
+        descripcion: 'Boca arriba, sube simultáneamente piernas y torso formando una V. Activa el recto abdominal superior e inferior.',
+        youtube: 'https://www.youtube.com/results?search_query=v+ups+abdominales+core+completo+tutorial' },
+      { nombre: 'Remadora intervalos (HIIT)', sets: 4, reps: '20s sprint / 40s suave', equipo: 'Remadora', nota: 'Cardio bajo impacto',
+        descripcion: 'Sprints en remadora: 20 seg al máximo, 40 seg palada suave de recuperación. Preserva articulaciones mejor que saltos.',
+        youtube: 'https://www.youtube.com/results?search_query=remadora+hiit+intervalos+rowing+machine+tutorial' }
+    ]
+  }
+};
+
+// ─── Genera el protocolo del día para la semana actual ───
+// • Ejercicios core siempre presentes.
+// • Accesorios del protocolo base + extras del pool rotan seeded por semana.
+// • Filtra por equipamiento disponible.
+function generarProtocoloDia(tipoDia, semanaNum, equiposDisp) {
+  const diaBase = ENTRENO_PROTOCOLO.dias[tipoDia];
+  if (!diaBase) return null;
+  const pool = EJERCICIOS_POOL[tipoDia];
+  if (!pool) return diaBase;
+
+  const equipos = equiposDisp || ['peso_corporal', 'speediance', 'treadmill_plano'];
+
+  function _equipoId(equipo) {
+    if (!equipo) return 'peso_corporal';
+    const e = equipo.toLowerCase();
+    if (e.includes('remadora')) return 'remadora';
+    if (e.includes('speediance') || e.includes('barra/speediance')) return 'speediance';
+    if (e.includes('treadmill')) return 'treadmill_plano';
+    if (e === 'barra') return 'barra';
+    return 'peso_corporal';
+  }
+
+  function _disponible(ej) {
+    const id = _equipoId(ej.equipo);
+    return id === 'peso_corporal' || equipos.includes(id);
+  }
+
+  const coreSet = new Set(pool.core);
+  const coreEj = diaBase.ejercicios.filter(e => coreSet.has(e.nombre));
+  const accesoriosBase = diaBase.ejercicios.filter(e => !coreSet.has(e.nombre) && _disponible(e));
+  const extrasDisp = pool.extra.filter(_disponible);
+
+  const todoAccesorios = [...accesoriosBase, ...extrasDisp];
+  const seed = semanaNum * 1000 + tipoDia.charCodeAt(0);
+  const shuffled = _seededShuffle(todoAccesorios, seed);
+
+  const nAccesorios = pool.totalSesion - coreEj.length;
+  const seleccionados = shuffled.slice(0, nAccesorios);
+
+  return Object.assign({}, diaBase, {
+    ejercicios: [...coreEj, ...seleccionados],
+    semana: semanaNum,
+    variante: (Math.abs(seed) % 99) + 1   // número de variante 1-99 para UI
+  });
+}
+
+// ─── Busca metadatos de un ejercicio (descripcion, youtube) ───
+// Busca primero en ENTRENO_PROTOCOLO, luego en EJERCICIOS_POOL.extra
+function buscarEjercicio(nombre) {
+  for (const k of Object.keys(ENTRENO_PROTOCOLO.dias)) {
+    const ej = ENTRENO_PROTOCOLO.dias[k].ejercicios.find(e => e.nombre === nombre);
+    if (ej) return ej;
+  }
+  for (const k of Object.keys(EJERCICIOS_POOL)) {
+    const ej = EJERCICIOS_POOL[k].extra.find(e => e.nombre === nombre);
+    if (ej) return ej;
+  }
+  return null;
+}
+
 // ─── Exponer a window ───
 if (typeof window !== 'undefined') {
   window.NP_RoadmapData = {
@@ -303,8 +476,12 @@ if (typeof window !== 'undefined') {
     ALCOHOL_BEBIDAS,
     EQUIPOS_DISPONIBLES,
     ENTRENO_PROTOCOLO,
+    EJERCICIOS_POOL,
     FUENTES_PROTEICAS,
     ALIMENTOS_ALTO_VOLUMEN,
-    FACTORES_ACTIVIDAD: FACTORES_ACTIVIDAD_FL
+    FACTORES_ACTIVIDAD: FACTORES_ACTIVIDAD_FL,
+    semanaActual,
+    generarProtocoloDia,
+    buscarEjercicio
   };
 }

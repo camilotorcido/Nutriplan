@@ -3391,7 +3391,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418at — split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418au — split en 2 secciones)
 // seccion="entrenamiento" → Pasos + Entreno
 // seccion="progreso" → Roadmap + Métricas
 // =============================================
@@ -4505,6 +4505,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
 function getEquipoId(equipo) {
   if (!equipo) return 'peso_corporal';
   const e = equipo.toLowerCase();
+  if (e.includes('remadora')) return 'remadora';
   if (e.includes('speediance') || e.includes('barra/speediance')) return 'speediance';
   if (e.includes('treadmill')) return 'treadmill_plano';
   if (e === 'barra') return 'barra';
@@ -4583,8 +4584,31 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
     return <div className={`rounded-xl p-6 text-sm ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-amber-50 text-amber-700'}`}>Módulo de entreno no disponible.</div>;
   }
 
-  const sesion = window.NP_Training.obtener(hoy, tipoDia);
-  const protocolo = window.NP_Training.protocoloDia(tipoDia);
+  // ── Protocolo dinámico: ejercicios rotan semana a semana ──
+  const semanaNum = window.NP_RoadmapData ? window.NP_RoadmapData.semanaActual(hoy) : 0;
+  const equiposDisp = leerEquipos();
+  const protocolo = (window.NP_RoadmapData && window.NP_RoadmapData.generarProtocoloDia)
+    ? window.NP_RoadmapData.generarProtocoloDia(tipoDia, semanaNum, equiposDisp)
+    : (window.NP_Training ? window.NP_Training.protocoloDia(tipoDia) : null);
+
+  // ── Sesión del día: si está sin iniciar, sembrar con el protocolo dinámico ──
+  let sesion = window.NP_Training.obtener(hoy, tipoDia);
+  if (protocolo && !sesion.ejercicios.some(e => e.done || e.peso != null)) {
+    // Sesión virgen: sobrescribir ejercicios con la selección dinámica de esta semana
+    sesion = Object.assign({}, sesion, {
+      ejercicios: protocolo.ejercicios.map(ej => ({
+        nombre:       ej.nombre,
+        setsEsperado: ej.sets,
+        repsEsperado: ej.reps,
+        equipo:       ej.equipo,
+        nota:         ej.nota || '',
+        done:         false,
+        peso:         null,
+        repsReales:   null
+      }))
+    });
+  }
+
   const resumen = window.NP_Training.resumen7();
   const ultimas = window.NP_Training.ultimas(8);
   const esDescanso = sugerido === 'descanso';
@@ -4694,7 +4718,14 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
         <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex-1 min-w-0">
-              <div className={`text-sm uppercase tracking-wider font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{protocolo.nombre}</div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className={`text-sm uppercase tracking-wider font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{protocolo.nombre}</div>
+                {protocolo.variante && (
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
+                    Sem {semanaNum} · var #{protocolo.variante}
+                  </span>
+                )}
+              </div>
               <div className={`text-base ${darkMode ? 'text-gray-300' : 'text-gray-700'} mt-1`}>{protocolo.foco}</div>
               <div className="text-xs text-gray-400 mt-1">
                 <i className="fas fa-clock mr-1"></i>{protocolo.duracionMin} min · {protocolo.equipamiento}
@@ -4733,7 +4764,10 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
           const previo = window.NP_Training.ultimoPeso(e.nombre, hoy);
           const mejoró = previo && e.peso != null && Number(e.peso) > previo.peso;
           const bajó = previo && e.peso != null && Number(e.peso) < previo.peso;
-          const protEj = protocolo ? protocolo.ejercicios.find(p => p.nombre === e.nombre) : null;
+          // Lookup en el pool global (cubre protocolo base + extras de rotación)
+          const protEj = (window.NP_RoadmapData && window.NP_RoadmapData.buscarEjercicio)
+            ? window.NP_RoadmapData.buscarEjercicio(e.nombre)
+            : (protocolo ? protocolo.ejercicios.find(p => p.nombre === e.nombre) : null);
           return (
             <div key={i} className={`rounded-xl p-3 transition-colors ${
               e.done
