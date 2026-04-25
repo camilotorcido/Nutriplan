@@ -2004,7 +2004,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                       setForceUpdate(x => x + 1);
                     }
                   }}
-                  className={`w-6 h-6 flex items-center justify-center rounded-full text-xs transition-all ${
+                  className={`w-6 h-6 flex items-center justify-center rounded-full text-xs transition-all active:scale-90 ${
                     yaComido
                       ? 'bg-emerald-500 text-white'
                       : darkMode ? 'bg-gray-700 text-gray-400 hover:text-emerald-400' : 'bg-white/70 text-gray-400 hover:text-emerald-600'
@@ -2456,7 +2456,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-overlay" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-overlay animate-overlayFadeIn" onClick={onClose}>
       <div className={`w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[92vh] overflow-hidden flex flex-col animate-slideUp shadow-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}
         onClick={(e) => e.stopPropagation()}>
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-5 text-white flex-shrink-0">
@@ -2699,7 +2699,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
 
           <div className="p-5">
             {(tabActiva === "normal" || !tieneThermomix) && (
-              <div>
+              <div key="normal" className="animate-fadeIn">
                 {!tieneThermomix && (
                   <h3 className={`font-semibold mb-3 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                     <i className="fas fa-fire-burner text-green-500"></i>Instrucciones
@@ -2716,7 +2716,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
               </div>
             )}
             {tabActiva === "thermomix" && tieneThermomix && (
-              <div>
+              <div key="thermomix" className="animate-fadeIn">
                 <div className={`rounded-xl p-3 mb-4 text-xs flex items-start gap-2 ${darkMode ? 'bg-indigo-900/40 border border-indigo-700 text-indigo-300' : 'bg-indigo-50 border border-indigo-200 text-indigo-700'}`}>
                   <i className="fas fa-blender mt-0.5"></i>
                   <span><strong>Receta profesional para Thermomix TM6.</strong> Incluye mise en place, técnica detallada, comandos completos (tiempo / temperatura / velocidad / giro), uso de accesorios y controles de cocción. Vaso 2.2 L: respetar cantidades máximas.</span>
@@ -3509,7 +3509,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260418bi)
+// COMPONENTE: HoyView — Dashboard diario (v20260418bj)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -3779,12 +3779,16 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
                   Guardar
                 </button>
               </div>
-              {/* N23: range validation feedback */}
-              {pesoError && <p className="text-red-500 text-xs mt-1">{pesoError}</p>}
+              {/* N23: range validation feedback — animate-slideDown para entrada suave */}
+              {pesoError && (
+                <div className="animate-slideDown">
+                  <p className="text-red-500 text-xs mt-1">{pesoError}</p>
+                </div>
+              )}
             </div>
           )}
           {pesoGuardado && (
-            <div className={`rounded-2xl px-5 py-3 flex items-center gap-3 ${darkMode ? 'bg-green-900/30 border border-green-800' : 'bg-green-50 border border-green-200'}`}>
+            <div className={`rounded-2xl px-5 py-3 flex items-center gap-3 animate-fadeIn ${darkMode ? 'bg-green-900/30 border border-green-800' : 'bg-green-50 border border-green-200'}`}>
               <i className="fas fa-check-circle text-green-500"></i>
               <span className={`text-sm font-medium ${darkMode ? 'text-green-300' : 'text-green-700'}`}>Peso registrado correctamente</span>
             </div>
@@ -5878,7 +5882,7 @@ function App() {
         </div>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-4 py-6">
+      <main key={pantalla} className="max-w-3xl mx-auto px-4 py-6 animate-fadeIn">
         {pantalla === "hoy" && (
           <HoyView perfil={perfil} darkMode={darkMode} planSemanal={planSemanal} onNavigate={navegarA} />
         )}

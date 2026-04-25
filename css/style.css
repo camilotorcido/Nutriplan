@@ -27,20 +27,39 @@ html.dark body {
 html.dark ::-webkit-scrollbar-thumb { background: #4b5563; }
 html.dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 
-/* Animaciones */
+/* Animaciones — easing: expo-out (objetos reales desaceleran suavemente) */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* slideDown: entrada de mensajes de error/validación — usa grid-template-rows
+   (nunca animar height directamente — fuerza reflow) */
+@keyframes slideDown {
+    from { grid-template-rows: 0fr; opacity: 0; }
+    to   { grid-template-rows: 1fr; opacity: 1; }
+}
+
+/* Micro-interacción para checkboxes / toggles: confirmación visual del click */
+@keyframes checkPop {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.22); }
+    100% { transform: scale(1); }
 }
 
 @keyframes pulse-soft {
@@ -53,9 +72,29 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
     to { transform: rotate(360deg); }
 }
 
-.animate-fadeIn { animation: fadeIn 0.4s ease-out; }
-.animate-slideUp { animation: slideUp 0.5s ease-out; }
-.animate-scaleIn { animation: scaleIn 0.3s ease-out; }
+.animate-fadeIn        { animation: fadeIn        0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-slideUp       { animation: slideUp       0.3s  cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-scaleIn       { animation: scaleIn       0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-overlayFadeIn { animation: overlayFadeIn 0.2s  ease-out both; }
+
+/* Contenedor slideDown: el hijo directo debe tener overflow:hidden */
+.animate-slideDown {
+    display: grid;
+    animation: slideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-slideDown > * { overflow: hidden; }
+
+/* ─── prefers-reduced-motion: OBLIGATORIO por accesibilidad (WCAG 2.3.3) ─── */
+/* Usuarios con epilepsia u otras condiciones que solicitaron reducción de
+   movimiento. Se desactivan transiciones y animaciones sin quitar el layout. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration:       0.01ms !important;
+        animation-iteration-count: 1    !important;
+        transition-duration:      0.01ms !important;
+        scroll-behavior:          auto  !important;
+    }
+}
 
 /* Cards */
 .meal-card {
