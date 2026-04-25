@@ -114,9 +114,8 @@ const ALCOHOL_BEBIDAS = [
 // ─── Equipamiento disponible ───
 const EQUIPOS_DISPONIBLES = [
   { id: 'peso_corporal',  nombre: 'Peso corporal',       icono: '🤸', siempre: true },
-  { id: 'speediance',     nombre: 'Speediance',           icono: '🏋️', siempre: false },
+  { id: 'speediance',     nombre: 'Speediance / Remadora', icono: '🏋️', siempre: false },
   { id: 'treadmill_plano',nombre: 'Treadmill (plano)',    icono: '🏃', siempre: false },
-  { id: 'remadora',       nombre: 'Remadora',             icono: '🚣', siempre: false },
   { id: 'barra',          nombre: 'Barra de dominadas',   icono: '⬆️', siempre: false }
 ];
 
@@ -380,8 +379,8 @@ const EJERCICIOS_POOL = {
       { nombre: 'Shrug cable', sets: 3, reps: '15', equipo: 'Speediance', nota: 'Trapecio superior',
         descripcion: 'De pie con cables a los lados, encoge los hombros hacia las orejas. Pausa 1 seg arriba para máxima contracción del trapecio.',
         youtube: 'https://www.youtube.com/results?search_query=shrug+cable+trapecio+superior+tutorial' },
-      { nombre: 'Rowing remadora calentamiento', sets: 1, reps: '10-15 min', equipo: 'Remadora', nota: 'Técnica: piernas → cadera → brazos',
-        descripcion: 'En remadora: arranque con piernas, apertura de cadera y tirón de brazos en secuencia. Espalda recta durante todo el stroke.',
+      { nombre: 'Rowing remadora calentamiento', sets: 1, reps: '10-15 min', equipo: 'Speediance', nota: 'Técnica: piernas → cadera → brazos',
+        descripcion: 'En modo remo del Speediance: arranque con piernas, apertura de cadera y tirón de brazos en secuencia. Espalda recta durante todo el stroke.',
         youtube: 'https://www.youtube.com/results?search_query=remadora+tecnica+correcta+rowing+machine+tutorial' }
     ]
   },
@@ -401,10 +400,65 @@ const EJERCICIOS_POOL = {
       { nombre: 'V-ups', sets: 3, reps: '15', equipo: 'Peso corporal', nota: 'Core completo',
         descripcion: 'Boca arriba, sube simultáneamente piernas y torso formando una V. Activa el recto abdominal superior e inferior.',
         youtube: 'https://www.youtube.com/results?search_query=v+ups+abdominales+core+completo+tutorial' },
-      { nombre: 'Remadora intervalos (HIIT)', sets: 4, reps: '20s sprint / 40s suave', equipo: 'Remadora', nota: 'Cardio bajo impacto',
-        descripcion: 'Sprints en remadora: 20 seg al máximo, 40 seg palada suave de recuperación. Preserva articulaciones mejor que saltos.',
+      { nombre: 'Remadora intervalos (HIIT)', sets: 4, reps: '20s sprint / 40s suave', equipo: 'Speediance', nota: 'Cardio bajo impacto',
+        descripcion: 'Modo remo del Speediance en intervalos: 20 seg sprint al máximo, 40 seg palada suave. Cardio intenso sin impacto articular.',
         youtube: 'https://www.youtube.com/results?search_query=remadora+hiit+intervalos+rowing+machine+tutorial' }
     ]
+  }
+};
+
+// ─── Planes por días de entrenamiento a la semana ────────────────────────────
+// 'short' es la etiqueta corta del botón (e.g. "A'" para la 2ª aparición de A).
+const SCHEDULES_POR_DIAS = {
+  2: {
+    label: '2 días',
+    tipos: [
+      { k: 'A',  short: 'A',  corto: 'Empuje'  },
+      { k: 'C',  short: 'C',  corto: 'Jalar'   }
+    ],
+    schedule: { 1:'A', 2:'descanso', 3:'descanso', 4:'C', 5:'descanso', 6:'descanso', 0:'descanso' }
+  },
+  3: {
+    label: '3 días',
+    tipos: [
+      { k: 'A',  short: 'A',  corto: 'Empuje'  },
+      { k: 'B',  short: 'B',  corto: 'Piernas' },
+      { k: 'C',  short: 'C',  corto: 'Jalar'   }
+    ],
+    schedule: { 1:'A', 2:'descanso', 3:'B', 4:'descanso', 5:'C', 6:'descanso', 0:'descanso' }
+  },
+  4: {
+    label: '4 días',
+    tipos: [
+      { k: 'A',  short: 'A',  corto: 'Empuje'   },
+      { k: 'B',  short: 'B',  corto: 'Piernas'  },
+      { k: 'C',  short: 'C',  corto: 'Jalar'    },
+      { k: 'D',  short: 'D',  corto: 'Circuito' }
+    ],
+    schedule: { 1:'A', 2:'B', 3:'descanso', 4:'C', 5:'descanso', 6:'D', 0:'descanso' }
+  },
+  5: {
+    label: '5 días',
+    tipos: [
+      { k: 'A',  short: 'A',  corto: 'Empuje'   },
+      { k: 'B',  short: 'B',  corto: 'Piernas'  },
+      { k: 'C',  short: 'C',  corto: 'Jalar'    },
+      { k: 'D',  short: 'D',  corto: 'Circuito' },
+      { k: 'B2', short: "B'", corto: 'Piernas+' }
+    ],
+    schedule: { 1:'A', 2:'B', 3:'C', 4:'D', 5:'B2', 6:'descanso', 0:'descanso' }
+  },
+  6: {
+    label: '6 días',
+    tipos: [
+      { k: 'A',  short: 'A',  corto: 'Empuje'   },
+      { k: 'B',  short: 'B',  corto: 'Piernas'  },
+      { k: 'C',  short: 'C',  corto: 'Jalar'    },
+      { k: 'A2', short: "A'", corto: 'Empuje+'  },
+      { k: 'B2', short: "B'", corto: 'Piernas+' },
+      { k: 'C2', short: "C'", corto: 'Jalar+'   }
+    ],
+    schedule: { 1:'A', 2:'B', 3:'C', 4:'A2', 5:'B2', 6:'C2', 0:'descanso' }
   }
 };
 
@@ -412,10 +466,16 @@ const EJERCICIOS_POOL = {
 // • Ejercicios core siempre presentes.
 // • Accesorios del protocolo base + extras del pool rotan seeded por semana.
 // • Filtra por equipamiento disponible.
+// • Soporta tipos variantes A2/B2/C2: misma base, seed diferente → ejercicios distintos.
 function generarProtocoloDia(tipoDia, semanaNum, equiposDisp) {
-  const diaBase = ENTRENO_PROTOCOLO.dias[tipoDia];
+  // Tipos variantes (A2 → base A, variante 2; B2 → base B, variante 2)
+  const match = String(tipoDia).match(/^([A-Z]+)(\d*)$/);
+  const baseDia = match ? match[1] : tipoDia;
+  const variantNum = match && match[2] ? parseInt(match[2]) : 0;
+
+  const diaBase = ENTRENO_PROTOCOLO.dias[baseDia];
   if (!diaBase) return null;
-  const pool = EJERCICIOS_POOL[tipoDia];
+  const pool = EJERCICIOS_POOL[baseDia];
   if (!pool) return diaBase;
 
   const equipos = equiposDisp || ['peso_corporal', 'speediance', 'treadmill_plano'];
@@ -423,7 +483,6 @@ function generarProtocoloDia(tipoDia, semanaNum, equiposDisp) {
   function _equipoId(equipo) {
     if (!equipo) return 'peso_corporal';
     const e = equipo.toLowerCase();
-    if (e.includes('remadora')) return 'remadora';
     if (e.includes('speediance') || e.includes('barra/speediance')) return 'speediance';
     if (e.includes('treadmill')) return 'treadmill_plano';
     if (e === 'barra') return 'barra';
@@ -441,13 +500,19 @@ function generarProtocoloDia(tipoDia, semanaNum, equiposDisp) {
   const extrasDisp = pool.extra.filter(_disponible);
 
   const todoAccesorios = [...accesoriosBase, ...extrasDisp];
-  const seed = semanaNum * 1000 + tipoDia.charCodeAt(0);
+  // variantNum desplaza el seed para que A y A2 produzcan listas distintas
+  const seed = semanaNum * 1000 + baseDia.charCodeAt(0) + variantNum * 500;
   const shuffled = _seededShuffle(todoAccesorios, seed);
 
   const nAccesorios = pool.totalSesion - coreEj.length;
   const seleccionados = shuffled.slice(0, nAccesorios);
 
+  const nombreDia = variantNum > 0
+    ? diaBase.nombre + ' (variante ' + variantNum + ')'
+    : diaBase.nombre;
+
   return Object.assign({}, diaBase, {
+    nombre: nombreDia,
     ejercicios: [...coreEj, ...seleccionados],
     semana: semanaNum,
     variante: (Math.abs(seed) % 99) + 1   // número de variante 1-99 para UI
@@ -477,6 +542,7 @@ if (typeof window !== 'undefined') {
     EQUIPOS_DISPONIBLES,
     ENTRENO_PROTOCOLO,
     EJERCICIOS_POOL,
+    SCHEDULES_POR_DIAS,
     FUENTES_PROTEICAS,
     ALIMENTOS_ALTO_VOLUMEN,
     FACTORES_ACTIVIDAD: FACTORES_ACTIVIDAD_FL,

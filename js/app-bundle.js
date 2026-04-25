@@ -3391,7 +3391,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418au — split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418av — split en 2 secciones)
 // seccion="entrenamiento" → Pasos + Entreno
 // seccion="progreso" → Roadmap + Métricas
 // =============================================
@@ -4505,7 +4505,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
 function getEquipoId(equipo) {
   if (!equipo) return 'peso_corporal';
   const e = equipo.toLowerCase();
-  if (e.includes('remadora')) return 'remadora';
+  // Speediance incluye modo remo/remadora — son el mismo equipo
   if (e.includes('speediance') || e.includes('barra/speediance')) return 'speediance';
   if (e.includes('treadmill')) return 'treadmill_plano';
   if (e === 'barra') return 'barra';
@@ -4576,9 +4576,30 @@ function EquipamientoCard({ darkMode, onRefresh }) {
 // ─── Sub-vista: Entreno (log de cargas por día A/B/C/D) ───
 function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   const hoy = new Date().toISOString().split('T')[0];
-  const sugerido = (window.NP_Training && window.NP_Training.tipoDiaSugerido) ? window.NP_Training.tipoDiaSugerido(hoy) : 'descanso';
-  const tipoInicial = (sugerido === 'descanso') ? 'A' : sugerido;
+
+  // ── Días/semana: persiste en localStorage, modifica todo el plan ──
+  const [diasSemana, setDiasSemana] = React.useState(() =>
+    parseInt(localStorage.getItem('nutriplan_dias_semana') || '4')
+  );
+  const planActual = (window.NP_RoadmapData && window.NP_RoadmapData.SCHEDULES_POR_DIAS)
+    ? (window.NP_RoadmapData.SCHEDULES_POR_DIAS[diasSemana] || window.NP_RoadmapData.SCHEDULES_POR_DIAS[4])
+    : null;
+
+  const hoyDow = new Date(hoy + 'T12:00:00').getDay();
+  const sugerido = planActual
+    ? (planActual.schedule[hoyDow] || 'descanso')
+    : (window.NP_Training && window.NP_Training.tipoDiaSugerido ? window.NP_Training.tipoDiaSugerido(hoy) : 'descanso');
+  const tipos = planActual ? planActual.tipos
+    : [{ k:'A', short:'A', corto:'Empuje' }, { k:'B', short:'B', corto:'Piernas' },
+       { k:'C', short:'C', corto:'Jalar'  }, { k:'D', short:'D', corto:'Circuito' }];
+
+  const tipoInicial = (sugerido === 'descanso') ? (tipos[0] ? tipos[0].k : 'A') : sugerido;
   const [tipoDia, setTipoDia] = React.useState(tipoInicial);
+
+  // Cuando cambia diasSemana, resetear al sugerido si el tipo actual ya no existe en el plan
+  React.useEffect(() => {
+    if (!tipos.some(t => t.k === tipoDia)) setTipoDia(tipoInicial);
+  }, [diasSemana]);
 
   if (!window.NP_Training) {
     return <div className={`rounded-xl p-6 text-sm ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-amber-50 text-amber-700'}`}>Módulo de entreno no disponible.</div>;
@@ -4651,13 +4672,8 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   const total = sesion.ejercicios.length;
   const pct = total > 0 ? Math.round((completados / total) * 100) : 0;
 
-  const tipos = [
-    { k: 'A', corto: 'Empuje' },
-    { k: 'B', corto: 'Piernas' },
-    { k: 'C', corto: 'Jalar' },
-    { k: 'D', corto: 'Circuito' }
-  ];
-
+  // tipos ya está definido arriba desde planActual
+  const gridCols = tipos.length <= 4 ? tipos.length : 3; // 5-6 días → 2 filas de 3
   const diaSemana = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][new Date(hoy + 'T12:00:00').getDay()];
 
   return (
@@ -4683,16 +4699,39 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
 
       {/* Selector de día */}
       <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-2">
           <div className={`text-xs uppercase font-bold tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             Día a registrar · hoy ({diaSemana})
           </div>
           {esDescanso
             ? <span className={`text-xs px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>Descanso según plan</span>
-            : <span className="text-xs px-2 py-0.5 rounded bg-orange-500/20 text-orange-500 font-bold">Sugerido: Día {sugerido}</span>
+            : <span className="text-xs px-2 py-0.5 rounded bg-orange-500/20 text-orange-500 font-bold">
+                Sugerido: Día {(tipos.find(t => t.k === sugerido) || {}).short || sugerido}
+              </span>
           }
         </div>
-        <div className="grid grid-cols-4 gap-2">
+
+        {/* Selector días/semana */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className={`text-xs font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Días/sem:</span>
+          <div className="flex gap-1">
+            {[2,3,4,5,6].map(n => (
+              <button key={n}
+                onClick={() => { localStorage.setItem('nutriplan_dias_semana', String(n)); setDiasSemana(n); }}
+                className={`w-7 h-7 rounded text-xs font-bold transition-all ${
+                  diasSemana === n
+                    ? 'bg-orange-500 text-white'
+                    : darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}>
+                {n}
+              </button>
+            ))}
+          </div>
+          {planActual && <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{planActual.label}</span>}
+        </div>
+
+        {/* Botones de tipo de día */}
+        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
           {tipos.map(t => {
             const activo = tipoDia === t.k;
             const esSugerido = !esDescanso && sugerido === t.k;
@@ -4705,7 +4744,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                       ? darkMode ? 'bg-orange-900/30 text-orange-300 border border-orange-700' : 'bg-orange-50 text-orange-600 border border-orange-200'
                       : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
                 }`}>
-                <span className="text-sm">Día {t.k}</span>
+                <span className="text-sm">Día {t.short || t.k}</span>
                 <span className="text-[11px] opacity-80">{t.corto}</span>
               </button>
             );
