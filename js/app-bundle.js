@@ -3359,45 +3359,50 @@ function ShoppingList({ plan, darkMode }) {
           : <span><i className="fas fa-copy mr-2"></i>Copiar Lista al Portapapeles</span>}
       </button>
 
-      {/* Fase 4.1: Exports adicionales */}
+      {/* Exports adicionales */}
       {typeof window.exports !== 'undefined' && ingredientesFaltantes.length > 0 && (
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <button onClick={() => {
-              const result = window.exports.listaCSV(ingredientesFaltantes.map(ing => ({
-                nombre: ing.nombre,
-                cantidad: ing.cantidad,
-                unidad: ing.unidad,
-                precio_clp: ing.precio_clp,
-                descripcion_compra: ing.descripcion_compra,
-                categoria: ing.categoria_supermercado
-              })));
-              console.log('[Export CSV]', result);
-            }}
-            className={`py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] ${
-              darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-            }`}>
-            <i className="fas fa-file-csv text-emerald-500 mr-2"></i>Descargar CSV
-          </button>
-          <button onClick={async () => {
-              let texto = window.exports.textoSupermercado(ingredientesFaltantes);
-              const ess = esencialesActivos();
-              if (ess.length > 0) texto += "\n" + ess.map(e => e.nombre).join("\n");
-              try {
-                await navigator.clipboard.writeText(texto);
-                alert('✓ Lista copiada. Pégala en el buscador de Jumbo/Líder (uno por línea).');
-              } catch {
-                const ta = document.createElement('textarea');
-                ta.value = texto;
-                document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-                document.body.removeChild(ta);
-                alert('✓ Lista copiada');
-              }
-            }}
-            className={`py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] ${
-              darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-            }`}>
-            <i className="fas fa-cart-shopping text-blue-500 mr-2"></i>Formato Jumbo/Líder
-          </button>
+        <div className="mt-3">
+          <div className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            <i className="fas fa-download mr-1"></i>Exportar lista
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={() => {
+                const result = window.exports.listaCSV(ingredientesFaltantes.map(ing => ({
+                  nombre: ing.nombre,
+                  cantidad: ing.cantidad,
+                  unidad: ing.unidad,
+                  precio_clp: ing.precio_clp,
+                  descripcion_compra: ing.descripcion_compra,
+                  categoria: ing.categoria_supermercado
+                })));
+                console.log('[Export CSV]', result);
+              }}
+              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition-all active:scale-[0.98] ${
+                darkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}>
+              <i className="fas fa-file-csv text-emerald-500"></i>Descargar CSV
+            </button>
+            <button onClick={async () => {
+                let texto = window.exports.textoSupermercado(ingredientesFaltantes);
+                const ess = esencialesActivos();
+                if (ess.length > 0) texto += "\n" + ess.map(e => e.nombre).join("\n");
+                try {
+                  await navigator.clipboard.writeText(texto);
+                  alert('✓ Lista copiada. Pégala en el buscador de Jumbo/Líder (uno por línea).');
+                } catch {
+                  const ta = document.createElement('textarea');
+                  ta.value = texto;
+                  document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+                  document.body.removeChild(ta);
+                  alert('✓ Lista copiada');
+                }
+              }}
+              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition-all active:scale-[0.98] ${
+                darkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}>
+              <i className="fas fa-cart-shopping text-blue-500"></i>Formato Jumbo/Líder
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -3406,7 +3411,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418ba — split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418bb — split en 2 secciones)
 // seccion="entrenamiento" → Pasos + Entreno
 // seccion="progreso" → Roadmap + Métricas
 // =============================================
@@ -3459,17 +3464,20 @@ function FatLossTab({ perfil, darkMode, seccion }) {
 }
 
 // =============================================
-// COMPONENTE: CocinarTab (agrupa ¿Qué cocino? + Crear receta)
+// COMPONENTE: CocinarTab (¿Qué cocino? + Crear receta + Preparar)
 // =============================================
-function CocinarTab({ darkMode, onRecipeClick }) {
+function CocinarTab({ darkMode, onRecipeClick, plan, factorComensales }) {
   const [subVista, setSubVista] = React.useState('buscar');
+  const tienePlan = plan && typeof plan === 'object' && Object.keys(plan).some(k => k.startsWith('semana_'));
   const subs = [
     { k: 'buscar', l: '¿Qué cocino?', icon: 'fa-magnifying-glass' },
-    { k: 'crear', l: 'Crear receta', icon: 'fa-wand-magic-sparkles' }
+    { k: 'crear',  l: 'Crear receta', icon: 'fa-wand-magic-sparkles' },
+    ...(tienePlan ? [{ k: 'preparar', l: 'Preparar', icon: 'fa-pot-food' }] : [])
   ];
+  const cols = subs.length === 3 ? 'grid-cols-3' : 'grid-cols-2';
   return (
     <div className="animate-fadeIn">
-      <div className="grid grid-cols-2 gap-2 mb-4">
+      <div className={`grid ${cols} gap-2 mb-4`}>
         {subs.map(s => (
           <button key={s.k} onClick={() => setSubVista(s.k)}
             className={`py-2.5 px-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${
@@ -3481,8 +3489,39 @@ function CocinarTab({ darkMode, onRecipeClick }) {
           </button>
         ))}
       </div>
-      {subVista === 'buscar' && <ReverseSearch darkMode={darkMode} onRecipeClick={onRecipeClick} />}
-      {subVista === 'crear' && <RecipeGenerator darkMode={darkMode} onRecipeClick={onRecipeClick} />}
+      {subVista === 'buscar'   && <ReverseSearch darkMode={darkMode} onRecipeClick={onRecipeClick} />}
+      {subVista === 'crear'    && <RecipeGenerator darkMode={darkMode} onRecipeClick={onRecipeClick} />}
+      {subVista === 'preparar' && <PrepararView darkMode={darkMode} plan={plan} factorComensales={factorComensales} />}
+    </div>
+  );
+}
+
+// ─── Sub-vista: Preparar (Batch Cooking + Comensales) ───
+function PrepararView({ darkMode, plan, factorComensales }) {
+  // Detectar semana activa (primera semana disponible del plan)
+  const semanaActiva = React.useMemo(() => {
+    if (!plan) return 1;
+    const keys = Object.keys(plan).filter(k => k.startsWith('semana_')).map(k => parseInt(k.replace('semana_', ''))).sort((a,b) => a-b);
+    return keys.length > 0 ? keys[0] : 1;
+  }, [plan]);
+
+  return (
+    <div className="space-y-4 animate-fadeIn">
+      {/* Comensales */}
+      {typeof window.perfilesMulti !== 'undefined' && (
+        <ComensalesPanel darkMode={darkMode} onChange={() => {}} />
+      )}
+
+      {/* Batch Cooking */}
+      {typeof window.batchCooking !== 'undefined' && plan ? (
+        <BatchCookingPanel planSemanal={plan} semanaActiva={semanaActiva} darkMode={darkMode} factorComensales={factorComensales || 1} />
+      ) : (
+        <div className={`rounded-xl p-5 text-center text-sm ${darkMode ? 'bg-gray-800 border border-gray-700 text-gray-400' : 'bg-gray-50 border border-gray-200 text-gray-500'}`}>
+          <i className="fas fa-pot-food text-3xl text-amber-400 mb-3 block"></i>
+          <div className={`font-semibold mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Preparación en lote</div>
+          <p>Generá un plan semanal primero para ver qué podés preparar en batch.</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -4010,6 +4049,16 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
 }
 
 // ─── Componente: PlateauCard (detector + protocolo 6 pasos) ───
+// Mapa de acción contextual por paso: destino de navegación + label
+const _PLATEAU_ACCIONES = {
+  1: { label: 'Ver mi plan semanal',         icon: 'fa-calendar-days',   destino: 'plan' },
+  2: { label: 'Ver mis pasos de hoy',        icon: 'fa-person-walking',  destino: 'entrenamiento' },
+  3: { label: 'Buscar recetas bajas en carbos', icon: 'fa-magnifying-glass', destino: 'cocinar' },
+  4: { label: 'Ver plan de esta semana',     icon: 'fa-calendar-days',   destino: 'plan' },
+  5: { label: 'Ajustar calorías en perfil',  icon: 'fa-sliders',         destino: 'perfil' },
+  6: { label: 'Ver entreno de hoy',          icon: 'fa-dumbbell',        destino: 'entrenamiento' },
+};
+
 function PlateauCard({ darkMode, refresh, onRefresh }) {
   const [verProtocolo, setVerProtocolo] = React.useState(false);
 
@@ -4114,7 +4163,21 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
             </div>
           </div>
           <div className={`text-sm mt-2 leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{est.pasoDef.detalle}</div>
-          <div className="flex gap-2 mt-3">
+
+          {/* Acción contextual por paso */}
+          {_PLATEAU_ACCIONES[est.pasoActual] && window._NP_nav && (
+            <button
+              onClick={() => window._NP_nav(_PLATEAU_ACCIONES[est.pasoActual].destino)}
+              className={`w-full mt-3 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 ${
+                darkMode ? 'bg-gray-700 text-orange-300 hover:bg-gray-600 border border-gray-600' : 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200'
+              }`}>
+              <i className={`fas ${_PLATEAU_ACCIONES[est.pasoActual].icon}`}></i>
+              {_PLATEAU_ACCIONES[est.pasoActual].label}
+              <i className="fas fa-arrow-right ml-auto text-xs opacity-50"></i>
+            </button>
+          )}
+
+          <div className="flex gap-2 mt-2">
             <button onClick={resolver}
               className="flex-1 py-2 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600">
               <i className="fas fa-check mr-1"></i>Funcionó
@@ -5283,6 +5346,8 @@ function App() {
     window.scrollTo(0, 0);
   };
   const navegarA = (destino) => { setPantalla(destino); window.scrollTo(0, 0); };
+  // Exponer navegación global para componentes profundos (PlateauCard, etc.)
+  window._NP_nav = navegarA;
 
   // ─── Elementos globales (loading overlay + toast) ───
   const globalOverlays = (
@@ -5373,7 +5438,9 @@ function App() {
               <button key={tab.id} onClick={() => navegarA(tab.id)}
                 className={`nav-pill flex-shrink-0 sm:flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                   pantalla === tab.id
-                    ? 'bg-green-500 text-white shadow-md'
+                    ? (tab.id === 'entrenamiento' || tab.id === 'progreso')
+                      ? 'bg-orange-500 text-white shadow-md'
+                      : 'bg-green-500 text-white shadow-md'
                     : darkMode
                       ? 'text-gray-500 hover:bg-gray-700 hover:text-gray-300'
                       : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
@@ -5403,7 +5470,7 @@ function App() {
           <FatLossTab perfil={perfil} darkMode={darkMode} seccion="progreso" />
         )}
         {pantalla === "cocinar" && (
-          <CocinarTab darkMode={darkMode} onRecipeClick={(r) => setRecetaSeleccionada(r)} />
+          <CocinarTab darkMode={darkMode} onRecipeClick={(r) => setRecetaSeleccionada(r)} plan={planSemanal} factorComensales={factorComensales} />
         )}
         {pantalla === "despensa" && planSemanal && (
           <Pantry plan={planSemanal} onNavigateToShopping={() => navegarA("compras")} darkMode={darkMode} />
