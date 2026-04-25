@@ -86,7 +86,8 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
       fatLossMode: false,
       soloRapidas: false,
       maxTiempoMin: 25,
-      modoSobras: false
+      modoSobras: false,
+      usaThermomix: true
     };
   });
 
@@ -781,6 +782,20 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 </div>
                 {perfil.modoSobras && <i className="fas fa-check text-indigo-700"></i>}
               </label>
+
+              {/* Toggle Thermomix */}
+              <label className={`mt-3 flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${
+                perfil.usaThermomix ? 'bg-indigo-50 border-2 border-indigo-300 text-indigo-900'
+                  : darkMode ? 'bg-gray-700 border-2 border-transparent text-gray-300 hover:bg-gray-600' : 'bg-gray-50 border-2 border-transparent text-gray-600 hover:bg-gray-100'
+              }`}>
+                <input type="checkbox" checked={!!perfil.usaThermomix} onChange={(e) => handleChange("usaThermomix", e.target.checked)} className="sr-only" />
+                <i className="fas fa-blender text-xl text-indigo-500"></i>
+                <div className="flex-1">
+                  <div className="text-sm font-medium">Tengo Thermomix TM6</div>
+                  <div className="text-xs opacity-75">Muestra instrucciones y tiempos adaptados para Thermomix en cada receta</div>
+                </div>
+                {perfil.usaThermomix && <i className="fas fa-check text-indigo-700"></i>}
+              </label>
             </div>
           </div>
 
@@ -869,7 +884,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}>
             <i className={`fas ${perfil.fatLossMode ? 'fa-fire' : 'fa-calendar-alt'} mr-2`}></i>
-            {tienePlan ? 'Guardar y Regenerar Plan' : (perfil.fatLossMode ? 'Activar Fat Loss Mode' : 'Generar Plan Semanal')}
+            {tienePlan ? 'Guardar y Regenerar Plan' : (perfil.fatLossMode ? 'Activar modo pérdida de peso' : 'Generar Plan Semanal')}
           </button>
         </form>
       </div>
@@ -1986,7 +2001,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                     {comida._fuente === 'online' && (
                       <span className="online-badge"><i className="fas fa-globe mr-1"></i>Internet</span>
                     )}
-                    {(tipo === 'almuerzo' || tipo === 'cena') && comida.instrucciones_thermomix && comida.instrucciones_thermomix.length > 0 && (
+                    {perfil.usaThermomix !== false && (tipo === 'almuerzo' || tipo === 'cena') && comida.instrucciones_thermomix && comida.instrucciones_thermomix.length > 0 && (
                       <span className="thermomix-badge">TM6</span>
                     )}
                     {comida.es_sobra && (
@@ -2372,10 +2387,10 @@ function reescalarInstruccionesPorFactor(instrucciones, factor) {
 // =============================================
 // COMPONENTE: RecipeModal
 // =============================================
-function RecipeModal({ receta, onClose, darkMode, factorComensales }) {
+function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix = true }) {
   if (!receta) return null;
   const factor = factorComensales || 1;
-  const tieneThermomix = receta.instrucciones_thermomix && receta.instrucciones_thermomix.length > 0;
+  const tieneThermomix = usaThermomix && receta.instrucciones_thermomix && receta.instrucciones_thermomix.length > 0;
   const [tabActiva, setTabActiva] = React.useState("normal");
   const [sustitucionAbierta, setSustitucionAbierta] = React.useState(null); // nombre_normalizado del ing abierto
   const [sustitucionAplicada, setSustitucionAplicada] = React.useState(null); // preview
@@ -3391,7 +3406,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418az — split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418ba — split en 2 secciones)
 // seccion="entrenamiento" → Pasos + Entreno
 // seccion="progreso" → Roadmap + Métricas
 // =============================================
@@ -3403,7 +3418,7 @@ function FatLossTab({ perfil, darkMode, seccion }) {
     ],
     progreso: [
       { k: 'roadmap', l: 'Roadmap', icon: 'fa-route' },
-      { k: 'metricas', l: 'Métricas', icon: 'fa-weight-scale' }
+      { k: 'metricas', l: 'Registros', icon: 'fa-clipboard-list' }
     ]
   };
   const subs = subsPorSeccion[seccion] || subsPorSeccion.progreso;
@@ -3414,8 +3429,8 @@ function FatLossTab({ perfil, darkMode, seccion }) {
     return (
       <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>
         <i className="fas fa-fire text-4xl text-orange-400 mb-3"></i>
-        <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Fat Loss Mode no activado</h3>
-        <p className="text-sm">Andá a tu perfil y elegí "Pérdida de peso" como objetivo para configurar tu roadmap.</p>
+        <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Modo pérdida no activado</h3>
+        <p className="text-sm">Andá a tu perfil y elegí "Pérdida de peso" como objetivo para ver tu roadmap y progreso.</p>
       </div>
     );
   }
@@ -3435,7 +3450,7 @@ function FatLossTab({ perfil, darkMode, seccion }) {
         ))}
       </div>
 
-      {subVista === 'roadmap' && <FLRoadmapView perfil={perfil} darkMode={darkMode} refresh={refresh} />}
+      {subVista === 'roadmap' && <FLRoadmapView perfil={perfil} darkMode={darkMode} refresh={refresh} onGoToRegistros={() => setSubVista('metricas')} />}
       {subVista === 'metricas' && <FLMetricasView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
       {subVista === 'pasos' && <FLPasosView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
       {subVista === 'entreno' && <FLEntrenoView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
@@ -3473,7 +3488,7 @@ function CocinarTab({ darkMode, onRecipeClick }) {
 }
 
 // ─── Sub-vista: Roadmap dinámico — conecta BodyComp + Training + Plateau + Alcohol ───
-function FLRoadmapView({ perfil, darkMode, refresh }) {
+function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
   const roadmap = perfil.roadmap;
   const faseInfo = (window.NP_FatLoss && window.NP_FatLoss.banner) ? window.NP_FatLoss.banner() : null;
   const progreso = (window.NP_BodyComp && window.NP_BodyComp.progreso) ? window.NP_BodyComp.progreso() : null;
@@ -3558,14 +3573,16 @@ function FLRoadmapView({ perfil, darkMode, refresh }) {
           </div>
         </div>
 
-        {/* Plateau badge */}
+        {/* Plateau badge — clickeable → lleva a Registros */}
         {plateau && plateau.plateau && (
-          <div className={`mt-3 px-3 py-2 rounded-lg text-xs flex items-center gap-2 ${
-            darkMode ? 'bg-yellow-900/30 text-yellow-300 border border-yellow-800' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-          }`}>
-            <i className="fas fa-triangle-exclamation"></i>
-            <span>Meseta detectada · {plateau.diasVentana}d · {plateau.deltaSemanal} kg/sem → ver <b>Métricas</b></span>
-          </div>
+          <button onClick={onGoToRegistros}
+            className={`w-full mt-3 px-3 py-2 rounded-lg text-xs flex items-center gap-2 text-left transition-colors ${
+              darkMode ? 'bg-yellow-900/30 text-yellow-300 border border-yellow-800 hover:bg-yellow-900/50' : 'bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100'
+            }`}>
+            <i className="fas fa-triangle-exclamation flex-shrink-0"></i>
+            <span>Meseta detectada · {plateau.diasVentana}d · {plateau.deltaSemanal} kg/sem</span>
+            <span className="ml-auto flex-shrink-0 font-semibold underline">Ver protocolo →</span>
+          </button>
         )}
       </div>
 
@@ -3602,8 +3619,17 @@ function FLRoadmapView({ perfil, darkMode, refresh }) {
         </div>
       )}
       {!progreso && (
-        <div className={`rounded-xl p-4 text-xs ${darkMode ? 'bg-gray-800 text-gray-400 border border-gray-700' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-          <i className="fas fa-info-circle mr-2"></i>Registrá tu peso en <b>Progreso → Métricas</b> para ver avance real.
+        <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-amber-50 border border-amber-200'}`}>
+          <div className={`text-sm font-semibold mb-1 ${darkMode ? 'text-gray-300' : 'text-amber-800'}`}>
+            <i className="fas fa-weight-scale mr-2 opacity-70"></i>Sin registros de peso aún
+          </div>
+          <p className={`text-xs mb-3 ${darkMode ? 'text-gray-400' : 'text-amber-700'}`}>
+            Registrá tu primer peso para ver tu avance real contra el plan.
+          </p>
+          <button onClick={onGoToRegistros}
+            className="w-full py-2 rounded-lg text-xs font-semibold bg-orange-500 text-white hover:bg-orange-600 active:scale-[0.98] transition-all">
+            <i className="fas fa-plus mr-1.5"></i>Registrar peso ahora
+          </button>
         </div>
       )}
 
@@ -5232,9 +5258,9 @@ function App() {
         const semKey = 'semana_' + numSemana;
         const recetaNueva = nuevoPlan[semKey]?.[dia]?.[tipoComida];
         if (recetaNueva && recetaNueva._fuente === 'online') {
-          mostrarToast(`${tipoNombre} del ${dia} cambiado (receta de internet)`);
+          mostrarToast(`${tipoNombre} del ${dia} cambiado (internet) · revisá tus compras 🛒`);
         } else {
-          mostrarToast(`${tipoNombre} del ${dia} cambiado`);
+          mostrarToast(`${tipoNombre} del ${dia} cambiado · revisá tus compras 🛒`);
         }
       } catch (e) {
         console.error("Error cambiando receta:", e);
@@ -5392,7 +5418,7 @@ function App() {
         <p className="mt-1">Recetas en español + búsqueda en vivo · Thermomix TM6</p>
       </footer>
 
-      {recetaSeleccionada && <RecipeModal receta={recetaSeleccionada} onClose={() => setRecetaSeleccionada(null)} darkMode={darkMode} factorComensales={factorComensales} />}
+      {recetaSeleccionada && <RecipeModal receta={recetaSeleccionada} onClose={() => setRecetaSeleccionada(null)} darkMode={darkMode} factorComensales={factorComensales} usaThermomix={perfil?.usaThermomix !== false} />}
 
       {globalOverlays}
     </div>
