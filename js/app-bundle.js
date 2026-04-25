@@ -3391,7 +3391,7 @@ function ShoppingList({ plan, darkMode }) {
 
 
 // =============================================
-// COMPONENTE: FatLossTab (v20260418av — split en 2 secciones)
+// COMPONENTE: FatLossTab (v20260418aw — split en 2 secciones)
 // seccion="entrenamiento" → Pasos + Entreno
 // seccion="progreso" → Roadmap + Métricas
 // =============================================
@@ -4520,7 +4520,7 @@ function leerEquipos() {
 }
 
 // ─── Componente: selector de equipamiento disponible ───
-function EquipamientoCard({ darkMode, onRefresh }) {
+function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
   const equipos = (window.NP_RoadmapData && window.NP_RoadmapData.EQUIPOS_DISPONIBLES) || [];
   const [seleccion, setSeleccion] = React.useState(leerEquipos);
   const [abierto, setAbierto] = React.useState(false);
@@ -4533,6 +4533,8 @@ function EquipamientoCard({ darkMode, onRefresh }) {
       : [...seleccion, id];
     setSeleccion(nueva);
     localStorage.setItem('nutriplan_equipos', JSON.stringify(nueva));
+    // Notificar al padre directamente (re-render inmediato sin pasar por el abuelo)
+    if (onEquiposChange) onEquiposChange(nueva);
     if (onRefresh) onRefresh();
   };
 
@@ -4607,26 +4609,37 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
 
   // ── Protocolo dinámico: ejercicios rotan semana a semana ──
   const semanaNum = window.NP_RoadmapData ? window.NP_RoadmapData.semanaActual(hoy) : 0;
-  const equiposDisp = leerEquipos();
+  // equiposDisp como estado: permite re-render inmediato al cambiar equipamiento
+  const [equiposDisp, setEquiposDisp] = React.useState(leerEquipos);
   const protocolo = (window.NP_RoadmapData && window.NP_RoadmapData.generarProtocoloDia)
     ? window.NP_RoadmapData.generarProtocoloDia(tipoDia, semanaNum, equiposDisp)
     : (window.NP_Training ? window.NP_Training.protocoloDia(tipoDia) : null);
 
-  // ── Sesión del día: si está sin iniciar, sembrar con el protocolo dinámico ──
+  // ── Sesión del día: siempre refleja el protocolo dinámico actual ──
+  // Los datos ya logueados se preservan por nombre de ejercicio.
+  // Así, al cambiar equipamiento los ejercicios se actualizan de inmediato
+  // sin borrar el progreso de los ejercicios que permanezcan en el plan.
   let sesion = window.NP_Training.obtener(hoy, tipoDia);
-  if (protocolo && !sesion.ejercicios.some(e => e.done || e.peso != null)) {
-    // Sesión virgen: sobrescribir ejercicios con la selección dinámica de esta semana
+  if (protocolo) {
+    // Mapa nombre → datos logueados de la sesión guardada
+    const logMap = {};
+    sesion.ejercicios.forEach(e => {
+      logMap[e.nombre] = { done: e.done, peso: e.peso, repsReales: e.repsReales };
+    });
     sesion = Object.assign({}, sesion, {
-      ejercicios: protocolo.ejercicios.map(ej => ({
-        nombre:       ej.nombre,
-        setsEsperado: ej.sets,
-        repsEsperado: ej.reps,
-        equipo:       ej.equipo,
-        nota:         ej.nota || '',
-        done:         false,
-        peso:         null,
-        repsReales:   null
-      }))
+      ejercicios: protocolo.ejercicios.map(ej => {
+        const log = logMap[ej.nombre] || {};
+        return {
+          nombre:       ej.nombre,
+          setsEsperado: ej.sets,
+          repsEsperado: ej.reps,
+          equipo:       ej.equipo,
+          nota:         ej.nota || '',
+          done:         log.done  || false,
+          peso:         log.peso  != null ? log.peso  : null,
+          repsReales:   log.repsReales || null
+        };
+      })
     });
   }
 
@@ -4695,7 +4708,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
       </div>
 
       {/* Equipamiento disponible */}
-      <EquipamientoCard darkMode={darkMode} onRefresh={onRefresh} />
+      <EquipamientoCard darkMode={darkMode} onEquiposChange={setEquiposDisp} onRefresh={onRefresh} />
 
       {/* Selector de día */}
       <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
@@ -4833,7 +4846,6 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                   {(() => {
                     const eqId = getEquipoId(e.equipo);
                     if (eqId === 'peso_corporal') return null;
-                    const equiposDisp = leerEquipos();
                     if (equiposDisp.includes(eqId)) return null;
                     const info = window.NP_RoadmapData && window.NP_RoadmapData.EQUIPOS_DISPONIBLES
                       ? window.NP_RoadmapData.EQUIPOS_DISPONIBLES.find(eq => eq.id === eqId)
