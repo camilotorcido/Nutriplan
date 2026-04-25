@@ -6,7 +6,7 @@
    - Network-first para peticiones externas (TheMealDB, etc.)
    ============================================ */
 
-const VERSION = 'nutriplan-v20260418be';
+const VERSION = 'nutriplan-v20260418bf';
 const CACHE_STATIC = 'nutriplan-static-' + VERSION;
 const CACHE_RUNTIME = 'nutriplan-runtime-' + VERSION;
 
@@ -45,16 +45,23 @@ const PRECACHE_URLS = [
   './js/app-bundle.js'
 ];
 
-// Assets que se cachean al primer uso (runtime cache)
-// recipes-extra.js (212 KB), recipes-thermomix-upgrade.js, recipes-metadata-upgrade.js
-
 // ─── Install: pre-cachear shell ───
+// FIX: skipWaiting() se llama SIEMPRE, aunque falle algún asset del precache.
+// Un fallo parcial no debe bloquear al nuevo SW indefinidamente.
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_STATIC)
-      .then((cache) => cache.addAll(PRECACHE_URLS.map(u => new Request(u, { cache: 'reload' }))))
-      .then(() => self.skipWaiting())
-      .catch((e) => console.warn('[SW] precache falló:', e))
+      .then((cache) => {
+        // addAll con fallback individual: si un asset falla, los demás siguen
+        return Promise.allSettled(
+          PRECACHE_URLS.map((u) =>
+            cache.add(new Request(u, { cache: 'reload' })).catch((e) => {
+              console.warn('[SW] No se pudo pre-cachear:', u, e);
+            })
+          )
+        );
+      })
+      .then(() => self.skipWaiting()) // ← siempre se activa
   );
 });
 
@@ -107,10 +114,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3) Assets estáticos mismo origen: cache-first con fallback a URL sin query
+  // 3) Assets estáticos mismo origen
+  // Estrategia: cache-first para hit exacto; network-first para miss.
+  // FIX: eliminado el fallback ignoreSearch que devolvía versiones antiguas
+  // cuando cambiaba el ?v= de versionado. Ahora el miss va directo a red.
   event.respondWith(
     caches.match(req).then((cached) => {
-      // Solo servir del caché si es una respuesta válida (no 404)
+      // Hit exacto: servir del caché + revalidar en background
       if (cached && cached.ok) {
         fetch(req).then((resp) => {
           if (resp && resp.ok && resp.status !== 404) {
@@ -119,27 +129,24 @@ self.addEventListener('fetch', (event) => {
         }).catch(() => {});
         return cached;
       }
-      // Si no está o es 404, intentar sin query string
-      return caches.match(req, { ignoreSearch: true }).then((cachedNoQuery) => {
-        if (cachedNoQuery && cachedNoQuery.ok) return cachedNoQuery;
-        // Network fallback
-        return fetch(req).then((resp) => {
-          if (resp && resp.ok && resp.status !== 404) {
-            const copia = resp.clone();
-            caches.open(CACHE_STATIC).then((c) => c.put(req, copia)).catch(() => {});
-          }
-          return resp;
-        }).catch(() => {
-          // Último intento: fetch sin query string
-          const urlLimpia = req.url.split('?')[0];
-          return fetch(urlLimpia).catch(() => cached || new Response('', { status: 404 }));
-        });
+
+      // Miss: red primero
+      return fetch(req).then((resp) => {
+        if (resp && resp.ok && resp.status !== 404) {
+          const copia = resp.clone();
+          caches.open(CACHE_STATIC).then((c) => c.put(req, copia)).catch(() => {});
+        }
+        return resp;
+      }).catch(() => {
+        // Sin red: último recurso — buscar sin query string (solo offline)
+        return caches.match(req, { ignoreSearch: true })
+          .then((fb) => fb || new Response('', { status: 503, statusText: 'Offline' }));
       });
     })
   );
 });
 
-// ─── Mensaje para forzar actualización (opcional) ───
+// ─── Mensaje para forzar actualización ───
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
