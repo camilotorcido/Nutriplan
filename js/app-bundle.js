@@ -305,7 +305,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425cb: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
+  // v20260425cc: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 1 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
@@ -490,7 +490,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425cb: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425cc: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
     const TOTAL_PASOS = 6;
     const PASOS_META = [
@@ -666,17 +666,17 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             {/* ── Paso 3: Objetivo ── */}
             {pasoWizard === 3 && (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-2">
                   {Object.entries(AJUSTES_OBJETIVO).map(([key, info]) => (
                     <button key={key} type="button" onClick={() => handleObjetivoChange(key)}
-                      className={`p-4 rounded-xl text-center transition-all ${
+                      className={`py-3 px-2 rounded-xl text-center transition-all ${
                         perfil.objetivo === key
                           ? 'bg-green-500 text-white shadow-lg shadow-green-200'
                           : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                       }`}>
-                      <i className={`fas ${key === 'perdida' ? 'fa-arrow-trend-down' : key === 'mantenimiento' ? 'fa-scale-balanced' : 'fa-arrow-trend-up'} text-xl mb-1`}></i>
-                      <div className="font-medium text-sm">{info.label}</div>
-                      <div className={`text-xs mt-1 ${perfil.objetivo === key ? 'text-green-100' : 'text-gray-400'}`}>
+                      <i className={`fas ${key === 'perdida' ? 'fa-arrow-trend-down' : key === 'mantenimiento' ? 'fa-scale-balanced' : 'fa-arrow-trend-up'} text-lg mb-1`}></i>
+                      <div className="font-medium text-xs leading-tight">{info.label}</div>
+                      <div className={`text-xs mt-0.5 ${perfil.objetivo === key ? 'text-green-100' : 'text-gray-400'}`}>
                         {info.valor > 0 ? '+' : ''}{info.valor} kcal
                       </div>
                     </button>
@@ -684,13 +684,13 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 </div>
                 {/* Fat Loss Mode toggle — aparece solo cuando se elige pérdida */}
                 {perfil.objetivo === 'perdida' && (
-                  <div className={`animate-fadeIn rounded-xl border-2 p-4 transition-all cursor-pointer select-none ${
+                  <div className={`animate-fadeIn rounded-xl border-2 p-3 transition-all cursor-pointer select-none ${
                     perfil.fatLossMode
                       ? darkMode ? 'border-orange-500 bg-orange-900/20' : 'border-orange-400 bg-orange-50'
                       : darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
                   }`} onClick={() => handleChange('fatLossMode', !perfil.fatLossMode)}>
                     <div className="flex items-start gap-3">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
                         perfil.fatLossMode ? 'bg-orange-500' : darkMode ? 'bg-gray-600' : 'bg-gray-200'
                       }`}>
                         <i className={`fas fa-fire text-sm ${perfil.fatLossMode ? 'text-white' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
@@ -4370,7 +4370,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425cb)
+// COMPONENTE: HoyView — Dashboard diario (v20260425cc)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
