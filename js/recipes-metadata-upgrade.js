@@ -102,7 +102,7 @@
       total += cantidadNormalizada * precio.clp_por_unidad_base;
     }
 
-    return Math.round(total);
+    return Math.ceil(total);
   }
 
   // ───────────────────────────────────────────────
@@ -170,12 +170,12 @@
         cambio = true;
       }
 
-      if (typeof comida.costo_clp === 'undefined' || comida.costo_clp === 0) {
-        if (recetaBase && recetaBase.costo_clp > 0) {
-          comida.costo_clp = recetaBase.costo_clp;
-        } else {
-          comida.costo_clp = calcularCostoCLP(comida);
-        }
+      // Always sync cost from the base recipe so price updates propagate to stored plans
+      if (recetaBase && recetaBase.costo_clp > 0) {
+        comida.costo_clp = recetaBase.costo_clp;
+        cambio = true;
+      } else if (typeof comida.costo_clp === 'undefined' || comida.costo_clp === 0) {
+        comida.costo_clp = calcularCostoCLP(comida);
         cambio = true;
       }
 

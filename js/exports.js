@@ -469,7 +469,7 @@
           if (y > pageH - 12) { doc.addPage(); y = mg; }
 
           var kcal  = comida.calorias_escaladas || 0;
-          var costo = Math.round((comida.costo_clp || 0) * (comida.factor_escala || 1) * factorComensales);
+          var costo = Math.ceil((comida.costo_clp || 0) * (comida.factor_escala || 1) * factorComensales);
           kcalDia  += kcal;
           costoDia += costo;
 

@@ -946,7 +946,7 @@
       tiempo_prep_min: tiempo_prep,
       tiempo_coccion_min: tiempo_coccion,
       tiempo_total_min: tiempo_total,
-      costo_clp: Math.round(costo),
+      costo_clp: Math.ceil(costo),
       _generada: true,
       _metadata: {
         cocina: cocinaId,

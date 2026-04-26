@@ -69,7 +69,7 @@
     return {
       ...comida,
       ingredientes_escalados: ingredientesEsc,
-      costo_clp_comensales: Math.round((comida.costo_clp || 0) * (comida.factor_escala || 1) * factor),
+      costo_clp_comensales: Math.ceil((comida.costo_clp || 0) * (comida.factor_escala || 1) * factor),
       _escalado_comensales_factor: factor
     };
   }

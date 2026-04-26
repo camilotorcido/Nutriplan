@@ -374,7 +374,7 @@ function calcularResumenDiario(comidasDia) {
     tiempo_prep_min: Math.round(totalPrep),
     tiempo_coccion_min: Math.round(totalCoccion),
     tiempo_total_min: Math.round(totalPrep + totalCoccion),
-    costo_clp: Math.round(totalCostoCLP)
+    costo_clp: Math.ceil(totalCostoCLP)
   };
 }
 
