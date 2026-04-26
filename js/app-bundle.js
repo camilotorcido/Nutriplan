@@ -305,7 +305,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425bw: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
+  // v20260425bx: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 1 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
@@ -490,7 +490,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425bw: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425bx: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
     const TOTAL_PASOS = 6;
     const PASOS_META = [
@@ -4370,7 +4370,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425bw)
+// COMPONENTE: HoyView — Dashboard diario (v20260425bx)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -5944,7 +5944,8 @@ function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
                         ? 'bg-transparent text-gray-500 border-gray-600 hover:border-gray-400 hover:text-gray-300'
                         : 'bg-transparent text-gray-400 border-gray-300 hover:border-gray-500 hover:text-gray-600'
                   }`}>
-                  {eq.icono} {eq.nombre}
+                  <i className={`fas ${eq.icono} mr-1.5`}></i>
+                  {eq.nombre.charAt(0).toUpperCase() + eq.nombre.slice(1)}
                 </button>
               );
             })}
@@ -6193,6 +6194,9 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
         </div>
       </div>
 
+      {/* Equipamiento disponible — entre selector de día y el card de entrenamiento */}
+      <EquipamientoCard darkMode={darkMode} onEquiposChange={setEquiposDisp} onRefresh={onRefresh} />
+
       {/* Card del día seleccionado */}
       {protocolo && (
         <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
@@ -6254,9 +6258,6 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
           </button>
         </div>
       )}
-
-      {/* Equipamiento disponible — cerca de los ejercicios donde aplica */}
-      <EquipamientoCard darkMode={darkMode} onEquiposChange={setEquiposDisp} onRefresh={onRefresh} />
 
       {/* Banner: ejercicios incompatibles con equipamiento actual */}
       {hayEjIncompatible && (
@@ -6494,10 +6495,10 @@ function CuentaModal({ authUser, darkMode, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-end pt-14 pr-4"
-      onClick={onClose}>
-      <div className={`w-80 rounded-2xl border shadow-xl p-5 animate-scaleIn ${cardCls}`}
-        onClick={e => e.stopPropagation()}>
+    <>
+    <div className="fixed inset-0 z-40" onClick={onClose}></div>
+    <div className={`absolute top-full right-0 mt-2 z-50 w-80 rounded-2xl border shadow-xl p-5 animate-scaleIn ${cardCls}`}
+      onClick={e => e.stopPropagation()}>
 
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-base">Mi cuenta</h3>
@@ -6648,7 +6649,7 @@ function CuentaModal({ authUser, darkMode, onClose }) {
         )}
 
       </div>
-    </div>
+    </>
   );
 }
 
@@ -7072,7 +7073,7 @@ function App() {
             </button>
             {/* Avatar de usuario → abre panel de cuenta */}
             {authUser && window.NP_Auth && (
-              <div className="ml-1 pl-1 border-l border-gray-200 dark:border-gray-700">
+              <div className="relative ml-1 pl-1 border-l border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => setShowCuenta(v => !v)}
                   aria-label="Mi cuenta"
@@ -7088,6 +7089,7 @@ function App() {
                   }
                   <i className={`fas fa-chevron-down text-xs transition-transform ${showCuenta ? 'rotate-180' : ''} ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
                 </button>
+                {showCuenta && <CuentaModal authUser={authUser} darkMode={darkMode} onClose={() => setShowCuenta(false)} />}
               </div>
             )}
           </div>
@@ -7172,7 +7174,6 @@ function App() {
       </footer>
 
       {recetaSeleccionada && <RecipeModal receta={recetaSeleccionada} onClose={() => setRecetaSeleccionada(null)} darkMode={darkMode} factorComensales={factorComensales} usaThermomix={perfil?.usaThermomix !== false} />}
-      {showCuenta && authUser && <CuentaModal authUser={authUser} darkMode={darkMode} onClose={() => setShowCuenta(false)} />}
 
       {globalOverlays}
     </div>
