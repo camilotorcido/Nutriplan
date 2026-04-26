@@ -3,6 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
+   v20260425dd: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -51,6 +52,33 @@ var obtenerRecetasUsadas14Dias = window.obtenerRecetasUsadas14Dias;
 var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
+
+// ─── v20260425dd: Bilingual helpers ────────────────────────────────────────
+/**
+ * Translate helper: returns `en` when app language is English, `es` otherwise.
+ * Reads window._NP_lang which is set by the App component on every render.
+ */
+function t(es, en) {
+  return (window._NP_lang || 'es') === 'en' && en !== undefined ? en : es;
+}
+
+// English labels for FACTORES_ACTIVIDAD (defined in nutritionEngine.js)
+var FACTORES_ACTIVIDAD_EN = {
+  sedentario: 'Sedentary (little or no exercise)',
+  ligera:     'Lightly active (1–3 days/week)',
+  moderada:   'Moderately active (3–5 days/week)',
+  muy_activo: 'Very active (6–7 days/week)',
+  extremo:    'Extremely active (athlete/physical work)'
+};
+
+// English labels for AJUSTES_OBJETIVO
+var AJUSTES_OBJETIVO_EN = {
+  perdida:      'Weight loss',
+  mantenimiento:'Maintenance',
+  volumen:      'Bulking / Muscle gain'
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 // =============================================
 // COMPONENTE: LoginScreen
@@ -261,7 +289,7 @@ function LoginScreen({ darkMode, onToggleDark }) {
 // =============================================
 // COMPONENTE: ProfileSetup
 // =============================================
-function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBack, tienePlan }) {
+function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBack, tienePlan, lang, onLangChange }) {
   const [perfil, setPerfil] = React.useState(() => {
     // v20260418x: sincronizar fatLossMode con objetivo='perdida' si venía de una versión anterior
     if (perfilInicial) {
@@ -305,8 +333,8 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425cc: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
-  const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 1 : null);
+  // v20260425dd: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
   React.useEffect(() => {
@@ -490,34 +518,100 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425cc: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425dd: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
+
+    // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
+    if (pasoWizard === 0) {
+      const _pickLang = (code) => {
+        if (onLangChange) onLangChange(code);
+        setPasoWizard(1);
+      };
+      return (
+        <div className={`min-h-screen flex flex-col items-center justify-center px-4 py-8 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50'}`}>
+          <button onClick={onToggleDark} aria-label={darkMode ? 'Light mode' : 'Dark mode'}
+            className={`absolute top-4 right-4 p-2 rounded-lg transition-colors ${darkMode ? 'text-yellow-400 hover:bg-gray-800' : 'text-gray-400 hover:bg-white/70'}`}>
+            <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'} text-sm`}></i>
+          </button>
+          <div className={`w-full max-w-sm rounded-2xl shadow-xl p-8 animate-scaleIn ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'}`}>
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-200">
+                <i className="fas fa-seedling text-white text-2xl"></i>
+              </div>
+              <h1 className={`text-2xl font-bold font-display ${darkMode ? 'text-white' : 'text-gray-800'}`}>NutriPlan</h1>
+            </div>
+            <div className="text-center mb-6">
+              <p className={`text-base font-semibold mb-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Choose your language</p>
+              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Elige tu idioma</p>
+            </div>
+            <div className="space-y-3">
+              <button onClick={() => _pickLang('es')}
+                className={`w-full py-4 rounded-2xl font-semibold text-base transition-all flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] ${
+                  (lang || 'es') === 'es'
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200'
+                    : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                }`}>
+                <span className="text-2xl" role="img" aria-label="España">🇪🇸</span>
+                <span>Español</span>
+                {(lang || 'es') === 'es' && <i className="fas fa-check text-sm ml-auto"></i>}
+              </button>
+              <button onClick={() => _pickLang('en')}
+                className={`w-full py-4 rounded-2xl font-semibold text-base transition-all flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] ${
+                  lang === 'en'
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200'
+                    : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                }`}>
+                <span className="text-2xl" role="img" aria-label="United States">🇺🇸</span>
+                <span>English</span>
+                {lang === 'en' && <i className="fas fa-check text-sm ml-auto"></i>}
+              </button>
+            </div>
+          </div>
+          <p className={`mt-6 text-xs ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>
+            Solo para amigos · Beta privada
+          </p>
+        </div>
+      );
+    }
+
     const TOTAL_PASOS = 6;
     const PASOS_META = [
-      { titulo: 'Tus datos básicos',        subtitulo: 'Para calcular tus calorías con precisión',                      icono: 'fa-user-circle' },
-      { titulo: 'Nivel de actividad',        subtitulo: 'Elegí el que mejor describe tu semana típica',                  icono: 'fa-person-running' },
-      { titulo: '¿Qué querés lograr?',       subtitulo: 'Esto define tu plan calórico',                                  icono: 'fa-bullseye' },
-      { titulo: perfil.fatLossMode ? 'Medidas corporales' : 'Tu plan calórico',
-        subtitulo: perfil.fatLossMode ? 'Para diseñar tu roadmap de pérdida de grasa personalizado' : 'Calculamos tus calorías automáticamente',
+      { titulo: t('Tus datos básicos','Your basic data'),
+        subtitulo: t('Para calcular tus calorías con precisión','To calculate your calories accurately'),
+        icono: 'fa-user-circle' },
+      { titulo: t('Nivel de actividad','Activity level'),
+        subtitulo: t('Elige el que mejor describe tu semana típica','Choose the one that best describes your typical week'),
+        icono: 'fa-person-running' },
+      { titulo: t('¿Qué quieres lograr?','What is your goal?'),
+        subtitulo: t('Esto define tu plan calórico','This sets your calorie plan'),
+        icono: 'fa-bullseye' },
+      { titulo: perfil.fatLossMode ? t('Medidas corporales','Body measurements') : t('Tu plan calórico','Your calorie plan'),
+        subtitulo: perfil.fatLossMode
+          ? t('Para diseñar tu roadmap de pérdida de grasa personalizado','To design your personalized fat loss roadmap')
+          : t('Calculamos tus calorías automáticamente','We calculate your calories automatically'),
         icono: perfil.fatLossMode ? 'fa-ruler' : 'fa-fire-flame-curved' },
-      { titulo: 'Equipamiento',              subtitulo: 'Marca lo que tienes disponible para entrenar en casa',           icono: 'fa-dumbbell' },
-      { titulo: 'Preferencias',              subtitulo: 'Personaliza tus recetas y la duración del plan',               icono: 'fa-sliders' },
+      { titulo: t('Equipamiento','Equipment'),
+        subtitulo: t('Marca lo que tienes disponible para entrenar en casa','Mark what you have available for home training'),
+        icono: 'fa-dumbbell' },
+      { titulo: t('Preferencias','Preferences'),
+        subtitulo: t('Personaliza tus recetas y la duración del plan','Customize your recipes and plan duration'),
+        icono: 'fa-sliders' },
     ];
     const meta = PASOS_META[pasoWizard - 1];
 
     const avanzar = () => {
       const err = {};
       if (pasoWizard === 1) {
-        if (!perfil.edad || perfil.edad < 15 || perfil.edad > 100)       err.edad   = 'Ingresa una edad válida (15–100)';
-        if (!perfil.genero)                                               err.genero = 'Selecciona un género';
-        if (!perfil.peso || perfil.peso < 30 || perfil.peso > 300)       err.peso   = 'Ingresa un peso válido (30–300 kg)';
-        if (!perfil.altura || perfil.altura < 100 || perfil.altura > 250) err.altura = 'Ingresa una altura válida (100–250 cm)';
+        if (!perfil.edad || perfil.edad < 15 || perfil.edad > 100)       err.edad   = t('Ingresa una edad válida (15–100)','Enter a valid age (15–100)');
+        if (!perfil.genero)                                               err.genero = t('Selecciona un género','Select a gender');
+        if (!perfil.peso || perfil.peso < 30 || perfil.peso > 300)       err.peso   = t('Ingresa un peso válido (30–300 kg)','Enter a valid weight (30–300 kg)');
+        if (!perfil.altura || perfil.altura < 100 || perfil.altura > 250) err.altura = t('Ingresa una altura válida (100–250 cm)','Enter a valid height (100–250 cm)');
       }
       if (pasoWizard === 4 && !perfil.fatLossMode) {
         if (usarCaloriasManual && (!perfil.caloriasManual || perfil.caloriasManual < 800 || perfil.caloriasManual > 6000))
-          err.caloriasManual = 'Las calorías deben estar entre 800 y 6000 kcal';
+          err.caloriasManual = t('Las calorías deben estar entre 800 y 6000 kcal','Calories must be between 800 and 6000 kcal');
         const suma = perfil.macros.proteinas + perfil.macros.carbohidratos + perfil.macros.grasas;
-        if (suma !== 100) { setMacroError(`Los macros suman ${suma}%, deben sumar 100%`); err.macros = true; }
+        if (suma !== 100) { setMacroError(t(`Los macros suman ${suma}%, deben sumar 100%`,`Macros add up to ${suma}%, must be 100%`)); err.macros = true; }
         else setMacroError('');
       }
       if (Object.keys(err).length > 0) { setErrores(err); return; }
@@ -549,7 +643,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               </div>
               <div>
                 <div className={`font-bold font-display text-base ${darkMode ? 'text-white' : 'text-gray-800'}`}>NutriPlan</div>
-                <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Configuración inicial</div>
+                <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Configuración inicial','Initial setup')}</div>
               </div>
             </div>
             <button onClick={onToggleDark} aria-label={darkMode ? 'Modo claro' : 'Modo oscuro'}
@@ -561,7 +655,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           {/* ── Progress ── */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-1.5">
-              <span className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Paso {pasoWizard} de {TOTAL_PASOS}</span>
+              <span className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t(`Paso ${pasoWizard} de ${TOTAL_PASOS}`,`Step ${pasoWizard} of ${TOTAL_PASOS}`)}</span>
               <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{Math.round((pasoWizard / TOTAL_PASOS) * 100)}%</span>
             </div>
             <div className={`h-2 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
@@ -595,14 +689,14 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             {pasoWizard === 1 && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Edad (años)</label>
+                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{t('Edad (años)','Age (years)')}</label>
                   <input type="number" value={perfil.edad} onChange={(e) => handleChange('edad', e.target.value)}
                     className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} ${errores.edad ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
                     placeholder="25" min="15" max="100" autoFocus />
                   {errores.edad && <p className="text-red-500 text-xs mt-1">{errores.edad}</p>}
                 </div>
                 <div>
-                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Género</label>
+                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{t('Género','Gender')}</label>
                   <select value={perfil.genero} onChange={(e) => handleChange('genero', e.target.value)}
                     style={{
                       appearance: 'none', WebkitAppearance: 'none',
@@ -615,21 +709,21 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                       paddingRight: '2.5rem'
                     }}
                     className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200 bg-white'} ${errores.genero ? 'border-red-400' : ''} focus:border-green-500`}>
-                    <option value="" disabled>Selecciona...</option>
-                    <option value="masculino">Masculino</option>
-                    <option value="femenino">Femenino</option>
+                    <option value="" disabled>{t('Selecciona...','Select...')}</option>
+                    <option value="masculino">{t('Masculino','Male')}</option>
+                    <option value="femenino">{t('Femenino','Female')}</option>
                   </select>
                   {errores.genero && <p className="text-red-500 text-xs mt-1">{errores.genero}</p>}
                 </div>
                 <div>
-                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Peso (kg)</label>
+                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{t('Peso (kg)','Weight (kg)')}</label>
                   <input type="number" step="0.1" value={perfil.peso} onChange={(e) => handleChange('peso', e.target.value)}
                     className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} ${errores.peso ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
                     placeholder="70" min="30" max="300" />
                   {errores.peso && <p className="text-red-500 text-xs mt-1">{errores.peso}</p>}
                 </div>
                 <div>
-                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Altura (cm)</label>
+                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{t('Altura (cm)','Height (cm)')}</label>
                   <input type="number" value={perfil.altura} onChange={(e) => handleChange('altura', e.target.value)}
                     className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} ${errores.altura ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
                     placeholder="170" min="100" max="250" />
@@ -655,7 +749,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                       {perfil.nivelActividad === key && <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>}
                     </div>
                     <div>
-                      <span className={`text-sm font-medium ${darkMode && perfil.nivelActividad !== key ? 'text-gray-200' : 'text-gray-700'}`}>{info.label}</span>
+                      <span className={`text-sm font-medium ${darkMode && perfil.nivelActividad !== key ? 'text-gray-200' : 'text-gray-700'}`}>{t(info.label, FACTORES_ACTIVIDAD_EN[key] || info.label)}</span>
                       <span className="text-xs text-gray-400 ml-2">(×{info.valor})</span>
                     </div>
                   </label>
@@ -675,7 +769,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                           : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                       }`}>
                       <i className={`fas ${key === 'perdida' ? 'fa-arrow-trend-down' : key === 'mantenimiento' ? 'fa-scale-balanced' : 'fa-arrow-trend-up'} text-lg mb-1`}></i>
-                      <div className="font-medium text-xs leading-tight">{info.label}</div>
+                      <div className="font-medium text-xs leading-tight">{t(info.label, AJUSTES_OBJETIVO_EN[key] || info.label)}</div>
                       <div className={`text-xs mt-0.5 ${perfil.objetivo === key ? 'text-green-100' : 'text-gray-400'}`}>
                         {info.valor > 0 ? '+' : ''}{info.valor} kcal
                       </div>
@@ -697,11 +791,11 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className={`text-sm font-semibold flex items-center gap-2 flex-wrap ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                          Plan Fat Loss — Precision Nutrition
-                          {perfil.fatLossMode && <span className="text-xs font-normal bg-orange-500 text-white px-2 py-0.5 rounded-full">Activado</span>}
+                          {t('Plan Fat Loss — Precision Nutrition','Fat Loss Plan — Precision Nutrition')}
+                          {perfil.fatLossMode && <span className="text-xs font-normal bg-orange-500 text-white px-2 py-0.5 rounded-full">{t('Activado','Active')}</span>}
                         </div>
                         <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          Roadmap por fases con diet breaks. Requiere medidas corporales.
+                          {t('Roadmap por fases con diet breaks. Requiere medidas corporales.','Phased roadmap with diet breaks. Requires body measurements.')}
                         </div>
                       </div>
                       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
@@ -1113,7 +1207,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             {pasoWizard > 1 && (
               <button type="button" onClick={retroceder}
                 className={`flex-1 py-3.5 rounded-2xl font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 shadow-sm'}`}>
-                <i className="fas fa-arrow-left text-sm"></i>Atrás
+                <i className="fas fa-arrow-left text-sm"></i>{t('Atrás','Back')}
               </button>
             )}
             <button type="button" onClick={avanzar} disabled={!!btnFinalDisabled}
@@ -1129,9 +1223,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               }`}>
               {pasoWizard === TOTAL_PASOS ? (
                 <><i className={`fas ${perfil.fatLossMode ? 'fa-fire' : 'fa-calendar-alt'} text-sm`}></i>
-                  {perfil.fatLossMode ? 'Activar Fat Loss' : 'Generar mi plan'}</>
+                  {perfil.fatLossMode ? t('Activar Fat Loss','Activate Fat Loss') : t('Generar mi plan','Generate my plan')}</>
               ) : (
-                <>Continuar <i className="fas fa-arrow-right text-sm"></i></>
+                <>{t('Continuar','Continue')} <i className="fas fa-arrow-right text-sm"></i></>
               )}
             </button>
           </div>
@@ -4370,7 +4464,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425cc)
+// COMPONENTE: HoyView — Dashboard diario (v20260425dd)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -6374,7 +6468,7 @@ function LoadingOverlay({ mensaje, darkMode }) {
 // =============================================
 // COMPONENTE: CuentaModal
 // =============================================
-function CuentaModal({ authUser, darkMode, onClose }) {
+function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange }) {
   const isGoogle = (authUser.providerData?.[0]?.providerId === 'google.com');
   const [view, setView]          = React.useState('main');
   const [newPass, setNewPass]    = React.useState('');
@@ -6427,8 +6521,8 @@ function CuentaModal({ authUser, darkMode, onClose }) {
       onClick={e => e.stopPropagation()}>
 
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-base">Mi cuenta</h3>
-          <button onClick={onClose} aria-label="Cerrar"
+          <h3 className="font-semibold text-base">{t('Mi cuenta','My account')}</h3>
+          <button onClick={onClose} aria-label={t('Cerrar','Close')}
             className={`p-1.5 rounded-lg transition-colors cursor-pointer ${darkMode ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-400 hover:bg-gray-100'}`}>
             <i className="fas fa-xmark text-sm"></i>
           </button>
@@ -6450,7 +6544,7 @@ function CuentaModal({ authUser, darkMode, onClose }) {
                 <p className={`text-xs truncate ${mutedCls}`}>{authUser.email}</p>
                 <p className={`text-xs mt-0.5 ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
                   <i className={`${isGoogle ? 'fab fa-google' : 'fas fa-envelope'} mr-1`}></i>
-                  {isGoogle ? 'Cuenta Google' : 'Email / contraseña'}
+                  {isGoogle ? t('Cuenta Google','Google account') : t('Email / contraseña','Email / password')}
                 </p>
               </div>
             </div>
@@ -6467,28 +6561,50 @@ function CuentaModal({ authUser, darkMode, onClose }) {
                 <button onClick={() => { setView('changePass'); setError(''); setSuccess(''); }}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors cursor-pointer ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
                   <i className={`fas fa-lock w-4 text-center ${mutedCls}`}></i>
-                  <span>Cambiar contraseña</span>
+                  <span>{t('Cambiar contraseña','Change password')}</span>
                   <i className={`fas fa-chevron-right ml-auto text-xs ${mutedCls}`}></i>
                 </button>
               )}
               {isGoogle && (
                 <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                   <i className="fas fa-lock w-4 text-center"></i>
-                  <span>Contraseña gestionada por Google</span>
+                  <span>{t('Contraseña gestionada por Google','Password managed by Google')}</span>
                 </div>
               )}
               <button onClick={async () => { onClose(); await window.NP_Auth.signOut(); }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors cursor-pointer ${darkMode ? 'text-orange-400 hover:bg-gray-700' : 'text-orange-500 hover:bg-orange-50'}`}>
                 <i className="fas fa-arrow-right-from-bracket w-4 text-center"></i>
-                <span>Cerrar sesión</span>
+                <span>{t('Cerrar sesión','Sign out')}</span>
               </button>
             </div>
+
+            {/* ── Language selector ── */}
+            {onLangChange && (
+              <div className={`mt-4 pt-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${mutedCls}`}>{t('Idioma','Language')}</p>
+                <div className="flex gap-2">
+                  {[
+                    { code: 'es', flag: '🇪🇸', label: 'Español' },
+                    { code: 'en', flag: '🇺🇸', label: 'English' }
+                  ].map(({ code, flag, label }) => (
+                    <button key={code} onClick={() => { if (onLangChange) onLangChange(code); }}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                        (lang || 'es') === code
+                          ? 'bg-green-500 text-white shadow-sm'
+                          : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
+                      }`}>
+                      <span>{flag}</span>{label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className={`mt-4 pt-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
               <button onClick={() => { setView('deleteConfirm'); setError(''); }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors cursor-pointer ${darkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-500 hover:bg-red-50'}`}>
                 <i className="fas fa-user-xmark w-4 text-center"></i>
-                <span>Eliminar mi cuenta</span>
+                <span>{t('Eliminar mi cuenta','Delete my account')}</span>
               </button>
             </div>
           </div>
@@ -6498,9 +6614,9 @@ function CuentaModal({ authUser, darkMode, onClose }) {
           <div>
             <button onClick={() => setView('main')}
               className={`flex items-center gap-1.5 text-sm mb-4 cursor-pointer transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
-              <i className="fas fa-arrow-left text-xs"></i> Volver
+              <i className="fas fa-arrow-left text-xs"></i> {t('Volver','Back')}
             </button>
-            <h4 className="font-medium text-sm mb-4">Cambiar contraseña</h4>
+            <h4 className="font-medium text-sm mb-4">{t('Cambiar contraseña','Change password')}</h4>
             {error && (
               <div className={`flex items-start gap-2 px-3 py-2.5 rounded-xl text-sm mb-3 ${darkMode ? 'bg-red-900/40 text-red-300 border border-red-800' : 'bg-red-50 text-red-700 border border-red-200'}`}>
                 <i className="fas fa-circle-exclamation mt-0.5 flex-shrink-0"></i>
@@ -6509,11 +6625,11 @@ function CuentaModal({ authUser, darkMode, onClose }) {
             )}
             <div className="space-y-3">
               <div>
-                <label className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Nueva contraseña</label>
+                <label className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{t('Nueva contraseña','New password')}</label>
                 <div className="relative">
                   <input type={showP1 ? 'text' : 'password'} value={newPass}
                     onChange={e => { setNewPass(e.target.value); setError(''); }}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder={t('Mínimo 6 caracteres','At least 6 characters')}
                     className={`${inputCls} pr-10`} />
                   <button type="button" onClick={() => setShowP1(p => !p)}
                     className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded cursor-pointer ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'}`}>
@@ -6522,11 +6638,11 @@ function CuentaModal({ authUser, darkMode, onClose }) {
                 </div>
               </div>
               <div>
-                <label className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Confirmar contraseña</label>
+                <label className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{t('Confirmar contraseña','Confirm password')}</label>
                 <div className="relative">
                   <input type={showP2 ? 'text' : 'password'} value={confirmPass}
                     onChange={e => { setConfirm(e.target.value); setError(''); }}
-                    placeholder="Repite la contraseña"
+                    placeholder={t('Repite la contraseña','Repeat your password')}
                     className={`${inputCls} pr-10`} />
                   <button type="button" onClick={() => setShowP2(p => !p)}
                     className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded cursor-pointer ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'}`}>
@@ -6537,8 +6653,8 @@ function CuentaModal({ authUser, darkMode, onClose }) {
               <button onClick={handleChangePassword} disabled={loading}
                 className={`w-full py-3 rounded-xl font-semibold text-sm text-white transition-all ${loading ? 'bg-green-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 active:scale-[0.98]'}`}>
                 {loading
-                  ? <span className="flex items-center justify-center gap-2"><i className="fas fa-circle-notch fa-spin"></i>Guardando…</span>
-                  : 'Guardar contraseña'}
+                  ? <span className="flex items-center justify-center gap-2"><i className="fas fa-circle-notch fa-spin"></i>{t('Guardando…','Saving…')}</span>
+                  : t('Guardar contraseña','Save password')}
               </button>
             </div>
           </div>
@@ -6548,14 +6664,14 @@ function CuentaModal({ authUser, darkMode, onClose }) {
           <div>
             <button onClick={() => setView('main')}
               className={`flex items-center gap-1.5 text-sm mb-4 cursor-pointer transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
-              <i className="fas fa-arrow-left text-xs"></i> Volver
+              <i className="fas fa-arrow-left text-xs"></i> {t('Volver','Back')}
             </button>
             <div className={`p-4 rounded-xl mb-4 border ${darkMode ? 'bg-gray-900 border-red-800' : 'bg-red-50 border-red-200'}`}>
               <div className="flex items-start gap-3">
                 <i className={`fas fa-triangle-exclamation mt-0.5 ${darkMode ? 'text-red-400' : 'text-red-500'}`}></i>
                 <div>
-                  <p className={`text-sm font-semibold mb-1 ${darkMode ? 'text-red-300' : 'text-red-700'}`}>¿Eliminar tu cuenta?</p>
-                  <p className={`text-xs ${darkMode ? 'text-red-400' : 'text-red-600'}`}>Esta acción es irreversible. Se borrarán todos tus datos y no podrás recuperarlos.</p>
+                  <p className={`text-sm font-semibold mb-1 ${darkMode ? 'text-red-300' : 'text-red-700'}`}>{t('¿Eliminar tu cuenta?','Delete your account?')}</p>
+                  <p className={`text-xs ${darkMode ? 'text-red-400' : 'text-red-600'}`}>{t('Esta acción es irreversible. Se borrarán todos tus datos y no podrás recuperarlos.','This action is irreversible. All your data will be deleted and cannot be recovered.')}</p>
                 </div>
               </div>
             </div>
@@ -6568,8 +6684,8 @@ function CuentaModal({ authUser, darkMode, onClose }) {
             <button onClick={handleDeleteAccount} disabled={loading}
               className={`w-full py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.98] ${loading ? 'bg-red-300 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}>
               {loading
-                ? <span className="flex items-center justify-center gap-2"><i className="fas fa-circle-notch fa-spin"></i>Eliminando…</span>
-                : 'Sí, eliminar mi cuenta'}
+                ? <span className="flex items-center justify-center gap-2"><i className="fas fa-circle-notch fa-spin"></i>{t('Eliminando…','Deleting…')}</span>
+                : t('Sí, eliminar mi cuenta','Yes, delete my account')}
             </button>
           </div>
         )}
@@ -6589,6 +6705,16 @@ function App() {
   const [cargando, setCargando] = React.useState(false);
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
+
+  // ─── v20260425dd: Language state ───
+  const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
+  // Sync to global so t() works inside any component during render
+  window._NP_lang = lang;
+  const changeLang = (newLang) => {
+    localStorage.setItem('nutriplan_lang', newLang);
+    window._NP_lang = newLang;
+    setLang(newLang);
+  };
 
   // ─── Auth state ───
   // undefined = todavía cargando, null = no logueado, object = usuario logueado
@@ -6960,13 +7086,15 @@ function App() {
   if (pantalla === "perfil") {
     return (
       <React.Fragment>
-        <ProfileSetup 
-          onComplete={handlePerfilComplete} 
-          perfilInicial={perfil} 
-          darkMode={darkMode} 
-          onToggleDark={toggleDarkMode} 
+        <ProfileSetup
+          onComplete={handlePerfilComplete}
+          perfilInicial={perfil}
+          darkMode={darkMode}
+          onToggleDark={toggleDarkMode}
           onBack={planSemanal ? handleVolverAlPlan : null}
-          tienePlan={!!planSemanal} />
+          tienePlan={!!planSemanal}
+          lang={lang}
+          onLangChange={changeLang} />
         {globalOverlays}
       </React.Fragment>
     );
@@ -7015,7 +7143,7 @@ function App() {
                   }
                   <i className={`fas fa-chevron-down text-xs transition-transform ${showCuenta ? 'rotate-180' : ''} ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
                 </button>
-                {showCuenta && <CuentaModal authUser={authUser} darkMode={darkMode} onClose={() => setShowCuenta(false)} />}
+                {showCuenta && <CuentaModal authUser={authUser} darkMode={darkMode} onClose={() => setShowCuenta(false)} lang={lang} onLangChange={changeLang} />}
               </div>
             )}
           </div>
@@ -7026,14 +7154,14 @@ function App() {
         <div className="max-w-3xl mx-auto px-4 overflow-x-auto">
           <div className="flex gap-1 py-2 min-w-max sm:min-w-0">
             {[
-              { id: "hoy",      label: "Hoy",          short: "Hoy",      icon: "fa-house" },
-              { id: "plan",     label: "Plan",         short: "Plan",     icon: "fa-calendar-days" },
+              { id: "hoy",      label: t("Hoy","Today"),           short: t("Hoy","Today"),    icon: "fa-house" },
+              { id: "plan",     label: t("Plan","Plan"),           short: t("Plan","Plan"),    icon: "fa-calendar-days" },
               ...(perfil && perfil.fatLossMode ? [
-                { id: "fitness", label: "Fitness",     short: "Fitness",  icon: "fa-dumbbell" }
+                { id: "fitness", label: "Fitness",                  short: "Fitness",           icon: "fa-dumbbell" }
               ] : []),
-              { id: "cocinar",  label: "¿Qué cocino?", short: "Cocinar", icon: "fa-magnifying-glass" },
-              { id: "despensa", label: "Despensa",     short: "Despensa", icon: "fa-warehouse" },
-              { id: "compras",  label: "Compras",      short: "Compras",  icon: "fa-cart-shopping" }
+              { id: "cocinar",  label: t("¿Qué cocino?","Recipes"), short: t("Cocinar","Cook"), icon: "fa-magnifying-glass" },
+              { id: "despensa", label: t("Despensa","Pantry"),      short: t("Despensa","Pantry"), icon: "fa-warehouse" },
+              { id: "compras",  label: t("Compras","Shopping"),     short: t("Compras","Shop"), icon: "fa-cart-shopping" }
             ].map(tab => (
               <button key={tab.id} onClick={() => navegarA(tab.id)}
                 className={`nav-pill flex-shrink-0 sm:flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
