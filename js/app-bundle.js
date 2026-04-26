@@ -276,7 +276,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     }
     return {
       edad: "",
-      genero: "masculino",
+      genero: "",
       peso: "",
       altura: "",
       nivelActividad: "moderada",
@@ -305,7 +305,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425bq: Wizard onboarding — null = modo edición (form completo), 1-5 = paso activo
+  // v20260425br: Wizard onboarding — null = modo edición (form completo), 1-5 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 1 : null);
 
   React.useEffect(() => {
@@ -489,7 +489,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425bq: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425br: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
     const TOTAL_PASOS = 5;
     const PASOS_META = [
@@ -506,8 +506,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     const avanzar = () => {
       const err = {};
       if (pasoWizard === 1) {
-        if (!perfil.edad || perfil.edad < 15 || perfil.edad > 100)     err.edad   = 'Ingresá una edad válida (15–100)';
-        if (!perfil.peso || perfil.peso < 30 || perfil.peso > 300)      err.peso   = 'Ingresá un peso válido (30–300 kg)';
+        if (!perfil.edad || perfil.edad < 15 || perfil.edad > 100)       err.edad   = 'Ingresá una edad válida (15–100)';
+        if (!perfil.genero)                                               err.genero = 'Seleccioná un género';
+        if (!perfil.peso || perfil.peso < 30 || perfil.peso > 300)       err.peso   = 'Ingresá un peso válido (30–300 kg)';
         if (!perfil.altura || perfil.altura < 100 || perfil.altura > 250) err.altura = 'Ingresá una altura válida (100–250 cm)';
       }
       if (pasoWizard === 4 && !perfil.fatLossMode) {
@@ -530,8 +531,12 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
     const btnFinalDisabled = pasoWizard === TOTAL_PASOS && perfil.fatLossMode && !roadmapPreview;
 
+    const handleWizardKey = (e) => {
+      if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); avanzar(); }
+    };
+
     return (
-      <div className={`min-h-screen py-6 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`}>
+      <div className={`min-h-screen py-6 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`} onKeyDown={handleWizardKey}>
         <div className="max-w-3xl mx-auto">
 
           {/* ── Header ── */}
@@ -607,10 +612,12 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                       backgroundSize: '1.25rem 1.25rem',
                       paddingRight: '2.5rem'
                     }}
-                    className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200 bg-white'} focus:border-green-500`}>
+                    className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200 bg-white'} ${errores.genero ? 'border-red-400' : ''} focus:border-green-500`}>
+                    <option value="" disabled>Seleccioná...</option>
                     <option value="masculino">Masculino</option>
                     <option value="femenino">Femenino</option>
                   </select>
+                  {errores.genero && <p className="text-red-500 text-xs mt-1">{errores.genero}</p>}
                 </div>
                 <div>
                   <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Peso (kg)</label>
@@ -4298,7 +4305,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425bq)
+// COMPONENTE: HoyView — Dashboard diario (v20260425br)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
