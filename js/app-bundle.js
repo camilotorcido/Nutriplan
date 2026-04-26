@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260425ll: Bilingual ES/EN support
+   v20260425mm: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260425ll: Bilingual helpers ────────────────────────────────────────
+// ─── v20260425mm: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -333,7 +333,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425ll: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260425mm: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
@@ -518,7 +518,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425ll: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425mm: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -2426,7 +2426,7 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
                       <span className="text-rose-500">G: {r.grasas_g}g</span>
                       <span className="text-indigo-500"><i className="fas fa-clock mr-1"></i>{r.tiempo_total_min}′</span>
                       {r.costo_clp > 0 && (
-                        <span className="text-emerald-600"><i className="fas fa-coins mr-1"></i>${r.costo_clp.toLocaleString('es-CL')}</span>
+                        <span className="text-emerald-600"><i className="fas fa-coins mr-1"></i>${(Math.ceil(r.costo_clp / 100) * 100).toLocaleString('es-CL')}</span>
                       )}
                     </div>
                   </div>
@@ -2657,7 +2657,7 @@ function ReverseSearch({ darkMode, onRecipeClick }) {
                           <span className="text-indigo-500"><i className="fas fa-clock mr-1"></i>{r.receta.tiempo_total_min}′</span>
                         )}
                         {r.receta.costo_clp > 0 && (
-                          <span className="text-emerald-600"><i className="fas fa-coins mr-1"></i>${r.receta.costo_clp.toLocaleString('es-CL')}</span>
+                          <span className="text-emerald-600"><i className="fas fa-coins mr-1"></i>${(Math.ceil(r.receta.costo_clp / 100) * 100).toLocaleString('es-CL')}</span>
                         )}
                       </div>
                       {r.faltantes.length > 0 && (
@@ -2897,7 +2897,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
             <i className="fas fa-coins text-amber-500"></i>
             <div className="flex-1">
               <div className={`text-sm font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-                ${resumen.costo_clp.toLocaleString('es-CL')} CLP
+                ${(Math.ceil(resumen.costo_clp / 100) * 100).toLocaleString('es-CL')} CLP
               </div>
               <div className="text-[11px] text-gray-400">Costo estimado del día</div>
             </div>
@@ -4464,7 +4464,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425ll)
+// COMPONENTE: HoyView — Dashboard diario (v20260425mm)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -6717,7 +6717,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260425ll: Language state ───
+  // ─── v20260425mm: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
