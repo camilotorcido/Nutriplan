@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260425dd: Bilingual ES/EN support
+   v20260425ee: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260425dd: Bilingual helpers ────────────────────────────────────────
+// ─── v20260425ee: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -333,7 +333,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425dd: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260425ee: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
@@ -518,7 +518,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425dd: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425ee: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -3522,7 +3522,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
                   <div key={idx}>
                     <div className={`flex items-center justify-between py-1.5 px-3 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className={`text-sm capitalize truncate ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{ing.nombre_display || ing.nombre}</span>
+                        <span className={`text-sm capitalize break-words leading-snug ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{ing.nombre_display || ing.nombre}</span>
                         {tieneSustitutos && (
                           <button
                             onClick={() => setSustitucionAbierta(estaAbierto ? null : ing.nombre_normalizado)}
@@ -4348,9 +4348,9 @@ function ShoppingList({ plan, darkMode }) {
                           }`}>
                           {comprados[ing.id] && <i className="fas fa-check text-white text-xs"></i>}
                         </button>
-                        <span className={`text-sm truncate ${comprados[ing.id] ? 'line-through text-gray-400' : darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{ing.nombre}</span>
+                        <span className={`text-sm break-words leading-snug ${comprados[ing.id] ? 'line-through text-gray-400' : darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{ing.nombre}</span>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-lg whitespace-nowrap ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-900'}`}>
                           {formatearCompraCorto(ing)}
                         </span>
@@ -4381,9 +4381,9 @@ function ShoppingList({ plan, darkMode }) {
                     }`}>
                     {comprados[ing.id] && <i className="fas fa-check text-white text-xs"></i>}
                   </button>
-                  <span className={`text-sm truncate ${comprados[ing.id] ? 'line-through text-gray-400' : darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{ing.nombre}</span>
+                  <span className={`text-sm break-words leading-snug ${comprados[ing.id] ? 'line-through text-gray-400' : darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{ing.nombre}</span>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-lg whitespace-nowrap ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-900'}`}>
                     {formatearCompraCorto(ing)}
                   </span>
@@ -4464,7 +4464,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425dd)
+// COMPONENTE: HoyView — Dashboard diario (v20260425ee)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -6706,7 +6706,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260425dd: Language state ───
+  // ─── v20260425ee: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
