@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260425ee: Bilingual ES/EN support
+   v20260425ff: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260425ee: Bilingual helpers ────────────────────────────────────────
+// ─── v20260425ff: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -333,7 +333,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425ee: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260425ff: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
@@ -518,7 +518,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425ee: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425ff: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -4464,16 +4464,21 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425ee)
+// COMPONENTE: HoyView — Dashboard diario (v20260425ff)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
-  const diasJS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-  const mesesES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
-  const diaActual = diasJS[hoy.getDay()];
-  const fechaStr = diaActual + ' ' + hoy.getDate() + ' de ' + mesesES[hoy.getMonth()];
+  const diasJS    = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  const diasEN    = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const mesesES   = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  const mesesEN   = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const diaActual = diasJS[hoy.getDay()]; // always ES for plan lookup
+  const fechaStr  = t(
+    diaActual + ' ' + hoy.getDate() + ' de ' + mesesES[hoy.getMonth()],
+    diasEN[hoy.getDay()] + ', ' + mesesEN[hoy.getMonth()] + ' ' + hoy.getDate()
+  );
   const hora = hoy.getHours();
-  const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
+  const saludo = hora < 12 ? t('Buenos días','Good morning') : hora < 19 ? t('Buenas tardes','Good afternoon') : t('Buenas noches','Good evening');
   const nombreCorto = perfil && perfil.nombre ? perfil.nombre.split(' ')[0] : '';
 
   // N24: detectar la semana actual según fecha de creación del plan
@@ -4493,7 +4498,13 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const resumenHoy = calcularResumenDiario(comidasHoy);
   const tiposOrden = ["desayuno", "snack_am", "almuerzo", "snack_pm", "cena"];
   const iconosComida = { desayuno: "fa-sun", snack_am: "fa-apple-whole", almuerzo: "fa-utensils", snack_pm: "fa-cookie-bite", cena: "fa-moon" };
-  const nombresComida = { desayuno: "Desayuno", snack_am: "Snack AM", almuerzo: "Almuerzo", snack_pm: "Snack PM", cena: "Cena" };
+  const nombresComida = {
+    desayuno: t("Desayuno","Breakfast"),
+    snack_am: "Snack AM",
+    almuerzo: t("Almuerzo","Lunch"),
+    snack_pm: "Snack PM",
+    cena:     t("Cena","Dinner")
+  };
 
   const [refresh, setRefresh] = React.useState(0);
   const tieneEntrenamiento = !!(perfil && perfil.fatLossMode && window.NP_Training);
@@ -4543,8 +4554,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const guardarPeso = () => {
     const val = parseFloat(pesoInput.replace(',', '.'));
     // N23: range validation with feedback
-    if (isNaN(val)) { setPesoError('Ingresa un número válido'); return; }
-    if (val < 20 || val > 300) { setPesoError('El peso debe estar entre 20 y 300 kg'); return; }
+    if (isNaN(val)) { setPesoError(t('Ingresa un número válido','Enter a valid number')); return; }
+    if (val < 20 || val > 300) { setPesoError(t('El peso debe estar entre 20 y 300 kg','Weight must be between 20 and 300 kg')); return; }
     setPesoError('');
     if (window.NP_BodyComp) {
       const hoyStr = new Date().toISOString().split('T')[0];
@@ -4568,7 +4579,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
         <p className="text-sm font-medium opacity-90">{fechaStr}</p>
         <h2 className="text-xl font-extrabold font-display mt-0.5">{saludo}{nombreCorto ? ', ' + nombreCorto : ''} 👋</h2>
         {perfil && (
-          <p className="text-sm opacity-80 mt-1">{perfil.caloriasObjetivo} kcal · {perfil.numSemanas > 1 ? perfil.numSemanas + ' semanas' : '1 semana'}</p>
+          <p className="text-sm opacity-80 mt-1">{perfil.caloriasObjetivo} kcal · {perfil.numSemanas > 1 ? perfil.numSemanas + t(' semanas',' weeks') : t('1 semana','1 week')}</p>
         )}
       </div>
 
@@ -4577,11 +4588,11 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
         <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <div className={`px-5 py-3 flex items-center justify-between border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
             <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              <i className="fas fa-utensils mr-2"></i>Comidas de hoy
+              <i className="fas fa-utensils mr-2"></i>{t('Comidas de hoy','Today\'s meals')}
             </h3>
             <button onClick={() => onNavigate('plan')}
               className="text-xs text-green-500 font-semibold hover:text-green-600">
-              Ver plan →
+              {t('Ver plan →','View plan →')}
             </button>
           </div>
           {resumenHoy.calorias > 0 && (
@@ -4589,9 +4600,9 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <span className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumenHoy.calorias} kcal</span>
                 <div className="flex gap-3 text-gray-400">
-                  <span><span className="text-blue-500 font-semibold">{resumenHoy.proteinas}g</span> prot</span>
-                  <span><span className="text-amber-500 font-semibold">{resumenHoy.carbohidratos}g</span> carb</span>
-                  <span><span className="text-purple-500 font-semibold">{resumenHoy.grasas}g</span> grasas</span>
+                  <span><span className="text-blue-500 font-semibold">{resumenHoy.proteinas}g</span> {t('prot','prot')}</span>
+                  <span><span className="text-amber-500 font-semibold">{resumenHoy.carbohidratos}g</span> {t('carb','carb')}</span>
+                  <span><span className="text-purple-500 font-semibold">{resumenHoy.grasas}g</span> {t('grasas','fat')}</span>
                 </div>
               </div>
               {pctKcal > 0 && (
@@ -4630,7 +4641,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
                   {typeof window.adherencia !== 'undefined' && (
                     /* A2: aria-label en botón adherencia */
                     <button onClick={toggleAdh}
-                      aria-label={yaComido ? `Marcar ${nombresComida[tipo]} como no comido` : `Marcar ${nombresComida[tipo]} como comido`}
+                      aria-label={yaComido ? t(`Marcar ${nombresComida[tipo]} como no comido`,`Mark ${nombresComida[tipo]} as not eaten`) : t(`Marcar ${nombresComida[tipo]} como comido`,`Mark ${nombresComida[tipo]} as eaten`)}
                       className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
                         yaComido ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700 text-gray-500 hover:bg-gray-600' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                       }`}>
@@ -4645,10 +4656,10 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
       ) : (
         <div className={`rounded-2xl p-6 text-center ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-amber-50 border border-amber-200'}`}>
           <i className="fas fa-calendar-plus text-3xl text-amber-400 mb-3"></i>
-          <p className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-amber-800'}`}>Todavía no tienes un plan semanal</p>
+          <p className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-amber-800'}`}>{t('Todavía no tienes un plan semanal','You don\'t have a weekly plan yet')}</p>
           <button onClick={() => onNavigate('plan')}
             className="px-4 py-2 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
-            <i className="fas fa-plus mr-1.5"></i>Crear mi plan
+            <i className="fas fa-plus mr-1.5"></i>{t('Crear mi plan','Create my plan')}
           </button>
         </div>
       )}
@@ -4660,18 +4671,18 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
             <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
               <div className={`px-5 py-3 flex items-center justify-between border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
                 <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  <i className="fas fa-dumbbell mr-2"></i>Entreno de hoy
+                  <i className="fas fa-dumbbell mr-2"></i>{t('Entreno de hoy',"Today's workout")}
                 </h3>
                 <button onClick={() => onNavigate('fitness')}
-                  className="text-xs text-orange-500 font-semibold hover:text-orange-600">Abrir →</button>
+                  className="text-xs text-orange-500 font-semibold hover:text-orange-600">{t('Abrir →','Open →')}</button>
               </div>
               <div className="px-5 py-3">
                 {entrenoHoy.esDescanso ? (
                   <div className="flex items-center gap-3">
                     <i className="fas fa-couch text-2xl text-gray-400"></i>
                     <div>
-                      <div className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Día de descanso</div>
-                      <div className="text-xs text-gray-400">Recuperación activa</div>
+                      <div className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{t('Día de descanso','Rest day')}</div>
+                      <div className="text-xs text-gray-400">{t('Recuperación activa','Active recovery')}</div>
                     </div>
                   </div>
                 ) : (
@@ -4707,7 +4718,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
             <div className={`rounded-2xl px-5 py-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
               <div className="flex items-center justify-between mb-2">
                 <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  <i className="fas fa-person-walking mr-2"></i>Pasos hoy
+                  <i className="fas fa-person-walking mr-2"></i>{t('Pasos hoy','Steps today')}
                 </h3>
                 <span className={`text-sm font-extrabold ${(pasosHoy.pasos || 0) >= (pasosHoy.target || 8000) ? 'text-green-500' : darkMode ? 'text-white' : 'text-gray-800'}`}>
                   {(pasosHoy.pasos || 0).toLocaleString()} / {(pasosHoy.target || 8000).toLocaleString()}
@@ -4723,16 +4734,16 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
           {necesitaPeso && !pesoGuardado && (
             <div className={`rounded-2xl px-5 py-4 ${darkMode ? 'bg-gray-800 border border-yellow-800/40' : 'bg-yellow-50 border border-yellow-200'}`}>
               <h3 className={`text-sm font-bold mb-2 ${darkMode ? 'text-yellow-300' : 'text-yellow-800'}`}>
-                <i className="fas fa-weight-scale mr-2"></i>¿Cuánto pesas hoy?
+                <i className="fas fa-weight-scale mr-2"></i>{t('¿Cuánto pesas hoy?','How much do you weigh today?')}
               </h3>
               <div className="flex gap-2">
                 <input type="number" value={pesoInput} onChange={e => { setPesoInput(e.target.value); if (pesoError) setPesoError(''); }}
                   onKeyDown={e => { if (e.key === 'Enter') guardarPeso(); }}
-                  placeholder="ej: 78.5" min="20" max="300" step="0.1"
+                  placeholder={t('ej: 78.5','e.g. 78.5')} min="20" max="300" step="0.1"
                   className={`flex-1 px-3 py-2 rounded-xl border text-sm ${pesoError ? 'border-red-400' : ''} ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-yellow-300 text-gray-800 placeholder-gray-400'}`} />
                 <button onClick={guardarPeso}
                   className="px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition-colors">
-                  Guardar
+                  {t('Guardar','Save')}
                 </button>
               </div>
               {/* N23: range validation feedback — animate-slideDown para entrada suave */}
@@ -4746,7 +4757,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
           {pesoGuardado && (
             <div className={`rounded-2xl px-5 py-3 flex items-center gap-3 animate-fadeIn ${darkMode ? 'bg-green-900/30 border border-green-800' : 'bg-green-50 border border-green-200'}`}>
               <i className="fas fa-check-circle text-green-500"></i>
-              <span className={`text-sm font-medium ${darkMode ? 'text-green-300' : 'text-green-700'}`}>Peso registrado correctamente</span>
+              <span className={`text-sm font-medium ${darkMode ? 'text-green-300' : 'text-green-700'}`}>{t('Peso registrado correctamente','Weight recorded successfully')}</span>
             </div>
           )}
         </div>
@@ -4760,10 +4771,10 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
 // =============================================
 function FitnessTab({ perfil, darkMode }) {
   const subs = [
-    { k: 'entreno',  l: 'Entreno',   icon: 'fa-dumbbell' },
-    { k: 'pasos',    l: 'Pasos',     icon: 'fa-person-walking' },
-    { k: 'roadmap',  l: 'Roadmap',   icon: 'fa-route' },
-    { k: 'metricas', l: 'Registros', icon: 'fa-clipboard-list' }
+    { k: 'entreno',  l: t('Entreno','Workout'),   icon: 'fa-dumbbell' },
+    { k: 'pasos',    l: t('Pasos','Steps'),       icon: 'fa-person-walking' },
+    { k: 'roadmap',  l: 'Roadmap',                icon: 'fa-route' },
+    { k: 'metricas', l: t('Registros','Logs'),    icon: 'fa-clipboard-list' }
   ];
   // N5: persistir sub-tab activa para no perder posición al navegar
   const [subVista, setSubVista] = React.useState(() => {
@@ -4777,8 +4788,8 @@ function FitnessTab({ perfil, darkMode }) {
     return (
       <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>
         <i className="fas fa-fire text-4xl text-orange-400 mb-3"></i>
-        <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Modo pérdida no activado</h3>
-        <p className="text-sm">Ve a tu perfil y elegí "Pérdida de peso" como objetivo para ver tu roadmap y progreso.</p>
+        <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{t('Modo pérdida no activado','Fat loss mode not active')}</h3>
+        <p className="text-sm">{t('Ve a tu perfil y elegí "Pérdida de peso" como objetivo para ver tu roadmap y progreso.','Go to your profile and choose "Weight loss" as your goal to see your roadmap and progress.')}</p>
       </div>
     );
   }
@@ -6706,7 +6717,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260425ee: Language state ───
+  // ─── v20260425ff: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
