@@ -305,7 +305,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425bo: Wizard onboarding — null = modo edición (form completo), 1-5 = paso activo
+  // v20260425bp: Wizard onboarding — null = modo edición (form completo), 1-5 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 1 : null);
 
   React.useEffect(() => {
@@ -489,7 +489,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425bo: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425bp: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
     const TOTAL_PASOS = 5;
     const PASOS_META = [
@@ -596,11 +596,15 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 </div>
                 <div>
                   <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Género</label>
-                  <select value={perfil.genero} onChange={(e) => handleChange('genero', e.target.value)}
-                    className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200 bg-white'} focus:border-green-500`}>
-                    <option value="masculino">Masculino</option>
-                    <option value="femenino">Femenino</option>
-                  </select>
+                  <div className="relative">
+                    <select value={perfil.genero} onChange={(e) => handleChange('genero', e.target.value)}
+                      style={{ appearance: 'none', WebkitAppearance: 'none' }}
+                      className={`w-full px-4 py-3 pr-10 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200 bg-white'} focus:border-green-500`}>
+                      <option value="masculino">Masculino</option>
+                      <option value="femenino">Femenino</option>
+                    </select>
+                    <i className={`fas fa-chevron-down absolute right-3 top-1/2 text-xs pointer-events-none ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} style={{ transform: 'translateY(-50%)' }}></i>
+                  </div>
                 </div>
                 <div>
                   <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Peso (kg)</label>
@@ -1029,14 +1033,14 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
           {/* ── Navegación ── */}
           <div className="flex gap-3">
-            {pasoWizard > 1 ? (
+            {pasoWizard > 1 && (
               <button type="button" onClick={retroceder}
                 className={`flex-1 py-3.5 rounded-2xl font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 shadow-sm'}`}>
                 <i className="fas fa-arrow-left text-sm"></i>Atrás
               </button>
-            ) : <div className="flex-1"></div>}
+            )}
             <button type="button" onClick={avanzar} disabled={!!btnFinalDisabled}
-              className={`flex-[2] py-3.5 rounded-2xl font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              className={`${pasoWizard > 1 ? 'flex-[2]' : 'w-full'} py-3.5 rounded-2xl font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 btnFinalDisabled
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   : pasoWizard === TOTAL_PASOS
@@ -4288,7 +4292,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425bo)
+// COMPONENTE: HoyView — Dashboard diario (v20260425bp)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
