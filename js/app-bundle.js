@@ -69,7 +69,7 @@ function LoginScreen({ darkMode, onToggleDark }) {
 
   const handleSubmit = async () => {
     clearMessages();
-    if (!email.trim()) { setError('Ingresá tu email.'); return; }
+    if (!email.trim()) { setError('Ingresa tu email.'); return; }
     if (mode !== 'reset' && password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres.'); return; }
     setLoading(true);
     try {
@@ -103,8 +103,8 @@ function LoginScreen({ darkMode, onToggleDark }) {
 
   const handleKeyDown = (e) => { if (e.key === 'Enter') handleSubmit(); };
 
-  const titles = { login: 'Iniciá sesión', signup: 'Crear cuenta', reset: 'Recuperar contraseña' };
-  const subtitles = { login: 'Tu plan nutricional te espera', signup: 'Empezá a planificar tu semana', reset: 'Te enviamos un link por email' };
+  const titles = { login: 'Inicia sesión', signup: 'Crear cuenta', reset: 'Recuperar contraseña' };
+  const subtitles = { login: 'Tu plan nutricional te espera', signup: 'Empieza a planificar tu semana', reset: 'Te enviamos un link por email' };
   const btnLabels = { login: 'Iniciar sesión', signup: 'Crear cuenta', reset: 'Enviar email' };
 
   return (
@@ -219,7 +219,7 @@ function LoginScreen({ darkMode, onToggleDark }) {
           {mode === 'login' && (
             <div className="flex flex-col gap-2">
               <span>
-                ¿No tenés cuenta?{' '}
+                ¿No tienes cuenta?{' '}
                 <button onClick={() => { setMode('signup'); clearMessages(); }}
                   className="font-semibold text-green-500 hover:text-green-400 transition-colors cursor-pointer">
                   Crear cuenta
@@ -233,7 +233,7 @@ function LoginScreen({ darkMode, onToggleDark }) {
           )}
           {mode === 'signup' && (
             <span>
-              ¿Ya tenés cuenta?{' '}
+              ¿Ya tienes cuenta?{' '}
               <button onClick={() => { setMode('login'); clearMessages(); }}
                 className="font-semibold text-green-500 hover:text-green-400 transition-colors cursor-pointer">
                 Iniciar sesión
@@ -305,7 +305,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425bu: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
+  // v20260425bv: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 1 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
@@ -490,7 +490,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425bu: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425bv: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
     const TOTAL_PASOS = 6;
     const PASOS_META = [
@@ -500,18 +500,18 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
       { titulo: perfil.fatLossMode ? 'Medidas corporales' : 'Tu plan calórico',
         subtitulo: perfil.fatLossMode ? 'Para diseñar tu roadmap de pérdida de grasa personalizado' : 'Calculamos tus calorías automáticamente',
         icono: perfil.fatLossMode ? 'fa-ruler' : 'fa-fire-flame-curved' },
-      { titulo: 'Equipamiento',              subtitulo: 'Marcá lo que tenés disponible para entrenar en casa',           icono: 'fa-dumbbell' },
-      { titulo: 'Preferencias',              subtitulo: 'Personalizá tus recetas y la duración del plan',               icono: 'fa-sliders' },
+      { titulo: 'Equipamiento',              subtitulo: 'Marca lo que tienes disponible para entrenar en casa',           icono: 'fa-dumbbell' },
+      { titulo: 'Preferencias',              subtitulo: 'Personaliza tus recetas y la duración del plan',               icono: 'fa-sliders' },
     ];
     const meta = PASOS_META[pasoWizard - 1];
 
     const avanzar = () => {
       const err = {};
       if (pasoWizard === 1) {
-        if (!perfil.edad || perfil.edad < 15 || perfil.edad > 100)       err.edad   = 'Ingresá una edad válida (15–100)';
-        if (!perfil.genero)                                               err.genero = 'Seleccioná un género';
-        if (!perfil.peso || perfil.peso < 30 || perfil.peso > 300)       err.peso   = 'Ingresá un peso válido (30–300 kg)';
-        if (!perfil.altura || perfil.altura < 100 || perfil.altura > 250) err.altura = 'Ingresá una altura válida (100–250 cm)';
+        if (!perfil.edad || perfil.edad < 15 || perfil.edad > 100)       err.edad   = 'Ingresa una edad válida (15–100)';
+        if (!perfil.genero)                                               err.genero = 'Selecciona un género';
+        if (!perfil.peso || perfil.peso < 30 || perfil.peso > 300)       err.peso   = 'Ingresa un peso válido (30–300 kg)';
+        if (!perfil.altura || perfil.altura < 100 || perfil.altura > 250) err.altura = 'Ingresa una altura válida (100–250 cm)';
       }
       if (pasoWizard === 4 && !perfil.fatLossMode) {
         if (usarCaloriasManual && (!perfil.caloriasManual || perfil.caloriasManual < 800 || perfil.caloriasManual > 6000))
@@ -615,7 +615,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                       paddingRight: '2.5rem'
                     }}
                     className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200 bg-white'} ${errores.genero ? 'border-red-400' : ''} focus:border-green-500`}>
-                    <option value="" disabled>Seleccioná...</option>
+                    <option value="" disabled>Selecciona...</option>
                     <option value="masculino">Masculino</option>
                     <option value="femenino">Femenino</option>
                   </select>
@@ -746,7 +746,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   </div>
                   <p className={`text-[11px] mt-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     <i className="fas fa-info-circle mr-1"></i>
-                    Navy calcula BF% con cintura + cuello{perfil.genero === 'femenino' ? ' + cadera' : ''}. Si tenés bioimpedancia o caliper, completá "BF% manual".
+                    Navy calcula BF% con cintura + cuello{perfil.genero === 'femenino' ? ' + cadera' : ''}. Si tienes bioimpedancia o caliper, completa "BF% manual".
                   </p>
                 </div>
                 <div>
@@ -810,7 +810,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 ) : (
                   <div className={`text-xs p-3 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-orange-50 text-orange-700 border border-orange-100'}`}>
                     <i className="fas fa-info-circle mr-1"></i>
-                    Completá cintura + cuello{perfil.genero === 'femenino' ? ' + cadera' : ''} y al menos un target para ver el roadmap.
+                    Completa cintura + cuello{perfil.genero === 'femenino' ? ' + cadera' : ''} y al menos un target para ver el roadmap.
                   </div>
                 )}
               </div>
@@ -931,7 +931,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   !usarCaloriasManual && (
                     <div className={`text-xs p-3 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-green-50 text-green-700 border border-green-100'}`}>
                       <i className="fas fa-info-circle mr-1"></i>
-                      Completá tus datos en el paso 1 para ver el cálculo automático de calorías.
+                      Completa tus datos en el paso 1 para ver el cálculo automático de calorías.
                     </div>
                   )
                 )}
@@ -961,7 +961,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 <div className="space-y-4">
                   <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     <i className="fas fa-info-circle mr-1"></i>
-                    Los ejercicios se adaptan automáticamente a lo que marcás. Peso corporal siempre incluido.
+                    Los ejercicios se adaptan automáticamente a lo que marcas. Peso corporal siempre incluido.
                   </p>
                   {categorias.map(cat => {
                     const items = todosEquipos.filter(e => e.cat === cat.id);
@@ -1162,7 +1162,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             <i className="fas fa-seedling text-white text-2xl"></i>
           </div>
           <h1 className={`text-3xl font-bold font-display mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>NutriPlan</h1>
-          <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{tienePlan ? 'Editá tu perfil nutricional' : 'Configurá tu perfil nutricional para comenzar'}</p>
+          <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{tienePlan ? 'Edita tu perfil nutricional' : 'Configura tu perfil nutricional para comenzar'}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -1267,7 +1267,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               <i className="fas fa-fire text-orange-500 text-xl"></i>
               <div>
                 <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Plan Fat Loss — Precision Nutrition</h2>
-                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Completá las medidas y objetivos para generar tu roadmap por fases con diet breaks</p>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Completa las medidas y objetivos para generar tu roadmap por fases con diet breaks</p>
               </div>
             </div>
 
@@ -1301,7 +1301,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   </div>
                   <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     <i className="fas fa-info-circle mr-1"></i>
-                    Navy calcula BF% con cintura + cuello{perfil.genero === 'femenino' ? ' + cadera' : ''}. Si tenés medición por bioimpedancia o caliper, completá "BF% manual" y se usa ese.
+                    Navy calcula BF% con cintura + cuello{perfil.genero === 'femenino' ? ' + cadera' : ''}. Si tienes medición por bioimpedancia o caliper, completa "BF% manual" y se usa ese.
                   </p>
                 </div>
 
@@ -1352,8 +1352,8 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 <div>
                   <label className={`block text-xs font-semibold mb-1 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Timeline deseado (meses, opcional)</label>
                   <input type="number" min="2" max="24" step="1" value={perfil.timelineMesesDeseado || ''} onChange={(e) => handleChange("timelineMesesDeseado", e.target.value)}
-                    className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Ej: 10. Dejá vacío para cálculo automático." />
-                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Si ingresás un timeline, el motor ajusta el déficit para cumplirlo (siempre dentro de rangos seguros 200-800 kcal/día).</p>
+                    className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Ej: 10. Deja vacío para cálculo automático." />
+                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Si ingresas un timeline, el motor ajusta el déficit para cumplirlo (siempre dentro de rangos seguros 200-800 kcal/día).</p>
                 </div>
 
                 {/* Complemento preferido */}
@@ -1455,7 +1455,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 {!roadmapPreview && (
                   <div className={`text-xs p-3 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-50 text-gray-500'}`}>
                     <i className="fas fa-spinner mr-2"></i>
-                    Completá medidas corporales (cintura + cuello o BF% manual) y al menos un target (peso o BF%) para ver el roadmap.
+                    Completa medidas corporales (cintura + cuello o BF% manual) y al menos un target (peso o BF%) para ver el roadmap.
                   </div>
                 )}
               </div>
@@ -1500,7 +1500,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   {errores.caloriasManual && <p className="text-red-500 text-xs mt-1">{errores.caloriasManual}</p>}
                   <p className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     <i className="fas fa-info-circle mr-1"></i>
-                    Ingresá directamente tu objetivo calórico sin depender del cálculo TDEE. Rango: 800–6000 kcal.
+                    Ingresa directamente tu objetivo calórico sin depender del cálculo TDEE. Rango: 800–6000 kcal.
                   </p>
                 </div>
               )}
@@ -4156,7 +4156,7 @@ function ShoppingList({ plan, darkMode }) {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
             <i className="fas fa-check-circle text-green-500 text-4xl"></i>
           </div>
-          <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>¡Tenés todo!</h3>
+          <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>¡Tienes todo!</h3>
           <p className="text-gray-500 mb-6">Tu despensa está completa para la semana.</p>
         </div>
         <EsencialesRecurrentes darkMode={darkMode} />
@@ -4370,7 +4370,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425bu)
+// COMPONENTE: HoyView — Dashboard diario (v20260425bv)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -4449,7 +4449,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const guardarPeso = () => {
     const val = parseFloat(pesoInput.replace(',', '.'));
     // N23: range validation with feedback
-    if (isNaN(val)) { setPesoError('Ingresá un número válido'); return; }
+    if (isNaN(val)) { setPesoError('Ingresa un número válido'); return; }
     if (val < 20 || val > 300) { setPesoError('El peso debe estar entre 20 y 300 kg'); return; }
     setPesoError('');
     if (window.NP_BodyComp) {
@@ -4551,7 +4551,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
       ) : (
         <div className={`rounded-2xl p-6 text-center ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-amber-50 border border-amber-200'}`}>
           <i className="fas fa-calendar-plus text-3xl text-amber-400 mb-3"></i>
-          <p className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-amber-800'}`}>Todavía no tenés un plan semanal</p>
+          <p className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-amber-800'}`}>Todavía no tienes un plan semanal</p>
           <button onClick={() => onNavigate('plan')}
             className="px-4 py-2 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
             <i className="fas fa-plus mr-1.5"></i>Crear mi plan
@@ -4684,7 +4684,7 @@ function FitnessTab({ perfil, darkMode }) {
       <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>
         <i className="fas fa-fire text-4xl text-orange-400 mb-3"></i>
         <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Modo pérdida no activado</h3>
-        <p className="text-sm">Andá a tu perfil y elegí "Pérdida de peso" como objetivo para ver tu roadmap y progreso.</p>
+        <p className="text-sm">Ve a tu perfil y elegí "Pérdida de peso" como objetivo para ver tu roadmap y progreso.</p>
       </div>
     );
   }
@@ -4768,7 +4768,7 @@ function PrepararView({ darkMode, plan, factorComensales }) {
         <div className={`rounded-xl p-5 text-center text-sm ${darkMode ? 'bg-gray-800 border border-gray-700 text-gray-400' : 'bg-gray-50 border border-gray-200 text-gray-500'}`}>
           <i className="fas fa-pot-food text-3xl text-amber-400 mb-3 block"></i>
           <div className={`font-semibold mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Preparación en lote</div>
-          <p>Generá un plan semanal primero para ver qué podés preparar en batch.</p>
+          <p>Genera un plan semanal primero para ver qué podés preparar en batch.</p>
         </div>
       )}
     </div>
@@ -4912,7 +4912,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
             <i className="fas fa-weight-scale mr-2 opacity-70"></i>Sin registros de peso aún
           </div>
           <p className={`text-xs mb-3 ${darkMode ? 'text-gray-400' : 'text-amber-700'}`}>
-            Registrá tu primer peso para ver tu avance real contra el plan.
+            Registra tu primer peso para ver tu avance real contra el plan.
           </p>
           <button onClick={onGoToRegistros}
             className="w-full py-2 rounded-lg text-xs font-semibold bg-orange-500 text-white hover:bg-orange-600 active:scale-[0.98] transition-all">
@@ -5455,7 +5455,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
       {esSugerencia && !hayPasoActivo && (
         <div className={`rounded-lg p-4 mb-3 ${darkMode ? 'bg-red-900/40' : 'bg-white/70'}`}>
           <div className={`text-sm mb-3 leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-            Tu peso lleva ≥14 días dentro del umbral de meseta. Aplicá el primer paso del protocolo antes de tocar calorías: <b>auditar tracking</b>.
+            Tu peso lleva ≥14 días dentro del umbral de meseta. Aplica el primer paso del protocolo antes de tocar calorías: <b>auditar tracking</b>.
           </div>
           <button onClick={aplicarPaso1}
             className="w-full py-2 rounded-lg text-sm font-semibold bg-red-500 text-white hover:bg-red-600">
@@ -5834,7 +5834,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
       {ultimos.length === 0 && (
         <div className={`rounded-xl p-5 text-center text-sm ${darkMode ? 'bg-gray-800 border border-gray-700 text-gray-400' : 'bg-gray-50 border border-gray-200 text-gray-500'}`}>
           <i className="fas fa-person-walking text-2xl mb-2 block opacity-40"></i>
-          Aún no registraste pasos. Usá los botones de arriba para empezar.
+          Aún no registraste pasos. Usa los botones de arriba para empezar.
         </div>
       )}
       {ultimos.length > 0 && (
@@ -6210,7 +6210,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             ? window.NP_RoadmapData.buscarEjercicio(e.nombre)
             : (protocolo ? protocolo.ejercicios.find(p => p.nombre === e.nombre) : null);
           return (
-            <div key={i} className={`rounded-xl p-3 transition-colors ${
+            <div key={i} className={`rounded-xl p-4 transition-colors ${
               e.done
                 ? darkMode ? 'bg-green-900/20 border border-green-800' : 'bg-green-50 border border-green-200'
                 : darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'
@@ -6258,13 +6258,16 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
               </div>
 
               <div className="flex gap-2 mt-3">
-                {/* L1: inline style → Tailwind (evita overflow en 320px) */}
-                <div className="relative flex-shrink-0 w-28">
-                  <input type="text" inputMode="decimal" value={e.peso == null ? '' : e.peso}
-                    onChange={ev => setPeso(i, ev.target.value)}
-                    className={`w-full pl-3 pr-9 py-2 rounded-lg border text-sm font-semibold ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`}
-                    placeholder={previo ? String(previo.peso) : '0'} />
-                  <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-xs pointer-events-none ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>kg</span>
+                {/* Stepper de peso: [−] valor [+] */}
+                <div className={`flex items-center flex-shrink-0 rounded-lg border overflow-hidden ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                  <button onClick={() => setPeso(i, Math.max(0, (Number(e.peso) || 0) - 2.5))}
+                    className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>−</button>
+                  <div className={`flex items-center justify-center px-2 h-9 min-w-[3.5rem] text-sm font-semibold border-x ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200 text-gray-800'}`}>
+                    {e.peso != null ? e.peso : (previo ? previo.peso : '0')}
+                    <span className={`ml-0.5 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>kg</span>
+                  </div>
+                  <button onClick={() => setPeso(i, (Number(e.peso) || 0) + 2.5)}
+                    className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>+</button>
                 </div>
                 <input type="text" value={e.repsReales || ''}
                   onChange={ev => setReps(i, ev.target.value)}
@@ -6397,8 +6400,8 @@ function CuentaModal({ authUser, darkMode, onClose }) {
       setView('main');
     } catch (e) {
       setError(e.code === 'auth/requires-recent-login'
-        ? 'Por seguridad, cerrá sesión, volvé a ingresar y repetí la acción.'
-        : 'Error al cambiar la contraseña. Intentá de nuevo.');
+        ? 'Por seguridad, cierra sesión, vuelve a ingresar y repite la acción.'
+        : 'Error al cambiar la contraseña. Intenta de nuevo.');
     } finally { setLoading(false); }
   };
 
@@ -6410,8 +6413,8 @@ function CuentaModal({ authUser, darkMode, onClose }) {
       onClose();
     } catch (e) {
       setError(e.code === 'auth/requires-recent-login'
-        ? 'Por seguridad, cerrá sesión, volvé a ingresar y repetí la acción.'
-        : 'Error al eliminar la cuenta. Intentá de nuevo.');
+        ? 'Por seguridad, cierra sesión, vuelve a ingresar y repite la acción.'
+        : 'Error al eliminar la cuenta. Intenta de nuevo.');
       setLoading(false);
     }
   };
@@ -6522,7 +6525,7 @@ function CuentaModal({ authUser, darkMode, onClose }) {
                 <div className="relative">
                   <input type={showP2 ? 'text' : 'password'} value={confirmPass}
                     onChange={e => { setConfirm(e.target.value); setError(''); }}
-                    placeholder="Repetí la contraseña"
+                    placeholder="Repite la contraseña"
                     className={`${inputCls} pr-10`} />
                   <button type="button" onClick={() => setShowP2(p => !p)}
                     className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded cursor-pointer ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'}`}>
@@ -6869,9 +6872,9 @@ function App() {
         const semKey = 'semana_' + numSemana;
         const recetaNueva = nuevoPlan[semKey]?.[dia]?.[tipoComida];
         if (recetaNueva && recetaNueva._fuente === 'online') {
-          mostrarToast(`${tipoNombre} del ${dia} cambiado (internet) · revisá tus compras 🛒`);
+          mostrarToast(`${tipoNombre} del ${dia} cambiado (internet) · revisa tus compras 🛒`);
         } else {
-          mostrarToast(`${tipoNombre} del ${dia} cambiado · revisá tus compras 🛒`);
+          mostrarToast(`${tipoNombre} del ${dia} cambiado · revisa tus compras 🛒`);
         }
       } catch (e) {
         console.error("Error cambiando receta:", e);
@@ -7071,7 +7074,7 @@ function App() {
           ? <Pantry plan={planSemanal} onNavigateToShopping={() => navegarA("compras")} darkMode={darkMode} />
           : <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-amber-50 border border-amber-200'}`}>
               <i className="fas fa-warehouse text-3xl text-amber-400 mb-3"></i>
-              <p className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-amber-800'}`}>Primero generá tu plan semanal para ver la despensa</p>
+              <p className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-amber-800'}`}>Primero genera tu plan semanal para ver la despensa</p>
               <button onClick={() => navegarA('plan')} className="px-4 py-2 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
                 <i className="fas fa-calendar-days mr-1.5"></i>Ir al Plan
               </button>
@@ -7081,7 +7084,7 @@ function App() {
           ? <ShoppingList plan={planSemanal} darkMode={darkMode} />
           : <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-amber-50 border border-amber-200'}`}>
               <i className="fas fa-cart-shopping text-3xl text-amber-400 mb-3"></i>
-              <p className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-amber-800'}`}>Primero generá tu plan semanal para ver la lista de compras</p>
+              <p className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-amber-800'}`}>Primero genera tu plan semanal para ver la lista de compras</p>
               <button onClick={() => navegarA('plan')} className="px-4 py-2 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
                 <i className="fas fa-calendar-days mr-1.5"></i>Ir al Plan
               </button>

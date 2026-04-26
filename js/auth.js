@@ -1,5 +1,5 @@
 ﻿/* ============================================
-   NutriPlan - Módulo de Autenticación (v20260425bu)
+   NutriPlan - Módulo de Autenticación (v20260425bv)
    Requiere: firebase-config.js cargado antes.
    Expone: window.NP_Auth
    ============================================ */
@@ -37,10 +37,10 @@
       'auth/popup-closed-by-user':    '',   // el usuario cerró el popup — no es un error
       'auth/cancelled-popup-request': '',
       'auth/popup-blocked':           'El navegador bloqueó el popup. Habilitá los popups para este sitio.',
-      'auth/requires-recent-login':   'Por seguridad, cerrá sesión, volvé a ingresar y repetí la acción.',
+      'auth/requires-recent-login':   'Por seguridad, cierra sesión, vuelve a ingresar y repite la acción.',
       'auth/operation-not-allowed':   'Este método de login no está habilitado. Activá Email/contraseña en Firebase Console.',
     };
-    return map[code] || 'Error de autenticación. Intentá de nuevo.';
+    return map[code] || 'Error de autenticación. Intenta de nuevo.';
   }
 
   // ─── API pública ───
