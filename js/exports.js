@@ -212,7 +212,7 @@
 
         descripcion += `\\n🔥 Total: ${totalKcal} kcal`;
         if (comidasDia._costo_clp) {
-          descripcion += ` | 💰 $${Math.ceil(comidasDia._costo_clp).toLocaleString('es-CL')}`;
+          descripcion += ` | 💰 $${(Math.ceil(comidasDia._costo_clp / 100) * 100).toLocaleString('es-CL')}`;
         }
 
         const titulo = sumario.length > 0 
@@ -469,7 +469,7 @@
           if (y > pageH - 12) { doc.addPage(); y = mg; }
 
           var kcal  = comida.calorias_escaladas || 0;
-          var costo = Math.ceil((comida.costo_clp || 0) * (comida.factor_escala || 1) * factorComensales);
+          var costo = Math.ceil((comida.costo_clp || 0) * (comida.factor_escala || 1) * factorComensales / 100) * 100;
           kcalDia  += kcal;
           costoDia += costo;
 
