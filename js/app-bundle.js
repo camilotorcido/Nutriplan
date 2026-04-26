@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260425hh: Bilingual ES/EN support
+   v20260425ii: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260425hh: Bilingual helpers ────────────────────────────────────────
+// ─── v20260425ii: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -333,7 +333,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425hh: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260425ii: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
@@ -518,7 +518,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425hh: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425ii: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -2418,7 +2418,7 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
                         {tecnica?.display}
                       </span>
                     </div>
-                    <h4 className={`font-semibold text-sm ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{r.nombre}</h4>
+                    <h4 className={`font-semibold text-sm ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{getNombreReceta(r)}</h4>
                     <div className="flex flex-wrap gap-2 mt-1.5 text-[11px]">
                       <span className="text-gray-500"><i className="fas fa-fire text-orange-400 mr-1"></i>{r.calorias_base} kcal</span>
                       <span className="text-blue-500">P: {r.proteinas_g}g</span>
@@ -2650,7 +2650,7 @@ function ReverseSearch({ darkMode, onRecipeClick }) {
                         </span>
                         <span className={`text-[11px] font-bold text-${color}-500`}>{r.porcentaje}% match</span>
                       </div>
-                      <h4 className={`font-semibold text-sm ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{r.receta.nombre}</h4>
+                      <h4 className={`font-semibold text-sm ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{getNombreReceta(r.receta)}</h4>
                       <div className="flex flex-wrap gap-2 mt-1.5 text-[11px]">
                         <span className="text-gray-500"><i className="fas fa-fire text-orange-400 mr-1"></i>{r.receta.calorias_base} kcal</span>
                         {r.receta.tiempo_total_min > 0 && (
@@ -2991,7 +2991,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                       </span>
                     )}
                   </div>
-                  <h4 className={`font-semibold text-sm mt-2 ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{comida.nombre}</h4>
+                  <h4 className={`font-semibold text-sm mt-2 ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{getNombreReceta(comida)}</h4>
                   <div className="flex flex-wrap gap-3 mt-2">
                     <span className="text-xs text-gray-500"><i className="fas fa-fire text-orange-400 mr-1"></i>{comida.calorias_escaladas} kcal</span>
                     <span className="text-xs text-blue-500">P: {comida.proteinas_escaladas}g</span>
@@ -3033,7 +3033,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                     <i className={`fas ${swapping && swapping.dia === diaSeleccionado && swapping.tipoComida === tipo ? 'fa-spinner fa-spin' : 'fa-shuffle'} text-sm`}></i>
                   </button>
                   {/* T5/A8: div→button para ser focusable por teclado */}
-                  <button onClick={() => onRecipeClick(comida)} aria-label={`Ver receta de ${comida.nombre || NOMBRES_COMIDAS[tipo]}`}
+                  <button onClick={() => onRecipeClick(comida)} aria-label={`${t('Ver receta de','View recipe for')} ${getNombreReceta(comida) || NOMBRES_COMIDAS[tipo]}`}
                     className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors cursor-pointer rounded">
                     <i className="fas fa-chevron-right text-sm"></i>
                   </button>
@@ -3428,7 +3428,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
                 )}
                 {tieneThermomix && <span className="thermomix-badge"><i className="fas fa-blender mr-1"></i>TM6</span>}
               </div>
-              <h2 className="text-lg font-bold leading-tight">{receta.nombre}</h2>
+              <h2 className="text-lg font-bold leading-tight">{getNombreReceta(receta)}</h2>
             </div>
             {/* A4: aria-label en botón cerrar */}
             <button onClick={onClose} aria-label="Cerrar receta"
@@ -4464,7 +4464,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425hh)
+// COMPONENTE: HoyView — Dashboard diario (v20260425ii)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -4635,7 +4635,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
                   <i className={`fas ${iconosComida[tipo]} text-sm w-4 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
                   <div className="flex-1 min-w-0">
                     <div className={`text-[11px] font-bold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{nombresComida[tipo]}</div>
-                    <div className={`text-sm font-medium truncate ${yaComido ? 'line-through opacity-60' : ''} ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{comida.nombre}</div>
+                    <div className={`text-sm font-medium truncate ${yaComido ? 'line-through opacity-60' : ''} ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{getNombreReceta(comida)}</div>
                   </div>
                   <span className={`text-xs font-bold flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{comida.calorias_escaladas || comida.calorias} kcal</span>
                   {typeof window.adherencia !== 'undefined' && (
@@ -6717,7 +6717,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260425hh: Language state ───
+  // ─── v20260425ii: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;

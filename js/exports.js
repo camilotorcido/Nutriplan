@@ -115,12 +115,13 @@
     'Jueves': 4, 'Viernes': 5, 'Sábado': 6, 'Sabado': 6, 'Domingo': 0
   };
 
+  var _isEN = (window._NP_lang || 'es') === 'en';
   const TIPOS_COMIDA = [
-    { key: 'desayuno', label: 'Desayuno', icon: '🌅' },
+    { key: 'desayuno', label: _isEN ? 'Breakfast' : 'Desayuno', icon: '🌅' },
     { key: 'snack_am', label: 'Snack AM', icon: '🍎' },
-    { key: 'almuerzo', label: 'Almuerzo', icon: '🍽️' },
+    { key: 'almuerzo', label: _isEN ? 'Lunch' : 'Almuerzo', icon: '🍽️' },
     { key: 'snack_pm', label: 'Snack PM', icon: '🍪' },
-    { key: 'cena', label: 'Cena', icon: '🌙' }
+    { key: 'cena', label: _isEN ? 'Dinner' : 'Cena', icon: '🌙' }
   ];
 
   // Obtener próximo lunes a partir de hoy para anclar la semana 1
@@ -202,9 +203,10 @@
           if (!comida || !comida.nombre) return;
           const kcal = comida.calorias_escaladas || comida.calorias_base || 0;
           totalKcal += kcal;
-          descripcion += `${tc.icon} ${tc.label}: ${comida.nombre} (${kcal} kcal)\\n`;
+          const _nombre = (typeof getNombreReceta === 'function') ? getNombreReceta(comida) : comida.nombre;
+          descripcion += `${tc.icon} ${tc.label}: ${_nombre} (${kcal} kcal)\\n`;
           if (tc.key === 'almuerzo' || tc.key === 'cena') {
-            sumario.push(comida.nombre);
+            sumario.push(_nombre);
           }
         });
 
@@ -295,7 +297,7 @@
           fechaFin.setMinutes(fechaFin.getMinutes() + dur);
 
           const kcal = comida.calorias_escaladas || comida.calorias_base || 0;
-          let desc = `${comida.nombre}\\n${kcal} kcal`;
+          let desc = `${(typeof getNombreReceta === 'function') ? getNombreReceta(comida) : comida.nombre}\\n${kcal} kcal`;
           if (comida.proteinas_escaladas) {
             desc += ` | P: ${comida.proteinas_escaladas}g | C: ${comida.carbohidratos_escalados}g | G: ${comida.grasas_escaladas}g`;
           }
@@ -312,7 +314,7 @@
             `DTSTAMP:${formatearFechaICS(new Date())}`,
             `DTSTART:${formatearFechaICS(fechaEvento)}`,
             `DTEND:${formatearFechaICS(fechaFin)}`,
-            `SUMMARY:${escaparICS(tc.icon + ' ' + comida.nombre)}`,
+            `SUMMARY:${escaparICS(tc.icon + ' ' + ((typeof getNombreReceta === 'function') ? getNombreReceta(comida) : comida.nombre))}`,
             `DESCRIPTION:${escaparICS(desc)}`,
             `SEQUENCE:${seq}`,
             `CATEGORIES:NutriPlan,${tc.label}`,
@@ -347,15 +349,18 @@
     return _jsPDFReady;
   }
 
+  var _pdfEN = (window._NP_lang || 'es') === 'en';
   const NOMBRES_COMIDA_PDF = {
-    desayuno: 'Desayuno',
+    desayuno: _pdfEN ? 'Breakfast' : 'Desayuno',
     snack_am: 'Snack AM',
-    almuerzo: 'Almuerzo',
+    almuerzo: _pdfEN ? 'Lunch'     : 'Almuerzo',
     snack_pm: 'Snack PM',
-    cena: 'Cena'
+    cena:     _pdfEN ? 'Dinner'    : 'Cena'
   };
   const ORDEN_COMIDAS = ['desayuno', 'snack_am', 'almuerzo', 'snack_pm', 'cena'];
-  const DIAS_PDF = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  const DIAS_PDF = _pdfEN
+    ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    : ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
   async function exportarPlanPDF(planMulti, perfil, opciones) {
     opciones = opciones || {};
@@ -482,7 +487,8 @@
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(9);
           doc.setTextColor(cDark[0], cDark[1], cDark[2]);
-          var nombreLineas = doc.splitTextToSize(comida.nombre || '', wNombre);
+          var _recetaNombre = (typeof getNombreReceta === 'function') ? getNombreReceta(comida) : (comida.nombre || '');
+          var nombreLineas = doc.splitTextToSize(_recetaNombre, wNombre);
           var nombreTrunc = nombreLineas[0] || '';
           doc.text(nombreTrunc, xNombre, y);
 
