@@ -1224,8 +1224,34 @@ function _extraerNombreIngrediente(textoRaw) {
   return resultado;
 }
 
+// ─── Unidades discretas (indivisibles) — se redondean al entero más cercano ───
+// Ej: 2.6 unidades → 3 unidades  /  1.3 diente → 1 diente
+var _UNIDADES_DISCRETAS = new Set([
+  'unidad','unidades','ud','ud.',
+  'diente','dientes',
+  'rebanada','rebanadas',
+  'tajada','tajadas',
+  'porcion','porciones','porción','porciones',
+  'pieza','piezas',
+  'lata','latas',
+  'sobre','sobres',
+  'tarro','tarros',
+  'filete','filetes',
+  'rodaja','rodajas',
+  'hoja','hojas',
+  'ramita','ramitas',
+  'trozo','trozos',
+]);
+
 // ─── Formatear cantidad para mostrar — AHORA CON MEDIDAS CASERAS ───
 function formatearCantidad(cantidad, unidad, nombreNormalizado) {
+  // Redondear al entero más cercano para unidades indivisibles
+  var _uLower = (unidad || '').toLowerCase().trim();
+  if (_UNIDADES_DISCRETAS.has(_uLower)) {
+    var redondeado = Math.round(cantidad);
+    if (redondeado === 0) redondeado = 1; // mínimo 1 unidad
+    return redondeado + ' ' + unidad;
+  }
   // Si tenemos nombre normalizado, intentar convertir a medida casera
   if (nombreNormalizado && (unidad === 'g' || unidad === 'ml')) {
     const conv = convertirAMedidaCasera(cantidad, unidad, nombreNormalizado);
