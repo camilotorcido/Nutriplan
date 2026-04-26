@@ -305,7 +305,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425bs: Wizard onboarding — null = modo edición (form completo), 1-5 = paso activo
+  // v20260425bt: Wizard onboarding — null = modo edición (form completo), 1-5 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 1 : null);
 
   React.useEffect(() => {
@@ -489,7 +489,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425bs: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425bt: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
     const TOTAL_PASOS = 5;
     const PASOS_META = [
@@ -4306,7 +4306,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425bs)
+// COMPONENTE: HoyView — Dashboard diario (v20260425bt)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -4350,6 +4350,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
     const hoyDow = new Date(hoyStr + 'T12:00:00').getDay();
     const tipo = planActual ? (planActual.schedule[hoyDow] || 'descanso') : 'descanso';
     const sesion = window.NP_Training.obtener(hoyStr, tipo);
+    if (!sesion) return { tipo, tipoInfo: null, completados: 0, total: 0, esDescanso: tipo === 'descanso', foco: null, duracionMin: null };
     const completados = sesion.ejercicios.filter(e => e.done).length;
     const total = sesion.ejercicios.length;
     const tipoInfo = planActual && planActual.tipos ? planActual.tipos.find(t => t.k === tipo) : null;
