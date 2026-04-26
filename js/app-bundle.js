@@ -305,7 +305,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425bz: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
+  // v20260425ca: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 1 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
@@ -490,7 +490,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425bz: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425ca: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
     const TOTAL_PASOS = 6;
     const PASOS_META = [
@@ -3926,7 +3926,7 @@ function guardarEsenciales(lista) {
 function EsencialesRecurrentes({ darkMode }) {
   const [items, setItems] = React.useState(() => cargarEsenciales());
   const [nuevoNombre, setNuevoNombre] = React.useState("");
-  const [expandido, setExpandido] = React.useState(false);
+  const [expandido, setExpandido] = React.useState(true);
 
   React.useEffect(() => { guardarEsenciales(items); }, [items]);
 
@@ -4370,7 +4370,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425bz)
+// COMPONENTE: HoyView — Dashboard diario (v20260425ca)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
