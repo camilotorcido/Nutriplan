@@ -305,7 +305,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425bv: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
+  // v20260425bw: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 1 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
@@ -490,7 +490,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425bv: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425bw: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
     const TOTAL_PASOS = 6;
     const PASOS_META = [
@@ -4370,7 +4370,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425bv)
+// COMPONENTE: HoyView — Dashboard diario (v20260425bw)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -6061,6 +6061,55 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
     }
   };
 
+  // ── Rearmar sesión con equipamiento disponible actual ──────────────────────
+  // Para ejercicios core que requieren equipo no disponible, busca un sustituto
+  // en el pool de extras con equipo compatible, preservando misma meta muscular.
+  const rearmarSesion = () => {
+    if (!window.NP_RoadmapData || !window.NP_RoadmapData.generarProtocoloDia) return;
+    const nuevoProto = window.NP_RoadmapData.generarProtocoloDia(tipoDia, semanaNum, equiposDisp);
+    if (!nuevoProto) return;
+
+    const baseDia = String(tipoDia).replace(/\d+$/, '');
+    const pool = window.NP_RoadmapData.EJERCICIOS_POOL && window.NP_RoadmapData.EJERCICIOS_POOL[baseDia];
+
+    // Preservar datos logueados (peso, reps, done) por nombre de ejercicio
+    const logMap = {};
+    sesion.ejercicios.forEach(e => {
+      logMap[e.nombre] = { done: e.done, peso: e.peso, repsReales: e.repsReales };
+    });
+
+    // Sustituir ejercicios incompatibles con el mejor extra disponible
+    const usados = new Set(nuevoProto.ejercicios.map(e => e.nombre));
+    const finales = nuevoProto.ejercicios.map(ej => {
+      const eqId = getEquipoId(ej.equipo);
+      const disponible = eqId === 'peso_corporal' || equiposDisp.includes(eqId);
+      let ejFinal = ej;
+      if (!disponible && pool) {
+        const sub = pool.extra.find(ex => {
+          const exId = getEquipoId(ex.equipo);
+          return (exId === 'peso_corporal' || equiposDisp.includes(exId)) && !usados.has(ex.nombre);
+        });
+        if (sub) { usados.add(sub.nombre); usados.delete(ej.nombre); ejFinal = sub; }
+      }
+      const log = logMap[ejFinal.nombre] || {};
+      return {
+        nombre: ejFinal.nombre, setsEsperado: ejFinal.sets, repsEsperado: ejFinal.reps,
+        equipo: ejFinal.equipo, nota: ejFinal.nota || '',
+        done: log.done || false, peso: log.peso != null ? log.peso : null, repsReales: log.repsReales || null
+      };
+    });
+
+    window.NP_Training.guardar(Object.assign({}, sesion, { ejercicios: finales }));
+    if (window._NP_toast) window._NP_toast('Sesión adaptada a tu equipamiento disponible');
+    onRefresh();
+  };
+
+  // Flag: hay ejercicios que piden equipo no marcado como disponible
+  const hayEjIncompatible = sesion.ejercicios.some(e => {
+    const id = getEquipoId(e.equipo);
+    return id !== 'peso_corporal' && !equiposDisp.includes(id);
+  });
+
   const completados = sesion.ejercicios.filter(e => e.done).length;
   const total = sesion.ejercicios.length;
   const pct = total > 0 ? Math.round((completados / total) * 100) : 0;
@@ -6185,19 +6234,44 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                 window.NP_Training.guardar(nueva); onRefresh();
               }}
                 className={`px-4 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-                <i className="fas fa-xmark mr-1"></i>Desmarcar
-              </button>
+              <i className="fas fa-xmark mr-1"></i>Desmarcar
+            </button>
             )}
             <button onClick={limpiarSesion}
               className={`px-4 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-gray-700 text-red-400 hover:bg-gray-600' : 'bg-gray-100 text-red-500 hover:bg-gray-200'}`}>
               <i className="fas fa-rotate-left mr-1"></i>Reset
             </button>
           </div>
+          {/* Rearmar siempre disponible: re-genera la sesión con equipo actual y guarda */}
+          <button onClick={rearmarSesion}
+            className={`w-full mt-2 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+              hayEjIncompatible
+                ? 'bg-amber-500 hover:bg-amber-400 text-white'
+                : darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-200'
+            }`}>
+            <i className={`fas fa-arrows-rotate ${hayEjIncompatible ? '' : 'opacity-60'}`}></i>
+            {hayEjIncompatible ? 'Adaptar sesión a mi equipamiento' : 'Rearmar sesión con equipamiento actual'}
+          </button>
         </div>
       )}
 
       {/* Equipamiento disponible — cerca de los ejercicios donde aplica */}
       <EquipamientoCard darkMode={darkMode} onEquiposChange={setEquiposDisp} onRefresh={onRefresh} />
+
+      {/* Banner: ejercicios incompatibles con equipamiento actual */}
+      {hayEjIncompatible && (
+        <div className={`rounded-xl px-4 py-3 flex items-center gap-3 ${darkMode ? 'bg-amber-900/30 border border-amber-700/50' : 'bg-amber-50 border border-amber-200'}`}>
+          <i className="fas fa-triangle-exclamation text-amber-500 flex-shrink-0"></i>
+          <div className="flex-1 min-w-0">
+            <div className={`text-sm font-semibold ${darkMode ? 'text-amber-300' : 'text-amber-800'}`}>Algunos ejercicios necesitan equipo no disponible</div>
+            <div className={`text-xs mt-0.5 ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>Usa el botón para reemplazarlos por equivalentes con lo que tienes.</div>
+          </div>
+          <button onClick={rearmarSesion}
+            className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-white text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap">
+            Adaptar ahora
+          </button>
+        </div>
+      )}
 
       {/* Lista de ejercicios */}
       <div className="space-y-2">
