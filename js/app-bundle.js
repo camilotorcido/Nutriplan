@@ -305,8 +305,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425bt: Wizard onboarding — null = modo edición (form completo), 1-5 = paso activo
+  // v20260425bu: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 1 : null);
+  const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
   React.useEffect(() => {
     const { peso, altura, edad, genero, nivelActividad, objetivo } = perfil;
@@ -489,9 +490,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425bt: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425bu: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
-    const TOTAL_PASOS = 5;
+    const TOTAL_PASOS = 6;
     const PASOS_META = [
       { titulo: 'Tus datos básicos',        subtitulo: 'Para calcular tus calorías con precisión',                      icono: 'fa-user-circle' },
       { titulo: 'Nivel de actividad',        subtitulo: 'Elegí el que mejor describe tu semana típica',                  icono: 'fa-person-running' },
@@ -499,6 +500,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
       { titulo: perfil.fatLossMode ? 'Medidas corporales' : 'Tu plan calórico',
         subtitulo: perfil.fatLossMode ? 'Para diseñar tu roadmap de pérdida de grasa personalizado' : 'Calculamos tus calorías automáticamente',
         icono: perfil.fatLossMode ? 'fa-ruler' : 'fa-fire-flame-curved' },
+      { titulo: 'Equipamiento',              subtitulo: 'Marcá lo que tenés disponible para entrenar en casa',           icono: 'fa-dumbbell' },
       { titulo: 'Preferencias',              subtitulo: 'Personalizá tus recetas y la duración del plan',               icono: 'fa-sliders' },
     ];
     const meta = PASOS_META[pasoWizard - 1];
@@ -936,8 +938,70 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               </div>
             )}
 
-            {/* ── Paso 5: Preferencias ── */}
-            {pasoWizard === 5 && (
+            {/* ── Paso 5: Equipamiento ── */}
+            {pasoWizard === 5 && (() => {
+              const todosEquipos = (window.NP_RoadmapData && window.NP_RoadmapData.EQUIPOS_DISPONIBLES) || [];
+              const categorias = [
+                { id: 'base',       label: 'Siempre disponible', icono: 'fa-person' },
+                { id: 'cardio',     label: 'Cardio',             icono: 'fa-heart-pulse' },
+                { id: 'pesos',      label: 'Pesos libres',       icono: 'fa-dumbbell' },
+                { id: 'maquinas',   label: 'Máquinas y cables',  icono: 'fa-gear' },
+                { id: 'accesorios', label: 'Accesorios',         icono: 'fa-wrench' },
+              ];
+              const toggleEq = (id) => {
+                const eq = todosEquipos.find(e => e.id === id);
+                if (eq && eq.siempre) return;
+                const nueva = equiposWizard.includes(id)
+                  ? equiposWizard.filter(x => x !== id)
+                  : [...equiposWizard, id];
+                setEquiposWizard(nueva);
+                localStorage.setItem('nutriplan_equipos', JSON.stringify(nueva));
+              };
+              return (
+                <div className="space-y-4">
+                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <i className="fas fa-info-circle mr-1"></i>
+                    Los ejercicios se adaptan automáticamente a lo que marcás. Peso corporal siempre incluido.
+                  </p>
+                  {categorias.map(cat => {
+                    const items = todosEquipos.filter(e => e.cat === cat.id);
+                    if (!items.length) return null;
+                    return (
+                      <div key={cat.id}>
+                        <div className={`text-xs font-semibold mb-2 uppercase tracking-wide flex items-center gap-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          <i className={`fas ${cat.icono} text-xs`}></i>{cat.label}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {items.map(eq => {
+                            const activo = equiposWizard.includes(eq.id);
+                            return (
+                              <button key={eq.id} type="button" onClick={() => toggleEq(eq.id)}
+                                disabled={!!eq.siempre}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
+                                  activo
+                                    ? eq.siempre
+                                      ? `${darkMode ? 'bg-green-900/40 border-green-700 text-green-400' : 'bg-green-100 border-green-400 text-green-700'} cursor-default`
+                                      : `${darkMode ? 'bg-green-900/40 border-green-600 text-green-400' : 'bg-green-100 border-green-400 text-green-700'}`
+                                    : darkMode
+                                      ? 'bg-transparent border-gray-600 text-gray-400 hover:border-gray-400 hover:text-gray-200'
+                                      : 'bg-transparent border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
+                                }`}>
+                                <i className={`fas ${eq.icono} text-xs`}></i>
+                                {eq.nombre}
+                                {activo && !eq.siempre && <i className="fas fa-check text-[10px] ml-0.5"></i>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            {/* ── Paso 6: Preferencias ── */}
+            {pasoWizard === 6 && (
               <div className="space-y-5">
                 {/* Restricciones */}
                 <div>
@@ -4306,7 +4370,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425bt)
+// COMPONENTE: HoyView — Dashboard diario (v20260425bu)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -5808,18 +5872,29 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
 function getEquipoId(equipo) {
   if (!equipo) return 'peso_corporal';
   const e = equipo.toLowerCase();
-  // Speediance incluye modo remo/remadora — son el mismo equipo
-  if (e.includes('speediance') || e.includes('barra/speediance')) return 'speediance';
-  if (e.includes('treadmill')) return 'treadmill_plano';
-  if (e === 'barra') return 'barra';
+  if (e.includes('speediance') || e.includes('cable machine') || e.includes('cable')) return 'speediance';
+  if (e.includes('treadmill') || e.includes('cinta')) return 'treadmill_plano';
+  if (e.includes('remadora') || e.includes('remo') || e.includes('rowing')) return 'remadora';
+  if (e.includes('bicicleta') || e.includes('bike')) return 'bicicleta';
+  if (e.includes('eliptica') || e.includes('elíptica')) return 'eliptica';
+  if (e.includes('mancuerna') || e.includes('dumbbell')) return 'mancuernas';
+  if (e.includes('kettlebell') || e.includes('pesa rusa')) return 'kettlebell';
+  if (e.includes('barra olímpica') || e.includes('barbell')) return 'barra_olimpica';
+  if (e.includes('barra ez')) return 'barra_ez';
+  if (e.includes('trx') || e.includes('suspensión') || e.includes('suspension')) return 'trx';
+  if (e.includes('banda') || e.includes('band')) return 'bandas';
+  if (e.includes('multiestacion') || e.includes('multifuncion')) return 'multiestacion';
+  if (e.includes('banco')) return 'banco';
+  if (e.includes('rueda')) return 'rueda_abdominal';
+  if (e === 'barra' || e.includes('dominadas') || e.includes('pull-up')) return 'barra';
   return 'peso_corporal';
 }
 
 function leerEquipos() {
   try {
     const g = JSON.parse(localStorage.getItem('nutriplan_equipos'));
-    return Array.isArray(g) ? g : ['peso_corporal', 'speediance', 'treadmill_plano'];
-  } catch (err) { return ['peso_corporal', 'speediance', 'treadmill_plano']; }
+    return Array.isArray(g) ? g : ['peso_corporal'];
+  } catch (err) { return ['peso_corporal']; }
 }
 
 // ─── Componente: selector de equipamiento disponible ───

@@ -113,10 +113,31 @@ const ALCOHOL_BEBIDAS = [
 
 // ─── Equipamiento disponible ───
 const EQUIPOS_DISPONIBLES = [
-  { id: 'peso_corporal',  nombre: 'Peso corporal',       icono: '🤸', siempre: true },
-  { id: 'speediance',     nombre: 'Speediance / Remadora', icono: '🏋️', siempre: false },
-  { id: 'treadmill_plano',nombre: 'Treadmill (plano)',    icono: '🏃', siempre: false },
-  { id: 'barra',          nombre: 'Barra de dominadas',   icono: '⬆️', siempre: false }
+  // ── Siempre disponible ──
+  { id: 'peso_corporal',   nombre: 'Peso corporal',          icono: 'fa-person',          cat: 'base',       siempre: true  },
+  // ── Cardio ──
+  { id: 'cuerda_saltar',   nombre: 'Cuerda para saltar',     icono: 'fa-rotate',          cat: 'cardio',     siempre: false },
+  { id: 'bicicleta',       nombre: 'Bicicleta estática',     icono: 'fa-bicycle',         cat: 'cardio',     siempre: false },
+  { id: 'remadora',        nombre: 'Remadora',               icono: 'fa-water',           cat: 'cardio',     siempre: false },
+  { id: 'treadmill_plano', nombre: 'Cinta de correr',        icono: 'fa-person-running',  cat: 'cardio',     siempre: false },
+  { id: 'eliptica',        nombre: 'Elíptica',               icono: 'fa-arrows-spin',     cat: 'cardio',     siempre: false },
+  // ── Pesos libres ──
+  { id: 'mancuernas',      nombre: 'Mancuernas',             icono: 'fa-dumbbell',        cat: 'pesos',      siempre: false },
+  { id: 'mancuernas_adj',  nombre: 'Mancuernas ajustables',  icono: 'fa-sliders',         cat: 'pesos',      siempre: false },
+  { id: 'kettlebell',      nombre: 'Kettlebell',             icono: 'fa-weight-hanging',  cat: 'pesos',      siempre: false },
+  { id: 'barra_olimpica',  nombre: 'Barra olímpica + discos',icono: 'fa-circle-dot',      cat: 'pesos',      siempre: false },
+  { id: 'barra_ez',        nombre: 'Barra EZ',               icono: 'fa-wave-square',     cat: 'pesos',      siempre: false },
+  // ── Máquinas y cables ──
+  { id: 'speediance',      nombre: 'Cable machine / Speediance', icono: 'fa-gear',        cat: 'maquinas',   siempre: false },
+  { id: 'multiestacion',   nombre: 'Estación multifunción',  icono: 'fa-table-columns',   cat: 'maquinas',   siempre: false },
+  { id: 'trx',             nombre: 'TRX / Suspensión',       icono: 'fa-link',            cat: 'maquinas',   siempre: false },
+  { id: 'bandas',          nombre: 'Bandas de resistencia',  icono: 'fa-minus',           cat: 'maquinas',   siempre: false },
+  // ── Accesorios ──
+  { id: 'barra',           nombre: 'Barra de dominadas',     icono: 'fa-grip-lines',      cat: 'accesorios', siempre: false },
+  { id: 'banco',           nombre: 'Banco de pesas',         icono: 'fa-table',           cat: 'accesorios', siempre: false },
+  { id: 'rueda_abdominal', nombre: 'Rueda abdominal',        icono: 'fa-circle-half-stroke', cat: 'accesorios', siempre: false },
+  { id: 'balon_medicinal', nombre: 'Balón medicinal',        icono: 'fa-circle',          cat: 'accesorios', siempre: false },
+  { id: 'bosu',            nombre: 'BOSU / Balancín',        icono: 'fa-square-full',     cat: 'accesorios', siempre: false },
 ];
 
 // ─── Protocolo de entrenamiento 4 días ───

@@ -1,5 +1,5 @@
 ﻿/* ============================================
-   NutriPlan - Cloud Storage (v20260425bt)
+   NutriPlan - Cloud Storage (v20260425bu)
 
    Estrategia multi-usuario:
    ┌─────────────────────────────────────────────┐
