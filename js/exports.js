@@ -366,158 +366,209 @@
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
-    const margen = 12;
-    let y = margen;
+    const mg = 14;       // margen horizontal
+    const PW = pageW - mg * 2;  // ancho imprimible
+    let y = mg;
 
-    // Header
-    doc.setFillColor(16, 185, 129);
-    doc.rect(0, 0, pageW, 22, 'F');
+    // ── Paleta: verde app + escala de grises ──────────────────────────────────
+    // Solo 2 colores de acento: verde principal y gris medio.
+    // Todo lo demás es fondo blanco o gris muy claro.
+    var cGreen     = [16, 185, 129];   // emerald-500
+    var cGreenDark = [5,  78,  56];    // emerald-900
+    var cGreenBg   = [236, 253, 245];  // emerald-50
+    var cDark      = [31,  41,  55];   // gray-800
+    var cMed       = [107, 114, 128];  // gray-500
+    var cLight     = [229, 231, 235];  // gray-200
+    var cBg        = [249, 250, 251];  // gray-50
+
+    // ── Columnas fijas ────────────────────────────────────────────────────────
+    // [mg] TIPO(20) [gap2] NOMBRE→ [badges 18] [kcal+macros 38] [mg]
+    var xTipo      = mg + 2;
+    var wTipo      = 20;
+    var xNombre    = mg + 24;
+    var xBadgeCol  = pageW - mg - 56;  // columna fija para TM6/Sobra
+    var xDerecha   = pageW - mg - 2;   // kcal+macros right-aligned
+    var wNombre    = xBadgeCol - xNombre - 2;  // max width for name text
+
+    // ── Header ────────────────────────────────────────────────────────────────
+    doc.setFillColor(cGreen[0], cGreen[1], cGreen[2]);
+    doc.rect(0, 0, pageW, 20, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
+    doc.setFontSize(15);
     doc.setFont('helvetica', 'bold');
-    doc.text('NutriPlan', margen, 14);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    const fechaHoy = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
-    doc.text(`Plan semanal · ${fechaHoy}`, pageW - margen, 14, { align: 'right' });
-    y = 28;
-
-    // Perfil resumen
-    doc.setTextColor(60, 60, 60);
+    doc.text('NutriPlan', mg, 13);
     doc.setFontSize(9);
-    const resumenPerfil = `${caloriasObj} kcal/día · ${factorComensales !== 1 ? `×${factorComensales.toFixed(2)} comensales · ` : ''}${perfil?.sinGluten ? 'Sin gluten · ' : ''}${perfil?.sinLactosa ? 'Sin lactosa · ' : ''}${perfil?.vegetariano ? 'Vegetariano · ' : ''}${perfil?.modoSobras ? '♻️ Modo sobras' : ''}`.replace(/ · $/, '');
-    doc.text(resumenPerfil, margen, y);
-    y += 6;
+    doc.setFont('helvetica', 'normal');
+    var fechaHoy = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+    doc.text('Plan semanal · ' + fechaHoy, pageW - mg, 13, { align: 'right' });
+    y = 26;
 
-    // Normalizar plan
-    const plan = planMulti && planMulti._numSemanas ? planMulti : { _numSemanas: 1, semana_1: planMulti || {} };
-    const numSemanas = plan._numSemanas || 1;
+    // ── Resumen perfil ────────────────────────────────────────────────────────
+    doc.setTextColor(cMed[0], cMed[1], cMed[2]);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    var partesPerfil = [caloriasObj + ' kcal/día'];
+    if (factorComensales !== 1) partesPerfil.push('×' + factorComensales.toFixed(2) + ' comensales');
+    if (perfil && perfil.sinGluten)   partesPerfil.push('Sin gluten');
+    if (perfil && perfil.sinLactosa)  partesPerfil.push('Sin lactosa');
+    if (perfil && perfil.vegetariano) partesPerfil.push('Vegetariano');
+    if (perfil && perfil.modoSobras)  partesPerfil.push('Modo sobras');
+    doc.text(partesPerfil.join(' · '), mg, y);
+    y += 8;
 
-    // Colores por tipo de comida
-    const COLORES = {
-      desayuno: [251, 191, 36],    // amber
-      snack_am: [134, 239, 172],   // green-300
-      almuerzo: [96, 165, 250],    // blue-400
-      snack_pm: [167, 139, 250],   // purple-400
-      cena: [244, 114, 182]        // pink-400
-    };
+    // ── Normalizar plan ───────────────────────────────────────────────────────
+    var plan = (planMulti && planMulti._numSemanas) ? planMulti : { _numSemanas: 1, semana_1: planMulti || {} };
+    var numSemanas = plan._numSemanas || 1;
 
-    for (let s = 1; s <= numSemanas; s++) {
-      const semana = plan['semana_' + s];
+    // ── Dibujar separador fino ────────────────────────────────────────────────
+    function hRule(yy) {
+      doc.setDrawColor(cLight[0], cLight[1], cLight[2]);
+      doc.line(mg, yy, pageW - mg, yy);
+    }
+
+    for (var s = 1; s <= numSemanas; s++) {
+      var semana = plan['semana_' + s];
       if (!semana) continue;
 
-      if (s > 1 || y > 40) {
-        if (y > pageH - 40) { doc.addPage(); y = margen; }
-      }
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.setTextColor(16, 185, 129);
-      doc.text(`Semana ${s}`, margen, y + 6);
-      y += 10;
+      if (y > pageH - 40) { doc.addPage(); y = mg; }
 
-      let totalKcalSem = 0, totalCostoSem = 0;
-
-      DIAS_PDF.forEach(dia => {
-        const comidasDia = semana[dia];
-        if (!comidasDia) return;
-
-        // Saltos de página
-        if (y > pageH - 40) { doc.addPage(); y = margen; }
-
-        // Día header
-        doc.setFillColor(240, 253, 244);
-        doc.rect(margen, y, pageW - margen * 2, 7, 'F');
-        doc.setTextColor(6, 95, 70);
+      if (numSemanas > 1) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
-        doc.text(dia, margen + 2, y + 5);
-        let kcalDia = 0, costoDia = 0;
+        doc.setTextColor(cGreen[0], cGreen[1], cGreen[2]);
+        doc.text('Semana ' + s, mg, y + 5);
+        y += 9;
+      }
+
+      var totalKcalSem = 0, totalCostoSem = 0;
+
+      DIAS_PDF.forEach(function(dia) {
+        var comidasDia = semana[dia];
+        if (!comidasDia) return;
+
+        if (y > pageH - 38) { doc.addPage(); y = mg; }
+
+        // ── Día header ───────────────────────────────────────────────────────
+        doc.setFillColor(cGreenBg[0], cGreenBg[1], cGreenBg[2]);
+        doc.rect(mg, y, PW, 7, 'F');
+        doc.setTextColor(cGreenDark[0], cGreenDark[1], cGreenDark[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        doc.text(dia.toUpperCase(), mg + 3, y + 5);
+        var kcalDia = 0, costoDia = 0;
         y += 9;
 
-        ORDEN_COMIDAS.forEach(tipo => {
-          const comida = comidasDia[tipo];
+        ORDEN_COMIDAS.forEach(function(tipo) {
+          var comida = comidasDia[tipo];
           if (!comida) return;
-          if (y > pageH - 15) { doc.addPage(); y = margen; }
+          if (y > pageH - 12) { doc.addPage(); y = mg; }
 
-          const kcal = comida.calorias_escaladas || 0;
-          const costo = Math.round((comida.costo_clp || 0) * (comida.factor_escala || 1) * factorComensales);
-          kcalDia += kcal;
+          var kcal  = comida.calorias_escaladas || 0;
+          var costo = Math.round((comida.costo_clp || 0) * (comida.factor_escala || 1) * factorComensales);
+          kcalDia  += kcal;
           costoDia += costo;
 
-          // Badge de tipo
-          const c = COLORES[tipo] || [120, 120, 120];
-          doc.setFillColor(c[0], c[1], c[2]);
-          doc.rect(margen + 2, y - 3, 22, 4.5, 'F');
-          doc.setTextColor(255, 255, 255);
+          // ── Etiqueta tipo (gris, sin color) ─────────────────────────────
+          doc.setFillColor(cBg[0], cBg[1], cBg[2]);
+          doc.setDrawColor(cLight[0], cLight[1], cLight[2]);
+          doc.roundedRect(xTipo, y - 3.5, wTipo, 5, 1, 1, 'FD');
           doc.setFont('helvetica', 'bold');
-          doc.setFontSize(7);
-          doc.text(NOMBRES_COMIDA_PDF[tipo] || tipo, margen + 13, y, { align: 'center' });
+          doc.setFontSize(6);
+          doc.setTextColor(cMed[0], cMed[1], cMed[2]);
+          doc.text((NOMBRES_COMIDA_PDF[tipo] || tipo).toUpperCase(), xTipo + wTipo / 2, y, { align: 'center' });
 
-          // Nombre receta
-          doc.setTextColor(40, 40, 40);
+          // ── Nombre receta ─────────────────────────────────────────────────
+          // Truncar al ancho disponible antes de cambiar el font
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(9);
-          const nombre = (comida.nombre || '').substring(0, 55);
-          doc.text(nombre, margen + 26, y);
+          doc.setTextColor(cDark[0], cDark[1], cDark[2]);
+          var nombreLineas = doc.splitTextToSize(comida.nombre || '', wNombre);
+          var nombreTrunc = nombreLineas[0] || '';
+          doc.text(nombreTrunc, xNombre, y);
 
-          // Macros + kcal + costo a la derecha
-          const macros = `${kcal} kcal · P${comida.proteinas_escaladas || 0} C${comida.carbohidratos_escalados || 0} G${comida.grasas_escaladas || 0}${costo ? ` · $${costo.toLocaleString('es-CL')}` : ''}`;
-          doc.setFontSize(7);
-          doc.setTextColor(107, 114, 128);
-          doc.text(macros, pageW - margen - 2, y, { align: 'right' });
+          // ── Badges TM6 / Sobra — columna FIJA a la derecha del nombre ────
+          var tieneTM6   = comida.instrucciones_thermomix && comida.instrucciones_thermomix.length > 0;
+          var tieneSobra = !!comida.es_sobra;
+          var xB = xBadgeCol;
 
-          // Badges extras (Sobra, TM6)
-          let xBadge = margen + 26 + doc.getTextWidth(nombre) + 2;
-          if (comida.es_sobra) {
-            doc.setFillColor(224, 231, 255);
-            doc.setTextColor(67, 56, 202);
-            doc.roundedRect(xBadge, y - 3, 10, 4, 1, 1, 'F');
-            doc.text('Sobra', xBadge + 5, y, { align: 'center' });
-            xBadge += 12;
+          if (tieneTM6) {
+            // Píldora verde — texto "TM6"
+            doc.setFillColor(cGreenBg[0], cGreenBg[1], cGreenBg[2]);
+            doc.setDrawColor(cGreen[0], cGreen[1], cGreen[2]);
+            doc.roundedRect(xB, y - 3.2, 10, 4.5, 1, 1, 'FD');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(6.5);
+            doc.setTextColor(cGreenDark[0], cGreenDark[1], cGreenDark[2]);
+            doc.text('TM6', xB + 5, y, { align: 'center' });
+            xB += 12;
           }
-          if (comida.instrucciones_thermomix && comida.instrucciones_thermomix.length > 0) {
-            doc.setFillColor(253, 230, 138);
-            doc.setTextColor(180, 83, 9);
-            doc.roundedRect(xBadge, y - 3, 8, 4, 1, 1, 'F');
-            doc.text('TM6', xBadge + 4, y, { align: 'center' });
+          if (tieneSobra) {
+            doc.setFillColor(cBg[0], cBg[1], cBg[2]);
+            doc.setDrawColor(cLight[0], cLight[1], cLight[2]);
+            doc.roundedRect(xB, y - 3.2, 12, 4.5, 1, 1, 'FD');
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(6);
+            doc.setTextColor(cMed[0], cMed[1], cMed[2]);
+            doc.text('Sobra', xB + 6, y, { align: 'center' });
           }
 
-          y += 5.5;
+          // ── kcal (verde) + macros (gris) alineados a la derecha ──────────
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8);
+          doc.setTextColor(cGreen[0], cGreen[1], cGreen[2]);
+          doc.text(kcal + ' kcal', xDerecha, y, { align: 'right' });
+
+          if (comida.proteinas_escaladas != null) {
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(6.5);
+            doc.setTextColor(cMed[0], cMed[1], cMed[2]);
+            var macStr = 'P:' + (comida.proteinas_escaladas || 0) +
+                         ' C:' + (comida.carbohidratos_escalados || 0) +
+                         ' G:' + (comida.grasas_escaladas || 0) +
+                         (costo ? '  $' + costo.toLocaleString('es-CL') : '');
+            doc.text(macStr, xDerecha, y + 3.5, { align: 'right' });
+          }
+
+          y += 8;
         });
 
-        // Total del día
-        doc.setDrawColor(229, 231, 235);
-        doc.line(margen + 2, y, pageW - margen - 2, y);
+        // ── Total del día ─────────────────────────────────────────────────────
+        hRule(y - 1);
+        doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
-        doc.setTextColor(107, 114, 128);
-        doc.text(`Total día: ${kcalDia} kcal${costoDia ? ` · $${costoDia.toLocaleString('es-CL')}` : ''}`, pageW - margen - 2, y + 3, { align: 'right' });
-        y += 6;
+        doc.setTextColor(cMed[0], cMed[1], cMed[2]);
+        doc.text('Total: ' + kcalDia + ' kcal' + (costoDia ? ' · $' + costoDia.toLocaleString('es-CL') : ''),
+          xDerecha, y + 2.5, { align: 'right' });
+        y += 7;
         totalKcalSem += kcalDia;
         totalCostoSem += costoDia;
       });
 
-      // Total semana
-      if (y > pageH - 20) { doc.addPage(); y = margen; }
-      doc.setFillColor(16, 185, 129);
-      doc.rect(margen, y, pageW - margen * 2, 7, 'F');
+      // ── Total semana ──────────────────────────────────────────────────────
+      if (y > pageH - 15) { doc.addPage(); y = mg; }
+      doc.setFillColor(cGreen[0], cGreen[1], cGreen[2]);
+      doc.rect(mg, y, PW, 7, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.text(`Total Semana ${s}: ${totalKcalSem.toLocaleString('es-CL')} kcal · ${totalCostoSem > 0 ? '$' + totalCostoSem.toLocaleString('es-CL') + ' CLP' : ''}`, margen + 2, y + 5);
-      y += 12;
+      doc.setFontSize(8.5);
+      doc.text('Total Semana ' + s + ': ' + totalKcalSem.toLocaleString('es-CL') + ' kcal' +
+        (totalCostoSem > 0 ? ' · $' + totalCostoSem.toLocaleString('es-CL') + ' CLP' : ''),
+        mg + 3, y + 5);
+      y += 11;
     }
 
-    // Footer de todas las páginas
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
+    // ── Footer todas las páginas ──────────────────────────────────────────────
+    var totalPages = doc.internal.getNumberOfPages();
+    for (var i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFontSize(7);
-      doc.setTextColor(156, 163, 175);
-      doc.text(`NutriPlan · Página ${i} de ${totalPages}`, pageW / 2, pageH - 5, { align: 'center' });
+      doc.setTextColor(cLight[0], cLight[1], cLight[2]);
+      doc.text('NutriPlan · Página ' + i + ' de ' + totalPages,
+        pageW / 2, pageH - 5, { align: 'center' });
     }
 
-    const fecha = new Date().toISOString().split('T')[0];
-    doc.save(`nutriplan-plan-${fecha}.pdf`);
+    var fecha = new Date().toISOString().split('T')[0];
+    doc.save('nutriplan-plan-' + fecha + '.pdf');
     return { paginas: totalPages };
   }
 
