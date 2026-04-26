@@ -212,7 +212,7 @@
 
         descripcion += `\\n🔥 Total: ${totalKcal} kcal`;
         if (comidasDia._costo_clp) {
-          descripcion += ` | 💰 $${Math.round(comidasDia._costo_clp).toLocaleString('es-CL')}`;
+          descripcion += ` | 💰 $${Math.ceil(comidasDia._costo_clp).toLocaleString('es-CL')}`;
         }
 
         const titulo = sumario.length > 0 
