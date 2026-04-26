@@ -484,9 +484,9 @@ const SCHEDULES_POR_DIAS = {
 };
 
 // ─── Genera el protocolo del día para la semana actual ───
-// • Ejercicios core siempre presentes.
+// • Ejercicios core adaptados al equipamiento disponible (si el equipo requerido no
+//   está disponible, se sustituye por el primer accesorio/extra disponible del pool).
 // • Accesorios del protocolo base + extras del pool rotan seeded por semana.
-// • Filtra por equipamiento disponible.
 // • Soporta tipos variantes A2/B2/C2: misma base, seed diferente → ejercicios distintos.
 function generarProtocoloDia(tipoDia, semanaNum, equiposDisp) {
   // Tipos variantes (A2 → base A, variante 2; B2 → base B, variante 2)
@@ -515,18 +515,31 @@ function generarProtocoloDia(tipoDia, semanaNum, equiposDisp) {
     return id === 'peso_corporal' || equipos.includes(id);
   }
 
+  // Seed determinístico por semana y variante
+  const seed = semanaNum * 1000 + baseDia.charCodeAt(0) + variantNum * 500;
+
   const coreSet = new Set(pool.core);
-  const coreEj = diaBase.ejercicios.filter(e => coreSet.has(e.nombre));
   const accesoriosBase = diaBase.ejercicios.filter(e => !coreSet.has(e.nombre) && _disponible(e));
   const extrasDisp = pool.extra.filter(_disponible);
 
-  const todoAccesorios = [...accesoriosBase, ...extrasDisp];
-  // variantNum desplaza el seed para que A y A2 produzcan listas distintas
-  const seed = semanaNum * 1000 + baseDia.charCodeAt(0) + variantNum * 500;
-  const shuffled = _seededShuffle(todoAccesorios, seed);
+  // Pool mezclado de accesorios disponibles (para sustituciones y relleno)
+  const shuffled = _seededShuffle([...accesoriosBase, ...extrasDisp], seed);
 
-  const nAccesorios = pool.totalSesion - coreEj.length;
-  const seleccionados = shuffled.slice(0, nAccesorios);
+  // Adaptar core: si un ejercicio core necesita equipo no disponible, sustituir
+  // por el primer alternativo disponible del pool (misma sesión, distinto equipo).
+  const usados = new Set();
+  const coreAdaptado = diaBase.ejercicios
+    .filter(e => coreSet.has(e.nombre))
+    .map(ej => {
+      if (_disponible(ej)) { usados.add(ej.nombre); return ej; }
+      const sub = shuffled.find(s => !usados.has(s.nombre));
+      if (sub)  { usados.add(sub.nombre); return sub; }
+      usados.add(ej.nombre); return ej; // sin sustituto — mantener con advertencia en UI
+    });
+
+  // Llenar slots de accesorios con lo que queda del pool (excluye ya usados)
+  const nAccesorios = pool.totalSesion - coreAdaptado.length;
+  const seleccionados = shuffled.filter(e => !usados.has(e.nombre)).slice(0, nAccesorios);
 
   const nombreDia = variantNum > 0
     ? diaBase.nombre + ' (variante ' + variantNum + ')'
@@ -534,9 +547,9 @@ function generarProtocoloDia(tipoDia, semanaNum, equiposDisp) {
 
   return Object.assign({}, diaBase, {
     nombre: nombreDia,
-    ejercicios: [...coreEj, ...seleccionados],
+    ejercicios: [...coreAdaptado, ...seleccionados],
     semana: semanaNum,
-    variante: (Math.abs(seed) % 99) + 1   // número de variante 1-99 para UI
+    variante: (Math.abs(seed) % 99) + 1
   });
 }
 

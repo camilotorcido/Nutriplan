@@ -305,7 +305,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425bx: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
+  // v20260425by: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 1 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
@@ -490,7 +490,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425bx: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425by: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
     const TOTAL_PASOS = 6;
     const PASOS_META = [
@@ -4370,7 +4370,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425bx)
+// COMPONENTE: HoyView — Dashboard diario (v20260425by)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -6063,45 +6063,11 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   };
 
   // ── Rearmar sesión con equipamiento disponible actual ──────────────────────
-  // Para ejercicios core que requieren equipo no disponible, busca un sustituto
-  // en el pool de extras con equipo compatible, preservando misma meta muscular.
+  // generarProtocoloDia ya adapta los ejercicios core al equipo disponible en
+  // cada render. Este botón persiste explícitamente la sesión actual en NP_Training.
   const rearmarSesion = () => {
-    if (!window.NP_RoadmapData || !window.NP_RoadmapData.generarProtocoloDia) return;
-    const nuevoProto = window.NP_RoadmapData.generarProtocoloDia(tipoDia, semanaNum, equiposDisp);
-    if (!nuevoProto) return;
-
-    const baseDia = String(tipoDia).replace(/\d+$/, '');
-    const pool = window.NP_RoadmapData.EJERCICIOS_POOL && window.NP_RoadmapData.EJERCICIOS_POOL[baseDia];
-
-    // Preservar datos logueados (peso, reps, done) por nombre de ejercicio
-    const logMap = {};
-    sesion.ejercicios.forEach(e => {
-      logMap[e.nombre] = { done: e.done, peso: e.peso, repsReales: e.repsReales };
-    });
-
-    // Sustituir ejercicios incompatibles con el mejor extra disponible
-    const usados = new Set(nuevoProto.ejercicios.map(e => e.nombre));
-    const finales = nuevoProto.ejercicios.map(ej => {
-      const eqId = getEquipoId(ej.equipo);
-      const disponible = eqId === 'peso_corporal' || equiposDisp.includes(eqId);
-      let ejFinal = ej;
-      if (!disponible && pool) {
-        const sub = pool.extra.find(ex => {
-          const exId = getEquipoId(ex.equipo);
-          return (exId === 'peso_corporal' || equiposDisp.includes(exId)) && !usados.has(ex.nombre);
-        });
-        if (sub) { usados.add(sub.nombre); usados.delete(ej.nombre); ejFinal = sub; }
-      }
-      const log = logMap[ejFinal.nombre] || {};
-      return {
-        nombre: ejFinal.nombre, setsEsperado: ejFinal.sets, repsEsperado: ejFinal.reps,
-        equipo: ejFinal.equipo, nota: ejFinal.nota || '',
-        done: log.done || false, peso: log.peso != null ? log.peso : null, repsReales: log.repsReales || null
-      };
-    });
-
-    window.NP_Training.guardar(Object.assign({}, sesion, { ejercicios: finales }));
-    if (window._NP_toast) window._NP_toast('Sesión adaptada a tu equipamiento disponible');
+    window.NP_Training.guardar(sesion);
+    if (window._NP_toast) window._NP_toast('Sesión guardada con tu equipamiento actual');
     onRefresh();
   };
 
