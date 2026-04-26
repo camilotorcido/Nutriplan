@@ -305,7 +305,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425br: Wizard onboarding — null = modo edición (form completo), 1-5 = paso activo
+  // v20260425bs: Wizard onboarding — null = modo edición (form completo), 1-5 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 1 : null);
 
   React.useEffect(() => {
@@ -489,7 +489,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425br: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425bs: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
     const TOTAL_PASOS = 5;
     const PASOS_META = [
@@ -1053,7 +1053,8 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               </button>
             )}
             <button type="button" onClick={avanzar} disabled={!!btnFinalDisabled}
-              className={`${pasoWizard > 1 ? 'flex-[2]' : 'w-full'} py-3.5 rounded-2xl font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              style={pasoWizard > 1 ? { flex: 2 } : {}}
+              className={`${pasoWizard > 1 ? '' : 'w-full'} py-3.5 rounded-2xl font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 btnFinalDisabled
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   : pasoWizard === TOTAL_PASOS
@@ -4305,7 +4306,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425br)
+// COMPONENTE: HoyView — Dashboard diario (v20260425bs)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
