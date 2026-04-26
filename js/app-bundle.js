@@ -305,7 +305,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260425by: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
+  // v20260425bz: Wizard onboarding — null = modo edición (form completo), 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 1 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
@@ -490,7 +490,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260425by: Wizard onboarding ──────────────────────────────────────
+  // ── v20260425bz: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
     const TOTAL_PASOS = 6;
     const PASOS_META = [
@@ -4370,7 +4370,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260425by)
+// COMPONENTE: HoyView — Dashboard diario (v20260425bz)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -6062,21 +6062,6 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
     }
   };
 
-  // ── Rearmar sesión con equipamiento disponible actual ──────────────────────
-  // generarProtocoloDia ya adapta los ejercicios core al equipo disponible en
-  // cada render. Este botón persiste explícitamente la sesión actual en NP_Training.
-  const rearmarSesion = () => {
-    window.NP_Training.guardar(sesion);
-    if (window._NP_toast) window._NP_toast('Sesión guardada con tu equipamiento actual');
-    onRefresh();
-  };
-
-  // Flag: hay ejercicios que piden equipo no marcado como disponible
-  const hayEjIncompatible = sesion.ejercicios.some(e => {
-    const id = getEquipoId(e.equipo);
-    return id !== 'peso_corporal' && !equiposDisp.includes(id);
-  });
-
   const completados = sesion.ejercicios.filter(e => e.done).length;
   const total = sesion.ejercicios.length;
   const pct = total > 0 ? Math.round((completados / total) * 100) : 0;
@@ -6212,31 +6197,6 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
               <i className="fas fa-rotate-left mr-1"></i>Reset
             </button>
           </div>
-          {/* Rearmar siempre disponible: re-genera la sesión con equipo actual y guarda */}
-          <button onClick={rearmarSesion}
-            className={`w-full mt-2 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-              hayEjIncompatible
-                ? 'bg-amber-500 hover:bg-amber-400 text-white'
-                : darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-200'
-            }`}>
-            <i className={`fas fa-arrows-rotate ${hayEjIncompatible ? '' : 'opacity-60'}`}></i>
-            {hayEjIncompatible ? 'Adaptar sesión a mi equipamiento' : 'Rearmar sesión con equipamiento actual'}
-          </button>
-        </div>
-      )}
-
-      {/* Banner: ejercicios incompatibles con equipamiento actual */}
-      {hayEjIncompatible && (
-        <div className={`rounded-xl px-4 py-3 flex items-center gap-3 ${darkMode ? 'bg-amber-900/30 border border-amber-700/50' : 'bg-amber-50 border border-amber-200'}`}>
-          <i className="fas fa-triangle-exclamation text-amber-500 flex-shrink-0"></i>
-          <div className="flex-1 min-w-0">
-            <div className={`text-sm font-semibold ${darkMode ? 'text-amber-300' : 'text-amber-800'}`}>Algunos ejercicios necesitan equipo no disponible</div>
-            <div className={`text-xs mt-0.5 ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>Usa el botón para reemplazarlos por equivalentes con lo que tienes.</div>
-          </div>
-          <button onClick={rearmarSesion}
-            className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-white text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap">
-            Adaptar ahora
-          </button>
         </div>
       )}
 
