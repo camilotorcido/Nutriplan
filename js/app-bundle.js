@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260428ae: Bilingual ES/EN support
+   v20260428af: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260428ae: Bilingual helpers ────────────────────────────────────────
+// ─── v20260428af: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -401,7 +401,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260428ae: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260428af: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
   // Previews para mantenimiento y volumen (paso 4)
@@ -672,7 +672,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     _mostrarExplicacion(perfilFinal);
   };
 
-  // ── v20260428ae: Wizard onboarding ──────────────────────────────────────
+  // ── v20260428af: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -2107,7 +2107,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           </div>
 
-          {/* Objetivo — v20260428ae: goal cards unificados, sin kcal subtitles */}
+          {/* Objetivo — v20260428af: goal cards unificados, sin kcal subtitles */}
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-bullseye text-green-500"></i>
@@ -5488,7 +5488,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260428ae)
+// COMPONENTE: ModalComidaExterna (v20260428af)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
 //   - Búsqueda en FOODS_DB + RECETAS_DB
@@ -5811,7 +5811,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260428ae)
+// COMPONENTE: HoyView — Dashboard diario (v20260428af)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -6490,7 +6490,7 @@ function NutricionLogView({ perfil, darkMode }) {
     const r = 38, C = 2 * Math.PI * r;
     const pArc = C * p / 100, cArc = C * c / 100, fArc = C * f / 100;
     return (
-      <svg viewBox="0 0 100 100" className="w-28 h-28 flex-shrink-0">
+      <svg viewBox="0 0 100 100" className="w-36 h-36">
         <circle cx="50" cy="50" r={r} fill="none" stroke={darkMode ? '#374151' : '#e5e7eb'} strokeWidth="15" />
         {p > 0 && <circle cx="50" cy="50" r={r} fill="none" stroke="#60a5fa" strokeWidth="15"
           strokeDasharray={`${pArc} ${C - pArc}`} transform="rotate(-90, 50, 50)" />}
@@ -6589,33 +6589,41 @@ function NutricionLogView({ perfil, darkMode }) {
         </div>
       </div>
 
-      {/* ── Composición de macros — donut SVG ── */}
+      {/* ── Composición de macros — donut SVG + leyenda vertical ── */}
       <div className={card}>
         <p className={`text-[10px] font-bold uppercase tracking-widest mb-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
           Composición de macros{datos.tieneMg && <span className={`ml-1 font-normal text-[9px] ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}> · C y G estimados*</span>}
         </p>
-        <div className="flex items-center gap-5">
+        {/* Donut centrado */}
+        <div className="flex justify-center mb-4">
           <DonutChart p={datos.protPct} c={datos.carbPct} f={datos.fatPct} />
-          <div className="flex-1 space-y-2">
-            {[
-              { label: 'Proteína', short: 'Prot', pct: datos.protPct, g: datos.avgProt, color: '#60a5fa', bg: darkMode ? 'bg-blue-900/30'  : 'bg-blue-50'  },
-              { label: 'Carbos',   short: 'Carb', pct: datos.carbPct, g: datos.avgCarb, color: '#fbbf24', bg: darkMode ? 'bg-amber-900/30' : 'bg-amber-50' },
-              { label: 'Grasa',    short: 'Gras', pct: datos.fatPct,  g: datos.avgFat,  color: '#f87171', bg: darkMode ? 'bg-rose-900/30'  : 'bg-rose-50'  },
-            ].map(item => (
-              <div key={item.label} className={`rounded-lg px-3 py-2 ${item.bg}`}>
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className={`text-[11px] flex-shrink-0 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{item.label}</span>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <span className="font-display text-xs font-semibold" style={{color: item.color}}>{item.g}g</span>
-                    <span className="font-display text-sm font-bold" style={{color: item.color}}>{item.pct}%</span>
-                  </div>
-                </div>
-                <div className="h-1 rounded-full overflow-hidden" style={{background: darkMode ? '#374151' : '#e5e7eb'}}>
-                  <div className="h-full rounded-full" style={{width: item.pct + '%', backgroundColor: item.color}}></div>
-                </div>
+        </div>
+        {/* Leyenda en 3 columnas — nunca overflows */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label: 'Proteína', pct: datos.protPct, g: datos.avgProt, color: '#60a5fa', bg: darkMode ? 'rgba(59,130,246,0.15)' : '#eff6ff' },
+            { label: 'Carbos',   pct: datos.carbPct, g: datos.avgCarb, color: '#fbbf24', bg: darkMode ? 'rgba(245,158,11,0.15)' : '#fffbeb' },
+            { label: 'Grasa',    pct: datos.fatPct,  g: datos.avgFat,  color: '#f87171', bg: darkMode ? 'rgba(248,113,113,0.15)' : '#fff1f2' },
+          ].map(item => (
+            <div key={item.label} className="rounded-xl p-3 text-center" style={{ background: item.bg }}>
+              {/* Porcentaje grande */}
+              <div className="font-display text-xl font-bold leading-none" style={{ color: item.color }}>
+                {item.pct}%
               </div>
-            ))}
-          </div>
+              {/* Label */}
+              <div className={`text-[10px] font-semibold mt-1 mb-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                {item.label}
+              </div>
+              {/* Gramos */}
+              <div className="font-display text-xs font-medium" style={{ color: item.color }}>
+                {item.g}g
+              </div>
+              {/* Mini barra */}
+              <div className="w-full h-1 rounded-full overflow-hidden mt-2" style={{ background: darkMode ? '#374151' : '#e5e7eb' }}>
+                <div className="h-full rounded-full" style={{ width: item.pct + '%', backgroundColor: item.color }}></div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -8619,7 +8627,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260428ae: Language state ───
+  // ─── v20260428af: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
