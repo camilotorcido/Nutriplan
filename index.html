@@ -51,7 +51,7 @@
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased" style="overscroll-behavior-y: contain;">
     <div id="root">
         <div id="app-loader">
             <div class="spinner"></div>
@@ -270,6 +270,114 @@
                 });
         });
     }
+    </script>
+
+    <!-- Fase PTR: Pull-to-Refresh → fuerza chequeo de Service Worker -->
+    <script>
+    (function() {
+      if (!('ontouchstart' in window) || !('serviceWorker' in navigator)) return;
+
+      /* ── Indicador visual (burbuja ámbar) ── */
+      var ind = document.createElement('div');
+      ind.style.cssText = [
+        'position:fixed', 'top:0', 'left:50%', 'z-index:99999',
+        'pointer-events:none', 'width:44px', 'height:44px',
+        'border-radius:50%', 'background:#C8943A',
+        'display:flex', 'align-items:center', 'justify-content:center',
+        'box-shadow:0 6px 20px rgba(200,148,58,0.45)',
+        'opacity:0', 'transform:translateX(-50%) translateY(-60px)',
+        'will-change:transform,opacity'
+      ].join(';');
+      document.body.appendChild(ind);
+
+      function setIcon(type) {
+        if (type === 'spin') {
+          ind.innerHTML = '<div style="width:20px;height:20px;border:2.5px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;"></div>';
+        } else {
+          ind.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><polyline points="2,8 6,12 14,4" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        }
+      }
+      setIcon('spin');
+
+      var startY = 0, delta = 0, active = false, locked = false;
+      var THRESHOLD = 72;
+
+      function applyMove(d) {
+        var ty = -60 + d * 0.55;
+        var op = Math.min(1, d / THRESHOLD);
+        var sc = 0.55 + op * 0.45;
+        ind.style.transition = 'none';
+        ind.style.transform = 'translateX(-50%) translateY(' + ty + 'px) scale(' + sc + ')';
+        ind.style.opacity = op;
+      }
+
+      function snapIn() {
+        ind.style.transition = 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1),opacity 0.15s ease';
+        ind.style.transform = 'translateX(-50%) translateY(14px) scale(1)';
+        ind.style.opacity = '1';
+      }
+
+      function snapOut() {
+        ind.style.transition = 'transform 0.28s ease,opacity 0.28s ease';
+        ind.style.transform = 'translateX(-50%) translateY(-60px) scale(0.7)';
+        ind.style.opacity = '0';
+        locked = false;
+      }
+
+      function doRefresh() {
+        locked = true;
+        setIcon('spin');
+        snapIn();
+        navigator.serviceWorker.getRegistration().then(function(reg) {
+          if (!reg) { setTimeout(function() { snapOut(); setTimeout(function() { setIcon('spin'); }, 350); }, 900); return; }
+          reg.update().then(function() {
+            if (reg.waiting) {
+              /* SW nuevo listo → activarlo (controllerchange recarga la página) */
+              reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+              /* No ocultamos el indicador — la recarga lo elimina */
+            } else {
+              /* Sin actualización disponible → checkmark 1s */
+              setIcon('check');
+              setTimeout(function() {
+                snapOut();
+                setTimeout(function() { setIcon('spin'); }, 350);
+              }, 1100);
+            }
+          }).catch(function() {
+            setTimeout(function() { snapOut(); setTimeout(function() { setIcon('spin'); }, 350); }, 700);
+          });
+        }).catch(function() {
+          setTimeout(function() { snapOut(); setTimeout(function() { setIcon('spin'); }, 350); }, 700);
+        });
+      }
+
+      document.addEventListener('touchstart', function(e) {
+        if (locked || window.scrollY > 4 || e.touches.length !== 1) return;
+        startY = e.touches[0].clientY;
+        delta = 0;
+        active = true;
+      }, { passive: true });
+
+      document.addEventListener('touchmove', function(e) {
+        if (!active || locked) return;
+        var d = e.touches[0].clientY - startY;
+        if (d <= 0) { active = false; return; }
+        delta = d;
+        applyMove(d);
+      }, { passive: true });
+
+      document.addEventListener('touchend', function() {
+        if (!active) return;
+        active = false;
+        if (delta >= THRESHOLD) { doRefresh(); } else { snapOut(); }
+        delta = 0;
+      }, { passive: true });
+
+      document.addEventListener('touchcancel', function() {
+        active = false; delta = 0;
+        if (!locked) snapOut();
+      }, { passive: true });
+    })();
     </script>
 </body>
 </html>
