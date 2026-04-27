@@ -9077,13 +9077,13 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             {[2,3,4,5,6].map(n => (
               <button key={n}
                 onClick={() => { localStorage.setItem('nutriplan_dias_semana', String(n)); setDiasSemana(n); }}
-                className={`w-10 h-10 rounded text-xs font-bold transition-all border ${
-                  diasSemana === n
-                    ? 'bg-orange-500 text-white border-orange-500'
-                    : darkMode
-                      ? 'bg-transparent text-gray-500 border-gray-600 hover:border-gray-400 hover:text-gray-300'
-                      : 'bg-transparent text-gray-400 border-gray-300 hover:border-gray-500 hover:text-gray-600'
-                }`}>
+                className="w-10 h-10 rounded text-xs font-bold cursor-pointer"
+                style={diasSemana === n
+                  ? { background: '#f97316', color: '#ffffff', border: '1px solid #f97316' }
+                  : darkMode
+                    ? { background: 'transparent', color: '#6b7280', border: '1px solid #4b5563' }
+                    : { background: 'transparent', color: '#4b5563', border: '1px solid #d1d5db' }
+                }>
                 {n}
               </button>
             ))}
@@ -9098,15 +9098,23 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             const esSugerido = !esDescanso && sugerido === t.k;
             return (
               <button key={t.k} onClick={() => setTipoDia(t.k)}
-                className={`py-2.5 rounded-lg font-semibold flex flex-col items-center gap-0.5 transition-all ${
-                  activo
-                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md'
+                className="rounded-lg font-semibold flex flex-col items-center cursor-pointer"
+                style={{
+                  padding: '10px 0',
+                  gap: '2px',
+                  ...(activo
+                    ? { background: 'linear-gradient(to right, #f97316, #ef4444)', color: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.15)' }
                     : esSugerido
-                      ? darkMode ? 'bg-orange-900/30 text-orange-300 border border-orange-700' : 'bg-orange-50 text-orange-600 border border-orange-200'
-                      : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
-                }`}>
+                      ? darkMode
+                        ? { background: 'rgba(234,88,12,0.15)', color: '#fb923c', border: '1px solid rgba(194,65,12,0.4)' }
+                        : { background: '#fff7ed', color: '#ea580c', border: '1px solid #fed7aa' }
+                      : darkMode
+                        ? { background: '#374151', color: '#d1d5db' }
+                        : { background: '#f9fafb', color: '#4b5563', border: '1px solid #e5e7eb' }
+                  )
+                }}>
                 <span className="text-sm">Día {t.short || t.k}</span>
-                <span className="text-[11px] opacity-80">{t.corto}</span>
+                <span style={{ fontSize: '11px', opacity: 0.8 }}>{t.corto}</span>
               </button>
             );
           })}
