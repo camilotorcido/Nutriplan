@@ -929,17 +929,18 @@ function convertirAMedidaCasera(cantidad, unidad, nombreNormalizado) {
   const tazas = cantidadML / 240;
   const cucharadas = cantidadML / 15;
   const cucharaditas = cantidadML / 5;
-  
-  // >= 0.8 tazas → expresar en tazas
-  if (tazas >= 0.8) {
+
+  // >= ¼ taza (60ml ≈ 4 cucharadas) → expresar en tazas
+  // Umbral bajo para que no aparezcan cantidades como "11 cucharadas" de avena
+  if (tazas >= 0.25) {
     return _fraccionLegible(tazas, 'taza', 'tazas');
   }
-  // >= 0.8 cucharadas → expresar en cucharadas
-  if (cucharadas >= 0.8) {
+  // < ¼ taza pero >= ½ cucharada → expresar en cucharadas (máx ~3 cucharadas)
+  if (cucharadas >= 0.5) {
     return _fraccionLegible(cucharadas, 'cucharada', 'cucharadas');
   }
-  // >= 0.4 cucharaditas → expresar en cucharaditas
-  if (cucharaditas >= 0.4) {
+  // >= ¼ cucharadita → expresar en cucharaditas
+  if (cucharaditas >= 0.25) {
     return _fraccionLegible(cucharaditas, 'cucharadita', 'cucharaditas');
   }
   // Muy poquito → pizca
