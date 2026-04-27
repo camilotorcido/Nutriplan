@@ -8822,54 +8822,213 @@ function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
   );
 }
 
-// ─── Mapa ejercicio → artículo Wikipedia para foto de referencia ───
-// Fuente: Wikipedia REST API /page/summary/{title} → thumbnail.source
-var WIKI_ARTICULOS = {
+// ─── Mapa ejercicio → grupo muscular (diagrama anatómico SVG) ───
+var EJERCICIO_MUSCULOS = {
   // Día A — Empuje
-  'press pecho cables':               'Bench_press',
-  'aperturas cable chest fly':        'Fly_(exercise)',
-  'press hombros cables bilateral':   'Shoulder_press',
-  'elevaciones laterales cable':      'Fly_(exercise)',
-  'tríceps pushdown cable':           'Pushdown_(exercise)',
-  'pike pushups':                     'Push-up',
-  'plancha frontal':                  'Plank_(exercise)',
-  'plancha lateral alternada':        'Side_plank',
-  // Jalón / espalda
-  'jalón al pecho':                   'Lat_pulldown',
-  'jalón agarre neutro':              'Lat_pulldown',
-  'remo cable sentado':               'Bent-over_row',
-  'remo con mancuerna':               'Bent-over_row',
-  'dominadas':                        'Pull-up_(exercise)',
-  'face pull':                        'Fly_(exercise)',
-  // Bíceps
-  'curl bíceps cable':                'Biceps_curl',
-  'curl martillo':                    'Hammer_curl',
-  // Piernas
-  'sentadilla goblet':                'Squat_(exercise)',
-  'sentadilla':                       'Squat_(exercise)',
-  'zancada':                          'Lunge_(exercise)',
-  'hip thrust':                       'Hip_thrust',
-  'peso muerto rumano':               'Romanian_deadlift',
-  'curl femoral':                     'Leg_curl',
-  'extensión cuádriceps':             'Leg_extension',
-  'elevación de talones':             'Calf_raise',
-  'step up':                          'Step_up_(exercise)',
-  // Pecho
-  'press de banca':                   'Bench_press',
-  'fondos':                           'Dip_(exercise)',
-  // Core
-  'crunch':                           'Crunch_(exercise)',
+  'press pecho cables (bajo-arriba)':  'pecho',
+  'aperturas cable chest fly':          'pecho',
+  'press hombros cables bilateral':     'hombros',
+  'elevaciones laterales cable':        'hombros',
+  'tríceps pushdown cable':            'triceps',
+  'pike pushups':                       'hombros',
+  'plancha frontal':                    'core',
+  'plancha lateral alternada':          'core',
+  // Día B — Piernas
+  'squat con cable frontal':            'cuadriceps',
+  'romanian deadlift cable':            'isquiotibiales',
+  'bulgarian split squat':              'gluteos',
+  'glute kickbacks cable':              'gluteos',
+  'curl de pierna cable':               'isquiotibiales',
+  'hip thrust en el suelo':            'gluteos',
+  'lunges alternados caminando':        'cuadriceps',
+  'sentadilla sumo amplia':            'cuadriceps',
+  // Día C — Jalar / Espalda
+  'rowing speediance (modo remo)':     'espalda',
+  'cable row sentado':                  'espalda',
+  'lat pulldown cable':                 'espalda',
+  'remo unilateral cable':              'espalda',
+  'face pulls cable':                   'hombros',
+  'curl bíceps cable supinado':        'biceps',
+  'superman extensión espalda':        'espalda_baja',
+  'dead hang / inverted row':          'espalda',
+  // Día D — Full Body Circuito
+  'burpees (o half-burpee)':           'full_body',
+  'sentadillas con salto':              'cuadriceps',
+  'mountain climbers':                  'core',
+  'rowing explosivo':                   'espalda',
+  'flexiones de brazos':                'pecho',
+  'lunges con rotación':               'cuadriceps',
+  'dead bug / hollow body':            'core',
+  'treadmill plano (ritmo moderado)':  'full_body',
+  // Extras / Upgrades
+  'cable crossover (alto-abajo)':      'pecho',
+  'tríceps overhead cable':            'triceps',
+  'fondos en banco (triceps dip)':     'triceps',
+  'rotación externa cable (hombro)':   'hombros',
+  'flexiones declinadas':               'pecho',
+  'step-ups (cajón/silla)':           'gluteos',
+  'abductores cable (de pie)':         'gluteos',
+  'sentadilla goblet':                  'cuadriceps',
+  'frog pumps':                         'gluteos',
+  'sentadilla pistol asistida':        'cuadriceps',
+  'curl martillo cable':               'biceps',
+  'pullover cable':                     'espalda',
+  'high row cable':                     'espalda',
+  'shrug cable':                        'trapecio',
 };
 
-function wikiArticleForEjercicio(nombre) {
-  return WIKI_ARTICULOS[nombre.toLowerCase().trim()] || null;
+function musculoParaEjercicio(nombre) {
+  return EJERCICIO_MUSCULOS[nombre.toLowerCase().trim()] || 'full_body';
 }
 
-// ─── EjercicioCard: tarjeta individual con foto de referencia vía Wikipedia ───
+// ─── Diagrama anatómico SVG — siempre disponible, sin red, crisp a cualquier tamaño ───
+function MusculoDiagrama({ nombre, darkMode }) {
+  var grupo = musculoParaEjercicio(nombre);
+  var BASE = darkMode ? '#3a5068' : '#94a3b8';
+  var H1   = '#f59e0b';
+  var H2   = '#fcd34d';
+  var HEAD = darkMode ? '#4a6275' : '#b8cdd9';
+
+  var p = {
+    lShould: BASE, rShould: BASE,
+    lPec: BASE, rPec: BASE,
+    lBicep: BASE, rBicep: BASE,
+    lTricep: BASE, rTricep: BASE,
+    upperAbs: BASE, lowerAbs: BASE,
+    trapecio: BASE,
+    upperBack: BASE, lowerBack: BASE,
+    lGlute: BASE, rGlute: BASE,
+    lQuad: BASE, rQuad: BASE,
+    lHam: BASE, rHam: BASE,
+    lCalf: BASE, rCalf: BASE,
+  };
+
+  var view = 'front';
+  var etiqueta = '';
+
+  switch (grupo) {
+    case 'pecho':
+      p.lPec = H1; p.rPec = H1; p.lShould = H2; p.rShould = H2;
+      etiqueta = 'Pectoral'; break;
+    case 'hombros':
+      p.lShould = H1; p.rShould = H1; p.lTricep = H2; p.rTricep = H2;
+      etiqueta = 'Deltoides'; break;
+    case 'triceps':
+      p.lTricep = H1; p.rTricep = H1;
+      etiqueta = 'Tríceps'; break;
+    case 'biceps':
+      p.lBicep = H1; p.rBicep = H1;
+      etiqueta = 'Bíceps'; break;
+    case 'core':
+      p.upperAbs = H1; p.lowerAbs = H1;
+      etiqueta = 'Core'; break;
+    case 'espalda':
+      view = 'back'; p.upperBack = H1; p.lShould = H2; p.rShould = H2;
+      etiqueta = 'Espalda · Dorsales'; break;
+    case 'espalda_baja':
+      view = 'back'; p.lowerBack = H1; p.upperBack = H2;
+      etiqueta = 'Espalda baja'; break;
+    case 'trapecio':
+      view = 'back'; p.trapecio = H1; p.lShould = H2; p.rShould = H2;
+      etiqueta = 'Trapecio'; break;
+    case 'gluteos':
+      view = 'back'; p.lGlute = H1; p.rGlute = H1; p.lHam = H2; p.rHam = H2;
+      etiqueta = 'Glúteos'; break;
+    case 'cuadriceps':
+      p.lQuad = H1; p.rQuad = H1; p.lGlute = H2; p.rGlute = H2;
+      etiqueta = 'Cuádriceps'; break;
+    case 'isquiotibiales':
+      view = 'back'; p.lHam = H1; p.rHam = H1; p.lGlute = H2; p.rGlute = H2;
+      etiqueta = 'Isquiotibiales'; break;
+    case 'full_body': default:
+      p.lPec = H2; p.rPec = H2; p.lShould = H2; p.rShould = H2;
+      p.upperAbs = H2; p.lowerAbs = H2; p.lQuad = H2; p.rQuad = H2;
+      etiqueta = 'Full Body'; break;
+  }
+
+  var labelClr = H1;
+  var subClr = darkMode ? '#64748b' : '#94a3b8';
+  var vista = view === 'back' ? 'Vista posterior' : 'Vista frontal';
+
+  if (view === 'front') {
+    return (
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'6px', padding:'14px 0 10px' }}>
+        <svg viewBox="0 0 110 208" style={{ width:'84px', height:'auto' }} aria-label={'Músculo: ' + etiqueta}>
+          <circle cx="55" cy="18" r="13" fill={HEAD} />
+          <rect x="51" y="30" width="8" height="9" rx="2" fill={BASE} />
+          {/* Triceps — outer edge of upper arm, rendered first so bicep overlaps */}
+          <rect x="13" y="42" width="9" height="35" rx="4" fill={p.lTricep} />
+          <rect x="88" y="42" width="9" height="35" rx="4" fill={p.rTricep} />
+          {/* Shoulders */}
+          <ellipse cx="33" cy="45" rx="13" ry="8" fill={p.lShould} />
+          <ellipse cx="77" cy="45" rx="13" ry="8" fill={p.rShould} />
+          {/* Pectorals */}
+          <ellipse cx="45" cy="57" rx="12" ry="9" fill={p.lPec} />
+          <ellipse cx="65" cy="57" rx="12" ry="9" fill={p.rPec} />
+          {/* Upper Abs */}
+          <rect x="42" y="64" width="26" height="12" rx="4" fill={p.upperAbs} />
+          {/* Lower Abs */}
+          <rect x="43" y="77" width="24" height="12" rx="4" fill={p.lowerAbs} />
+          {/* Pelvis */}
+          <ellipse cx="55" cy="95" rx="19" ry="9" fill={BASE} />
+          {/* Biceps — front of upper arm, on top of tricep */}
+          <rect x="18" y="40" width="13" height="38" rx="6" fill={p.lBicep} />
+          <rect x="79" y="40" width="13" height="38" rx="6" fill={p.rBicep} />
+          {/* Forearms */}
+          <rect x="19" y="79" width="11" height="29" rx="5" fill={BASE} />
+          <rect x="80" y="79" width="11" height="29" rx="5" fill={BASE} />
+          {/* Quads */}
+          <rect x="33" y="103" width="19" height="52" rx="8" fill={p.lQuad} />
+          <rect x="58" y="103" width="19" height="52" rx="8" fill={p.rQuad} />
+          {/* Calves */}
+          <rect x="34" y="157" width="16" height="36" rx="7" fill={p.lCalf} />
+          <rect x="60" y="157" width="16" height="36" rx="7" fill={p.rCalf} />
+        </svg>
+        <span style={{ fontSize:'11px', fontWeight:'700', color:labelClr, letterSpacing:'0.03em' }}>{etiqueta}</span>
+        <span style={{ fontSize:'10px', color:subClr }}>{vista}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'6px', padding:'14px 0 10px' }}>
+      <svg viewBox="0 0 110 208" style={{ width:'84px', height:'auto' }} aria-label={'Músculo: ' + etiqueta}>
+        <circle cx="55" cy="18" r="13" fill={HEAD} />
+        <rect x="51" y="30" width="8" height="9" rx="2" fill={BASE} />
+        {/* Trapezius */}
+        <path d="M43,32 L67,32 L78,52 L32,52 Z" fill={p.trapecio} />
+        {/* Shoulders (posterior) */}
+        <ellipse cx="33" cy="50" rx="13" ry="7" fill={p.lShould} />
+        <ellipse cx="77" cy="50" rx="13" ry="7" fill={p.rShould} />
+        {/* Upper Back (lats / rhomboids) */}
+        <rect x="39" y="50" width="32" height="28" rx="5" fill={p.upperBack} />
+        {/* Lower Back / Erector spinae */}
+        <rect x="43" y="76" width="24" height="22" rx="4" fill={p.lowerBack} />
+        {/* Triceps (back view — fully visible) */}
+        <rect x="18" y="40" width="13" height="40" rx="6" fill={p.lTricep} />
+        <rect x="79" y="40" width="13" height="40" rx="6" fill={p.rTricep} />
+        {/* Forearms */}
+        <rect x="19" y="81" width="11" height="28" rx="5" fill={BASE} />
+        <rect x="80" y="81" width="11" height="28" rx="5" fill={BASE} />
+        {/* Glutes */}
+        <ellipse cx="46" cy="108" rx="14" ry="12" fill={p.lGlute} />
+        <ellipse cx="64" cy="108" rx="14" ry="12" fill={p.rGlute} />
+        {/* Hamstrings */}
+        <rect x="33" y="118" width="19" height="48" rx="8" fill={p.lHam} />
+        <rect x="58" y="118" width="19" height="48" rx="8" fill={p.rHam} />
+        {/* Calves */}
+        <rect x="34" y="168" width="16" height="32" rx="7" fill={p.lCalf} />
+        <rect x="60" y="168" width="16" height="32" rx="7" fill={p.rCalf} />
+      </svg>
+      <span style={{ fontSize:'11px', fontWeight:'700', color:labelClr, letterSpacing:'0.03em' }}>{etiqueta}</span>
+      <span style={{ fontSize:'10px', color:subClr }}>{vista}</span>
+    </div>
+  );
+}
+
+// ─── EjercicioCard: tarjeta individual de ejercicio ───
 function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, bajó, onToggle, onSetPeso, onSetReps }) {
-  const [mostrarFotos, setMostrarFotos] = React.useState(false);
-  const [fotoEstado, setFotoEstado] = React.useState('idle'); // idle | loading | ok | vacio | error
-  const [fotos, setFotos] = React.useState([]);
+  const [mostrarDiagrama, setMostrarDiagrama] = React.useState(false);
 
   const eqId = getEquipoId(e.equipo);
   const esPesoCorporal = eqId === 'peso_corporal';
@@ -8886,29 +9045,6 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
   const eqInfo = eqNoDisp && window.NP_RoadmapData && window.NP_RoadmapData.EQUIPOS_DISPONIBLES
     ? window.NP_RoadmapData.EQUIPOS_DISPONIBLES.find(eq => eq.id === eqId)
     : null;
-
-  function fetchFotos() {
-    if (fotoEstado !== 'idle') return;
-    setFotoEstado('loading');
-    // Wikipedia REST API: free, CORS-open, sin API key, foto real del ejercicio
-    const articulo = wikiArticleForEjercicio(e.nombre);
-    if (!articulo) { setFotoEstado('vacio'); return; }
-    fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(articulo))
-      .then(r => r.json())
-      .then(data => {
-        const img = data.thumbnail && data.thumbnail.source;
-        if (!img) { setFotoEstado('vacio'); return; }
-        setFotos([img]);
-        setFotoEstado('ok');
-      })
-      .catch(() => setFotoEstado('error'));
-  }
-
-  function toggleFotos() {
-    const siguiente = !mostrarFotos;
-    setMostrarFotos(siguiente);
-    if (siguiente && fotoEstado === 'idle') fetchFotos();
-  }
 
   return (
     <div className={`rounded-xl p-4 transition-colors ${
@@ -8928,14 +9064,14 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
                 <span>ver video</span>
               </a>
             )}
-            <button onClick={toggleFotos}
+            <button onClick={() => setMostrarDiagrama(!mostrarDiagrama)}
               className={`flex items-center gap-1 text-xs font-medium transition-colors cursor-pointer ${
-                mostrarFotos
+                mostrarDiagrama
                   ? darkMode ? 'text-amber-400' : 'text-amber-600'
                   : darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
               }`}>
-              <i className={`fas ${mostrarFotos ? 'fa-images' : 'fa-camera'}`}></i>
-              <span>fotos</span>
+              <i className="fas fa-person"></i>
+              <span>músculos</span>
             </button>
           </div>
           {protEj && protEj.descripcion && (
@@ -8959,38 +9095,10 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
         </button>
       </div>
 
-      {/* Panel de foto de referencia (Wikipedia) */}
-      {mostrarFotos && (
-        <div className={`mt-3 rounded-xl overflow-hidden ${darkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
-          {fotoEstado === 'loading' && (
-            <div className="flex items-center justify-center gap-2 py-6 text-xs text-gray-400">
-              <div className="w-4 h-4 border-2 border-gray-300 border-t-amber-500 rounded-full animate-spin"></div>
-              <span>Cargando foto...</span>
-            </div>
-          )}
-          {fotoEstado === 'ok' && (
-            <div className="relative">
-              <img src={fotos[0]} alt={e.nombre}
-                className="w-full object-cover object-top"
-                style={{ maxHeight: '220px' }} />
-              <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-3 py-1.5 bg-black/40">
-                <span className="text-[11px] text-white font-medium">{e.nombre}</span>
-                <span className="text-[9px] text-white/50">Wikipedia</span>
-              </div>
-            </div>
-          )}
-          {fotoEstado === 'vacio' && (
-            <div className="text-center py-5 text-xs text-gray-400">
-              <i className="fas fa-image mr-1 opacity-40"></i>
-              Sin foto disponible para este ejercicio
-            </div>
-          )}
-          {fotoEstado === 'error' && (
-            <div className="text-center py-5 text-xs text-gray-400">
-              <i className="fas fa-circle-exclamation mr-1 opacity-40"></i>
-              No se pudo cargar — verifica tu conexión
-            </div>
-          )}
+      {/* Diagrama anatómico del grupo muscular — SVG inline, sin red */}
+      {mostrarDiagrama && (
+        <div style={{ marginTop:'12px', borderRadius:'12px', background: darkMode ? 'rgba(55,65,81,0.4)' : '#f8fafc' }}>
+          <MusculoDiagrama nombre={e.nombre} darkMode={darkMode} />
         </div>
       )}
 
