@@ -223,15 +223,15 @@ function generarPlanSemanal(perfil, caloriasObjetivo) {
         
         if (recetasDisponibles.length > 0) {
           // Preferir recetas no usadas en 14 días ni en todo el plan multi-semana
-          let candidatas = recetasDisponibles.filter(r => 
+          let candidatas = recetasDisponibles.filter(r =>
             !recetasUsadas14.has(r.id) && !recetasUsadasGlobal.has(r.id)
           );
-          
+
           // Relajar: solo excluir las del plan global
           if (candidatas.length === 0) {
             candidatas = recetasDisponibles.filter(r => !recetasUsadasGlobal.has(r.id));
           }
-          
+
           // Si aún no hay, usar cualquiera
           if (candidatas.length === 0) {
             candidatas = recetasDisponibles;
@@ -239,7 +239,21 @@ function generarPlanSemanal(perfil, caloriasObjetivo) {
               advertenciaRecetas = `Pocas recetas de "${NOMBRES_COMIDAS[tipoComida]}" disponibles. Se reutilizaron algunas.`;
             }
           }
-          
+
+          // Prioridad proteína: cuando hay objetivo científico (LBM-based), ordenar candidatas
+          // por densidad proteica (g/kcal) y restringir a la mitad superior.
+          // Mantiene variedad aleatoria dentro del pool de alto contenido proteico.
+          if (perfil.proteinaFloor && perfil.proteinaFloor > 0 && candidatas.length > 2) {
+            const sorted = candidatas.slice().sort((a, b) => {
+              const ratioA = a.calorias_base > 0 ? a.proteinas_g / a.calorias_base : 0;
+              const ratioB = b.calorias_base > 0 ? b.proteinas_g / b.calorias_base : 0;
+              return ratioB - ratioA;
+            });
+            // Tomar el 60% superior (al menos 2 recetas para mantener variedad)
+            const topN = Math.max(2, Math.ceil(sorted.length * 0.6));
+            candidatas = sorted.slice(0, topN);
+          }
+
           const idx = Math.floor(Math.random() * candidatas.length);
           const recetaSeleccionada = candidatas[idx];
           recetasUsadasGlobal.add(recetaSeleccionada.id);
@@ -325,13 +339,24 @@ function cambiarRecetaIndividual(planMulti, dia, tipoComida, perfil, caloriasObj
     const recetaActual = semanaActual[dia]?.[tipoComida];
     candidatas = recetasDelTipo.filter(r => !recetaActual || r.id !== recetaActual.id);
   }
-  
+
   if (candidatas.length === 0) return plan;
-  
+
+  // Prioridad proteína: igual que en el generador principal
+  if (perfil.proteinaFloor && perfil.proteinaFloor > 0 && candidatas.length > 2) {
+    const sorted = candidatas.slice().sort((a, b) => {
+      const ratioA = a.calorias_base > 0 ? a.proteinas_g / a.calorias_base : 0;
+      const ratioB = b.calorias_base > 0 ? b.proteinas_g / b.calorias_base : 0;
+      return ratioB - ratioA;
+    });
+    const topN = Math.max(2, Math.ceil(sorted.length * 0.6));
+    candidatas = sorted.slice(0, topN);
+  }
+
   const caloriasComida = Math.round(caloriasObjetivo * DISTRIBUCION_COMIDAS[tipoComida]);
   const idx = Math.floor(Math.random() * candidatas.length);
   const nuevaReceta = escalarReceta(candidatas[idx], caloriasComida);
-  
+
   // Actualizar plan multi-semana
   const nuevoPlan = { ...plan };
   nuevoPlan[semanaKey] = { ...semanaActual, [dia]: { ...semanaActual[dia], [tipoComida]: nuevaReceta } };
@@ -1385,11 +1410,22 @@ async function generarPlanSemanalAsync(perfil, caloriasObjetivo, onProgreso) {
               advertenciaRecetas = `Pocas recetas de "${NOMBRES_COMIDAS[tipoComida]}" disponibles. Se reutilizaron algunas.`;
             }
           }
-          
+
+          // Prioridad proteína: igual que en el generador síncrono
+          if (perfil.proteinaFloor && perfil.proteinaFloor > 0 && candidatas.length > 2) {
+            const sorted = candidatas.slice().sort((a, b) => {
+              const ratioA = a.calorias_base > 0 ? a.proteinas_g / a.calorias_base : 0;
+              const ratioB = b.calorias_base > 0 ? b.proteinas_g / b.calorias_base : 0;
+              return ratioB - ratioA;
+            });
+            const topN = Math.max(2, Math.ceil(sorted.length * 0.6));
+            candidatas = sorted.slice(0, topN);
+          }
+
           const idx = Math.floor(Math.random() * candidatas.length);
           const recetaSeleccionada = candidatas[idx];
           recetasUsadasGlobal.add(recetaSeleccionada.id);
-          
+
           planSemana[dia][tipoComida] = escalarReceta(recetaSeleccionada, caloriasComida);
         } else {
           planSemana[dia][tipoComida] = null;

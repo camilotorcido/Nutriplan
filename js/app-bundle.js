@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260427tt: Bilingual ES/EN support
+   v20260427uu: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260427tt: Bilingual helpers ────────────────────────────────────────
+// ─── v20260427uu: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -327,11 +327,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
       const fatLossInferido = perfilInicial.fatLossMode !== undefined
         ? perfilInicial.fatLossMode
         : perfilInicial.objetivo === 'perdida';
-      // FL fuerza macros 33/38/29 para coincidir con proteinaTarget (2.2 g/kg)
-      const macrosSync = fatLossInferido
-        ? { proteinas: 33, carbohidratos: 38, grasas: 29 }
-        : perfilInicial.macros;
-      return { ...perfilInicial, fatLossMode: fatLossInferido, macros: macrosSync };
+      // Usar macros ya almacenados (calculados por activarFatLossMode/Mantenimiento/Volumen)
+      // No forzar valores hardcodeados — el roadmap guarda los porcentajes reales
+      return { ...perfilInicial, fatLossMode: fatLossInferido };
     }
     return {
       edad: "",
@@ -364,7 +362,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260427tt: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260427uu: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
   // Previews para mantenimiento y volumen (paso 4)
@@ -635,7 +633,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     _mostrarExplicacion(perfilFinal);
   };
 
-  // ── v20260427tt: Wizard onboarding ──────────────────────────────────────
+  // ── v20260427uu: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -1966,7 +1964,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           </div>
 
-          {/* Objetivo — v20260427tt: goal cards unificados, sin kcal subtitles */}
+          {/* Objetivo — v20260427uu: goal cards unificados, sin kcal subtitles */}
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-bullseye text-green-500"></i>
@@ -5292,7 +5290,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260427tt)
+// COMPONENTE: ModalComidaExterna (v20260427uu)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
 //   - Búsqueda en FOODS_DB + RECETAS_DB
@@ -5615,7 +5613,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260427tt)
+// COMPONENTE: HoyView — Dashboard diario (v20260427uu)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -5777,9 +5775,12 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
     grasas:        Math.round(consumidoHoy.grasas)
   };
   var metaKcalDia = (perfil && perfil.caloriasObjetivo) || resumenHoy.calorias || 0;
-  var metaProtDia = resumenHoy.proteinas     || 0;
-  var metaCarbDia = resumenHoy.carbohidratos || 0;
-  var metaGrasDia = resumenHoy.grasas        || 0;
+  // Leer metas de macros desde el roadmap científico (LBM × factor), no desde el output del plan
+  var _rm  = perfil && (perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen);
+  var _mgr = _rm && _rm.calculados && _rm.calculados.macrosGramos;
+  var metaProtDia = _mgr ? Math.round(_mgr.proteina)      : (resumenHoy.proteinas     || 0);
+  var metaCarbDia = _mgr ? Math.round(_mgr.carbohidratos) : (resumenHoy.carbohidratos || 0);
+  var metaGrasDia = _mgr ? Math.round(_mgr.grasas)        : (resumenHoy.grasas        || 0);
 
   const pctKcal = perfil && perfil.caloriasObjetivo && resumenTotal.calorias > 0
     ? Math.min(100, Math.round((resumenTotal.calorias / perfil.caloriasObjetivo) * 100)) : 0;
@@ -8095,7 +8096,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260427tt: Language state ───
+  // ─── v20260427uu: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
