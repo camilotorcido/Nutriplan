@@ -149,6 +149,62 @@ function cargarDarkMode() {
 // ─── Fase 7.2: cleanup one-shot de claves obsoletas (despensa inteligente) ───
 try { ['nutriplan_fechas_compra', 'nutriplan_notif_ultima'].forEach(k => localStorage.removeItem(k)); } catch (e) {}
 
+// ─── Migración UTF-8: reparar strings con encoding Latin-1 roto (one-shot) ───
+// Ocurre cuando el archivo JS fue servido con Content-Type: text/plain (no UTF-8)
+// y los chars multibyte del nombre se guardaron como bytes Latin-1 individuales.
+// Ejemplo: 'proteína' → 'proteÃ­na' (Ã=0xC3, soft-hyphen=0xAD).
+// Algoritmo: si todos los char codes ≤ 255, tratarlos como bytes y decodificar
+// como UTF-8. Si el resultado no tiene chars de reemplazo (U+FFFD), es válido.
+(function() {
+  try {
+    if (localStorage.getItem('nutriplan_utf8_repair_v1')) return; // ya corrido
+
+    function _repararVal(v) {
+      if (typeof v === 'string') {
+        // Sólo actuar si hay chars en el rango Latin-1 extendido (0x80-0xFF)
+        if (!/[-ÿ]/.test(v)) return v;
+        try {
+          const bytes = new Uint8Array(v.length);
+          for (let i = 0; i < v.length; i++) {
+            const c = v.charCodeAt(i);
+            if (c > 255) return v; // char Unicode real → no es Latin-1 misread
+            bytes[i] = c;
+          }
+          const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+          return decoded.includes('�') ? v : decoded;
+        } catch { return v; }
+      }
+      if (Array.isArray(v)) return v.map(_repararVal);
+      if (v && typeof v === 'object') {
+        const r = {};
+        for (const k in v) r[k] = _repararVal(v[k]);
+        return r;
+      }
+      return v;
+    }
+
+    const CLAVES = [
+      'nutriplan_comidas_externas',
+      'nutriplan_adherencia',
+      'nutriplan_plan_semanal',
+      'nutriplan_perfil',
+      'nutriplan_historial_recetas',
+      'nutriplan_recetas_generadas'
+    ];
+
+    CLAVES.forEach(function(key) {
+      var raw = localStorage.getItem(key);
+      if (!raw || !/[-ÿ]/.test(raw)) return; // nada que reparar
+      try {
+        var fixed = _repararVal(JSON.parse(raw));
+        localStorage.setItem(key, JSON.stringify(fixed));
+      } catch (e) {}
+    });
+
+    localStorage.setItem('nutriplan_utf8_repair_v1', '1');
+  } catch (e) {}
+})();
+
 // ─── Limpiar todo ───
 function limpiarTodo() {
   Object.values(STORAGE_KEYS).forEach(clave => {
