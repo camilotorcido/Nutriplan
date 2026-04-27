@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Equivalencias de ingredientes
+   Calibrate — Equivalencias de ingredientes
    Tabla de sustitución con ajuste de macros
    ============================================ */
 

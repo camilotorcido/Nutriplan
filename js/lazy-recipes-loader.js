@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Lazy Recipes Loader (Fase 6.2)
+   Calibrate — Lazy Recipes Loader (Fase 6.2)
    Difiere la carga de recipes-extra.js (212 KB) y los upgrades
    (thermomix + metadata = ~12 KB) hasta el primer uso real.
    

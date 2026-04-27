@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Recetas Extra (ampliación 2026)
+   Calibrate — Recetas Extra (ampliación 2026)
    80 recetas adicionales para duplicar la base local:
    - 16 desayunos (d17-d32)
    - 16 snacks AM (sa17-sa32)

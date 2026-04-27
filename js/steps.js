@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Step Tracker (v20260418aa)
+   Calibrate — Step Tracker (v20260418aa)
    Log manual de pasos diarios. Target dinámico según fase activa.
    ============================================ */
 

@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Alcohol Calculator (v20260418ag)
+   Calibrate — Alcohol Calculator (v20260418ag)
    Log de bebidas + impacto semanal (oxidación grasa + síntesis proteica).
    Fuente de datos: NP_RoadmapData.ALCOHOL_BEBIDAS + ALCOHOL_IMPACTO.
    ============================================ */

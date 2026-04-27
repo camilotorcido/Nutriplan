@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Motor de Cálculos Nutricionales
+   Calibrate — Motor de Cálculos Nutricionales
    Incluye: TDEE (Mifflin-St Jeor), escalado de 
    recetas, distribución de macros, generación 
    de plan semanal, historial 14 días, swap

@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Fat Loss Integration (orquestador)
+   Calibrate — Fat Loss Integration (orquestador)
    Conecta el motor de roadmap con el perfil persistido
    y expone helpers de UI para banner, calorías efectivas y proteína target.
    ============================================ */

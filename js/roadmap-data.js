@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Fat Loss Roadmap: tablas estáticas
+   Calibrate — Fat Loss Roadmap: tablas estáticas
    Datos de referencia del método Precision Nutrition.
    Sin side effects, sin lógica — puros datos.
    ============================================ */

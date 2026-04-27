@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Upgrade Thermomix para recetas locales
+   Calibrate — Upgrade Thermomix para recetas locales
    Aplica el generador profesional _generarThermomixDesdeInstrucciones
    (expuesto en recipeAPI.js como window.generarThermomixProfesional)
    a todas las recetas de ALMUERZO y CENA de RECETAS_DB.

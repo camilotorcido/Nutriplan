@@ -1,5 +1,5 @@
 ﻿/* ============================================
-   NutriPlan - Módulo de Autenticación (v20260425bv)
+   Calibrate — Módulo de Autenticación (v20260425bv)
    Requiere: firebase-config.js cargado antes.
    Expone: window.NP_Auth
    ============================================ */

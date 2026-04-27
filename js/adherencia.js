@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Sistema de adherencia
+   Calibrate — Sistema de adherencia
    Registro "comí/no comí" + dashboard histórico
    ============================================ */
 

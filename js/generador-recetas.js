@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Generador paramétrico de recetas (Nivel B profesional)
+   Calibrate — Generador paramétrico de recetas (Nivel B profesional)
    
    Combina:
    - Proteína (18 opciones con perfil nutricional + cortes)

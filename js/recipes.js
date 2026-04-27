@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Base de Datos de Recetas
+   Calibrate — Base de Datos de Recetas
    30+ recetas en español latino
    MEJORA 1: Cada ingrediente incluye nombre_normalizado,
    nombre_display, unidad_compra, factor_conversion y

@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Gestión de LocalStorage
+   Calibrate — Gestión de LocalStorage
    Persistencia completa de datos de usuario
    MEJORAS: historial 14 días, dark mode
    ============================================ */

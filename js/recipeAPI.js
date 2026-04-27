@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Servicio de Recetas Online
+   Calibrate — Servicio de Recetas Online
    Fuente: TheMealDB (free, no auth, CORS OK)
    Genera nombres e instrucciones 100% en español.
    Prioriza recetas americanas/europeas.

@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Motor de generación de Fat Loss Roadmap
+   Calibrate — Motor de generación de Fat Loss Roadmap
    Puro: inputs del wizard → array de fases dinámicas
    Sin side effects, sin dependencias de otros módulos.
    ============================================ */

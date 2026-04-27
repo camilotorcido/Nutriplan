@@ -1,9 +1,9 @@
 ﻿/* ============================================
-   NutriPlan - App Bundle (todos los componentes React)
+   Calibrate — App Bundle (todos los componentes React)
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260427ww: Bilingual ES/EN support
+   v20260427zz: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260427ww: Bilingual helpers ────────────────────────────────────────
+// ─── v20260427zz: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -180,10 +180,10 @@ function LoginScreen({ darkMode, onToggleDark }) {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-200">
-            <i className="fas fa-seedling text-white text-2xl"></i>
+          <div className="w-16 h-16 brand-icon-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <i className="fas fa-bullseye text-white text-2xl"></i>
           </div>
-          <h1 className={`text-2xl font-bold font-display ${darkMode ? 'text-white' : 'text-gray-800'}`}>NutriPlan</h1>
+          <h1 className={`text-2xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-800'}`}>Calibrate</h1>
           <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{subtitles[mode]}</p>
         </div>
 
@@ -379,7 +379,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260427ww: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260427zz: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
   // Previews para mantenimiento y volumen (paso 4)
@@ -650,7 +650,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     _mostrarExplicacion(perfilFinal);
   };
 
-  // ── v20260427ww: Wizard onboarding ──────────────────────────────────────
+  // ── v20260427zz: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -667,10 +667,10 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           </button>
           <div className={`w-full max-w-sm rounded-2xl shadow-xl p-8 animate-scaleIn ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'}`}>
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-200">
-                <i className="fas fa-seedling text-white text-2xl"></i>
+              <div className="w-16 h-16 brand-icon-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <i className="fas fa-bullseye text-white text-2xl"></i>
               </div>
-              <h1 className={`text-2xl font-bold font-display ${darkMode ? 'text-white' : 'text-gray-800'}`}>NutriPlan</h1>
+              <h1 className={`text-2xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-800'}`}>Calibrate</h1>
             </div>
             <div className="text-center mb-6">
               <p className={`text-base font-semibold mb-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Choose your language</p>
@@ -1072,11 +1072,11 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           {/* ── Header ── */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-md">
-                <i className="fas fa-seedling text-white text-base"></i>
+              <div className="w-10 h-10 brand-icon-bg rounded-xl flex items-center justify-center">
+                <i className="fas fa-bullseye text-white text-base"></i>
               </div>
               <div>
-                <div className={`font-bold font-display text-base ${darkMode ? 'text-white' : 'text-gray-800'}`}>NutriPlan</div>
+                <div className={`font-bold text-base ${darkMode ? 'text-white' : 'text-gray-800'}`}>Calibrate</div>
                 <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Configuración inicial','Initial setup')}</div>
               </div>
             </div>
@@ -1878,11 +1878,11 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'}`}></i>
             </button>
           </div>
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl mb-4 shadow-lg">
-            <i className="fas fa-seedling text-white text-2xl"></i>
+          <div className="inline-flex items-center justify-center w-16 h-16 brand-icon-bg rounded-2xl mb-4">
+            <i className="fas fa-bullseye text-white text-2xl"></i>
           </div>
-          <h1 className={`text-3xl font-bold font-display mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>NutriPlan</h1>
-          <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{tienePlan ? 'Edita tu perfil nutricional' : 'Configura tu perfil nutricional para comenzar'}</p>
+          <h1 className={`text-3xl font-bold tracking-tight mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Calibrate</h1>
+          <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{tienePlan ? 'Edita tu perfil' : 'Para calcular tu plan necesito tus datos.'}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -1981,7 +1981,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           </div>
 
-          {/* Objetivo — v20260427ww: goal cards unificados, sin kcal subtitles */}
+          {/* Objetivo — v20260427zz: goal cards unificados, sin kcal subtitles */}
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-bullseye text-green-500"></i>
@@ -3562,7 +3562,13 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
     cena: { bg: "bg-indigo-50", border: "border-indigo-200", icon: "text-indigo-500", badge: "bg-indigo-100 text-indigo-700", bgDark: "bg-indigo-900/30", borderDark: "border-indigo-800" }
   };
   const caloriasObj = perfil.caloriasObjetivo;
-  const macrosObj = calcularMacrosEnGramos(caloriasObj, perfil.macros);
+  // Macro targets: prefer scientific LBM-based grams from roadmap (same source as HoyView + metodología)
+  const _rmPlan = perfil && (perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen);
+  const _calcPlan = _rmPlan && _rmPlan.calculados;
+  const _mgrPlan = _calcPlan && _calcPlan.macrosGramos;
+  const macrosObj = (_mgrPlan && _mgrPlan.proteina)
+    ? { proteinas_g: Math.round(_mgrPlan.proteina), carbohidratos_g: Math.round(_mgrPlan.carbohidratos), grasas_g: Math.round(_mgrPlan.grasas) }
+    : calcularMacrosEnGramos(caloriasObj, perfil.macros);
 
   // Totales de la semana activa (tiempo + costo)
   const totalesSemana = React.useMemo(() => {
@@ -4569,7 +4575,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
                   const limpio = p.replace(/^Paso\s+\d+:\s*/,'').replace(/\*\*([^*]+)\*\*/g, '*$1*');
                   return `${i+1}. ${limpio}`;
                 }).join('\n\n');
-                const texto = `*${receta.nombre}*\n\n${receta.calorias_escaladas || Math.round(receta.calorias_base * factorEscala)} kcal | P: ${receta.proteinas_escaladas || Math.round(receta.proteinas_g * factorEscala)}g | C: ${receta.carbohidratos_escalados || Math.round(receta.carbohidratos_g * factorEscala)}g | G: ${receta.grasas_escaladas || Math.round(receta.grasas_g * factorEscala)}g\n\n*Ingredientes:*\n${ingredientesTexto}\n\n*Preparacion${tieneThermomix && tabActiva === 'thermomix' ? ' (Thermomix TM6)' : ''}:*\n${instrTexto}\n\n_NutriPlan_`;
+                const texto = `*${receta.nombre}*\n\n${receta.calorias_escaladas || Math.round(receta.calorias_base * factorEscala)} kcal | P: ${receta.proteinas_escaladas || Math.round(receta.proteinas_g * factorEscala)}g | C: ${receta.carbohidratos_escalados || Math.round(receta.carbohidratos_g * factorEscala)}g | G: ${receta.grasas_escaladas || Math.round(receta.grasas_g * factorEscala)}g\n\n*Ingredientes:*\n${ingredientesTexto}\n\n*Preparacion${tieneThermomix && tabActiva === 'thermomix' ? ' (Thermomix TM6)' : ''}:*\n${instrTexto}\n\n_Calibrate_`;
                 const encoded = encodeURIComponent(texto);
                 window.open('https://api.whatsapp.com/send?text=' + encoded, '_blank', 'noopener');
               } catch(err) {
@@ -5044,7 +5050,7 @@ function ShoppingList({ plan, darkMode }) {
   }, [ingredientesFaltantes]);
 
   const generarTextoLista = () => {
-    let texto = "🛒 LISTA DE COMPRAS - NutriPlan\n";
+    let texto = "LISTA DE COMPRAS - Calibrate\n";
     texto += "═══════════════════════════\n";
     if (soloRestantes && diasRestantes.length > 0) {
       texto += `📅 Solo para: ${diasRestantes.join(', ')}\n`;
@@ -5307,7 +5313,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260427ww)
+// COMPONENTE: ModalComidaExterna (v20260427zz)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
 //   - Búsqueda en FOODS_DB + RECETAS_DB
@@ -5630,7 +5636,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260427ww)
+// COMPONENTE: HoyView — Dashboard diario (v20260427zz)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -8135,7 +8141,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260427ww: Language state ───
+  // ─── v20260427zz: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
@@ -8452,7 +8458,7 @@ function App() {
   const handleEditarPerfil = () => { setPantalla("perfil"); window.scrollTo(0, 0); };
   const handleVolverAlPlan = () => { setPantalla("plan"); window.scrollTo(0, 0); };
   const handleReiniciar = async () => {
-    if (!window.confirm('¿Reiniciar NutriPlan? Se borrarán tu perfil, plan semanal y todos los registros. Esta acción no se puede deshacer.')) return;
+    if (!window.confirm('¿Reiniciar Calibrate? Se borrarán tu perfil, plan semanal y todos los registros. Esta acción no se puede deshacer.')) return;
     limpiarTodo(); // Limpia localStorage (con proxy: solo borra claves del usuario actual)
     // También borrar datos en Firestore
     if (window.NP_CloudStorage && window.NP_CloudStorage.active) {
@@ -8510,7 +8516,7 @@ function App() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl mb-4 shadow-lg">
             <i className="fas fa-seedling text-white text-2xl"></i>
           </div>
-          <p className="text-gray-500">Cargando NutriPlan...</p>
+          <p className="text-gray-500">Cargando Calibrate...</p>
         </div>
         {globalOverlays}
       </div>
@@ -8539,10 +8545,10 @@ function App() {
       <header className={`sticky top-0 z-40 shadow-sm border-b ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-              <i className="fas fa-seedling text-white text-sm"></i>
+            <div className="w-8 h-8 brand-icon-bg rounded-lg flex items-center justify-center">
+              <i className="fas fa-bullseye text-white text-sm"></i>
             </div>
-            <span className={`font-bold font-display text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>NutriPlan</span>
+            <span className={`font-bold text-lg tracking-tight ${darkMode ? 'text-white' : 'text-gray-800'}`}>Calibrate</span>
             {perfil && <span className="text-xs text-gray-400 hidden sm:inline">{perfil.caloriasObjetivo} kcal/día{perfil.numSemanas > 1 ? ` · ${perfil.numSemanas} sem` : ''}</span>}
           </div>
           <div className="flex items-center gap-1">
@@ -8555,7 +8561,7 @@ function App() {
               className={`p-2 rounded-lg transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}>
               <i className="fas fa-user-pen text-sm"></i>
             </button>
-            <button onClick={handleReiniciar} aria-label="Reiniciar NutriPlan"
+            <button onClick={handleReiniciar} aria-label="Reiniciar Calibrate"
               className={`p-2 rounded-lg transition-colors ${darkMode ? 'text-gray-400 hover:text-red-400 hover:bg-gray-700' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}>
               <i className="fas fa-trash-alt text-sm"></i>
             </button>
@@ -8657,8 +8663,8 @@ function App() {
       </main>
 
       <footer className={`text-center py-6 text-xs no-print ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-        <p>NutriPlan · Planificador Nutricional Semanal</p>
-        <p className="mt-1">Recetas en español + búsqueda en vivo · Thermomix TM6</p>
+        <p>Calibrate · El método, no la motivación.</p>
+        <p className="mt-1">calibrate.cl</p>
       </footer>
 
       {recetaSeleccionada && <RecipeModal receta={recetaSeleccionada} onClose={() => setRecetaSeleccionada(null)} darkMode={darkMode} factorComensales={factorComensales} usaThermomix={perfil?.usaThermomix !== false} />}
@@ -8685,7 +8691,7 @@ class AppErrorBoundary extends React.Component {
       return React.createElement('div', {
         style: { padding: '24px', fontFamily: 'Inter, system-ui, sans-serif', maxWidth: '600px', margin: '40px auto' }
       },
-        React.createElement('h1', { style: { color: '#ef4444', marginBottom: '12px' } }, '⚠️ Error al cargar NutriPlan'),
+        React.createElement('h1', { style: { color: '#C0523A', marginBottom: '12px' } }, 'Error al cargar Calibrate'),
         React.createElement('p', { style: { color: '#374151', marginBottom: '8px' } }, 'Mensaje: ' + (this.state.error && this.state.error.message || 'desconocido')),
         React.createElement('pre', { style: { background: '#f3f4f6', padding: '12px', borderRadius: '8px', fontSize: '12px', overflow: 'auto', maxHeight: '200px' } }, this.state.error && this.state.error.stack || ''),
         React.createElement('button', {

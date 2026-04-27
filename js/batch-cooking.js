@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Modo Batch Cooking
+   Calibrate — Modo Batch Cooking
    Analiza el plan semanal y sugiere cocción en lote
    ============================================ */
 

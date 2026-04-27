@@ -1,41 +1,62 @@
 /* ============================================
-   NutriPlan - Estilos Globales
+   Calibrate — Estilos Globales
+   Sistema de diseño: cream base, mustaza accent, sage success
    Con soporte para Dark Mode
    ============================================ */
+
+/* ─── Design Tokens ─── */
+:root {
+    --color-base:           #F5F0E8;   /* fondo principal cream/marfil */
+    --color-ink:            #1A1A1A;   /* texto principal carbón */
+    --color-ink-muted:      #4A4A4A;   /* texto secundario, labels */
+    --color-ink-faint:      #8A8A8A;   /* texto deshabilitado, placeholders */
+    --color-accent:         #C8943A;   /* mostaza tostada — CTAs, accents */
+    --color-accent-dark:    #A67830;   /* hover de accent */
+    --color-accent-light:   #F0D9AC;   /* fondos de cards con acento */
+    --color-alert:          #C0523A;   /* terracota — errores, déficit */
+    --color-alert-light:    #F2D4CE;   /* fondo de alertas */
+    --color-success:        #5A7A5E;   /* verde salvia — confirmaciones, hitos */
+    --color-success-light:  #D0E4D2;   /* fondo de éxito */
+    --color-surface:        #FFFFFF;   /* cards, modales, sobre fondo cream */
+    --color-border:         #E0D9CC;   /* bordes de cards, separadores */
+}
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
-    background: #f8fafc;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--color-base);
+    color: var(--color-ink);
     min-height: 100vh;
-    line-height: 1.6;          /* mínimo recomendado para cuerpo de texto */
+    line-height: 1.6;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Fuente de display para títulos grandes y números clave (TDEE, calorías, etc.) */
+/* font-display: JetBrains Mono para métricas y números de tracking
+   (calorías, macros, peso, TDEE, KPIs de dashboard)
+   Texto narrativo y UI usa Inter (body). */
 .font-display {
-    font-family: 'Sora', 'DM Sans', system-ui, sans-serif;
-    font-variant-numeric: tabular-nums; /* dígitos de ancho fijo: alineación en columnas */
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
 }
 
-/* Dark mode body override */
+/* Dark mode */
 html.dark body {
-    background: #111827;
-    color: #e5e7eb;
+    background: #1A1816;   /* cream oscuro, no negro puro */
+    color: #E8E0D4;
 }
 
 /* Scrollbar personalizado */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #C8BFB0; }
 
 html.dark ::-webkit-scrollbar-thumb { background: #4b5563; }
 html.dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 
-/* Animaciones — easing: expo-out (objetos reales desaceleran suavemente) */
+/* ─── Animaciones — easing: expo-out ─── */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -56,14 +77,12 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
     to   { opacity: 1; }
 }
 
-/* slideDown: entrada de mensajes de error/validación — usa grid-template-rows
-   (nunca animar height directamente — fuerza reflow) */
+/* slideDown: entrada de mensajes — usa grid-template-rows para evitar reflow */
 @keyframes slideDown {
     from { grid-template-rows: 0fr; opacity: 0; }
     to   { grid-template-rows: 1fr; opacity: 1; }
 }
 
-/* Micro-interacción para checkboxes / toggles: confirmación visual del click */
 @keyframes checkPop {
     0%   { transform: scale(1); }
     35%  { transform: scale(1.22); }
@@ -85,16 +104,13 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 .animate-scaleIn       { animation: scaleIn       0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .animate-overlayFadeIn { animation: overlayFadeIn 0.2s  ease-out both; }
 
-/* Contenedor slideDown: el hijo directo debe tener overflow:hidden */
 .animate-slideDown {
     display: grid;
     animation: slideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .animate-slideDown > * { overflow: hidden; }
 
-/* ─── prefers-reduced-motion: OBLIGATORIO por accesibilidad (WCAG 2.3.3) ─── */
-/* Usuarios con epilepsia u otras condiciones que solicitaron reducción de
-   movimiento. Se desactivan transiciones y animaciones sin quitar el layout. */
+/* ─── prefers-reduced-motion (WCAG 2.3.3) ─── */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
         animation-duration:       0.01ms !important;
@@ -104,20 +120,20 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
     }
 }
 
-/* Cards */
+/* ─── Cards ─── */
 .meal-card {
     transition: all 0.2s ease;
     cursor: pointer;
 }
 .meal-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
 }
 html.dark .meal-card:hover {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
-/* Modal overlay */
+/* ─── Modal overlay ─── */
 .modal-overlay {
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
@@ -127,21 +143,21 @@ html.dark .modal-overlay {
     background: rgba(0, 0, 0, 0.7);
 }
 
-/* Input focus */
+/* ─── Input focus — accent mustaza ─── */
 input:focus, select:focus, textarea:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+    box-shadow: 0 0 0 3px rgba(200, 148, 58, 0.25);
 }
 html.dark input:focus, html.dark select:focus, html.dark textarea:focus {
-    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+    box-shadow: 0 0 0 3px rgba(200, 148, 58, 0.35);
 }
 
-/* Range slider personalizado */
+/* ─── Range slider ─── */
 input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
     height: 6px;
-    background: #e2e8f0;
+    background: var(--color-border);
     border-radius: 3px;
     outline: none;
 }
@@ -150,7 +166,7 @@ input[type="range"]::-webkit-slider-thumb {
     appearance: none;
     width: 20px;
     height: 20px;
-    background: #22c55e;
+    background: var(--color-accent);
     border-radius: 50%;
     cursor: pointer;
     border: 3px solid white;
@@ -159,7 +175,7 @@ input[type="range"]::-webkit-slider-thumb {
 html.dark input[type="range"] { background: #374151; }
 html.dark input[type="range"]::-webkit-slider-thumb { border-color: #1f2937; }
 
-/* Checkbox personalizado */
+/* ─── Checkbox personalizado ─── */
 .custom-checkbox {
     position: relative;
     display: inline-flex;
@@ -177,7 +193,7 @@ html.dark input[type="range"]::-webkit-slider-thumb { border-color: #1f2937; }
 .checkmark {
     height: 22px;
     width: 22px;
-    background-color: #e2e8f0;
+    background-color: var(--color-border);
     border-radius: 6px;
     display: flex;
     align-items: center;
@@ -186,10 +202,10 @@ html.dark input[type="range"]::-webkit-slider-thumb { border-color: #1f2937; }
     flex-shrink: 0;
 }
 .custom-checkbox:hover .checkmark {
-    background-color: #cbd5e1;
+    background-color: #C8BFB0;
 }
 .custom-checkbox input:checked ~ .checkmark {
-    background-color: #22c55e;
+    background-color: var(--color-accent);
 }
 .checkmark::after {
     content: "";
@@ -205,58 +221,65 @@ html.dark input[type="range"]::-webkit-slider-thumb { border-color: #1f2937; }
     display: block;
 }
 
-/* Toast notification */
+/* ─── Toast notification ─── */
 .toast {
     animation: slideUp 0.3s ease-out;
 }
 
-/* Macro bars */
+/* ─── Macro bars ─── */
 .macro-bar {
     transition: width 0.5s ease-out;
 }
 
-/* Navigation pills */
+/* ─── Navigation pills — mustaza accent ─── */
 .nav-pill {
     transition: all 0.2s ease;
 }
 .nav-pill.active {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
     color: white;
-    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    box-shadow: 0 4px 12px rgba(200, 148, 58, 0.35);
 }
 
-/* Día selector */
+/* ─── Día selector — mustaza ─── */
 .day-tab {
     transition: all 0.2s ease;
 }
 .day-tab.active {
-    background: #22c55e;
+    background: var(--color-accent);
     color: white;
     transform: scale(1.05);
 }
 
-/* MEJORA 2: Today highlight pulse */
+/* Today highlight pulse */
 .day-tab-today-ring {
     animation: pulse-soft 2s infinite;
 }
 
-/* Print styles */
+/* ─── Brand icon container ─── */
+/* Reemplaza from-green-500 to-emerald-600 con accent mustaza de Calibrate */
+.brand-icon-bg {
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
+    box-shadow: 0 4px 12px rgba(200, 148, 58, 0.3);
+}
+
+/* ─── Print styles ─── */
 @media print {
     .no-print { display: none !important; }
     body { background: white; }
 }
 
-/* Responsive fixes */
+/* ─── Responsive fixes ─── */
 @media (max-width: 640px) {
     .meal-card { padding: 12px; }
 }
 
-/* Gradient backgrounds */
+/* ─── Gradient backgrounds ─── */
 .bg-gradient-brand {
-    background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-dark) 50%, #8A6325 100%);
 }
 
-/* Thermomix badge */
+/* ─── Thermomix badge ─── */
 .thermomix-badge {
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     color: white;
@@ -267,13 +290,13 @@ html.dark input[type="range"]::-webkit-slider-thumb { border-color: #1f2937; }
     letter-spacing: 0.5px;
 }
 
-/* Dark mode select option fix */
+/* ─── Dark mode select ─── */
 html.dark select option {
     background-color: #374151;
     color: #e5e7eb;
 }
 
-/* Swap button animation */
+/* ─── Swap button animation ─── */
 .meal-card .fa-shuffle {
     transition: transform 0.3s ease;
 }
@@ -281,7 +304,7 @@ html.dark select option {
     transform: rotate(180deg);
 }
 
-/* Online recipe badge */
+/* ─── Online recipe badge ─── */
 .online-badge {
     background: linear-gradient(135deg, #3b82f6, #2563eb);
     color: white;
@@ -292,7 +315,7 @@ html.dark select option {
     letter-spacing: 0.5px;
 }
 
-/* Loading overlay animations */
+/* ─── Loading overlay animations ─── */
 .loading-spin {
     animation: spin-slow 2s linear infinite;
 }
@@ -305,7 +328,126 @@ html.dark select option {
     animation: loadingDots 1.2s ease-in-out infinite;
 }
 
-/* Smooth image load in modal */
+/* ─── Smooth image load in modal ─── */
 .meal-card img, .modal-overlay img {
     transition: opacity 0.3s ease;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CALIBRATE PALETTE OVERRIDES — Tailwind green → brand tokens
+   Cargado DESPUÉS del compiled Tailwind para ganar en cascada.
+
+   Estrategia quirúrgica:
+   · bg-green-500 / bg-green-600 / bg-green-700  → accent mustard
+     (botones CTAs, badges, íconos de acción primaria)
+   · hover:bg-green-600 / hover:bg-green-900      → accent dark
+   · from-green-500 / to-emerald-600              → gradiente mustard
+   · focus:border-green-500 / focus:ring-green-4  → accent mustard
+   · shadow-green-200 / hover:shadow-green-300    → accent shadow
+   · text-green-600 / text-green-700 (dark text)  → accent dark
+   · bg-green-50 / bg-green-100 / bg-green-200    → accent-light
+     (fondos de cards de categoría snack_am)
+   · text-green-500 (icon snack_am)               → accent
+   · text-green-400 / text-green-300 (dark mode)  → accent-light
+   · Emerald en positivos (éxito / tendencia OK)  → color-success
+   ══════════════════════════════════════════════════════════════ */
+
+/* — Backgrounds sólidos — */
+.bg-green-500   { background-color: var(--color-accent)       !important; }
+.bg-green-600   { background-color: var(--color-accent)       !important; }
+.bg-green-700   { background-color: var(--color-accent-dark)  !important; }
+.bg-green-100   { background-color: var(--color-accent-light) !important; }
+.bg-green-50    { background-color: #FAF5EC                   !important; } /* cream muy claro */
+
+/* — Backgrounds emerald (success positivo) — */
+.bg-emerald-500 { background-color: var(--color-success)       !important; }
+.bg-emerald-100 { background-color: var(--color-success-light) !important; }
+.bg-emerald-50  { background-color: #EEF5EF                    !important; }
+.bg-emerald-900\/30 { background-color: rgba(90,122,94,0.20)   !important; }
+.bg-emerald-900\/40 { background-color: rgba(90,122,94,0.25)   !important; }
+
+/* — Hover backgrounds — */
+.hover\:bg-green-600:hover     { background-color: var(--color-accent-dark) !important; }
+.hover\:bg-green-100:hover     { background-color: var(--color-accent-light) !important; }
+.hover\:bg-green-50:hover      { background-color: #FAF5EC !important; }
+.hover\:bg-green-900\/40:hover { background-color: rgba(200,148,58,0.15) !important; }
+.hover\:bg-green-900\/60:hover { background-color: rgba(200,148,58,0.20) !important; }
+.hover\:bg-emerald-200:hover   { background-color: var(--color-success-light) !important; }
+
+/* — Green/emerald context states — */
+.bg-green-900\/20  { background-color: rgba(200,148,58,0.10) !important; }
+.bg-green-900\/30  { background-color: rgba(200,148,58,0.15) !important; }
+.bg-green-900\/40  { background-color: rgba(200,148,58,0.20) !important; }
+
+/* — Text — */
+.text-green-500 { color: var(--color-accent)       !important; }
+.text-green-600 { color: var(--color-accent)       !important; }
+.text-green-700 { color: var(--color-accent-dark)  !important; }
+.text-green-800 { color: var(--color-accent-dark)  !important; }
+.text-green-300 { color: var(--color-accent-light) !important; }
+.text-green-400 { color: #E0B870                   !important; } /* mustard claro dark mode */
+.text-green-100 { color: var(--color-accent-light) !important; }
+
+.text-emerald-500 { color: var(--color-success)      !important; }
+.text-emerald-600 { color: var(--color-success)      !important; }
+.text-emerald-700 { color: #3D5A41                   !important; }
+.text-emerald-400 { color: #7AAD7E                   !important; }
+
+/* — Hover text — */
+.hover\:text-green-600:hover { color: var(--color-accent-dark) !important; }
+.hover\:text-green-700:hover { color: var(--color-accent-dark) !important; }
+.hover\:text-green-400:hover { color: var(--color-accent-light) !important; }
+.hover\:text-emerald-400:hover { color: #7AAD7E !important; }
+.hover\:text-emerald-600:hover { color: var(--color-success) !important; }
+
+/* — Borders — */
+.border-green-100 { border-color: var(--color-accent-light) !important; }
+.border-green-300 { border-color: #E0B870                   !important; }
+.border-green-400 { border-color: var(--color-accent)       !important; }
+.border-green-500 { border-color: var(--color-accent)       !important; }
+.border-green-600 { border-color: var(--color-accent-dark)  !important; }
+.border-green-800 { border-color: var(--color-accent-dark)  !important; }
+
+.border-emerald-300 { border-color: #8BB88E                   !important; }
+.border-emerald-500 { border-color: var(--color-success)      !important; }
+.border-emerald-700 { border-color: #3D5A41                   !important; }
+
+/* Hover border */
+.hover\:border-green-400:hover { border-color: var(--color-accent) !important; }
+
+/* — Focus states — */
+.focus\:border-green-500:focus { border-color: var(--color-accent) !important; }
+.focus\:ring-green-400:focus   {
+    --tw-ring-color: rgba(200,148,58,0.5) !important;
+}
+
+/* — Gradients — */
+.from-green-500  {
+    --tw-gradient-from: var(--color-accent) var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgba(200,148,58,0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.from-green-400  {
+    --tw-gradient-from: #E0B870 var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgba(224,184,112,0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.from-green-50 {
+    --tw-gradient-from: #FAF5EC var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgba(250,245,236,0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.to-emerald-600 { --tw-gradient-to: var(--color-accent-dark) var(--tw-gradient-to-position) !important; }
+.to-emerald-500 { --tw-gradient-to: var(--color-success) var(--tw-gradient-to-position) !important; }
+.to-emerald-50  { --tw-gradient-to: #EEF5EF var(--tw-gradient-to-position) !important; }
+.to-emerald-900\/20 { --tw-gradient-to: rgba(90,122,94,0.20) var(--tw-gradient-to-position) !important; }
+
+/* — Shadows — */
+.shadow-green-200      { --tw-shadow-color: rgba(200,148,58,0.35) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+.hover\:shadow-green-300:hover { --tw-shadow-color: rgba(200,148,58,0.45) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+
+/* — Hover from gradient (nav hover override) — */
+.hover\:from-green-600:hover {
+    --tw-gradient-from: var(--color-accent-dark) var(--tw-gradient-from-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
 }
