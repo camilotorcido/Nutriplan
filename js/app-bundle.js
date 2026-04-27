@@ -8671,6 +8671,170 @@ function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
   );
 }
 
+// ─── EjercicioCard: tarjeta individual con fotos de referencia vía Wger ───
+function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, bajó, onToggle, onSetPeso, onSetReps }) {
+  const [mostrarFotos, setMostrarFotos] = React.useState(false);
+  const [fotoEstado, setFotoEstado] = React.useState('idle'); // idle | loading | ok | vacio | error
+  const [fotos, setFotos] = React.useState([]);
+
+  const eqId = getEquipoId(e.equipo);
+  const eqNoDisp = eqId !== 'peso_corporal' && !equiposDisp.includes(eqId);
+  const eqInfo = eqNoDisp && window.NP_RoadmapData && window.NP_RoadmapData.EQUIPOS_DISPONIBLES
+    ? window.NP_RoadmapData.EQUIPOS_DISPONIBLES.find(eq => eq.id === eqId)
+    : null;
+
+  function fetchFotos() {
+    if (fotoEstado !== 'idle') return;
+    setFotoEstado('loading');
+    const term = encodeURIComponent(e.nombre);
+    fetch('https://wger.de/api/v2/exercise/search/?term=' + term + '&language=2&format=json')
+      .then(r => r.json())
+      .then(data => {
+        const sugerencias = data.suggestions || [];
+        if (!sugerencias.length) { setFotoEstado('vacio'); return; }
+        const baseId = sugerencias[0].data.base_id;
+        return fetch('https://wger.de/api/v2/exerciseimage/?exercise_base=' + baseId + '&format=json')
+          .then(r => r.json())
+          .then(imgData => {
+            const imgs = (imgData.results || []).map(r => r.image);
+            if (!imgs.length) { setFotoEstado('vacio'); return; }
+            setFotos(imgs.slice(0, 2));
+            setFotoEstado('ok');
+          });
+      })
+      .catch(() => setFotoEstado('error'));
+  }
+
+  function toggleFotos() {
+    const siguiente = !mostrarFotos;
+    setMostrarFotos(siguiente);
+    if (siguiente && fotoEstado === 'idle') fetchFotos();
+  }
+
+  return (
+    <div className={`rounded-xl p-4 transition-colors ${
+      e.done
+        ? darkMode ? 'bg-green-900/20 border border-green-800' : 'bg-green-50 border border-green-200'
+        : darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'
+    }`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <div className={`font-semibold text-base ${darkMode ? 'text-white' : 'text-gray-800'}`}>{e.nombre}</div>
+          <div className="flex items-center gap-2 flex-wrap mt-1">
+            <span className="text-xs text-gray-400"><b>{e.setsEsperado} × {e.repsEsperado}</b> · {e.equipo}</span>
+            {protEj && protEj.youtube && (
+              <a href={protEj.youtube} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-red-400 hover:text-red-500 font-medium">
+                <i className="fab fa-youtube"></i>
+                <span>ver video</span>
+              </a>
+            )}
+            <button onClick={toggleFotos}
+              className={`flex items-center gap-1 text-xs font-medium transition-colors cursor-pointer ${
+                mostrarFotos
+                  ? darkMode ? 'text-amber-400' : 'text-amber-600'
+                  : darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+              }`}>
+              <i className={`fas ${mostrarFotos ? 'fa-images' : 'fa-camera'}`}></i>
+              <span>fotos</span>
+            </button>
+          </div>
+          {protEj && protEj.descripcion && (
+            <div className={`text-xs mt-1 leading-snug ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{protEj.descripcion}</div>
+          )}
+          {e.nota && <div className="text-xs text-gray-400 italic mt-0.5">{e.nota}</div>}
+          {eqNoDisp && (
+            <div className="text-xs mt-1 font-medium text-amber-500">
+              <i className="fas fa-exclamation-triangle mr-1"></i>
+              {eqInfo ? `Requiere ${eqInfo.nombre} — no marcado como disponible` : 'Equipo no disponible'}
+            </div>
+          )}
+        </div>
+        <button onClick={() => onToggle(i)}
+          className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all ${
+            e.done
+              ? 'bg-green-500 text-white shadow-md'
+              : darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+          }`}>
+          <i className={`fas ${e.done ? 'fa-check' : 'fa-circle'} text-sm`}></i>
+        </button>
+      </div>
+
+      {/* Panel de fotos de referencia (Wger exercise images) */}
+      {mostrarFotos && (
+        <div className={`mt-3 rounded-lg overflow-hidden ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+          {fotoEstado === 'loading' && (
+            <div className="flex items-center justify-center gap-2 py-5 text-xs text-gray-400">
+              <div className="w-4 h-4 border-2 border-gray-300 border-t-amber-500 rounded-full animate-spin"></div>
+              <span>Buscando fotos...</span>
+            </div>
+          )}
+          {fotoEstado === 'ok' && (
+            <div className={`grid gap-1 p-1 ${fotos.length >= 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {fotos.map((url, idx) => (
+                <div key={idx} className="relative rounded-md overflow-hidden bg-white">
+                  <img src={url} alt={idx === 0 ? 'Posición inicial' : 'Posición final'}
+                    className="w-full object-contain"
+                    style={{ maxHeight: '160px' }} />
+                  <div className={`absolute bottom-0 left-0 right-0 text-center text-[10px] font-bold py-0.5 ${darkMode ? 'bg-gray-900/70 text-gray-300' : 'bg-black/30 text-white'}`}>
+                    {idx === 0 ? 'Inicio' : 'Final'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {fotoEstado === 'vacio' && (
+            <div className="text-center py-4 text-xs text-gray-400">
+              <i className="fas fa-image mr-1 opacity-50"></i>
+              Sin fotos disponibles para este ejercicio
+            </div>
+          )}
+          {fotoEstado === 'error' && (
+            <div className="text-center py-4 text-xs text-gray-400">
+              <i className="fas fa-circle-exclamation mr-1 opacity-50"></i>
+              No se pudo cargar — verifica tu conexión
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex gap-2 mt-3">
+        {/* Stepper de peso: [−] valor [+] */}
+        <div className={`flex items-center flex-shrink-0 rounded-lg border overflow-hidden ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+          <button onClick={() => onSetPeso(i, Math.max(0, (Number(e.peso) || 0) - 2.5))}
+            className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>−</button>
+          <div className={`flex items-center justify-center gap-1 px-3 h-9 min-w-[4.5rem] border-x ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+            <span className={`text-sm font-bold tabular-nums ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+              {e.peso != null ? e.peso : (previo ? previo.peso : '0')}
+            </span>
+            <span className={`text-xs font-medium ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>kg</span>
+          </div>
+          <button onClick={() => onSetPeso(i, (Number(e.peso) || 0) + 2.5)}
+            className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>+</button>
+        </div>
+        <input type="text" value={e.repsReales || ''}
+          onChange={ev => onSetReps(i, ev.target.value)}
+          className={`flex-1 px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`}
+          placeholder={'Reps reales (' + e.repsEsperado + ')'} />
+      </div>
+
+      {previo && (
+        <div className="flex items-center justify-between mt-2 text-xs">
+          <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
+            Último: <b className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{previo.peso} kg</b> × {previo.reps} <span className="opacity-60">({previo.fecha})</span>
+          </span>
+          {(mejoró || bajó) && (
+            <span className={`font-bold text-sm ${mejoró ? 'text-green-500' : 'text-red-400'}`}>
+              <i className={`fas ${mejoró ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1`}></i>
+              {mejoró ? '+' : ''}{(Number(e.peso) - previo.peso).toFixed(1)} kg
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Sub-vista: Entreno (log de cargas por día A/B/C/D) ───
 function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   const hoy = new Date().toISOString().split('T')[0];
@@ -8926,87 +9090,9 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             ? window.NP_RoadmapData.buscarEjercicio(e.nombre)
             : (protocolo ? protocolo.ejercicios.find(p => p.nombre === e.nombre) : null);
           return (
-            <div key={i} className={`rounded-xl p-4 transition-colors ${
-              e.done
-                ? darkMode ? 'bg-green-900/20 border border-green-800' : 'bg-green-50 border border-green-200'
-                : darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'
-            }`}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className={`font-semibold text-base ${darkMode ? 'text-white' : 'text-gray-800'}`}>{e.nombre}</div>
-                  <div className="flex items-center gap-2 flex-wrap mt-1">
-                    <span className="text-xs text-gray-400"><b>{e.setsEsperado} × {e.repsEsperado}</b> · {e.equipo}</span>
-                    {protEj && protEj.youtube && (
-                      <a href={protEj.youtube} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-xs text-red-400 hover:text-red-500 font-medium">
-                        <i className="fab fa-youtube"></i>
-                        <span>ver video</span>
-                      </a>
-                    )}
-                  </div>
-                  {protEj && protEj.descripcion && (
-                    <div className={`text-xs mt-1 leading-snug ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{protEj.descripcion}</div>
-                  )}
-                  {e.nota && <div className="text-xs text-gray-400 italic mt-0.5">{e.nota}</div>}
-                  {(() => {
-                    const eqId = getEquipoId(e.equipo);
-                    if (eqId === 'peso_corporal') return null;
-                    if (equiposDisp.includes(eqId)) return null;
-                    const info = window.NP_RoadmapData && window.NP_RoadmapData.EQUIPOS_DISPONIBLES
-                      ? window.NP_RoadmapData.EQUIPOS_DISPONIBLES.find(eq => eq.id === eqId)
-                      : null;
-                    return (
-                      <div className="text-xs mt-1 font-medium text-amber-500">
-                        <i className="fas fa-exclamation-triangle mr-1"></i>
-                        {info ? `Requiere ${info.nombre} — no marcado como disponible` : 'Equipo no disponible'}
-                      </div>
-                    );
-                  })()}
-                </div>
-                <button onClick={() => toggleDone(i)}
-                  className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all ${
-                    e.done
-                      ? 'bg-green-500 text-white shadow-md'
-                      : darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                  }`}>
-                  <i className={`fas ${e.done ? 'fa-check' : 'fa-circle'} text-sm`}></i>
-                </button>
-              </div>
-
-              <div className="flex gap-2 mt-3">
-                {/* Stepper de peso: [−] valor [+] */}
-                <div className={`flex items-center flex-shrink-0 rounded-lg border overflow-hidden ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
-                  <button onClick={() => setPeso(i, Math.max(0, (Number(e.peso) || 0) - 2.5))}
-                    className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>−</button>
-                  <div className={`flex items-center justify-center gap-1 px-3 h-9 min-w-[4.5rem] border-x ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
-                    <span className={`text-sm font-bold tabular-nums ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                      {e.peso != null ? e.peso : (previo ? previo.peso : '0')}
-                    </span>
-                    <span className={`text-xs font-medium ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>kg</span>
-                  </div>
-                  <button onClick={() => setPeso(i, (Number(e.peso) || 0) + 2.5)}
-                    className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>+</button>
-                </div>
-                <input type="text" value={e.repsReales || ''}
-                  onChange={ev => setReps(i, ev.target.value)}
-                  className={`flex-1 px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`}
-                  placeholder={'Reps reales (' + e.repsEsperado + ')'} />
-              </div>
-
-              {previo && (
-                <div className="flex items-center justify-between mt-2 text-xs">
-                  <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
-                    Último: <b className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{previo.peso} kg</b> × {previo.reps} <span className="opacity-60">({previo.fecha})</span>
-                  </span>
-                  {(mejoró || bajó) && (
-                    <span className={`font-bold text-sm ${mejoró ? 'text-green-500' : 'text-red-400'}`}>
-                      <i className={`fas ${mejoró ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1`}></i>
-                      {mejoró ? '+' : ''}{(Number(e.peso) - previo.peso).toFixed(1)} kg
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
+            <EjercicioCard key={i} e={e} i={i} darkMode={darkMode} protEj={protEj}
+              previo={previo} equiposDisp={equiposDisp} mejoró={mejoró} bajó={bajó}
+              onToggle={toggleDone} onSetPeso={setPeso} onSetReps={setReps} />
           );
         })}
       </div>
