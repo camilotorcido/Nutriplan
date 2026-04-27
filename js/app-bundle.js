@@ -3453,42 +3453,49 @@ function AdherenceWidget({ darkMode, forceUpdate }) {
   const color = stats.porcentaje >= 80 ? 'emerald' : stats.porcentaje >= 50 ? 'amber' : 'rose';
 
   return (
-    <div className={`mt-6 rounded-2xl p-4 border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-      <div className="flex items-center justify-between mb-3">
+    <div className={`mt-6 rounded-2xl border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
+      style={{ padding: '20px 20px 24px' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between" style={{ marginBottom: '16px' }}>
         <div className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-          <i className="fas fa-clipboard-check mr-1"></i>Adherencia 7 días
+          <i className="fas fa-clipboard-check mr-1.5"></i>Adherencia 7 días
         </div>
         <div className={`text-2xl font-bold font-display text-${color}-500`}>{stats.porcentaje}%</div>
       </div>
-      <div className="grid grid-cols-3 gap-2 mb-3 text-xs">
-        <div className={`px-2 py-1.5 rounded-lg text-center ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-          <div className="font-bold text-emerald-500">{stats.cumplidos}</div>
-          <div className="text-[11px] text-gray-400">cumplidas</div>
+      {/* Stats grid */}
+      <div className="grid grid-cols-3" style={{ gap: '10px', marginBottom: '20px' }}>
+        <div className={`rounded-xl text-center ${darkMode ? 'bg-gray-700/60' : 'bg-gray-50'}`}
+          style={{ padding: '12px 8px' }}>
+          <div className="font-bold text-emerald-500" style={{ fontSize: '18px', lineHeight: 1.2 }}>{stats.cumplidos}</div>
+          <div style={{ fontSize: '11px', marginTop: '4px' }} className="text-gray-400">cumplidas</div>
         </div>
-        <div className={`px-2 py-1.5 rounded-lg text-center ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-          <div className={`font-bold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{stats.kcal_cumplidas.toLocaleString('es-CL')}</div>
-          <div className="text-[11px] text-gray-400">kcal ✓</div>
+        <div className={`rounded-xl text-center ${darkMode ? 'bg-gray-700/60' : 'bg-gray-50'}`}
+          style={{ padding: '12px 8px' }}>
+          <div className={`font-bold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`} style={{ fontSize: '18px', lineHeight: 1.2 }}>{stats.kcal_cumplidas.toLocaleString('es-CL')}</div>
+          <div style={{ fontSize: '11px', marginTop: '4px' }} className="text-gray-400">kcal ✓</div>
         </div>
-        <div className={`px-2 py-1.5 rounded-lg text-center ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-          <div className="font-bold text-rose-500">{stats.kcal_perdidas.toLocaleString('es-CL')}</div>
-          <div className="text-[11px] text-gray-400">kcal perdidas</div>
+        <div className={`rounded-xl text-center ${darkMode ? 'bg-gray-700/60' : 'bg-gray-50'}`}
+          style={{ padding: '12px 8px' }}>
+          <div className="font-bold text-rose-500" style={{ fontSize: '18px', lineHeight: 1.2 }}>{stats.kcal_perdidas.toLocaleString('es-CL')}</div>
+          <div style={{ fontSize: '11px', marginTop: '4px' }} className="text-gray-400">kcal perdidas</div>
         </div>
       </div>
-      {/* A11/CH2: role="img" + aria-label en gráfico de barras div-based */}
-      {/* TY5: day labels 9px → 11px (mínimo legible en pantallas no-retina) */}
-      <div className="flex items-end justify-between gap-1 h-14"
+      {/* Bar chart */}
+      <div className="flex items-end justify-between" style={{ gap: '6px', height: '72px' }}
         role="img" aria-label={`Gráfico de adherencia 7 días: ${stats.porcentaje}% promedio`}>
         {historial.map((d, idx) => {
-          const altura = d.porcentaje != null ? Math.max(4, d.porcentaje * 0.5) : 0;
-          const colorBar = d.porcentaje == null ? 'bg-gray-300' : d.porcentaje >= 80 ? 'bg-emerald-500' : d.porcentaje >= 50 ? 'bg-amber-500' : 'bg-rose-400';
+          const altura = d.porcentaje != null ? Math.max(4, d.porcentaje * 0.56) : 0;
+          const bgBar = d.porcentaje == null
+            ? (darkMode ? '#374151' : '#e5e7eb')
+            : d.porcentaje >= 80 ? '#10b981' : d.porcentaje >= 50 ? '#f59e0b' : '#f87171';
           return (
-            <div key={idx} className="flex-1 flex flex-col items-center gap-1" aria-hidden="true">
-              <div className="w-full flex items-end h-10">
-                <div className={`w-full rounded-t ${colorBar} ${darkMode && d.porcentaje == null ? 'bg-gray-600' : ''}`}
-                  style={{height: `${altura}px`, minHeight: d.porcentaje != null ? '4px' : '2px'}}
+            <div key={idx} className="flex-1 flex flex-col items-center" style={{ gap: '6px' }} aria-hidden="true">
+              <div className="w-full flex items-end" style={{ height: '52px' }}>
+                <div className="w-full rounded-t"
+                  style={{ height: `${altura}px`, minHeight: d.porcentaje != null ? '4px' : '2px', background: bgBar, transition: 'height 0.3s ease' }}
                   title={d.porcentaje != null ? `${d.porcentaje}% (${d.cumplidos}/${d.total})` : 'Sin registro'}></div>
               </div>
-              <div className="text-[11px] text-gray-500">{d.dia_semana}</div>
+              <div style={{ fontSize: '11px' }} className="text-gray-500">{d.dia_semana}</div>
             </div>
           );
         })}
