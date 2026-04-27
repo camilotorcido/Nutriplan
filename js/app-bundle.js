@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260428aa: Bilingual ES/EN support
+   v20260428ab: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260428aa: Bilingual helpers ────────────────────────────────────────
+// ─── v20260428ab: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -379,7 +379,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260428aa: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260428ab: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
   // Previews para mantenimiento y volumen (paso 4)
@@ -650,7 +650,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     _mostrarExplicacion(perfilFinal);
   };
 
-  // ── v20260428aa: Wizard onboarding ──────────────────────────────────────
+  // ── v20260428ab: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -2085,7 +2085,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           </div>
 
-          {/* Objetivo — v20260428aa: goal cards unificados, sin kcal subtitles */}
+          {/* Objetivo — v20260428ab: goal cards unificados, sin kcal subtitles */}
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-bullseye text-green-500"></i>
@@ -4106,6 +4106,37 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
               </div>
             </div>
           )}
+
+          {/* Log de comidas → CSV (hasta 30 días) */}
+          {typeof window.exports !== 'undefined' && window.exports.logCSV && (
+            <div className="relative inline-block">
+              <button
+                onClick={(e) => { e.currentTarget.nextElementSibling.classList.toggle('hidden'); }}
+                className={`inline-flex items-center gap-2 px-6 py-3 border rounded-xl transition-all text-sm font-medium cursor-pointer ${
+                  darkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}>
+                <i className="fas fa-table-list" style={{color:'var(--color-accent)'}}></i>Log de comidas
+                <i className="fas fa-chevron-down text-[11px]"></i>
+              </button>
+              <div className={`hidden absolute top-full mt-2 right-0 w-60 rounded-xl shadow-xl z-20 overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+                {[
+                  { d: 7,  label: 'Últimos 7 días',  sub: 'Esta semana aprox.' },
+                  { d: 14, label: 'Últimas 2 semanas', sub: 'Visión quincenal' },
+                  { d: 30, label: 'Último mes',       sub: 'Máximo disponible' },
+                ].map(({ d, label, sub }, idx, arr) => (
+                  <button key={d}
+                    onClick={(e) => {
+                      e.currentTarget.parentElement.classList.add('hidden');
+                      window.exports.logCSV(d);
+                    }}
+                    className={`w-full text-left px-4 py-3 text-sm transition-colors ${idx < arr.length - 1 ? 'border-b' : ''} ${darkMode ? 'border-gray-700 hover:bg-gray-700 text-gray-200' : 'border-gray-100 hover:bg-amber-50 text-gray-700'}`}>
+                    <div className="font-semibold"><i className="fas fa-file-csv mr-1.5" style={{color:'var(--color-accent)'}}></i>{label}</div>
+                    <div className={`text-[11px] mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>{sub} · CSV para Excel / Sheets</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           <i className="fas fa-info-circle mr-1"></i>El calendario exporta desde el próximo lunes. Abre el .ics con Google Calendar, Apple Calendar u Outlook.
@@ -5417,7 +5448,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260428aa)
+// COMPONENTE: ModalComidaExterna (v20260428ab)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
 //   - Búsqueda en FOODS_DB + RECETAS_DB
@@ -5740,7 +5771,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260428aa)
+// COMPONENTE: HoyView — Dashboard diario (v20260428ab)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -8245,7 +8276,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260428aa: Language state ───
+  // ─── v20260428ab: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;

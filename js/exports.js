@@ -578,14 +578,116 @@
     return { paginas: totalPages };
   }
 
+  // ─────────────────────────────────────────────
+  // Log de comidas → CSV (hasta 30 días atrás)
+  // Incluye: comidas del plan + comidas externas
+  // ─────────────────────────────────────────────
+  function exportarLogCSV(dias) {
+    dias = dias || 30;
+    if (dias > 30) dias = 30;
+
+    const ADHER_KEY = 'nutriplan_adherencia';
+    const EXT_KEY   = 'nutriplan_comidas_externas';
+
+    let adher = {};
+    let ext   = {};
+    try { const r = localStorage.getItem(ADHER_KEY); if (r) adher = JSON.parse(r); } catch(e) {}
+    try { const r = localStorage.getItem(EXT_KEY);   if (r) ext   = JSON.parse(r); } catch(e) {}
+
+    // Rango de fechas: últimos `dias` días (incluyendo hoy)
+    const hoy = new Date();
+    const fechas = [];
+    for (let i = dias - 1; i >= 0; i--) {
+      const f = new Date(hoy);
+      f.setDate(hoy.getDate() - i);
+      fechas.push(f.toISOString().split('T')[0]);
+    }
+
+    const DIAS_ES  = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const ORDEN    = ['desayuno', 'snack_am', 'almuerzo', 'snack_pm', 'cena'];
+    const LABEL    = { desayuno: 'Desayuno', snack_am: 'Snack AM', almuerzo: 'Almuerzo', snack_pm: 'Snack PM', cena: 'Cena' };
+
+    const row = (...celdas) => celdas.map(escaparCSV).join(',');
+
+    const fechaLegible = hoy.toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const lines = [];
+    lines.push('# Calibrate — Log de comidas | Últimos ' + dias + ' días | Exportado: ' + fechaLegible);
+    lines.push('');
+    lines.push(row('Fecha', 'Día', 'Tipo', 'Comida / Plato', 'Kcal', 'Prot (g)', 'Consumido'));
+
+    // Totales globales
+    let gDias = 0, gTotal = 0, gConsumidas = 0, gKcal = 0, gProt = 0;
+
+    fechas.forEach(fecha => {
+      const diaData = adher[fecha] || {};
+      const extData = ext[fecha]   || [];
+      if (Object.keys(diaData).length === 0 && extData.length === 0) return; // sin registro → omitir
+
+      const dow = new Date(fecha + 'T12:00:00').getDay();
+      const diaSemana = DIAS_ES[dow] || '—';
+      let dayKcal = 0, dayProt = 0, dayTotal = 0, dayConsumidas = 0;
+
+      // Comidas del plan (en orden canónico)
+      ORDEN.forEach(tipo => {
+        const key = Object.keys(diaData).find(k => k.split(':')[1] === tipo);
+        if (!key) return;
+        const m = diaData[key];
+        const kcal = m.kcal_plan     || 0;
+        const prot = m.proteinas_plan || 0;
+        dayTotal++;
+        if (m.comido) { dayConsumidas++; dayKcal += kcal; dayProt += prot; }
+        lines.push(row(fecha, diaSemana, LABEL[tipo] || tipo, m.nombre || '—',
+          m.comido ? kcal : 0, m.comido ? prot : 0, m.comido ? 'Sí' : 'No'));
+      });
+
+      // Comidas externas (siempre consumidas)
+      extData.forEach(c => {
+        const kcal = c.kcal || 0;
+        const prot = c.proteinas_g || 0;
+        dayTotal++; dayConsumidas++;
+        dayKcal += kcal; dayProt += prot;
+        lines.push(row(fecha, diaSemana, 'Comida extra', c.nombre || '—', kcal, prot, 'Sí'));
+      });
+
+      // Resumen del día
+      const pct = dayTotal > 0 ? Math.round(dayConsumidas / dayTotal * 100) : 0;
+      lines.push(row(fecha, diaSemana, '— RESUMEN DÍA —', '',
+        dayKcal, dayProt, dayConsumidas + '/' + dayTotal + ' (' + pct + '%)'));
+      lines.push('');
+
+      gDias++; gTotal += dayTotal; gConsumidas += dayConsumidas;
+      gKcal += dayKcal; gProt += dayProt;
+    });
+
+    if (gDias === 0) {
+      alert('No hay datos de log de comidas en los últimos ' + dias + ' días.');
+      return;
+    }
+
+    // Resumen global
+    lines.push('');
+    lines.push(row('=== RESUMEN GLOBAL (' + dias + ' DÍAS) ==='));
+    lines.push(row('Días con registro', gDias));
+    lines.push(row('Adherencia global', Math.round(gConsumidas / (gTotal || 1) * 100) + '%'));
+    lines.push(row('Kcal consumidas total', gKcal));
+    lines.push(row('Prot consumidas total (g)', gProt));
+    lines.push(row('Promedio Kcal / día', Math.round(gKcal / gDias)));
+    lines.push(row('Promedio Prot / día (g)', Math.round(gProt / gDias)));
+
+    const csv = '﻿' + lines.join('\n');
+    const stamp = hoy.toISOString().slice(0, 10).replace(/-/g, '');
+    descargarArchivo(csv, 'calibrate-log-' + stamp + '-' + dias + 'd.csv', 'text/csv');
+  }
+
   window.exports = {
     listaCSV: exportarListaCSV,
     textoSupermercado: generarTextoSupermercado,
     textoKeep: generarTextoKeep,
     icsCompacto: generarICSCompacto,
     icsDetallado: generarICSDetallado,
-    planPDF: exportarPlanPDF
+    planPDF: exportarPlanPDF,
+    logCSV: exportarLogCSV
   };
 
-  console.log('[Exports] Módulo cargado (CSV + .ics + PDF)');
+  console.log('[Exports] Módulo cargado (CSV + .ics + PDF + Log)');
 })();
