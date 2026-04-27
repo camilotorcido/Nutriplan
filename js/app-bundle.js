@@ -3810,14 +3810,14 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
     <div className="animate-fadeIn">
       {/* Banner Fat Loss Mode */}
       {faseInfo && (
-        <div className={`mb-4 rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <div className={`mb-4 rounded-2xl overflow-hidden border min-w-0 w-full ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           {/* Barra de acento superior */}
-          <div className={`h-1.5 ${faseInfo.tipoFase === 'dietBreak' ? 'bg-gradient-to-r from-violet-500 to-purple-500' : 'bg-gradient-to-r from-amber-500 to-orange-500'}`} />
+          <div className={`h-2 ${faseInfo.tipoFase === 'dietBreak' ? 'bg-gradient-to-r from-violet-500 to-purple-500' : 'bg-gradient-to-r from-amber-500 to-orange-500'}`} />
 
-          <div className="px-5 pt-5 pb-5 space-y-4">
+          <div className="px-6 pt-6 pb-7 space-y-5 min-w-0">
             {/* ── Header: etiqueta + nombre de fase ── */}
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-3">
                 <i className={`fas ${faseInfo.tipoFase === 'dietBreak' ? 'fa-pause-circle text-violet-500' : 'fa-fire text-amber-500'} text-sm`}></i>
                 <span className={`text-[10px] font-bold tracking-widest uppercase ${faseInfo.tipoFase === 'dietBreak' ? (darkMode ? 'text-violet-400' : 'text-violet-600') : (darkMode ? 'text-amber-400' : 'text-amber-600')}`}>
                   {faseInfo.tipoFase === 'dietBreak' ? 'Diet Break' : 'Fat Loss Mode'}
@@ -3829,10 +3829,10 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                   <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>PROGRAMADO</span>
                 )}
               </div>
-              <h3 className={`text-xl font-bold leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              <h3 className={`text-2xl font-bold leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 {faseInfo.nombreFase}
               </h3>
-              <p className={`text-xs mt-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <p className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 Día {faseInfo.diaDentroDeFase} de fase · Mes {faseInfo.mesInicio}{faseInfo.mesFin !== faseInfo.mesInicio ? '–' + faseInfo.mesFin : ''}
                 {faseInfo.diasRestantesEnFase > 0 && ` · ${faseInfo.diasRestantesEnFase}d restantes`}
               </p>
@@ -3840,41 +3840,41 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
 
             {/* ── Métricas: calorías · pasos · días restantes ── */}
             <div className={`grid grid-cols-3 rounded-xl overflow-hidden ${darkMode ? 'bg-gray-700/60' : 'bg-amber-50'}`}>
-              <div className="text-center px-2 py-3">
-                <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Objetivo</div>
-                <div className={`text-2xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              <div className="text-center px-3 py-5">
+                <div className={`text-[10px] font-bold uppercase tracking-wide mb-2 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Objetivo</div>
+                <div className={`text-3xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                   {faseInfo.calorias}
                 </div>
-                <div className={`text-[10px] mt-1 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>kcal/día</div>
+                <div className={`text-[10px] mt-2 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>kcal/día</div>
               </div>
-              <div className={`text-center px-2 py-3 border-x ${darkMode ? 'border-gray-600' : 'border-amber-200/60'}`}>
-                <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Pasos</div>
-                <div className={`text-2xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              <div className={`text-center px-3 py-5 border-x ${darkMode ? 'border-gray-600' : 'border-amber-200/60'}`}>
+                <div className={`text-[10px] font-bold uppercase tracking-wide mb-2 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Pasos</div>
+                <div className={`text-3xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                   {Math.round(faseInfo.targetPasos / 1000)}k
                 </div>
-                <div className={`text-[10px] mt-1 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>diarios</div>
+                <div className={`text-[10px] mt-2 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>diarios</div>
               </div>
-              <div className="text-center px-2 py-3">
-                <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Restantes</div>
-                <div className={`text-2xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              <div className="text-center px-3 py-5">
+                <div className={`text-[10px] font-bold uppercase tracking-wide mb-2 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Restantes</div>
+                <div className={`text-3xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                   {faseInfo.diasRestantesEnFase}
                 </div>
-                <div className={`text-[10px] mt-1 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>días</div>
+                <div className={`text-[10px] mt-2 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>días</div>
               </div>
             </div>
 
             {/* ── Foco de la fase ── */}
             {faseInfo.foco && (
-              <div className="flex items-start gap-3">
-                <i className="fas fa-bullseye text-amber-500 mt-0.5 flex-shrink-0"></i>
-                <p className={`text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{faseInfo.foco}</p>
+              <div className="flex items-start gap-3 min-w-0">
+                <i className="fas fa-bullseye text-amber-500 mt-1 flex-shrink-0"></i>
+                <p className={`text-sm leading-relaxed min-w-0 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{faseInfo.foco}</p>
               </div>
             )}
 
             {/* ── Próximo hito ── */}
             {faseInfo.proximoHito && (
               <div className={`flex items-center justify-between gap-3 text-sm rounded-xl px-4 py-3 ${darkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-50 text-gray-500'}`}>
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
                   <i className={`fas fa-forward-fast flex-shrink-0 ${faseInfo.tipoFase === 'dietBreak' ? 'text-violet-400' : 'text-amber-500'}`}></i>
                   <span className="flex-shrink-0">Próximo:</span>
                   <span className={`font-semibold truncate ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{faseInfo.proximoHito.nombre}</span>
