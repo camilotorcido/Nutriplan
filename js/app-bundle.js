@@ -5572,6 +5572,349 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
+// COMPONENTE: BarcodeScannerModal
+// Escanea código de barras → busca en Open Food Facts → agrega a consumido
+// =============================================
+function BarcodeScannerModal({ darkMode, onAdd, onClose }) {
+  var videoRef = React.useRef(null);
+  var streamRef = React.useRef(null);
+  var scanningRef = React.useRef(true);
+  var detectorRef = React.useRef(null);
+
+  var [fase, setFase] = React.useState('scanning'); // 'scanning'|'fetching'|'found'|'not_found'|'manual'
+  var [producto, setProducto] = React.useState(null);
+  var [gramos, setGramos] = React.useState(100);
+  var [errorMsg, setErrorMsg] = React.useState('');
+  var [manualCode, setManualCode] = React.useState('');
+  var [soportado] = React.useState(typeof window.BarcodeDetector !== 'undefined');
+
+  function detenerCamara() {
+    scanningRef.current = false;
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(function(t) { t.stop(); });
+      streamRef.current = null;
+    }
+  }
+
+  function escanearLoop() {
+    if (!scanningRef.current || !videoRef.current) return;
+    if (!detectorRef.current) {
+      try { detectorRef.current = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] }); }
+      catch(e) { setFase('manual'); return; }
+    }
+    detectorRef.current.detect(videoRef.current).then(function(codes) {
+      if (!scanningRef.current) return;
+      if (codes && codes.length > 0) {
+        var code = codes[0].rawValue;
+        detenerCamara();
+        buscarProducto(code);
+      } else {
+        if (scanningRef.current) requestAnimationFrame(escanearLoop);
+      }
+    }).catch(function() {
+      if (scanningRef.current) requestAnimationFrame(escanearLoop);
+    });
+  }
+
+  function iniciarCamara() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setFase('manual'); return;
+    }
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    }).then(function(stream) {
+      streamRef.current = stream;
+      if (!videoRef.current) return;
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().then(function() {
+        scanningRef.current = true;
+        escanearLoop();
+      }).catch(function() { setFase('manual'); });
+    }).catch(function() { setFase('manual'); });
+  }
+
+  React.useEffect(function() {
+    if (!soportado) { setFase('manual'); return; }
+    iniciarCamara();
+    return function() { detenerCamara(); };
+  }, []);
+
+  function buscarProducto(codigo) {
+    setFase('fetching');
+    fetch('https://world.openfoodfacts.org/api/v0/product/' + codigo + '.json')
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.status === 1 && data.product) {
+          var p = data.product;
+          var nut = p.nutriments || {};
+          var kcal100 = Math.round(nut['energy-kcal_100g'] || (nut['energy_100g'] ? nut['energy_100g'] / 4.184 : 0));
+          var prot100 = parseFloat((nut['proteins_100g'] || 0).toFixed(1));
+          var carb100 = parseFloat((nut['carbohydrates_100g'] || 0).toFixed(1));
+          var fat100  = parseFloat((nut['fat_100g'] || 0).toFixed(1));
+          var ps = parseInt(p.serving_size);
+          var porcion = (!isNaN(ps) && ps > 0 && ps <= 1000) ? ps : 100;
+          setProducto({
+            nombre: p.product_name_es || p.product_name || 'Producto escaneado',
+            marca: p.brands || '',
+            imagen: p.image_front_small_url || null,
+            barcode: codigo,
+            kcal100: kcal100, prot100: prot100, carb100: carb100, fat100: fat100
+          });
+          setGramos(porcion);
+          setFase('found');
+        } else {
+          setErrorMsg('Código ' + codigo + ' no encontrado en Open Food Facts');
+          setFase('not_found');
+        }
+      })
+      .catch(function() {
+        setErrorMsg('Error de red al consultar el código');
+        setFase('not_found');
+      });
+  }
+
+  function confirmarAgregar() {
+    if (!producto) return;
+    var g = Math.max(1, parseInt(gramos) || 100);
+    onAdd({
+      id: 'scan_' + Date.now(),
+      nombre: producto.nombre + (g !== 100 ? ' (' + g + 'g)' : ''),
+      kcal: Math.round(producto.kcal100 * g / 100),
+      proteinas_g: parseFloat((producto.prot100 * g / 100).toFixed(1)),
+      carbohidratos_g: parseFloat((producto.carb100 * g / 100).toFixed(1)),
+      grasas_g: parseFloat((producto.fat100 * g / 100).toFixed(1)),
+      timestamp: Date.now()
+    });
+    onClose();
+  }
+
+  function reiniciarEscaner() {
+    setProducto(null);
+    setErrorMsg('');
+    setManualCode('');
+    scanningRef.current = true;
+    setFase('scanning');
+    iniciarCamara();
+  }
+
+  var g = Math.max(1, parseInt(gramos) || 100);
+  var kcalFinal = producto ? Math.round(producto.kcal100 * g / 100) : 0;
+  var protFinal = producto ? parseFloat((producto.prot100 * g / 100).toFixed(1)) : 0;
+  var carbFinal = producto ? parseFloat((producto.carb100 * g / 100).toFixed(1)) : 0;
+  var fatFinal  = producto ? parseFloat((producto.fat100 * g / 100).toFixed(1)) : 0;
+
+  var cardBase = darkMode ? 'bg-gray-900 border-t border-gray-700' : 'bg-white';
+  var inputStyle = { background: darkMode ? '#1f2937' : '#fff', color: darkMode ? '#f9fafb' : '#111827', border: '1px solid ' + (darkMode ? '#4b5563' : '#e5e7eb') };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 backdrop-blur-sm animate-fadeIn"
+      onClick={function(e) { if (e.target === e.currentTarget) { detenerCamara(); onClose(); } }}>
+      <div className={'w-full max-w-md rounded-t-2xl shadow-2xl ' + cardBase}
+        style={{ maxHeight: '92vh', display: 'flex', flexDirection: 'column', paddingBottom: 'env(safe-area-inset-bottom,16px)' }}>
+
+        {/* Header */}
+        <div className={'flex-shrink-0 flex items-center justify-between px-5 py-4 border-b ' + (darkMode ? 'border-gray-700' : 'border-gray-100')}>
+          <h3 className={'text-base font-bold ' + (darkMode ? 'text-white' : 'text-gray-900')}>
+            <i className="fas fa-barcode text-amber-500 mr-2"></i>Escanear producto
+          </h3>
+          <button onClick={function() { detenerCamara(); onClose(); }} aria-label="Cerrar"
+            className={'w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-colors ' + (darkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-400 hover:bg-gray-100')}>
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div style={{ overflowY: 'auto', flex: 1 }} className="px-5 py-4 space-y-4">
+
+          {/* ── FASE: scanning ── */}
+          {fase === 'scanning' && (
+            <div className="space-y-3">
+              <p className={'text-xs text-center ' + (darkMode ? 'text-gray-400' : 'text-gray-500')}>
+                Apunta la cámara al código de barras del producto
+              </p>
+              <div className="relative rounded-2xl overflow-hidden bg-black" style={{ aspectRatio: '4/3' }}>
+                <video ref={videoRef} muted playsInline autoPlay
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {/* Viewfinder overlay */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="relative" style={{ width: '65%', height: '38%' }}>
+                    <div className="absolute top-0 left-0 w-7 h-7 border-t-[3px] border-l-[3px] border-amber-400 rounded-tl-lg" />
+                    <div className="absolute top-0 right-0 w-7 h-7 border-t-[3px] border-r-[3px] border-amber-400 rounded-tr-lg" />
+                    <div className="absolute bottom-0 left-0 w-7 h-7 border-b-[3px] border-l-[3px] border-amber-400 rounded-bl-lg" />
+                    <div className="absolute bottom-0 right-0 w-7 h-7 border-b-[3px] border-r-[3px] border-amber-400 rounded-br-lg" />
+                    <div className="absolute inset-x-2 top-1/2 h-px bg-amber-400/80" style={{ boxShadow: '0 0 6px 2px rgba(200,148,58,0.5)' }} />
+                  </div>
+                </div>
+                <div className="absolute bottom-3 inset-x-0 text-center">
+                  <span className="text-white text-xs bg-black/50 px-3 py-1 rounded-full">
+                    <i className="fas fa-circle text-red-400 text-[8px] mr-1.5" style={{ animation: 'pulse-soft 1.2s infinite' }}></i>Escaneando…
+                  </span>
+                </div>
+              </div>
+              <button onClick={function() { detenerCamara(); setFase('manual'); }}
+                className={'w-full text-xs py-2 text-center cursor-pointer transition-colors ' + (darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600')}>
+                <i className="fas fa-keyboard mr-1.5"></i>Ingresar código manualmente
+              </button>
+            </div>
+          )}
+
+          {/* ── FASE: fetching ── */}
+          {fase === 'fetching' && (
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
+              <div className="w-12 h-12 rounded-full border-4 border-amber-100 border-t-amber-500" style={{ animation: 'spin 0.8s linear infinite' }} />
+              <p className={'text-sm ' + (darkMode ? 'text-gray-300' : 'text-gray-600')}>Buscando producto…</p>
+            </div>
+          )}
+
+          {/* ── FASE: not_found ── */}
+          {fase === 'not_found' && (
+            <div className="space-y-4">
+              <div className={'rounded-xl p-4 text-center ' + (darkMode ? 'bg-red-900/30 border border-red-800' : 'bg-red-50 border border-red-200')}>
+                <i className="fas fa-triangle-exclamation text-red-500 text-2xl mb-2 block"></i>
+                <p className={'text-sm font-semibold ' + (darkMode ? 'text-red-300' : 'text-red-700')}>{errorMsg}</p>
+                <p className={'text-xs mt-1 ' + (darkMode ? 'text-gray-400' : 'text-gray-500')}>
+                  El producto puede no estar en Open Food Facts aún
+                </p>
+              </div>
+              <div className="flex gap-2">
+                {soportado && (
+                  <button onClick={reiniciarEscaner}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-colors cursor-pointer">
+                    <i className="fas fa-redo mr-2"></i>Reintentar
+                  </button>
+                )}
+                <button onClick={function() { setFase('manual'); }}
+                  className={'flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors cursor-pointer ' + (darkMode ? 'border-gray-600 text-gray-200 hover:bg-gray-700' : 'border-gray-200 text-gray-700 hover:bg-gray-50')}>
+                  <i className="fas fa-keyboard mr-2"></i>Ingresar manual
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── FASE: manual ── */}
+          {fase === 'manual' && (
+            <div className="space-y-4">
+              {!soportado && (
+                <div className={'rounded-xl p-3 text-xs ' + (darkMode ? 'bg-blue-900/30 border border-blue-800 text-blue-300' : 'bg-blue-50 border border-blue-200 text-blue-700')}>
+                  <i className="fas fa-info-circle mr-1.5"></i>
+                  Tu navegador no soporta el escáner de cámara. Ingresa el número del código de barras.
+                </div>
+              )}
+              <div>
+                <label className={'block text-xs font-semibold mb-2 ' + (darkMode ? 'text-gray-300' : 'text-gray-600')}>
+                  Número del código de barras
+                </label>
+                <div className="flex gap-2">
+                  <input type="tel" inputMode="numeric" value={manualCode}
+                    onChange={function(e) { setManualCode(e.target.value.replace(/\D/g,'').slice(0,14)); }}
+                    onKeyDown={function(e) { if (e.key === 'Enter' && manualCode.length >= 8) buscarProducto(manualCode); }}
+                    placeholder="ej: 7802800081234"
+                    style={Object.assign({}, inputStyle, { flex: 1, padding: '10px 12px', borderRadius: 12, fontSize: 14, outline: 'none' })} />
+                  <button onClick={function() { if (manualCode.length >= 8) buscarProducto(manualCode); }}
+                    disabled={manualCode.length < 8}
+                    className="px-4 rounded-xl bg-amber-500 text-white text-sm font-bold hover:bg-amber-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                    <i className="fas fa-search"></i>
+                  </button>
+                </div>
+              </div>
+              {soportado && (
+                <button onClick={reiniciarEscaner}
+                  className={'w-full text-xs py-2 text-center cursor-pointer transition-colors ' + (darkMode ? 'text-amber-400 hover:text-amber-300' : 'text-amber-600 hover:text-amber-700')}>
+                  <i className="fas fa-camera mr-1.5"></i>Volver a la cámara
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* ── FASE: found ── */}
+          {fase === 'found' && producto && (
+            <div className="space-y-4 animate-fadeIn">
+              {/* Product card */}
+              <div className={'rounded-2xl p-4 ' + (darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-gray-50 border border-gray-200')}>
+                <div className="flex items-start gap-3">
+                  {producto.imagen && (
+                    <img src={producto.imagen} alt={producto.nombre}
+                      className="w-14 h-14 rounded-xl object-contain bg-white border border-gray-200 flex-shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h4 className={'font-bold text-sm leading-tight ' + (darkMode ? 'text-white' : 'text-gray-900')}>{producto.nombre}</h4>
+                    {producto.marca && <p className={'text-xs mt-0.5 ' + (darkMode ? 'text-gray-400' : 'text-gray-500')}>{producto.marca}</p>}
+                    <p className={'text-[10px] mt-1.5 font-medium ' + (darkMode ? 'text-gray-500' : 'text-gray-400')}>Por 100 g:</p>
+                    <div className="flex flex-wrap gap-2 mt-0.5 text-[11px]">
+                      <span className="text-orange-500 font-bold">{producto.kcal100} kcal</span>
+                      <span className="text-blue-400">P {producto.prot100}g</span>
+                      <span className="text-amber-400">C {producto.carb100}g</span>
+                      <span className="text-rose-400">G {producto.fat100}g</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Gram picker */}
+              <div>
+                <label className={'block text-xs font-semibold mb-2 ' + (darkMode ? 'text-gray-300' : 'text-gray-600')}>
+                  ¿Cuántos gramos consumiste?
+                </label>
+                <div className="flex items-center gap-2">
+                  <button onClick={function() { setGramos(function(prev) { return Math.max(5, parseInt(prev)-10); }); }}
+                    className={'w-10 h-10 rounded-xl font-bold text-lg flex items-center justify-center cursor-pointer transition-colors flex-shrink-0 ' + (darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')}>−</button>
+                  <div className="relative flex-1">
+                    <input type="number" value={gramos}
+                      onChange={function(e) { var v = parseInt(e.target.value) || 1; setGramos(Math.max(1, Math.min(2000, v))); }}
+                      style={Object.assign({}, inputStyle, { width: '100%', padding: '8px 36px 8px 12px', borderRadius: 12, fontSize: 16, fontWeight: 700, textAlign: 'center', outline: 'none' })} />
+                    <span className={'absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium ' + (darkMode ? 'text-gray-400' : 'text-gray-500')}>g</span>
+                  </div>
+                  <button onClick={function() { setGramos(function(prev) { return Math.min(2000, parseInt(prev)+10); }); }}
+                    className={'w-10 h-10 rounded-xl font-bold text-lg flex items-center justify-center cursor-pointer transition-colors flex-shrink-0 ' + (darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')}>+</button>
+                </div>
+                <div className="flex gap-1.5 mt-2 flex-wrap">
+                  {[50, 100, 150, 200, 300].map(function(gv) {
+                    var isActive = parseInt(gramos) === gv;
+                    return (
+                      <button key={gv} onClick={function() { setGramos(gv); }}
+                        className={'text-xs px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ' + (isActive
+                          ? 'bg-amber-500 border-amber-500 text-white'
+                          : (darkMode ? 'border-gray-600 text-gray-300 hover:border-amber-600 hover:text-amber-300' : 'border-gray-200 text-gray-600 hover:border-amber-400 hover:text-amber-700'))}>
+                        {gv}g
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Macro summary */}
+              <div className={'rounded-xl p-3 text-center ' + (darkMode ? 'bg-amber-900/20 border border-amber-800/40' : 'bg-amber-50 border border-amber-200')}>
+                <div>
+                  <span className={'text-3xl font-black ' + (darkMode ? 'text-amber-300' : 'text-amber-700')}>{kcalFinal}</span>
+                  <span className={'text-sm ml-1.5 ' + (darkMode ? 'text-amber-400' : 'text-amber-600')}>kcal</span>
+                </div>
+                <div className="flex justify-center gap-4 mt-1.5 text-xs">
+                  <span className="text-blue-400 font-semibold">P {protFinal}g</span>
+                  <span className="text-amber-400 font-semibold">C {carbFinal}g</span>
+                  <span className="text-rose-400 font-semibold">G {fatFinal}g</span>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-2">
+                <button onClick={reiniciarEscaner}
+                  className={'py-2.5 px-4 rounded-xl text-sm font-medium border transition-colors cursor-pointer flex-shrink-0 ' + (darkMode ? 'border-gray-600 text-gray-200 hover:bg-gray-700' : 'border-gray-200 text-gray-700 hover:bg-gray-50')}>
+                  <i className="fas fa-redo text-xs mr-1.5"></i>Otro
+                </button>
+                <button onClick={confirmarAgregar}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 transition-all cursor-pointer shadow-md">
+                  <i className="fas fa-plus mr-2"></i>Agregar {gramos}g
+                </button>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================
 // COMPONENTE: ModalComidaExterna (v20260428ai)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
@@ -5975,6 +6318,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const [pesoError, setPesoError] = React.useState(''); // N23
   const [comidasExt, setComidasExt] = React.useState(function() { return _comidasExtFecha(fechaHoyIso); });
   const [showModalExt, setShowModalExt] = React.useState(false);
+  const [showScanner, setShowScanner] = React.useState(false);
 
   const necesitaPeso = React.useMemo(() => {
     if (!tieneEntrenamiento || !window.NP_BodyComp || !window.NP_BodyComp.cargar) return false;
@@ -6346,10 +6690,18 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
           <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             <i className="fas fa-circle-plus mr-2"></i>{t('Comidas externas','Extra meals')}
           </h3>
-          <button onClick={function() { setShowModalExt(true); }}
-            className="text-xs text-green-500 font-semibold hover:text-green-600 cursor-pointer transition-colors">
-            <i className="fas fa-plus mr-1"></i>{t('Agregar','Add')}
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={function() { setShowScanner(true); }}
+              className={'text-xs font-semibold cursor-pointer transition-colors ' + (darkMode ? 'text-amber-400 hover:text-amber-300' : 'text-amber-600 hover:text-amber-700')}
+              title="Escanear código de barras">
+              <i className="fas fa-barcode mr-1"></i>{t('Escanear','Scan')}
+            </button>
+            <span className={darkMode ? 'text-gray-600' : 'text-gray-300'}>|</span>
+            <button onClick={function() { setShowModalExt(true); }}
+              className="text-xs text-green-500 font-semibold hover:text-green-600 cursor-pointer transition-colors">
+              <i className="fas fa-plus mr-1"></i>{t('Agregar','Add')}
+            </button>
+          </div>
         </div>
         {comidasExt.length === 0 ? (
           <button onClick={function() { setShowModalExt(true); }}
@@ -6489,6 +6841,21 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
             </div>
           )}
         </div>
+      )}
+
+      {/* Modal escáner de código de barras */}
+      {showScanner && (
+        <BarcodeScannerModal
+          darkMode={darkMode}
+          onAdd={function(comida) {
+            var nuevas = comidasExt.concat([comida]);
+            setComidasExt(nuevas);
+            _guardarComidasExt(fechaHoyIso, nuevas);
+            _agregarAdherenciaExt(diaActual, comida);
+            setRefresh(function(r) { return r + 1; });
+          }}
+          onClose={function() { setShowScanner(false); }}
+        />
       )}
 
       {/* Modal comida externa */}
