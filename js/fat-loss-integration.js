@@ -74,10 +74,14 @@ function recalcularRoadmap(overrides) {
   const roadmap = window.NP_Roadmap.generar(nuevosInputs);
   perfil.roadmap = roadmap;
   perfil.proteinaFloor = roadmap.calculados.proteinaTarget;
+  perfil.macrosGramos = roadmap.calculados.macrosGramos || null;
 
   // Aplicar calorías de la fase actual (puede haber avanzado en el tiempo)
   const fase = window.NP_Roadmap.faseActual(roadmap);
-  if (fase && fase.calorias) perfil.caloriasManual = fase.calorias;
+  if (fase && fase.calorias) {
+    perfil.caloriasManual  = fase.calorias;
+    perfil.caloriasObjetivo = fase.calorias;
+  }
 
   if (typeof guardarPerfil === 'function') guardarPerfil(perfil);
   return roadmap;
@@ -271,6 +275,54 @@ function activarVolumenMode(wizardInputs) {
   return perfilActualizado;
 }
 
+// ─── Auto-migración: regenera roadmaps viejos sin macrosGramos ───
+// Se llama al arrancar la app para que perfiles pre-actualización adopten la nueva fórmula.
+function migrarPerfilSiStale() {
+  if (typeof cargarPerfil !== 'function' || typeof guardarPerfil !== 'function') return false;
+  const perfil = cargarPerfil();
+  if (!perfil) return false;
+
+  let migrado = false;
+
+  // Pérdida de peso (roadmap principal)
+  if (perfil.roadmap && perfil.roadmap.inputs &&
+      !(perfil.roadmap.calculados && perfil.roadmap.calculados.macrosGramos)) {
+    try {
+      if (window.NP_Roadmap && window.NP_Roadmap.generar) {
+        console.log('[NP] Migrando roadmap fat-loss a fórmula LBM × 2.63...');
+        recalcularRoadmap();   // lee perfil del storage, regenera, guarda
+        migrado = true;
+      }
+    } catch (e) { console.warn('[NP] Migración fat-loss falló:', e); }
+  }
+
+  // Mantenimiento
+  if (perfil.roadmapMantenimiento && perfil.roadmapMantenimiento.inputs &&
+      !(perfil.roadmapMantenimiento.calculados && perfil.roadmapMantenimiento.calculados.macrosGramos)) {
+    try {
+      if (window.NP_Roadmap && window.NP_Roadmap.generarMantenimiento) {
+        console.log('[NP] Migrando roadmap mantenimiento a fórmula LBM × 2.0...');
+        activarMantenimientoMode(perfil.roadmapMantenimiento.inputs);
+        migrado = true;
+      }
+    } catch (e) { console.warn('[NP] Migración mantenimiento falló:', e); }
+  }
+
+  // Volumen
+  if (perfil.roadmapVolumen && perfil.roadmapVolumen.inputs &&
+      !(perfil.roadmapVolumen.calculados && perfil.roadmapVolumen.calculados.macrosGramos)) {
+    try {
+      if (window.NP_Roadmap && window.NP_Roadmap.generarVolumen) {
+        console.log('[NP] Migrando roadmap volumen a fórmula LBM × 2.4...');
+        activarVolumenMode(perfil.roadmapVolumen.inputs);
+        migrado = true;
+      }
+    } catch (e) { console.warn('[NP] Migración volumen falló:', e); }
+  }
+
+  return migrado;
+}
+
 // ─── Exponer a window ───
 if (typeof window !== 'undefined') {
   window.NP_FatLoss = {
@@ -285,6 +337,7 @@ if (typeof window !== 'undefined') {
     proteinaTarget: proteinaTargetEfectiva,
     banner: informacionBanner,
     desincronizado: planDesincronizado,
-    sincronizar: sincronizarConFaseActual
+    sincronizar: sincronizarConFaseActual,
+    migrar: migrarPerfilSiStale
   };
 }
