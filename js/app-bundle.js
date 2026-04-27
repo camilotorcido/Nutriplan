@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260428ad: Bilingual ES/EN support
+   v20260428ae: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260428ad: Bilingual helpers ────────────────────────────────────────
+// ─── v20260428ae: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -401,7 +401,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260428ad: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260428ae: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
   // Previews para mantenimiento y volumen (paso 4)
@@ -672,7 +672,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     _mostrarExplicacion(perfilFinal);
   };
 
-  // ── v20260428ad: Wizard onboarding ──────────────────────────────────────
+  // ── v20260428ae: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -2107,7 +2107,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           </div>
 
-          {/* Objetivo — v20260428ad: goal cards unificados, sin kcal subtitles */}
+          {/* Objetivo — v20260428ae: goal cards unificados, sin kcal subtitles */}
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-bullseye text-green-500"></i>
@@ -3920,25 +3920,6 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
               : yaMarcadoNo ? (darkMode ? 'bg-gray-800/50 border-gray-600 opacity-60' : 'bg-gray-100 border-gray-300 opacity-70')
               : (darkMode ? colores.bgDark + ' ' + colores.borderDark : colores.bg + ' ' + colores.border)
             }`}>
-              {/* Checkbox de adherencia — 44×44 touch target */}
-              <div className="absolute top-2 right-2 flex gap-1">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (typeof window.adherencia !== 'undefined') {
-                      window.adherencia.marcar(diaSeleccionado, tipo, !yaComido, {
-                        kcal_plan: comida.calorias_escaladas,
-                        proteinas_plan: comida.proteinas_escaladas,
-                        nombre: comida.nombre
-                      }, semanaActiva);
-                      setForceUpdate(x => x + 1);
-                    }
-                  }}
-                  className={`cal-check-btn ${yaComido ? 'checked' : ''}`}
-                  title={yaComido ? 'Marcado como comido' : 'Marcar como comido'}>
-                  <i className={`fas fa-check ${yaComido ? 'text-sm' : 'text-xs opacity-50'}`}></i>
-                </button>
-              </div>
               <div className="flex items-start justify-between">
                 <div className="flex-1" onClick={() => onRecipeClick(comida)}>
                   <div className="flex items-center gap-2 mb-1">
@@ -3990,7 +3971,29 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-1 ml-2">
+                <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                  {/* Check de adherencia — integrado en la fila de acciones */}
+                  {typeof window.adherencia !== 'undefined' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.adherencia.marcar(diaSeleccionado, tipo, !yaComido, {
+                          kcal_plan: comida.calorias_escaladas,
+                          proteinas_plan: comida.proteinas_escaladas,
+                          nombre: comida.nombre
+                        }, semanaActiva);
+                        setForceUpdate(x => x + 1);
+                      }}
+                      title={yaComido ? 'Marcado como comido' : 'Marcar como comido'}
+                      style={{ width: 32, height: 32, minWidth: 32 }}
+                      className={`flex items-center justify-center rounded-lg transition-all ${
+                        yaComido
+                          ? 'bg-emerald-500/20 text-emerald-500'
+                          : darkMode ? 'text-gray-600 hover:text-emerald-400 hover:bg-gray-700' : 'text-gray-300 hover:text-emerald-500 hover:bg-emerald-50'
+                      }`}>
+                      <i className={`fas fa-check text-sm ${yaComido ? '' : 'opacity-60'}`}></i>
+                    </button>
+                  )}
                   {/* MEJORA 3: Swap button con loading */}
                   {/* A3: aria-label en swap (reemplaza title) */}
                   <button onClick={(e) => handleSwap(e, diaSeleccionado, tipo)}
@@ -5485,7 +5488,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260428ad)
+// COMPONENTE: ModalComidaExterna (v20260428ae)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
 //   - Búsqueda en FOODS_DB + RECETAS_DB
@@ -5808,7 +5811,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260428ad)
+// COMPONENTE: HoyView — Dashboard diario (v20260428ae)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -6595,14 +6598,14 @@ function NutricionLogView({ perfil, darkMode }) {
           <DonutChart p={datos.protPct} c={datos.carbPct} f={datos.fatPct} />
           <div className="flex-1 space-y-2">
             {[
-              { label: 'Proteína',      pct: datos.protPct, g: datos.avgProt, color: '#60a5fa', bg: darkMode ? 'bg-blue-900/30'  : 'bg-blue-50'  },
-              { label: 'Carbohidratos', pct: datos.carbPct, g: datos.avgCarb, color: '#fbbf24', bg: darkMode ? 'bg-amber-900/30' : 'bg-amber-50' },
-              { label: 'Grasa',         pct: datos.fatPct,  g: datos.avgFat,  color: '#f87171', bg: darkMode ? 'bg-rose-900/30'  : 'bg-rose-50'  },
+              { label: 'Proteína', short: 'Prot', pct: datos.protPct, g: datos.avgProt, color: '#60a5fa', bg: darkMode ? 'bg-blue-900/30'  : 'bg-blue-50'  },
+              { label: 'Carbos',   short: 'Carb', pct: datos.carbPct, g: datos.avgCarb, color: '#fbbf24', bg: darkMode ? 'bg-amber-900/30' : 'bg-amber-50' },
+              { label: 'Grasa',    short: 'Gras', pct: datos.fatPct,  g: datos.avgFat,  color: '#f87171', bg: darkMode ? 'bg-rose-900/30'  : 'bg-rose-50'  },
             ].map(item => (
               <div key={item.label} className={`rounded-lg px-3 py-2 ${item.bg}`}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className={`text-[11px] ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{item.label}</span>
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className={`text-[11px] flex-shrink-0 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{item.label}</span>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     <span className="font-display text-xs font-semibold" style={{color: item.color}}>{item.g}g</span>
                     <span className="font-display text-sm font-bold" style={{color: item.color}}>{item.pct}%</span>
                   </div>
@@ -8616,7 +8619,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260428ad: Language state ───
+  // ─── v20260428ae: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
