@@ -8671,6 +8671,62 @@ function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
   );
 }
 
+// ─── Traducción ES→EN para búsqueda en Wger (ejercicios del protocolo) ───
+function ejercicioToEnSearch(nombre) {
+  var n = nombre.toLowerCase().trim();
+  var exacto = {
+    'press pecho cables': 'cable chest press',
+    'aperturas cable chest fly': 'cable fly',
+    'press hombros cables bilateral': 'cable shoulder press',
+    'elevaciones laterales cable': 'cable lateral raise',
+    'tríceps pushdown cable': 'cable pushdown',
+    'pike pushups': 'pike push-up',
+    'plancha frontal': 'plank',
+    'plancha lateral alternada': 'side plank',
+    'jalón al pecho': 'lat pulldown',
+    'jalón agarre neutro': 'lat pulldown neutral grip',
+    'remo cable sentado': 'seated cable row',
+    'remo con mancuerna': 'dumbbell row',
+    'curl bíceps cable': 'cable bicep curl',
+    'curl martillo': 'hammer curl',
+    'sentadilla goblet': 'goblet squat',
+    'sentadilla': 'squat',
+    'zancada': 'lunge',
+    'hip thrust': 'hip thrust',
+    'peso muerto rumano': 'romanian deadlift',
+    'curl femoral': 'lying leg curl',
+    'extensión cuádriceps': 'leg extension',
+    'elevación de talones': 'calf raise',
+    'press de banca': 'bench press',
+    'dominadas': 'pull-up',
+    'fondos': 'triceps dip',
+    'face pull': 'face pull',
+  };
+  if (exacto[n]) return exacto[n];
+  // Sustituciones de palabras clave
+  var t = n;
+  t = t.replace(/tr[ií]ceps/g,         'triceps');
+  t = t.replace(/cables?/g,             'cable');
+  t = t.replace(/press\s+pecho/g,       'chest press');
+  t = t.replace(/aperturas?/g,          'fly');
+  t = t.replace(/hombros?/g,            'shoulder');
+  t = t.replace(/elevaciones\s+laterales/g, 'lateral raise');
+  t = t.replace(/plancha\s+lateral/g,   'side plank');
+  t = t.replace(/plancha/g,             'plank');
+  t = t.replace(/sentadilla/g,          'squat');
+  t = t.replace(/zancadas?/g,           'lunge');
+  t = t.replace(/jal[oó]n/g,           'lat pulldown');
+  t = t.replace(/remo/g,               'row');
+  t = t.replace(/b[ií]cep[s]?/g,       'bicep');
+  t = t.replace(/\bpecho\b/g,           'chest');
+  t = t.replace(/mancuernas?/g,         'dumbbell');
+  t = t.replace(/peso\s+muerto/g,       'deadlift');
+  t = t.replace(/rumano/g,              'romanian');
+  t = t.replace(/femoral/g,             'leg curl');
+  t = t.replace(/bilateral/g,           '');
+  return t.replace(/\s+/g, ' ').trim();
+}
+
 // ─── EjercicioCard: tarjeta individual con fotos de referencia vía Wger ───
 function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, bajó, onToggle, onSetPeso, onSetReps }) {
   const [mostrarFotos, setMostrarFotos] = React.useState(false);
@@ -8686,13 +8742,23 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
   function fetchFotos() {
     if (fotoEstado !== 'idle') return;
     setFotoEstado('loading');
-    const term = encodeURIComponent(e.nombre);
+    // Traducir nombre ES→EN antes de buscar en Wger (idioma=2: inglés)
+    const searchTerm = ejercicioToEnSearch(e.nombre);
+    const term = encodeURIComponent(searchTerm);
     fetch('https://wger.de/api/v2/exercise/search/?term=' + term + '&language=2&format=json')
       .then(r => r.json())
       .then(data => {
         const sugerencias = data.suggestions || [];
         if (!sugerencias.length) { setFotoEstado('vacio'); return; }
-        const baseId = sugerencias[0].data.base_id;
+        const primera = sugerencias[0].data;
+        // Wger puede devolver la imagen ya en el resultado de búsqueda
+        if (primera.image) {
+          setFotos([primera.image]);
+          setFotoEstado('ok');
+          return;
+        }
+        // Fallback: pedir imágenes por base_id
+        const baseId = primera.base_id;
         return fetch('https://wger.de/api/v2/exerciseimage/?exercise_base=' + baseId + '&format=json')
           .then(r => r.json())
           .then(imgData => {
