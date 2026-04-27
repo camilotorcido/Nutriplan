@@ -3873,11 +3873,13 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
 
             {/* ── Próximo hito ── */}
             {faseInfo.proximoHito && (
-              <div className={`flex items-center gap-2.5 text-sm rounded-xl px-4 py-3 ${darkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-50 text-gray-500'}`}>
-                <i className={`fas fa-forward-fast flex-shrink-0 ${faseInfo.tipoFase === 'dietBreak' ? 'text-violet-400' : 'text-amber-500'}`}></i>
-                <span>Próximo:</span>
-                <span className={`font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{faseInfo.proximoHito.nombre}</span>
-                <span className="ml-auto text-xs opacity-70">en {faseInfo.proximoHito.enDias}d</span>
+              <div className={`flex items-center justify-between gap-3 text-sm rounded-xl px-4 py-3 ${darkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-50 text-gray-500'}`}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <i className={`fas fa-forward-fast flex-shrink-0 ${faseInfo.tipoFase === 'dietBreak' ? 'text-violet-400' : 'text-amber-500'}`}></i>
+                  <span className="flex-shrink-0">Próximo:</span>
+                  <span className={`font-semibold truncate ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{faseInfo.proximoHito.nombre}</span>
+                </div>
+                <span className="flex-shrink-0 text-xs opacity-70">en {faseInfo.proximoHito.enDias}d</span>
               </div>
             )}
 
