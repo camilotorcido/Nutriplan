@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260428ab: Bilingual ES/EN support
+   v20260428ac: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260428ab: Bilingual helpers ────────────────────────────────────────
+// ─── v20260428ac: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -379,7 +379,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260428ab: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260428ac: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
   // Previews para mantenimiento y volumen (paso 4)
@@ -650,7 +650,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     _mostrarExplicacion(perfilFinal);
   };
 
-  // ── v20260428ab: Wizard onboarding ──────────────────────────────────────
+  // ── v20260428ac: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -2085,7 +2085,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           </div>
 
-          {/* Objetivo — v20260428ab: goal cards unificados, sin kcal subtitles */}
+          {/* Objetivo — v20260428ac: goal cards unificados, sin kcal subtitles */}
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-bullseye text-green-500"></i>
@@ -5448,7 +5448,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260428ab)
+// COMPONENTE: ModalComidaExterna (v20260428ac)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
 //   - Búsqueda en FOODS_DB + RECETAS_DB
@@ -5771,7 +5771,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260428ab)
+// COMPONENTE: HoyView — Dashboard diario (v20260428ac)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -6325,14 +6325,253 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
 }
 
 // =============================================
-// COMPONENTE: FitnessTab (Entreno + Pasos + Roadmap + Registros en 4 sub-tabs)
+// COMPONENTE: NutricionLogView — historial nutricional con donut de macros
+// =============================================
+function NutricionLogView({ perfil, darkMode }) {
+  const [dias, setDias] = React.useState(14);
+
+  const datos = React.useMemo(() => {
+    const adher = (() => { try { return JSON.parse(localStorage.getItem('nutriplan_adherencia') || '{}'); } catch(e) { return {}; } })();
+    const ext   = (() => { try { return JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) { return {}; } })();
+
+    const rm = perfil && (perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen);
+    const mg         = rm?.calculados?.macrosGramos;
+    const kcalTarget = rm?.calculados?.caloriasCorte || rm?.calculados?.caloriasObjetivo || null;
+    const protTarget = mg?.proteina     || null;
+    const carbTarget = mg?.carbohidratos || null;
+    const fatTarget  = mg?.grasas       || null;
+
+    // Ratio carb/fat para estimación (kcal remanente tras proteína)
+    const carbKcalPlan = mg ? mg.carbohidratos * 4 : 0;
+    const fatKcalPlan  = mg ? mg.grasas * 9 : 0;
+    const remTotal  = carbKcalPlan + fatKcalPlan;
+    const carbRatio = remTotal > 0 ? carbKcalPlan / remTotal : 0.6;
+
+    const ORDEN     = ['desayuno', 'snack_am', 'almuerzo', 'snack_pm', 'cena'];
+    const DIA_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const hoy = new Date();
+    const diasData = [];
+
+    for (let i = dias - 1; i >= 0; i--) {
+      const d = new Date(hoy);
+      d.setDate(hoy.getDate() - i);
+      const fecha   = d.toISOString().split('T')[0];
+      const diaData = adher[fecha] || {};
+      const extData = ext[fecha]   || [];
+      let kcal = 0, prot = 0, total = 0, consumidas = 0;
+
+      ORDEN.forEach(tipo => {
+        const key = Object.keys(diaData).find(k => k.split(':')[1] === tipo);
+        if (!key) return;
+        const m = diaData[key];
+        total++;
+        if (m.comido) { consumidas++; kcal += m.kcal_plan || 0; prot += m.proteinas_plan || 0; }
+      });
+      extData.forEach(c => { total++; consumidas++; kcal += c.kcal || 0; prot += c.proteinas_g || 0; });
+
+      const rem = Math.max(0, kcal - prot * 4);
+      diasData.push({
+        fecha, label: DIA_SHORT[d.getDay()], dia: d.getDate(),
+        tieneRegistro: total > 0,
+        kcal: Math.round(kcal), prot: Math.round(prot),
+        carb: Math.round(rem * carbRatio / 4),
+        fat:  Math.round(rem * (1 - carbRatio) / 9),
+        adherencia: total > 0 ? Math.round(consumidas / total * 100) : null,
+        total, consumidas
+      });
+    }
+
+    const conReg = diasData.filter(d => d.tieneRegistro && d.kcal > 0);
+    const n = conReg.length || 1;
+    const avg = key => Math.round(conReg.reduce((s, d) => s + d[key], 0) / n);
+    const avgKcal = avg('kcal'), avgProt = avg('prot'), avgCarb = avg('carb'), avgFat = avg('fat');
+    const avgAdher = Math.round(
+      diasData.filter(d => d.adherencia !== null).reduce((s, d) => s + d.adherencia, 0) /
+      Math.max(1, diasData.filter(d => d.adherencia !== null).length)
+    );
+
+    const pKcal = avgProt * 4, cKcal = avgCarb * 4, fKcal = avgFat * 9;
+    const totMKcal = (pKcal + cKcal + fKcal) || 1;
+    const protPct = Math.round(pKcal / totMKcal * 100);
+    const carbPct = Math.round(cKcal / totMKcal * 100);
+    const fatPct  = 100 - protPct - carbPct;
+
+    return {
+      diasData, nConRegistro: conReg.length,
+      avgKcal, avgProt, avgCarb, avgFat, avgAdher,
+      protPct, carbPct, fatPct,
+      kcalTarget, protTarget, carbTarget, fatTarget, tieneMg: !!mg
+    };
+  }, [dias, perfil]);
+
+  // ── SVG donut de 3 segmentos (rotate transform para posicionamiento preciso) ──
+  const DonutChart = ({ p, c, f }) => {
+    const r = 38, C = 2 * Math.PI * r;
+    const pArc = C * p / 100, cArc = C * c / 100, fArc = C * f / 100;
+    return (
+      <svg viewBox="0 0 100 100" className="w-28 h-28 flex-shrink-0">
+        <circle cx="50" cy="50" r={r} fill="none" stroke={darkMode ? '#374151' : '#e5e7eb'} strokeWidth="15" />
+        {p > 0 && <circle cx="50" cy="50" r={r} fill="none" stroke="#60a5fa" strokeWidth="15"
+          strokeDasharray={`${pArc} ${C - pArc}`} transform="rotate(-90, 50, 50)" />}
+        {c > 0 && <circle cx="50" cy="50" r={r} fill="none" stroke="#fbbf24" strokeWidth="15"
+          strokeDasharray={`${cArc} ${C - cArc}`} transform={`rotate(${-90 + 360 * p / 100}, 50, 50)`} />}
+        {f > 0 && <circle cx="50" cy="50" r={r} fill="none" stroke="#f87171" strokeWidth="15"
+          strokeDasharray={`${fArc} ${C - fArc}`} transform={`rotate(${-90 + 360 * (p + c) / 100}, 50, 50)`} />}
+        <text x="50" y="47" textAnchor="middle" fontSize="12" fontWeight="bold"
+          fill={darkMode ? '#f9fafb' : '#111827'}>{datos.avgKcal > 0 ? datos.avgKcal.toLocaleString('es-CL') : '—'}</text>
+        <text x="50" y="58" textAnchor="middle" fontSize="7"
+          fill={darkMode ? '#9ca3af' : '#6b7280'}>kcal/día</text>
+      </svg>
+    );
+  };
+
+  if (datos.nConRegistro === 0) return (
+    <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800' : 'bg-white border border-gray-100'}`}>
+      <i className="fas fa-chart-pie text-4xl text-amber-400 mb-3 block"></i>
+      <h3 className={`text-base font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Sin datos para el período</h3>
+      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Marca tus comidas como consumidas en la vista «Hoy» para ver el historial nutricional aquí.</p>
+    </div>
+  );
+
+  const card = `rounded-2xl p-4 ${darkMode ? 'bg-gray-800' : 'bg-white border border-gray-100 shadow-sm'}`;
+
+  return (
+    <div className="space-y-4 animate-fadeIn">
+
+      {/* ── Selector de período ── */}
+      <div className={`flex rounded-xl p-1 gap-1 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+        {[{d:7,l:'7 días'},{d:14,l:'2 semanas'},{d:30,l:'30 días'}].map(opt => (
+          <button key={opt.d} onClick={() => setDias(opt.d)}
+            className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              dias === opt.d
+                ? darkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-800 shadow-sm'
+                : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+            }`}>
+            {opt.l}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Promedios diarios + adherencia ── */}
+      <div className={card}>
+        <p className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+          Promedio diario · {datos.nConRegistro} día{datos.nConRegistro !== 1 ? 's' : ''} con registro
+        </p>
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          {[
+            { label: 'Calorías',      val: datos.avgKcal, unit: 'kcal', tgt: datos.kcalTarget, color: 'var(--color-accent)', est: false },
+            { label: 'Proteína',      val: datos.avgProt, unit: 'g',    tgt: datos.protTarget, color: '#60a5fa',             est: false },
+            { label: 'Carbohidratos', val: datos.avgCarb, unit: 'g',    tgt: datos.carbTarget, color: '#fbbf24',             est: true  },
+            { label: 'Grasa',         val: datos.avgFat,  unit: 'g',    tgt: datos.fatTarget,  color: '#f87171',             est: true  },
+          ].map(item => (
+            <div key={item.label} className={`rounded-xl p-3 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+              <div className={`text-[10px] mb-0.5 flex items-center gap-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                {item.label}{item.est && <span className="opacity-50 text-[9px]">*</span>}
+              </div>
+              <div className="font-display text-xl font-bold leading-tight" style={{color: item.color}}>
+                {item.val.toLocaleString('es-CL')}<span className="text-xs font-normal ml-0.5 opacity-70">{item.unit}</span>
+              </div>
+              {item.tgt && (
+                <div className={`text-[10px] mt-0.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  obj {item.tgt}{item.unit} · <span style={{color: Math.abs(item.val/item.tgt - 1) < 0.1 ? 'var(--color-success)' : item.val < item.tgt ? '#fbbf24' : '#f87171'}}>
+                    {item.val >= item.tgt ? '+' : ''}{Math.round((item.val/item.tgt - 1)*100)}%
+                  </span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className={`flex items-center gap-2 pt-2.5 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+          <span className={`text-[11px] flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Adherencia período</span>
+          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{background: darkMode ? '#374151' : '#e5e7eb'}}>
+            <div className="h-full rounded-full transition-all duration-700" style={{width: datos.avgAdher + '%', backgroundColor: 'var(--color-accent)'}}></div>
+          </div>
+          <span className="font-display text-sm font-bold flex-shrink-0" style={{color: 'var(--color-accent)'}}>{datos.avgAdher}%</span>
+        </div>
+      </div>
+
+      {/* ── Composición de macros — donut SVG ── */}
+      <div className={card}>
+        <p className={`text-[10px] font-bold uppercase tracking-widest mb-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+          Composición de macros{datos.tieneMg && <span className={`ml-1 font-normal text-[9px] ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}> · C y G estimados*</span>}
+        </p>
+        <div className="flex items-center gap-5">
+          <DonutChart p={datos.protPct} c={datos.carbPct} f={datos.fatPct} />
+          <div className="flex-1 space-y-2">
+            {[
+              { label: 'Proteína',      pct: datos.protPct, g: datos.avgProt, color: '#60a5fa', bg: darkMode ? 'bg-blue-900/30'  : 'bg-blue-50'  },
+              { label: 'Carbohidratos', pct: datos.carbPct, g: datos.avgCarb, color: '#fbbf24', bg: darkMode ? 'bg-amber-900/30' : 'bg-amber-50' },
+              { label: 'Grasa',         pct: datos.fatPct,  g: datos.avgFat,  color: '#f87171', bg: darkMode ? 'bg-rose-900/30'  : 'bg-rose-50'  },
+            ].map(item => (
+              <div key={item.label} className={`rounded-lg px-3 py-2 ${item.bg}`}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`text-[11px] ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{item.label}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-display text-xs font-semibold" style={{color: item.color}}>{item.g}g</span>
+                    <span className="font-display text-sm font-bold" style={{color: item.color}}>{item.pct}%</span>
+                  </div>
+                </div>
+                <div className="h-1 rounded-full overflow-hidden" style={{background: darkMode ? '#374151' : '#e5e7eb'}}>
+                  <div className="h-full rounded-full" style={{width: item.pct + '%', backgroundColor: item.color}}></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Kcal por día (barras horizontales) ── */}
+      <div className={card}>
+        <p className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Kcal por día</p>
+        <div className="space-y-1.5">
+          {datos.diasData.map(d => {
+            if (!d.tieneRegistro) return null;
+            const maxRef = datos.kcalTarget || datos.avgKcal || 1;
+            const pct    = Math.min(115, Math.round(d.kcal / maxRef * 100));
+            const barColor = datos.kcalTarget
+              ? (d.kcal < datos.kcalTarget * 0.8 ? '#fbbf24' : d.kcal > datos.kcalTarget * 1.1 ? '#f87171' : 'var(--color-accent)')
+              : 'var(--color-accent)';
+            return (
+              <div key={d.fecha} className="flex items-center gap-2">
+                <span className={`text-[11px] w-12 flex-shrink-0 tabular-nums ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{d.label} {d.dia}</span>
+                <div className="flex-1 h-4 rounded-full overflow-hidden" style={{background: darkMode ? '#374151' : '#f3f4f6'}}>
+                  <div className="h-full rounded-full transition-all duration-500" style={{width: pct + '%', backgroundColor: barColor}}></div>
+                </div>
+                <span className={`font-display text-[11px] font-semibold w-20 text-right flex-shrink-0 tabular-nums ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  {d.kcal.toLocaleString('es-CL')} kcal
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        {datos.kcalTarget > 0 && (
+          <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 pt-2.5 border-t text-[10px] ${darkMode ? 'border-gray-700 text-gray-500' : 'border-gray-100 text-gray-400'}`}>
+            <span><span className="inline-block w-2 h-2 rounded-sm mr-1 align-middle" style={{backgroundColor: 'var(--color-accent)'}}></span>Objetivo · {datos.kcalTarget.toLocaleString('es-CL')} kcal</span>
+            <span><span className="inline-block w-2 h-2 rounded-sm mr-1 align-middle bg-amber-400"></span>{'< 80%'}</span>
+            <span><span className="inline-block w-2 h-2 rounded-sm mr-1 align-middle bg-rose-400"></span>{'> 110%'}</span>
+          </div>
+        )}
+      </div>
+
+      {datos.tieneMg && (
+        <p className={`text-[10px] ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>
+          * Carbohidratos y grasa estimados según la proporción del plan. Solo proteína y kcal totales son valores exactos del registro.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// =============================================
+// COMPONENTE: FitnessTab (Entreno + Pasos + Roadmap + Registros + Nutrición)
 // =============================================
 function FitnessTab({ perfil, darkMode }) {
   const subs = [
-    { k: 'entreno',  l: t('Entreno','Workout'),   icon: 'fa-dumbbell' },
-    { k: 'pasos',    l: t('Pasos','Steps'),       icon: 'fa-person-walking' },
-    { k: 'roadmap',  l: 'Roadmap',                icon: 'fa-route' },
-    { k: 'metricas', l: t('Registros','Logs'),    icon: 'fa-clipboard-list' }
+    { k: 'entreno',   l: t('Entreno','Workout'),  icon: 'fa-dumbbell' },
+    { k: 'pasos',     l: t('Pasos','Steps'),      icon: 'fa-person-walking' },
+    { k: 'roadmap',   l: 'Roadmap',               icon: 'fa-route' },
+    { k: 'metricas',  l: t('Registros','Logs'),   icon: 'fa-clipboard-list' },
+    { k: 'nutricion', l: t('Nutrición','Nutrition'), icon: 'fa-chart-pie' }
   ];
   // N5: persistir sub-tab activa para no perder posición al navegar
   const [subVista, setSubVista] = React.useState(() => {
@@ -6355,12 +6594,14 @@ function FitnessTab({ perfil, darkMode }) {
 
   return (
     <div className="animate-fadeIn">
-      <div className="grid grid-cols-4 gap-1.5 mb-4">
+      <div className="grid grid-cols-5 gap-1 mb-4">
         {subs.map(s => (
           <button key={s.k} onClick={() => cambiarSub(s.k)}
-            className={`py-2 px-1 rounded-xl font-medium text-xs flex flex-col items-center justify-center gap-1 transition-all ${
+            className={`py-2 px-1 rounded-xl font-medium text-[11px] flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
               subVista === s.k
-                ? 'bg-gradient-to-b from-orange-500 to-red-500 text-white shadow-md'
+                ? s.k === 'nutricion'
+                  ? 'text-white shadow-md' + ' ' + (darkMode ? 'bg-amber-600' : 'bg-gradient-to-b from-amber-500 to-orange-500')
+                  : 'bg-gradient-to-b from-orange-500 to-red-500 text-white shadow-md'
                 : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
             }`}>
             <i className={`fas ${s.icon} text-sm`}></i>
@@ -6368,10 +6609,11 @@ function FitnessTab({ perfil, darkMode }) {
           </button>
         ))}
       </div>
-      {subVista === 'entreno'  && <FLEntrenoView  perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
-      {subVista === 'pasos'    && <FLPasosView    perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
-      {subVista === 'roadmap'  && <FLRoadmapView  perfil={perfil} darkMode={darkMode} refresh={refresh} onGoToRegistros={() => cambiarSub('metricas')} />}
-      {subVista === 'metricas' && <FLMetricasView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
+      {subVista === 'entreno'   && <FLEntrenoView  perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
+      {subVista === 'pasos'     && <FLPasosView    perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
+      {subVista === 'roadmap'   && <FLRoadmapView  perfil={perfil} darkMode={darkMode} refresh={refresh} onGoToRegistros={() => cambiarSub('metricas')} />}
+      {subVista === 'metricas'  && <FLMetricasView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
+      {subVista === 'nutricion' && <NutricionLogView perfil={perfil} darkMode={darkMode} />}
     </div>
   );
 }
@@ -8276,7 +8518,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260428ab: Language state ───
+  // ─── v20260428ac: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
