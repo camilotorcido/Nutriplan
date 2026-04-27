@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260427rr: Bilingual ES/EN support
+   v20260427ss: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260427rr: Bilingual helpers ────────────────────────────────────────
+// ─── v20260427ss: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -364,7 +364,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260427rr: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260427ss: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
   // Previews para mantenimiento y volumen (paso 4)
@@ -635,7 +635,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     _mostrarExplicacion(perfilFinal);
   };
 
-  // ── v20260427rr: Wizard onboarding ──────────────────────────────────────
+  // ── v20260427ss: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -1966,231 +1966,411 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           </div>
 
-          {/* Objetivo */}
+          {/* Objetivo — v20260427ss: goal cards unificados, sin kcal subtitles */}
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-bullseye text-green-500"></i>
               Objetivo
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {Object.entries(AJUSTES_OBJETIVO).map(([key, info]) => (
-                <button key={key} type="button" onClick={() => handleObjetivoChange(key)}
-                  className={`p-4 rounded-xl text-center transition-all ${
-                    perfil.objetivo === key
-                      ? 'bg-green-500 text-white shadow-lg shadow-green-200'
-                      : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                  }`}>
-                  {/* ST2: FA icons en lugar de emojis para objetivos */}
-                  <i className={`fas ${key === 'perdida' ? 'fa-arrow-trend-down' : key === 'mantenimiento' ? 'fa-scale-balanced' : 'fa-arrow-trend-up'} text-xl mb-1`}></i>
-                  <div className="font-medium text-sm">{info.label}</div>
-                  <div className={`text-xs mt-1 ${perfil.objetivo === key ? 'text-green-100' : 'text-gray-400'}`}>
-                    {info.valor > 0 ? '+' : ''}{info.valor} kcal
-                  </div>
-                </button>
-              ))}
+            <div className="grid grid-cols-3 gap-3 mb-3">
+              {[
+                { key: 'perdida',       icono: 'fa-arrow-trend-down', label: 'Pérdida de peso',  tag: 'Precision Nutrition', activeClasses: 'bg-orange-500 text-white shadow-lg shadow-orange-200 border-orange-500' },
+                { key: 'mantenimiento', icono: 'fa-scale-balanced',   label: 'Mantenimiento',     tag: 'Recomposición',        activeClasses: 'bg-green-500 text-white shadow-lg shadow-green-200 border-green-500' },
+                { key: 'volumen',       icono: 'fa-arrow-trend-up',   label: 'Volumen muscular',  tag: 'Lean bulk',            activeClasses: 'bg-blue-500 text-white shadow-lg shadow-blue-200 border-blue-500' },
+              ].map(({ key, icono, label, tag, activeClasses }) => {
+                const activo = perfil.objetivo === key;
+                return (
+                  <button key={key} type="button" onClick={() => handleObjetivoChange(key)}
+                    className={`p-3 rounded-xl text-center transition-all border cursor-pointer ${
+                      activo ? activeClasses
+                      : darkMode ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                    }`}>
+                    <i className={`fas ${icono} text-lg mb-1`}></i>
+                    <div className="font-semibold text-xs leading-tight">{label}</div>
+                    <div className={`text-[10px] mt-1 font-medium ${activo ? 'opacity-80' : darkMode ? 'text-gray-400' : 'text-gray-400'}`}>{tag}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className={`text-xs p-2.5 rounded-xl ${darkMode ? 'bg-gray-700/60 text-gray-400' : 'bg-gray-50 text-gray-500'}`}>
+              {perfil.objetivo === 'perdida' && 'Roadmap por fases con diet breaks. Proteína basada en masa magra (LBM × 2.63 g/kg). Metodología Precision Nutrition.'}
+              {perfil.objetivo === 'mantenimiento' && 'Calorías exactas a tu TDEE. Proteína basada en masa magra (LBM × 2.0 g/kg). Favorece recomposición corporal gradual.'}
+              {perfil.objetivo === 'volumen' && 'Superávit calórico controlado (200–400 kcal). Proteína alta para maximizar síntesis muscular (LBM × 2.4 g/kg).'}
+              {!perfil.objetivo && 'Selecciona un objetivo para ver la metodología.'}
             </div>
           </div>
 
-          {/* v20260418y: Fat Loss Mode — inmediatamente después de Objetivo cuando se elige "Pérdida de peso" */}
-          {/* AN2: animate-fadeIn para evitar layout shift brusco */}
-          {perfil.fatLossMode && (
+          {/* ── Configuración: Pérdida de peso ── */}
+          {perfil.objetivo === 'perdida' && (
           <div className={`rounded-2xl shadow-sm border p-6 animate-fadeIn ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
-            <div className="flex items-center gap-3 mb-4">
-              <i className="fas fa-fire text-orange-500 text-xl"></i>
+            <h2 className={`text-base font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+              <i className="fas fa-fire text-orange-500"></i>
+              Configuración de pérdida de peso
+            </h2>
+            <div className="space-y-4">
+              {/* Medidas corporales */}
               <div>
-                <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Plan Fat Loss — Precision Nutrition</h2>
-                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Completa las medidas y objetivos para generar tu roadmap por fases con diet breaks</p>
+                <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Composición corporal (para cálculo LBM)</div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cintura (cm)</label>
+                    <input type="number" step="0.5" value={perfil.cintura || ''} onChange={(e) => handleChange("cintura", e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="85" />
+                  </div>
+                  <div>
+                    <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cuello (cm)</label>
+                    <input type="number" step="0.5" value={perfil.cuello || ''} onChange={(e) => handleChange("cuello", e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="40" />
+                  </div>
+                  {perfil.genero === 'femenino' && (
+                    <div>
+                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cadera (cm)</label>
+                      <input type="number" step="0.5" value={perfil.cadera || ''} onChange={(e) => handleChange("cadera", e.target.value)}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
+                    </div>
+                  )}
+                  <div>
+                    <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BF% manual (opcional)</label>
+                    <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange("bfOverride", e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Sino: Navy auto" />
+                  </div>
+                </div>
+                <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <i className="fas fa-info-circle mr-1"></i>
+                  Navy calcula BF% con cintura + cuello{perfil.genero === 'femenino' ? ' + cadera' : ''}. Si tienes bioimpedancia o caliper, usa "BF% manual".
+                </p>
               </div>
+              {/* Targets */}
+              <div>
+                <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Objetivos de composición</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Peso target (kg)</label>
+                    <input type="number" step="0.1" value={perfil.pesoTarget || ''} onChange={(e) => handleChange("pesoTarget", e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="72" />
+                  </div>
+                  <div>
+                    <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BF% target</label>
+                    <input type="number" step="0.1" value={perfil.bfTarget || ''} onChange={(e) => handleChange("bfTarget", e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="10" />
+                  </div>
+                </div>
+                <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Basta con uno de los dos. El otro se calcula asumiendo que preservás masa magra.</p>
+              </div>
+              {/* Tasa de pérdida */}
+              <div>
+                <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tasa de pérdida</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { k: 'conservadora', l: 'Conservadora', s: '0.4 kg/sem · −300 kcal' },
+                    { k: 'moderada',     l: 'Moderada',     s: '0.6 kg/sem · −450 kcal' },
+                    { k: 'agresiva',     l: 'Agresiva',     s: '0.8 kg/sem · −600 kcal' }
+                  ].map(tp => {
+                    const activo = (perfil.tasaPerdida || 'moderada') === tp.k;
+                    return (
+                      <button key={tp.k} type="button" onClick={() => handleChange("tasaPerdida", tp.k)}
+                        className={`px-2 py-2 rounded-lg text-xs border transition-colors cursor-pointer ${
+                          activo ? 'bg-orange-500 text-white border-orange-500'
+                          : darkMode ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                        }`}>
+                        <div className="font-semibold">{tp.l}</div>
+                        <div className={`text-[11px] mt-0.5 ${activo ? 'text-orange-100' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{tp.s}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Timeline */}
+              <div>
+                <label className={`block text-xs font-semibold mb-1 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Timeline deseado (meses, opcional)</label>
+                <input type="number" min="2" max="24" step="1" value={perfil.timelineMesesDeseado || ''} onChange={(e) => handleChange("timelineMesesDeseado", e.target.value)}
+                  className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Ej: 10. Vacío = cálculo automático." />
+                <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>El motor ajusta el déficit para cumplirlo dentro de rangos seguros (200–800 kcal/día).</p>
+              </div>
+              {/* Fuente proteica de rescate */}
+              <div>
+                <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Fuente proteica de rescate</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { k: 'whey', l: 'Whey', s: '1 scoop · 25g P' },
+                    { k: 'yogur_griego', l: 'Yogur griego', s: '200g · 20g P' },
+                    { k: 'cottage', l: 'Cottage light', s: '150g · 18g P' },
+                    { k: 'claras', l: 'Claras (6)', s: '180g · 22g P' }
+                  ].map(f => {
+                    const activo = (perfil.complementoPreferido || 'whey') === f.k;
+                    return (
+                      <button key={f.k} type="button" onClick={() => handleChange("complementoPreferido", f.k)}
+                        className={`px-2 py-2 rounded-lg text-xs border transition-colors cursor-pointer ${
+                          activo ? 'bg-blue-500 text-white border-blue-500'
+                          : darkMode ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                        }`}>
+                        <div className="font-semibold">{f.l}</div>
+                        <div className={`text-[11px] mt-0.5 ${activo ? 'text-blue-100' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{f.s}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Si algún día quedan pocos gramos de proteína, la app sugiere esta fuente para completar el target.</p>
+              </div>
+              {/* Roadmap preview */}
+              {roadmapPreview ? (
+                <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-xl p-5 text-white">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-xs font-bold tracking-wider opacity-90">ROADMAP PREVIEW</div>
+                    <div className="text-[11px] opacity-75">{roadmapPreview.calculados.semanasActivas}w activas · {roadmapPreview.calculados.cantDietBreaks} diet breaks</div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                    <div className="bg-white/20 rounded-lg p-2 text-center">
+                      <div className="text-[11px] opacity-80">BMR</div>
+                      <div className="text-lg font-bold">{roadmapPreview.calculados.bmr}</div>
+                      <div className="text-[11px] opacity-70">kcal</div>
+                    </div>
+                    <div className="bg-white/20 rounded-lg p-2 text-center">
+                      <div className="text-[11px] opacity-80">TDEE</div>
+                      <div className="text-lg font-bold">{roadmapPreview.calculados.tdee}</div>
+                      <div className="text-[11px] opacity-70">kcal</div>
+                    </div>
+                    <div className="bg-white/30 rounded-lg p-2 text-center">
+                      <div className="text-[11px] opacity-80">CORTE</div>
+                      <div className="text-lg font-bold">{roadmapPreview.calculados.caloriasCorte}</div>
+                      <div className="text-[11px] opacity-70">−{roadmapPreview.calculados.deficitDiario} kcal</div>
+                    </div>
+                    <div className="bg-white/20 rounded-lg p-2 text-center">
+                      <div className="text-[11px] opacity-80">PROTEÍNA</div>
+                      <div className="text-lg font-bold">{roadmapPreview.calculados.proteinaTarget}g</div>
+                      <div className="text-[11px] opacity-70">LBM × 2.63</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-[11px] mb-3">
+                    <div className="bg-white/10 rounded p-2">
+                      <span className="opacity-75">BF actual:</span> <b>{roadmapPreview.calculados.bfActual}%</b>
+                    </div>
+                    <div className="bg-white/10 rounded p-2">
+                      <span className="opacity-75">BF target:</span> <b>{roadmapPreview.calculados.bfTarget}%</b>
+                    </div>
+                    <div className="bg-white/10 rounded p-2">
+                      <span className="opacity-75">Grasa a perder:</span> <b>{roadmapPreview.calculados.grasaAPerder} kg</b>
+                    </div>
+                    <div className="bg-white/10 rounded p-2">
+                      <span className="opacity-75">Duración:</span> <b>~{roadmapPreview.calculados.mesesTotales} meses</b>
+                    </div>
+                  </div>
+                  <div className="text-[11px] font-bold tracking-wider opacity-80 mb-2">FASES</div>
+                  <div className="space-y-1">
+                    {roadmapPreview.fases.map((f, idx) => (
+                      <div key={idx} className={`flex items-center justify-between rounded px-2 py-1.5 text-[11px] ${f.tipo === 'dietBreak' ? 'bg-white/30' : 'bg-white/10'}`}>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold opacity-90">M{f.mesInicio}{f.mesFin !== f.mesInicio ? '–'+f.mesFin : ''}</span>
+                          <span className={f.tipo === 'dietBreak' ? 'font-semibold' : ''}>{f.nombre}</span>
+                          {f.tipo === 'dietBreak' && <i className="fas fa-pause-circle text-[11px]"></i>}
+                        </div>
+                        <span className="opacity-90">{f.calorias} kcal · {f.targetPasos.toLocaleString()} pasos</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className={`text-xs p-3 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-orange-50 text-orange-700 border border-orange-100'}`}>
+                  <i className="fas fa-info-circle mr-1"></i>
+                  Completa cintura + cuello{perfil.genero === 'femenino' ? ' + cadera' : ''} (o BF% manual) y al menos un target de peso o BF% para ver el roadmap.
+                </div>
+              )}
             </div>
+          </div>
+          )}
 
-              <div className={`space-y-4`}>
-                {/* Medidas corporales */}
-                <div>
-                  <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Medidas corporales</div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {/* ── Configuración: Mantenimiento ── */}
+          {perfil.objetivo === 'mantenimiento' && (
+          <div className={`rounded-2xl shadow-sm border p-6 animate-fadeIn ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+            <h2 className={`text-base font-semibold mb-3 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+              <i className="fas fa-scale-balanced text-green-500"></i>
+              Configuración de mantenimiento
+            </h2>
+            <div className={`p-3 rounded-xl mb-4 ${darkMode ? 'bg-green-900/20 border border-green-800/40' : 'bg-green-50 border border-green-100'}`}>
+              <p className={`text-xs ${darkMode ? 'text-green-300' : 'text-green-700'}`}>
+                <i className="fas fa-flask mr-1.5"></i>TDEE exacto + proteína LBM × 2.0 g/kg. Composición corporal opcional, mejora la precisión.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Composición corporal <span className="font-normal normal-case opacity-60">(opcional)</span></div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cintura (cm)</label>
+                    <input type="number" step="0.5" value={perfil.cintura || ''} onChange={(e) => handleChange("cintura", e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="85" />
+                  </div>
+                  <div>
+                    <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cuello (cm)</label>
+                    <input type="number" step="0.5" value={perfil.cuello || ''} onChange={(e) => handleChange("cuello", e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="40" />
+                  </div>
+                  {perfil.genero === 'femenino' && (
                     <div>
-                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cintura (cm)</label>
-                      <input type="number" step="0.5" value={perfil.cintura || ''} onChange={(e) => handleChange("cintura", e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="85" />
+                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cadera (cm)</label>
+                      <input type="number" step="0.5" value={perfil.cadera || ''} onChange={(e) => handleChange("cadera", e.target.value)}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
                     </div>
-                    <div>
-                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cuello (cm)</label>
-                      <input type="number" step="0.5" value={perfil.cuello || ''} onChange={(e) => handleChange("cuello", e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="40" />
-                    </div>
-                    {perfil.genero === 'femenino' && (
-                      <div>
-                        <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cadera (cm)</label>
-                        <input type="number" step="0.5" value={perfil.cadera || ''} onChange={(e) => handleChange("cadera", e.target.value)}
-                          className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
-                      </div>
-                    )}
-                    <div className={perfil.genero === 'femenino' ? '' : 'sm:col-span-1'}>
-                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BF% manual (opcional)</label>
-                      <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange("bfOverride", e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Sino: Navy auto" />
-                    </div>
-                  </div>
-                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    <i className="fas fa-info-circle mr-1"></i>
-                    Navy calcula BF% con cintura + cuello{perfil.genero === 'femenino' ? ' + cadera' : ''}. Si tienes medición por bioimpedancia o caliper, completa "BF% manual" y se usa ese.
-                  </p>
-                </div>
-
-                {/* Targets */}
-                <div>
-                  <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Objetivos</div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Peso target (kg)</label>
-                      <input type="number" step="0.1" value={perfil.pesoTarget || ''} onChange={(e) => handleChange("pesoTarget", e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="72" />
-                    </div>
-                    <div>
-                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BF% target</label>
-                      <input type="number" step="0.1" value={perfil.bfTarget || ''} onChange={(e) => handleChange("bfTarget", e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="10" />
-                    </div>
-                  </div>
-                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Basta con uno de los dos. El otro se calcula asumiendo que preservás masa magra.</p>
-                </div>
-
-                {/* Tasa de pérdida */}
-                <div>
-                  <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tasa de pérdida</div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      {k: 'conservadora', l: 'Conservadora', s: '0.4 kg/sem · déficit 300'},
-                      {k: 'moderada',     l: 'Moderada',     s: '0.6 kg/sem · déficit 450'},
-                      {k: 'agresiva',     l: 'Agresiva',     s: '0.8 kg/sem · déficit 600'}
-                    ].map(t => {
-                      const activo = (perfil.tasaPerdida || 'moderada') === t.k;
-                      return (
-                        <button key={t.k} type="button" onClick={() => handleChange("tasaPerdida", t.k)}
-                          className={`px-3 py-2 rounded-lg text-xs border transition-colors ${
-                            activo
-                              ? 'bg-orange-500 text-white border-orange-500'
-                              : darkMode ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-                          }`}>
-                          <div className="font-semibold">{t.l}</div>
-                          <div className={`text-[11px] mt-0.5 ${activo ? 'text-orange-100' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t.s}</div>
-                        </button>
-                      );
-                    })}
+                  )}
+                  <div>
+                    <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BF% manual (opcional)</label>
+                    <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange("bfOverride", e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Sino: Navy auto" />
                   </div>
                 </div>
-
-                {/* Timeline opcional */}
-                <div>
-                  <label className={`block text-xs font-semibold mb-1 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Timeline deseado (meses, opcional)</label>
-                  <input type="number" min="2" max="24" step="1" value={perfil.timelineMesesDeseado || ''} onChange={(e) => handleChange("timelineMesesDeseado", e.target.value)}
-                    className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Ej: 10. Deja vacío para cálculo automático." />
-                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Si ingresas un timeline, el motor ajusta el déficit para cumplirlo (siempre dentro de rangos seguros 200-800 kcal/día).</p>
-                </div>
-
-                {/* Complemento preferido */}
-                <div>
-                  <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Fuente proteica de rescate</div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {[
-                      {k: 'whey', l: 'Whey', s: '1 scoop · 25g P'},
-                      {k: 'yogur_griego', l: 'Yogur griego', s: '200g · 20g P'},
-                      {k: 'cottage', l: 'Cottage light', s: '150g · 18g P'},
-                      {k: 'claras', l: 'Claras (6)', s: '180g · 22g P'}
-                    ].map(f => {
-                      const activo = (perfil.complementoPreferido || 'whey') === f.k;
-                      return (
-                        <button key={f.k} type="button" onClick={() => handleChange("complementoPreferido", f.k)}
-                          className={`px-2 py-2 rounded-lg text-xs border transition-colors ${
-                            activo
-                              ? 'bg-blue-500 text-white border-blue-500'
-                              : darkMode ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-                          }`}>
-                          <div className="font-semibold">{f.l}</div>
-                          <div className={`text-[11px] mt-0.5 ${activo ? 'text-blue-100' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{f.s}</div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Si algún día queda corto de proteína, la app sugiere esta fuente para completar el target.</p>
-                </div>
-
-                {/* Preview del roadmap */}
-                {roadmapPreview && (
-                  <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-xl p-5 text-white">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="text-xs font-bold tracking-wider opacity-90">ROADMAP PREVIEW</div>
-                      <div className="text-[11px] opacity-75">{roadmapPreview.calculados.semanasActivas}w activas + {roadmapPreview.calculados.cantDietBreaks} diet breaks</div>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-                      <div className="bg-white/20 rounded-lg p-2 text-center">
-                        <div className="text-[11px] opacity-80">BMR</div>
-                        <div className="text-lg font-bold">{roadmapPreview.calculados.bmr}</div>
-                        <div className="text-[11px] opacity-70">kcal</div>
-                      </div>
-                      <div className="bg-white/20 rounded-lg p-2 text-center">
-                        <div className="text-[11px] opacity-80">TDEE</div>
-                        <div className="text-lg font-bold">{roadmapPreview.calculados.tdee}</div>
-                        <div className="text-[11px] opacity-70">kcal</div>
-                      </div>
-                      <div className="bg-white/30 rounded-lg p-2 text-center">
-                        <div className="text-[11px] opacity-80">CORTE</div>
-                        <div className="text-lg font-bold">{roadmapPreview.calculados.caloriasCorte}</div>
-                        <div className="text-[11px] opacity-70">-{roadmapPreview.calculados.deficitDiario}</div>
-                      </div>
-                      <div className="bg-white/20 rounded-lg p-2 text-center">
-                        <div className="text-[11px] opacity-80">PROTEÍNA</div>
-                        <div className="text-lg font-bold">{roadmapPreview.calculados.proteinaTarget}g</div>
-                        <div className="text-[11px] opacity-70">2.2g/kg</div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-[11px] mb-3">
-                      <div className="bg-white/10 rounded p-2">
-                        <span className="opacity-75">BF actual:</span> <b>{roadmapPreview.calculados.bfActual}%</b>
-                        {roadmapPreview.calculados.bfCalculadoNavy != null && roadmapPreview.inputs.bfOverride != null && (
-                          <span className="opacity-60 block text-[11px]">Navy calculado: {roadmapPreview.calculados.bfCalculadoNavy}% · override manual aplicado</span>
-                        )}
-                      </div>
-                      <div className="bg-white/10 rounded p-2">
-                        <span className="opacity-75">BF target:</span> <b>{roadmapPreview.calculados.bfTarget}%</b>
-                      </div>
-                      <div className="bg-white/10 rounded p-2">
-                        <span className="opacity-75">Grasa a perder:</span> <b>{roadmapPreview.calculados.grasaAPerder} kg</b>
-                      </div>
-                      <div className="bg-white/10 rounded p-2">
-                        <span className="opacity-75">Duración:</span> <b>~{roadmapPreview.calculados.mesesTotales} meses</b>
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <div className="text-[11px] font-bold tracking-wider opacity-80 mb-2">FASES</div>
-                      <div className="space-y-1">
-                        {roadmapPreview.fases.map((f, idx) => (
-                          <div key={idx} className={`flex items-center justify-between rounded px-2 py-1.5 text-[11px] ${f.tipo === 'dietBreak' ? 'bg-white/30' : 'bg-white/10'}`}>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold opacity-90">M{f.mesInicio}{f.mesFin !== f.mesInicio ? '-'+f.mesFin : ''}</span>
-                              <span className={f.tipo === 'dietBreak' ? 'font-semibold' : ''}>{f.nombre}</span>
-                              {f.tipo === 'dietBreak' && <i className="fas fa-pause-circle text-[11px]"></i>}
-                            </div>
-                            <div className="flex items-center gap-2 opacity-90">
-                              <span>{f.calorias} kcal</span>
-                              <span className="opacity-70">·</span>
-                              <span>{f.targetPasos.toLocaleString()} pasos</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Mensaje si falta data para preview */}
-                {!roadmapPreview && (
-                  <div className={`text-xs p-3 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-50 text-gray-500'}`}>
-                    <i className="fas fa-spinner mr-2"></i>
-                    Completa medidas corporales (cintura + cuello o BF% manual) y al menos un target (peso o BF%) para ver el roadmap.
-                  </div>
-                )}
               </div>
+              {/* Preview mantenimiento */}
+              {roadmapMantPreview ? (
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-4 text-white">
+                  <div className="text-xs font-bold tracking-wider opacity-90 mb-2">PLAN DE MANTENIMIENTO</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+                    {[
+                      { l: 'TDEE', v: roadmapMantPreview.calculados.tdee + ' kcal' },
+                      { l: 'Calorías/día', v: roadmapMantPreview.calculados.caloriasObjetivo + ' kcal' },
+                      { l: 'Proteína', v: roadmapMantPreview.calculados.proteinaTarget + ' g/día' },
+                      { l: 'BF estimado', v: roadmapMantPreview.calculados.bfActual != null ? roadmapMantPreview.calculados.bfActual + '%' : '—' },
+                    ].map(x => (
+                      <div key={x.l} className="bg-white/20 rounded-lg p-2 text-center">
+                        <div className="text-[10px] opacity-80">{x.l}</div>
+                        <div className="text-sm font-bold mt-0.5">{x.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {roadmapMantPreview.calculados.macrosGramos && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-blue-500/30 rounded-lg p-2 text-center">
+                        <div className="text-[10px] opacity-80">Proteínas</div>
+                        <div className="text-sm font-bold">{roadmapMantPreview.calculados.macrosGramos.proteina}g</div>
+                      </div>
+                      <div className="bg-amber-500/30 rounded-lg p-2 text-center">
+                        <div className="text-[10px] opacity-80">Carbos</div>
+                        <div className="text-sm font-bold">{roadmapMantPreview.calculados.macrosGramos.carbohidratos}g</div>
+                      </div>
+                      <div className="bg-rose-500/30 rounded-lg p-2 text-center">
+                        <div className="text-[10px] opacity-80">Grasas</div>
+                        <div className="text-sm font-bold">{roadmapMantPreview.calculados.macrosGramos.grasas}g</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className={`text-xs p-3 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-green-50 text-green-700 border border-green-100'}`}>
+                  <i className="fas fa-info-circle mr-1"></i>Completa tus datos corporales arriba para ver el plan calculado.
+                </div>
+              )}
+            </div>
+          </div>
+          )}
+
+          {/* ── Configuración: Volumen ── */}
+          {perfil.objetivo === 'volumen' && (
+          <div className={`rounded-2xl shadow-sm border p-6 animate-fadeIn ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+            <h2 className={`text-base font-semibold mb-3 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+              <i className="fas fa-arrow-trend-up text-blue-500"></i>
+              Configuración de volumen muscular
+            </h2>
+            <div className={`p-3 rounded-xl mb-4 ${darkMode ? 'bg-blue-900/20 border border-blue-800/40' : 'bg-blue-50 border border-blue-100'}`}>
+              <p className={`text-xs ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                <i className="fas fa-flask mr-1.5"></i>Lean bulk científico: superávit 200–400 kcal + proteína LBM × 2.4 g/kg. Minimiza grasa ganada.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Composición corporal <span className="font-normal normal-case opacity-60">(opcional)</span></div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cintura (cm)</label>
+                    <input type="number" step="0.5" value={perfil.cintura || ''} onChange={(e) => handleChange("cintura", e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="85" />
+                  </div>
+                  <div>
+                    <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cuello (cm)</label>
+                    <input type="number" step="0.5" value={perfil.cuello || ''} onChange={(e) => handleChange("cuello", e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="40" />
+                  </div>
+                  {perfil.genero === 'femenino' && (
+                    <div>
+                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cadera (cm)</label>
+                      <input type="number" step="0.5" value={perfil.cadera || ''} onChange={(e) => handleChange("cadera", e.target.value)}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
+                    </div>
+                  )}
+                  <div>
+                    <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BF% manual (opcional)</label>
+                    <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange("bfOverride", e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Sino: Navy auto" />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tasa de ganancia muscular</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { k: 'conservadora', l: 'Conservadora', s: '+200 kcal · ~0.2 kg/mes' },
+                    { k: 'moderada',     l: 'Moderada',     s: '+300 kcal · ~0.3 kg/mes' },
+                    { k: 'agresiva',     l: 'Agresiva',     s: '+400 kcal · ~0.5 kg/mes' },
+                  ].map(tg => {
+                    const activo = (perfil.tasaGanancia || 'moderada') === tg.k;
+                    return (
+                      <button key={tg.k} type="button" onClick={() => handleChange('tasaGanancia', tg.k)}
+                        className={`px-2 py-2 rounded-lg text-xs border transition-colors cursor-pointer ${
+                          activo ? 'bg-blue-500 text-white border-blue-500'
+                          : darkMode ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                        }`}>
+                        <div className="font-semibold">{tg.l}</div>
+                        <div className={`text-[11px] mt-0.5 ${activo ? 'text-blue-100' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{tg.s}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Peso objetivo (kg) <span className="font-normal opacity-60">— opcional</span></label>
+                <input type="number" step="0.5" value={perfil.pesoObjetivoVol || ''} onChange={(e) => handleChange('pesoObjetivoVol', e.target.value)}
+                  className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
+                  placeholder={`Ej: ${perfil.peso ? Math.round(Number(perfil.peso) + 5) : 80}`} />
+                <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Se estima el tiempo para alcanzarlo con tu tasa seleccionada.</p>
+              </div>
+              {/* Preview volumen */}
+              {roadmapVolPreview ? (
+                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-4 text-white">
+                  <div className="text-xs font-bold tracking-wider opacity-90 mb-2">PLAN DE VOLUMEN</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+                    {[
+                      { l: 'TDEE', v: roadmapVolPreview.calculados.tdee + ' kcal' },
+                      { l: 'Objetivo/día', v: roadmapVolPreview.calculados.caloriasObjetivo + ' kcal' },
+                      { l: 'Proteína', v: roadmapVolPreview.calculados.proteinaTarget + ' g/día' },
+                      { l: 'Duración est.', v: roadmapVolPreview.calculados.mesesEstimados ? roadmapVolPreview.calculados.mesesEstimados + ' meses' : '—' },
+                    ].map(x => (
+                      <div key={x.l} className="bg-white/20 rounded-lg p-2 text-center">
+                        <div className="text-[10px] opacity-80">{x.l}</div>
+                        <div className="text-sm font-bold mt-0.5">{x.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {roadmapVolPreview.calculados.macrosGramos && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-blue-400/30 rounded-lg p-2 text-center">
+                        <div className="text-[10px] opacity-80">Proteínas</div>
+                        <div className="text-sm font-bold">{roadmapVolPreview.calculados.macrosGramos.proteina}g</div>
+                      </div>
+                      <div className="bg-amber-500/30 rounded-lg p-2 text-center">
+                        <div className="text-[10px] opacity-80">Carbos</div>
+                        <div className="text-sm font-bold">{roadmapVolPreview.calculados.macrosGramos.carbohidratos}g</div>
+                      </div>
+                      <div className="bg-rose-500/30 rounded-lg p-2 text-center">
+                        <div className="text-[10px] opacity-80">Grasas</div>
+                        <div className="text-sm font-bold">{roadmapVolPreview.calculados.macrosGramos.grasas}g</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className={`text-xs p-3 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-blue-50 text-blue-700 border border-blue-100'}`}>
+                  <i className="fas fa-info-circle mr-1"></i>Completa tus datos corporales arriba para ver el plan calculado.
+                </div>
+              )}
+            </div>
           </div>
           )}
 
@@ -5112,7 +5292,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260427rr)
+// COMPONENTE: ModalComidaExterna (v20260427ss)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
 //   - Búsqueda en FOODS_DB + RECETAS_DB
@@ -5435,7 +5615,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260427rr)
+// COMPONENTE: HoyView — Dashboard diario (v20260427ss)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -7915,7 +8095,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260427rr: Language state ───
+  // ─── v20260427ss: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
