@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260426nn: Bilingual ES/EN support
+   v20260426oo: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260426nn: Bilingual helpers ────────────────────────────────────────
+// ─── v20260426oo: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -364,7 +364,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260426nn: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260426oo: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
@@ -549,7 +549,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260426nn: Wizard onboarding ──────────────────────────────────────
+  // ── v20260426oo: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -4495,8 +4495,9 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260426nn)
+// COMPONENTE: ModalComidaExterna (v20260426oo)
 // Modal estilo MyFitnessPal para registrar comidas no planificadas
+// Busca en FOODS_DB (alimentos individuales) + RECETAS_DB (recetas del plan)
 // =============================================
 function ModalComidaExterna({ darkMode, diaActual, onAdd, onClose }) {
   const [busqueda, setBusqueda] = React.useState('');
@@ -4504,24 +4505,66 @@ function ModalComidaExterna({ darkMode, diaActual, onAdd, onClose }) {
   const [form, setForm] = React.useState({ nombre: '', kcal: '', proteinas_g: '', carbohidratos_g: '', grasas_g: '' });
   const [error, setError] = React.useState('');
 
-  // Autocomplete: busca en RECETAS_DB por nombre
+  // Colores inline para inputs — más robusto que clases Tailwind en dark mode
+  var inputColor     = darkMode ? '#f9fafb' : '#111827';
+  var inputBg        = darkMode ? '#1f2937' : '#ffffff';
+  var inputBgSearch  = darkMode ? '#1f2937' : '#f9fafb';
+  var inputBorder    = darkMode ? '#4b5563' : '#e5e7eb';
+  var placeholderCss = darkMode ? '#6b7280' : '#9ca3af';
+
+  // Búsqueda unificada: FOODS_DB (prioridad) + RECETAS_DB (fallback)
   React.useEffect(function() {
     var q = busqueda.trim().toLowerCase();
     if (q.length < 2) { setSugerencias([]); return; }
-    if (typeof RECETAS_DB === 'undefined') { setSugerencias([]); return; }
-    var matches = RECETAS_DB.filter(function(r) {
-      return (r.nombre || '').toLowerCase().includes(q);
-    }).slice(0, 6);
-    setSugerencias(matches);
+    var resultados = [];
+    var lang = window._NP_lang || 'es';
+
+    // 1. FOODS_DB — alimentos individuales con porción
+    if (typeof window.FOODS_DB !== 'undefined') {
+      window.FOODS_DB.forEach(function(f) {
+        var nombreBuscar = (lang === 'en' && f.nombre_en) ? f.nombre_en : f.nombre;
+        if (nombreBuscar.toLowerCase().includes(q)) {
+          resultados.push({
+            _tipo: 'alimento',
+            nombre: (lang === 'en' && f.nombre_en) ? f.nombre_en : f.nombre,
+            porcion: f.porcion,
+            kcal: f.kcal,
+            proteinas: f.proteinas,
+            carbohidratos: f.carbohidratos,
+            grasas: f.grasas
+          });
+        }
+      });
+    }
+
+    // 2. RECETAS_DB — recetas del plan (si no hay suficientes alimentos)
+    if (typeof RECETAS_DB !== 'undefined') {
+      RECETAS_DB.forEach(function(r) {
+        var nombreReceta = (typeof getNombreReceta === 'function') ? getNombreReceta(r) : (r.nombre || '');
+        if (nombreReceta.toLowerCase().includes(q)) {
+          resultados.push({
+            _tipo: 'receta',
+            nombre: nombreReceta,
+            porcion: null,
+            kcal: r.calorias || r.calorias_base || r.calorias_escaladas || 0,
+            proteinas: r.proteinas || r.proteinas_base || r.proteinas_escaladas || 0,
+            carbohidratos: r.carbohidratos || r.carbohidratos_base || r.carbohidratos_escalados || 0,
+            grasas: r.grasas || r.grasas_base || r.grasas_escaladas || 0
+          });
+        }
+      });
+    }
+
+    setSugerencias(resultados.slice(0, 8));
   }, [busqueda]);
 
-  function seleccionarReceta(r) {
+  function seleccionarItem(item) {
     setForm({
-      nombre: r.nombre || '',
-      kcal: String(r.calorias || r.calorias_base || r.calorias_escaladas || ''),
-      proteinas_g: String(r.proteinas || r.proteinas_base || r.proteinas_escaladas || ''),
-      carbohidratos_g: String(r.carbohidratos || r.carbohidratos_base || r.carbohidratos_escalados || ''),
-      grasas_g: String(r.grasas || r.grasas_base || r.grasas_escaladas || '')
+      nombre: item.nombre,
+      kcal: String(item.kcal || ''),
+      proteinas_g: String(item.proteinas || ''),
+      carbohidratos_g: String(item.carbohidratos || ''),
+      grasas_g: String(item.grasas || '')
     });
     setBusqueda('');
     setSugerencias([]);
@@ -4549,14 +4592,12 @@ function ModalComidaExterna({ darkMode, diaActual, onAdd, onClose }) {
     onClose();
   }
 
-  var inputBase = 'w-full px-3 py-2.5 rounded-xl border text-sm outline-none transition-colors ';
-  var inputDark  = darkMode ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500 focus:border-green-500' : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400 focus:border-green-400';
-
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm animate-fadeIn"
       onClick={function(e) { if (e.target === e.currentTarget) onClose(); }}>
       <div className={`w-full max-w-md rounded-t-2xl shadow-2xl ${darkMode ? 'bg-gray-900 border-t border-gray-700' : 'bg-white'} animate-slideUp`}
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
+
         {/* Header */}
         <div className={`flex items-center justify-between px-5 py-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
           <h3 className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -4572,26 +4613,36 @@ function ModalComidaExterna({ darkMode, diaActual, onAdd, onClose }) {
         <div className="px-5 py-4 space-y-3">
           {/* Búsqueda autocomplete */}
           <div className="relative">
-            <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border"
+              style={{ backgroundColor: inputBgSearch, borderColor: inputBorder }}>
               <i className={`fas fa-magnifying-glass text-sm flex-shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
-              <input type="text" value={busqueda} onChange={function(e) { setBusqueda(e.target.value); }}
-                placeholder={t('Buscar en la base de datos...','Search in database...')}
-                className={`flex-1 bg-transparent text-sm outline-none ${darkMode ? 'text-white placeholder-gray-500' : 'text-gray-800 placeholder-gray-400'}`} />
+              <input type="text" value={busqueda}
+                onChange={function(e) { setBusqueda(e.target.value); }}
+                placeholder={t('Buscar alimento o receta...','Search food or recipe...')}
+                style={{ background: 'transparent', color: inputColor, caretColor: '#10b981', flex: 1, fontSize: '14px', outline: 'none', border: 'none' }} />
               {busqueda && (
                 <button onClick={function() { setBusqueda(''); setSugerencias([]); }}
-                  className={`flex-shrink-0 cursor-pointer ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}>
+                  style={{ color: placeholderCss, cursor: 'pointer' }}>
                   <i className="fas fa-times text-xs"></i>
                 </button>
               )}
             </div>
+            {/* Dropdown resultados */}
             {sugerencias.length > 0 && (
-              <div className={`absolute top-full left-0 right-0 mt-1 rounded-xl border shadow-lg z-10 overflow-hidden ${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
-                {sugerencias.map(function(r) {
+              <div className={`absolute top-full left-0 right-0 mt-1 rounded-xl border shadow-xl z-10 overflow-hidden ${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+                {sugerencias.map(function(item, idx) {
+                  var esAlimento = item._tipo === 'alimento';
                   return (
-                    <button key={r.id || r.nombre} onClick={function() { seleccionarReceta(r); }}
-                      className={`w-full text-left px-4 py-2.5 flex items-center justify-between transition-colors cursor-pointer ${darkMode ? 'hover:bg-gray-700 text-gray-200' : 'hover:bg-gray-50 text-gray-800'} border-b last:border-0 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-                      <span className="text-sm font-medium truncate">{r.nombre}</span>
-                      <span className={`text-xs flex-shrink-0 ml-2 font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{r.calorias || r.calorias_base || r.calorias_escaladas} kcal</span>
+                    <button key={idx} onClick={function() { seleccionarItem(item); }}
+                      className={`w-full text-left px-4 py-2.5 flex items-start gap-3 transition-colors cursor-pointer border-b last:border-0 ${darkMode ? 'hover:bg-gray-700 border-gray-700' : 'hover:bg-gray-50 border-gray-100'}`}>
+                      <i className={`fas ${esAlimento ? 'fa-apple-whole' : 'fa-bowl-food'} text-xs mt-1 flex-shrink-0 ${esAlimento ? 'text-green-500' : 'text-amber-500'}`}></i>
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-sm font-semibold truncate ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{item.nombre}</div>
+                        {item.porcion && (
+                          <div className="text-xs" style={{ color: placeholderCss }}>{item.porcion}</div>
+                        )}
+                      </div>
+                      <span className={`text-xs font-bold flex-shrink-0 mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{item.kcal} kcal</span>
                     </button>
                   );
                 })}
@@ -4601,33 +4652,43 @@ function ModalComidaExterna({ darkMode, diaActual, onAdd, onClose }) {
 
           {/* Nombre */}
           <div>
-            <label className={`text-xs font-bold mb-1 block ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Nombre','Name')} <span className="text-red-400">*</span></label>
-            <input type="text" value={form.nombre} onChange={function(e) { campo('nombre', e.target.value); }}
-              placeholder={t('Ej: Arroz con leche','E.g. Rice pudding')}
-              className={inputBase + inputDark} />
+            <label className={`text-xs font-bold mb-1 block ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              {t('Nombre','Name')} <span className="text-red-400">*</span>
+            </label>
+            <input type="text" value={form.nombre}
+              onChange={function(e) { campo('nombre', e.target.value); }}
+              placeholder={t('Ej: 2 huevos con tomate','E.g. 2 eggs with tomato')}
+              style={{ display:'block', width:'100%', padding:'10px 12px', borderRadius:'12px', border:'1px solid ' + inputBorder,
+                backgroundColor: inputBg, color: inputColor, fontSize:'14px', outline:'none', boxSizing:'border-box' }} />
           </div>
 
           {/* Calorías */}
           <div>
-            <label className={`text-xs font-bold mb-1 block ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Calorías (kcal)','Calories (kcal)')} <span className="text-red-400">*</span></label>
-            <input type="number" value={form.kcal} onChange={function(e) { campo('kcal', e.target.value); }}
+            <label className={`text-xs font-bold mb-1 block ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              {t('Calorías (kcal)','Calories (kcal)')} <span className="text-red-400">*</span>
+            </label>
+            <input type="number" value={form.kcal}
+              onChange={function(e) { campo('kcal', e.target.value); }}
               placeholder="0" min="0" step="1"
-              className={inputBase + inputDark} />
+              style={{ display:'block', width:'100%', padding:'10px 12px', borderRadius:'12px', border:'1px solid ' + inputBorder,
+                backgroundColor: inputBg, color: inputColor, fontSize:'14px', outline:'none', boxSizing:'border-box' }} />
           </div>
 
           {/* Macros */}
           <div className="grid grid-cols-3 gap-2">
             {[
-              { key: 'proteinas_g',      label: t('Proteínas (g)','Protein (g)'),  color: 'text-blue-500'   },
-              { key: 'carbohidratos_g',  label: t('Carbs (g)','Carbs (g)'),        color: 'text-amber-500'  },
-              { key: 'grasas_g',         label: t('Grasas (g)','Fat (g)'),         color: 'text-purple-500' }
+              { key: 'proteinas_g',     label: t('Proteínas g','Protein g'),  color: '#3b82f6' },
+              { key: 'carbohidratos_g', label: t('Carbs g','Carbs g'),        color: '#f59e0b' },
+              { key: 'grasas_g',        label: t('Grasas g','Fat g'),         color: '#a855f7' }
             ].map(function(f) {
               return (
                 <div key={f.key}>
-                  <label className={`text-xs font-bold mb-1 block ${f.color}`}>{f.label}</label>
-                  <input type="number" value={form[f.key]} onChange={function(e) { campo(f.key, e.target.value); }}
+                  <label className="text-xs font-bold mb-1 block" style={{ color: f.color }}>{f.label}</label>
+                  <input type="number" value={form[f.key]}
+                    onChange={function(e) { campo(f.key, e.target.value); }}
                     placeholder="0" min="0" step="0.1"
-                    className={'w-full px-3 py-2 rounded-xl border text-sm outline-none transition-colors ' + (darkMode ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500 focus:border-green-500' : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400 focus:border-green-400')} />
+                    style={{ display:'block', width:'100%', padding:'8px 10px', borderRadius:'12px', border:'1px solid ' + inputBorder,
+                      backgroundColor: inputBg, color: inputColor, fontSize:'13px', outline:'none', boxSizing:'border-box' }} />
                 </div>
               );
             })}
@@ -4658,7 +4719,7 @@ function ModalComidaExterna({ darkMode, diaActual, onAdd, onClose }) {
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260426nn)
+// COMPONENTE: HoyView — Dashboard diario (v20260426oo)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -6999,7 +7060,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260426nn: Language state ───
+  // ─── v20260426oo: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
