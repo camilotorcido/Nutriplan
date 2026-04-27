@@ -185,6 +185,96 @@ function _aplicarModoSobras(planSemana, caloriasObjetivo) {
   return planSemana;
 }
 
+// ─── Compliance proteína: resolver target diario en gramos ───
+// Jerarquía: proteinaFloor (LBM-based) > macrosGramos > porcentaje objetivo
+function _resolverProteinaTarget(perfil, caloriasObjetivo) {
+  if (perfil.proteinaFloor && perfil.proteinaFloor > 0) return perfil.proteinaFloor;
+  if (perfil.macrosGramos && perfil.macrosGramos.proteinas_g > 0) return perfil.macrosGramos.proteinas_g;
+  const pct = perfil.objetivo === 'volumen' ? 25 : 35; // 35% para pérdida/mantenimiento
+  return Math.round(caloriasObjetivo * pct / 100 / 4);
+}
+
+// ─── Compliance proteína: filtrar candidatas por densidad proteica mínima ───
+// minDensidad = proteinaTarget / caloriasObjetivo  (g proteína / kcal total del día)
+// Como cada comida se escala proporcionalmente a sus kcal, una receta con esa
+// densidad entregará su parte proporcional del target diario independiente del tamaño.
+//
+// Tier 1: recetas que CUMPLEN el umbral (strict).
+// Tier 2: si no hay ninguna que cumpla, tomar el top-50% por densidad (mín. 2).
+// Tier 3: fallback sin cambios (evita quedarse sin candidatas).
+function _filtrarPorProteinaMinima(candidatas, minDensidad) {
+  if (!minDensidad || minDensidad <= 0 || candidatas.length <= 1) return candidatas;
+  const strictPool = candidatas.filter(r =>
+    r.calorias_base > 0 && (r.proteinas_g / r.calorias_base) >= minDensidad
+  );
+  if (strictPool.length >= 1) return strictPool;
+  // Ninguna receta supera el umbral → top-50% por densidad como mejor opción posible
+  const sorted = candidatas.slice().sort((a, b) =>
+    (b.calorias_base > 0 ? b.proteinas_g / b.calorias_base : 0) -
+    (a.calorias_base > 0 ? a.proteinas_g / a.calorias_base : 0)
+  );
+  return sorted.slice(0, Math.max(2, Math.ceil(sorted.length * 0.5)));
+}
+
+// ─── Compliance proteína: pase de corrección post-generación por día ───
+// Si el día no alcanza el 95% del target, encuentra la comida de menor densidad
+// proteica y la reemplaza con la mejor alternativa disponible del pool.
+// Repite hasta MAX_SWAPS veces o hasta alcanzar la tolerancia.
+function _enforceProteinDia(comidasDia, caloriasObjetivo, porTipo, recetasUsadasGlobal, proteinaTarget) {
+  if (!proteinaTarget || proteinaTarget <= 0) return;
+  const TOLERANCIA = 0.95;
+  const MAX_SWAPS = 5;
+
+  const totalProteina = () => Object.entries(comidasDia).reduce((sum, [k, c]) =>
+    k.startsWith('_') || !c ? sum : sum + (c.proteinas_escaladas || 0), 0
+  );
+
+  let swaps = 0;
+  while (totalProteina() < proteinaTarget * TOLERANCIA && swaps < MAX_SWAPS) {
+    // Ordenar comidas del día de menor a mayor densidad proteica (ignorar sobras)
+    const meals = Object.entries(comidasDia)
+      .filter(([k, c]) => !k.startsWith('_') && c && !c.es_sobra)
+      .sort(([, a], [, b]) => {
+        const dA = a.calorias_escaladas > 0 ? (a.proteinas_escaladas || 0) / a.calorias_escaladas : 0;
+        const dB = b.calorias_escaladas > 0 ? (b.proteinas_escaladas || 0) / b.calorias_escaladas : 0;
+        return dA - dB; // peor densidad primero
+      });
+
+    let mejora = false;
+    for (const [tipoComida, comidaActual] of meals) {
+      const caloriasComida = Math.round(caloriasObjetivo * DISTRIBUCION_COMIDAS[tipoComida]);
+      const disponibles = porTipo[tipoComida] || [];
+      if (disponibles.length === 0) continue;
+
+      const densidadActual = comidaActual.calorias_escaladas > 0
+        ? comidaActual.proteinas_escaladas / comidaActual.calorias_escaladas : 0;
+
+      // Receta con mayor densidad proteica disponible (distinta a la actual)
+      const candidatasSwap = disponibles
+        .filter(r => r.id !== comidaActual.id)
+        .sort((a, b) =>
+          (b.calorias_base > 0 ? b.proteinas_g / b.calorias_base : 0) -
+          (a.calorias_base > 0 ? a.proteinas_g / a.calorias_base : 0)
+        );
+      if (candidatasSwap.length === 0) continue;
+
+      const mejor = candidatasSwap[0];
+      const densidadMejor = mejor.calorias_base > 0 ? mejor.proteinas_g / mejor.calorias_base : 0;
+
+      // Solo intercambiar si la mejora es real (≥10% más proteína por kcal)
+      if (densidadMejor > densidadActual * 1.10) {
+        recetasUsadasGlobal.delete(comidaActual.id);
+        recetasUsadasGlobal.add(mejor.id);
+        comidasDia[tipoComida] = escalarReceta(mejor, caloriasComida);
+        mejora = true;
+        swaps++;
+        break;
+      }
+    }
+    if (!mejora) break; // No hay más mejoras posibles
+  }
+}
+
 // ─── MEJORA 4: Generar plan semanal con historial de 14 días ───
 function generarPlanSemanal(perfil, caloriasObjetivo) {
   const numSemanas = Math.min(4, Math.max(1, perfil.numSemanas || 1));
@@ -207,6 +297,10 @@ function generarPlanSemanal(perfil, caloriasObjetivo) {
   // 4. Mensaje de advertencia si pocas recetas disponibles
   let advertenciaRecetas = null;
   const recetasUsadasGlobal = new Set(); // Para evitar repeticiones entre semanas
+
+  // Compliance proteína: target diario y densidad mínima requerida por receta
+  const proteinaTarget = _resolverProteinaTarget(perfil, caloriasObjetivo);
+  const minDensidad = caloriasObjetivo > 0 ? proteinaTarget / caloriasObjetivo : 0;
 
   // 5. Generar plan para N semanas
   const planMulti = { _numSemanas: numSemanas };
@@ -240,29 +334,22 @@ function generarPlanSemanal(perfil, caloriasObjetivo) {
             }
           }
 
-          // Prioridad proteína: cuando hay objetivo científico (LBM-based), ordenar candidatas
-          // por densidad proteica (g/kcal) y restringir a la mitad superior.
-          // Mantiene variedad aleatoria dentro del pool de alto contenido proteico.
-          if (perfil.proteinaFloor && perfil.proteinaFloor > 0 && candidatas.length > 2) {
-            const sorted = candidatas.slice().sort((a, b) => {
-              const ratioA = a.calorias_base > 0 ? a.proteinas_g / a.calorias_base : 0;
-              const ratioB = b.calorias_base > 0 ? b.proteinas_g / b.calorias_base : 0;
-              return ratioB - ratioA;
-            });
-            // Tomar el 60% superior (al menos 2 recetas para mantener variedad)
-            const topN = Math.max(2, Math.ceil(sorted.length * 0.6));
-            candidatas = sorted.slice(0, topN);
-          }
+          // Compliance proteína: filtrar por densidad mínima (Tier 1 estricto → Tier 2 top-50%)
+          candidatas = _filtrarPorProteinaMinima(candidatas, minDensidad);
 
           const idx = Math.floor(Math.random() * candidatas.length);
           const recetaSeleccionada = candidatas[idx];
           recetasUsadasGlobal.add(recetaSeleccionada.id);
-          
+
           planSemana[dia][tipoComida] = escalarReceta(recetaSeleccionada, caloriasComida);
         } else {
           planSemana[dia][tipoComida] = null;
         }
       });
+
+      // Compliance proteína: pase de corrección — si el día no alcanza el 95% del target,
+      // reemplaza la comida de menor densidad proteica con la mejor alternativa disponible.
+      _enforceProteinDia(planSemana[dia], caloriasObjetivo, porTipo, recetasUsadasGlobal, proteinaTarget);
     });
 
     // Fase 4 - Punto 16: modo sobras (cena día N → almuerzo día N+1)
@@ -342,16 +429,10 @@ function cambiarRecetaIndividual(planMulti, dia, tipoComida, perfil, caloriasObj
 
   if (candidatas.length === 0) return plan;
 
-  // Prioridad proteína: igual que en el generador principal
-  if (perfil.proteinaFloor && perfil.proteinaFloor > 0 && candidatas.length > 2) {
-    const sorted = candidatas.slice().sort((a, b) => {
-      const ratioA = a.calorias_base > 0 ? a.proteinas_g / a.calorias_base : 0;
-      const ratioB = b.calorias_base > 0 ? b.proteinas_g / b.calorias_base : 0;
-      return ratioB - ratioA;
-    });
-    const topN = Math.max(2, Math.ceil(sorted.length * 0.6));
-    candidatas = sorted.slice(0, topN);
-  }
+  // Compliance proteína: filtrar por densidad mínima al hacer swap individual
+  const minDensidadSwap = caloriasObjetivo > 0
+    ? _resolverProteinaTarget(perfil, caloriasObjetivo) / caloriasObjetivo : 0;
+  candidatas = _filtrarPorProteinaMinima(candidatas, minDensidadSwap);
 
   const caloriasComida = Math.round(caloriasObjetivo * DISTRIBUCION_COMIDAS[tipoComida]);
   const idx = Math.floor(Math.random() * candidatas.length);
@@ -1385,26 +1466,30 @@ async function generarPlanSemanalAsync(perfil, caloriasObjetivo, onProgreso) {
   const recetasUsadasGlobal = new Set();
   const planMulti = { _numSemanas: numSemanas };
 
+  // Compliance proteína: target diario y densidad mínima requerida por receta
+  const proteinaTarget = _resolverProteinaTarget(perfil, caloriasObjetivo);
+  const minDensidad = caloriasObjetivo > 0 ? proteinaTarget / caloriasObjetivo : 0;
+
   for (let s = 1; s <= numSemanas; s++) {
     if (onProgreso && numSemanas > 1) onProgreso(`Generando semana ${s} de ${numSemanas}...`);
     const planSemana = {};
-    
+
     DIAS_SEMANA.forEach(dia => {
       planSemana[dia] = {};
-      
+
       Object.keys(DISTRIBUCION_COMIDAS).forEach(tipoComida => {
         const caloriasComida = Math.round(caloriasObjetivo * DISTRIBUCION_COMIDAS[tipoComida]);
         const recetasDisponibles = porTipo[tipoComida];
-        
+
         if (recetasDisponibles.length > 0) {
-          let candidatas = recetasDisponibles.filter(r => 
+          let candidatas = recetasDisponibles.filter(r =>
             !recetasUsadas14.has(r.id) && !recetasUsadasGlobal.has(r.id)
           );
-          
+
           if (candidatas.length === 0) {
             candidatas = recetasDisponibles.filter(r => !recetasUsadasGlobal.has(r.id));
           }
-          
+
           if (candidatas.length === 0) {
             candidatas = recetasDisponibles;
             if (!advertenciaRecetas) {
@@ -1412,16 +1497,8 @@ async function generarPlanSemanalAsync(perfil, caloriasObjetivo, onProgreso) {
             }
           }
 
-          // Prioridad proteína: igual que en el generador síncrono
-          if (perfil.proteinaFloor && perfil.proteinaFloor > 0 && candidatas.length > 2) {
-            const sorted = candidatas.slice().sort((a, b) => {
-              const ratioA = a.calorias_base > 0 ? a.proteinas_g / a.calorias_base : 0;
-              const ratioB = b.calorias_base > 0 ? b.proteinas_g / b.calorias_base : 0;
-              return ratioB - ratioA;
-            });
-            const topN = Math.max(2, Math.ceil(sorted.length * 0.6));
-            candidatas = sorted.slice(0, topN);
-          }
+          // Compliance proteína: filtrar por densidad mínima (Tier 1 estricto → Tier 2 top-50%)
+          candidatas = _filtrarPorProteinaMinima(candidatas, minDensidad);
 
           const idx = Math.floor(Math.random() * candidatas.length);
           const recetaSeleccionada = candidatas[idx];
@@ -1432,6 +1509,9 @@ async function generarPlanSemanalAsync(perfil, caloriasObjetivo, onProgreso) {
           planSemana[dia][tipoComida] = null;
         }
       });
+
+      // Compliance proteína: pase de corrección post-selección
+      _enforceProteinDia(planSemana[dia], caloriasObjetivo, porTipo, recetasUsadasGlobal, proteinaTarget);
     });
 
     // Fase 4 - Punto 16: modo sobras
