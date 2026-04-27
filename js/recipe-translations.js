@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Recipe name translations (ES → EN)
+   Calibrate — Recipe name translations (ES → EN)
    Maps recipe ID → colloquial English name.
    Used by getNombreReceta() in app-bundle.js.
    ============================================ */

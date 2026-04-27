@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Firebase Configuration
+   Calibrate — Firebase Configuration
    ============================================
 
    INSTRUCCIONES (ver SETUP-AUTH.md para detalles):

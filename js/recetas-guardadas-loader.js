@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Loader de recetas generadas guardadas
+   Calibrate — Loader de recetas generadas guardadas
    Inyecta en RECETAS_DB las recetas que el usuario creó con el generador
    paramétrico y persistió en localStorage.
    Se ejecuta al final del bootstrap.

@@ -1,14 +1,14 @@
 ﻿/* ============================================
-   NutriPlan - Service Worker (Fase 5.2)
+   Calibrate — Service Worker
    Estrategia:
    - Cache-first para JS/CSS/iconos (assets versionados con ?v=)
    - Stale-while-revalidate para index.html
    - Network-first para peticiones externas (TheMealDB, etc.)
    ============================================ */
 
-const VERSION = 'nutriplan-v20260427xx';
-const CACHE_STATIC = 'nutriplan-static-' + VERSION;
-const CACHE_RUNTIME = 'nutriplan-runtime-' + VERSION;
+const VERSION = 'calibrate-v20260427yy';
+const CACHE_STATIC = 'calibrate-static-' + VERSION;
+const CACHE_RUNTIME = 'calibrate-runtime-' + VERSION;
 
 // Assets mínimos para el shell (Fase 6.2: recipes-extra y upgrades son lazy)
 const PRECACHE_URLS = [
@@ -73,7 +73,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
       keys
-        .filter((k) => k.startsWith('nutriplan-') && k !== CACHE_STATIC && k !== CACHE_RUNTIME)
+        .filter((k) => (k.startsWith('calibrate-') || k.startsWith('nutriplan-')) && k !== CACHE_STATIC && k !== CACHE_RUNTIME)
         .map((k) => caches.delete(k))
     )).then(() => self.clients.claim())
   );

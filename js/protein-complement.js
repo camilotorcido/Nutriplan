@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Complemento proteico automático
+   Calibrate — Complemento proteico automático
    Calcula déficit vs target del día y sugiere batido/fuente proteica.
    Se activa solo si Fat Loss Mode está ON.
    ============================================ */

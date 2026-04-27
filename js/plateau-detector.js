@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Plateau Detector (v20260418af)
+   Calibrate — Plateau Detector (v20260418af)
    Detecta estancamiento de peso (≥14d con delta semanal <0.25 kg)
    y orquesta el protocolo de 6 pasos de Precision Nutrition.
    Depende de NP_BodyComp + NP_RoadmapData.PLATEAU_PROTOCOL.

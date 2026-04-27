@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Exports (Fase 4.1 y 4.2)
+   Calibrate — Exports
    - Lista de compras: CSV, Google Keep, Jumbo/Líder copy
    - Plan semanal: .ics (iCalendar) para Google Calendar / Apple / Outlook
    ============================================ */
@@ -161,10 +161,10 @@
     const lineas = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//NutriPlan//Plan Semanal//ES',
+      'PRODID:-//Calibrate//Plan Semanal//ES',
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH',
-      `X-WR-CALNAME:NutriPlan - Plan Semanal`,
+      `X-WR-CALNAME:Calibrate - Plan Semanal`,
       'X-WR-TIMEZONE:America/Santiago'
     ];
 
@@ -194,7 +194,7 @@
         fechaFin.setMinutes(fechaFin.getMinutes() + 30);
 
         // Construir descripción con todas las comidas
-        let descripcion = `🍽️ Plan NutriPlan - ${dia}${semanas.length > 1 ? ' (Semana ' + (idxSemana + 1) + ')' : ''}\\n\\n`;
+        let descripcion = `🍽️ Plan Calibrate - ${dia}${semanas.length > 1 ? ' (Semana ' + (idxSemana + 1) + ')' : ''}\\n\\n`;
         let totalKcal = 0;
         let sumario = [];
 
@@ -235,7 +235,7 @@
           `SUMMARY:${escaparICS(titulo)}`,
           `DESCRIPTION:${escaparICS(descripcion)}`,
           `SEQUENCE:${seq}`,
-          `CATEGORIES:NutriPlan,Comida`,
+          `CATEGORIES:Calibrate,Comida`,
           'END:VEVENT'
         );
       });
@@ -264,9 +264,9 @@
     const lineas = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//NutriPlan//Plan Detallado//ES',
+      'PRODID:-//Calibrate//Plan Detallado//ES',
       'CALSCALE:GREGORIAN',
-      'X-WR-CALNAME:NutriPlan - Comidas',
+      'X-WR-CALNAME:Calibrate - Comidas',
       'X-WR-TIMEZONE:America/Santiago'
     ];
 
@@ -317,7 +317,7 @@
             `SUMMARY:${escaparICS(tc.icon + ' ' + ((typeof getNombreReceta === 'function') ? getNombreReceta(comida) : comida.nombre))}`,
             `DESCRIPTION:${escaparICS(desc)}`,
             `SEQUENCE:${seq}`,
-            `CATEGORIES:NutriPlan,${tc.label}`,
+            `CATEGORIES:Calibrate,${tc.label}`,
             'END:VEVENT'
           );
         });
@@ -378,9 +378,9 @@
     // ── Paleta: verde app + escala de grises ──────────────────────────────────
     // Solo 2 colores de acento: verde principal y gris medio.
     // Todo lo demás es fondo blanco o gris muy claro.
-    var cGreen     = [16, 185, 129];   // emerald-500
-    var cGreenDark = [5,  78,  56];    // emerald-900
-    var cGreenBg   = [236, 253, 245];  // emerald-50
+    var cGreen     = [200, 148, 58];   // Calibrate accent mustard
+    var cGreenDark = [166, 120, 48];   // Calibrate accent dark
+    var cGreenBg   = [240, 217, 172];  // Calibrate accent light
     var cDark      = [31,  41,  55];   // gray-800
     var cMed       = [107, 114, 128];  // gray-500
     var cLight     = [229, 231, 235];  // gray-200
@@ -401,7 +401,7 @@
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(15);
     doc.setFont('helvetica', 'bold');
-    doc.text('NutriPlan', mg, 13);
+    doc.text('Calibrate', mg, 13);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     var fechaHoy = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -569,7 +569,7 @@
       doc.setPage(i);
       doc.setFontSize(7);
       doc.setTextColor(cLight[0], cLight[1], cLight[2]);
-      doc.text('NutriPlan · Página ' + i + ' de ' + totalPages,
+      doc.text('Calibrate · Página ' + i + ' de ' + totalPages,
         pageW / 2, pageH - 5, { align: 'center' });
     }
 

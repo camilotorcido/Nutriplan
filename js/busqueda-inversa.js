@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Búsqueda inversa
+   Calibrate — Búsqueda inversa
    "Tengo estos ingredientes, qué puedo cocinar"
    ============================================ */
 

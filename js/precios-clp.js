@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Precios referenciales CLP
+   Calibrate — Precios referenciales CLP
    Santiago de Chile, promedio Jumbo/Líder 2026 (rev 2)
 
    Estructura: nombre_normalizado → {

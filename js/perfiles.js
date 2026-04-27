@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Perfiles múltiples (Fase 3.3)
+   Calibrate — Perfiles múltiples (Fase 3.3)
    Gestiona "para cuántos se cocina" sin duplicar el plan.
    Aplica un multiplicador de porciones a ingredientes y costo.
    Calorías/macros siguen correspondiendo a la porción de Camilo.

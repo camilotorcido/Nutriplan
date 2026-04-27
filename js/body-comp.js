@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Body Composition Tracking (v20260418aa)
+   Calibrate — Body Composition Tracking (v20260418aa)
    Log diario de peso + log semanal de medidas.
    Calcula Navy BF%, promedio 7 días, tendencia vs peso inicial.
    ============================================ */

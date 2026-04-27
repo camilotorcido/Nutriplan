@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Metadata Upgrade (Fase 1)
+   Calibrate — Metadata Upgrade (Fase 1)
    Añade tiempo_prep_min, tiempo_coccion_min y costo_clp
    a todas las recetas locales (RECETAS_DB) mediante heurística.
    

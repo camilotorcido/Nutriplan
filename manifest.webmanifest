@@ -1,15 +1,15 @@
 {
-  "name": "NutriPlan — Planificador Nutricional",
-  "short_name": "NutriPlan",
-  "description": "Planificador nutricional semanal con recetas en español latino, TDEE, escalado dinámico y soporte Thermomix TM6",
+  "name": "Calibrate",
+  "short_name": "Calibrate",
+  "description": "Fat loss con método. Meal planning automático, roadmap por fases y tracking integral con base científica explícita.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#10b981",
-  "background_color": "#f0fdf4",
+  "theme_color": "#C8943A",
+  "background_color": "#F5F0E8",
   "lang": "es-CL",
-  "categories": ["food", "health", "lifestyle"],
+  "categories": ["food", "health", "fitness"],
   "icons": [
     {
       "src": "icons/icon.svg",

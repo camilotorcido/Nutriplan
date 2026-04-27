@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Training Log (v20260418ad)
+   Calibrate — Training Log (v20260418ad)
    Registro de sesiones de entreno (A/B/C/D) con cargas por ejercicio.
    Depende de window.NP_RoadmapData.ENTRENO_PROTOCOLO.
    ============================================ */
