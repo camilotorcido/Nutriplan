@@ -8877,8 +8877,17 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
                   onSetPeso(i, val);
                   setPesoStr(String(val));
                 }}
-                className={`text-sm font-bold tabular-nums text-center bg-transparent border-none outline-none ${darkMode ? 'text-white' : 'text-gray-800'}`}
-                style={{ width: '2.8rem' }}
+                style={{
+                  width: '2.8rem',
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  textAlign: 'center',
+                  fontSize: '0.875rem',
+                  fontWeight: 'bold',
+                  fontVariantNumeric: 'tabular-nums',
+                  color: darkMode ? '#f9fafb' : '#1f2937'
+                }}
               />
               <span className={`text-xs font-medium flex-shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>kg</span>
             </div>
