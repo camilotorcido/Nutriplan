@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260428af: Bilingual ES/EN support
+   v20260428ag: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260428af: Bilingual helpers ────────────────────────────────────────
+// ─── v20260428ag: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -401,7 +401,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260428af: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260428ag: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
   // Previews para mantenimiento y volumen (paso 4)
@@ -672,7 +672,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     _mostrarExplicacion(perfilFinal);
   };
 
-  // ── v20260428af: Wizard onboarding ──────────────────────────────────────
+  // ── v20260428ag: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -2107,7 +2107,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           </div>
 
-          {/* Objetivo — v20260428af: goal cards unificados, sin kcal subtitles */}
+          {/* Objetivo — v20260428ag: goal cards unificados, sin kcal subtitles */}
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-bullseye text-green-500"></i>
@@ -5488,7 +5488,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260428af)
+// COMPONENTE: ModalComidaExterna (v20260428ag)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
 //   - Búsqueda en FOODS_DB + RECETAS_DB
@@ -5811,7 +5811,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260428af)
+// COMPONENTE: HoyView — Dashboard diario (v20260428ag)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -8278,9 +8278,11 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                 <div className={`flex items-center flex-shrink-0 rounded-lg border overflow-hidden ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
                   <button onClick={() => setPeso(i, Math.max(0, (Number(e.peso) || 0) - 2.5))}
                     className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>−</button>
-                  <div className={`flex items-center justify-center px-2 h-9 min-w-[3.5rem] text-sm font-semibold border-x ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200 text-gray-800'}`}>
-                    {e.peso != null ? e.peso : (previo ? previo.peso : '0')}
-                    <span className={`ml-0.5 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>kg</span>
+                  <div className={`flex items-center justify-center gap-1 px-3 h-9 min-w-[4.5rem] border-x ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+                    <span className={`text-sm font-bold tabular-nums ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                      {e.peso != null ? e.peso : (previo ? previo.peso : '0')}
+                    </span>
+                    <span className={`text-xs font-medium ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>kg</span>
                   </div>
                   <button onClick={() => setPeso(i, (Number(e.peso) || 0) + 2.5)}
                     className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>+</button>
@@ -8627,7 +8629,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260428af: Language state ───
+  // ─── v20260428ag: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
