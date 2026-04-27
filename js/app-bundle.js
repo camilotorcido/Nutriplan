@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260427vv: Bilingual ES/EN support
+   v20260427ww: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260427vv: Bilingual helpers ────────────────────────────────────────
+// ─── v20260427ww: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -317,6 +317,23 @@ function LoginScreen({ darkMode, onToggleDark }) {
   );
 }
 
+// ─── Helper: derivar macros en gramos desde un calculados de roadmap ───────────
+// Soporta roadmaps viejos (sin macrosGramos) usando proteinaTarget + split objetivo.
+function _resolverMacros(calc, obj) {
+  if (!calc) return null;
+  if (calc.macrosGramos && calc.macrosGramos.proteina) return calc.macrosGramos;
+  if (!calc.proteinaTarget) return null;
+  const kcal = calc.caloriasCorte || calc.caloriasObjetivo || 0;
+  if (!kcal) return null;
+  const remKcal = Math.max(0, kcal - calc.proteinaTarget * 4);
+  const carbPct  = obj === 'volumen' ? 0.60 : obj === 'mantenimiento' ? 0.45 : 0.572;
+  return {
+    proteina:      calc.proteinaTarget,
+    carbohidratos: Math.round(remKcal * carbPct / 4),
+    grasas:        Math.round(remKcal * (1 - carbPct) / 9)
+  };
+}
+
 // =============================================
 // COMPONENTE: ProfileSetup
 // =============================================
@@ -362,7 +379,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260427vv: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260427ww: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
   // Previews para mantenimiento y volumen (paso 4)
@@ -633,7 +650,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     _mostrarExplicacion(perfilFinal);
   };
 
-  // ── v20260427vv: Wizard onboarding ──────────────────────────────────────
+  // ── v20260427ww: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -791,14 +808,14 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 </div>
               ))}
             </div>
-            {calc.macrosGramos && (
+            {_resolverMacros(calc, obj) && (() => { const _mg = _resolverMacros(calc, obj); return (
               <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
                 <p className={`text-xs font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Distribución de macros diarios</p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { l: 'Proteínas', v: calc.macrosGramos.proteina + 'g', c: 'bg-blue-500' },
-                    { l: 'Carbohidratos', v: calc.macrosGramos.carbohidratos + 'g', c: 'bg-amber-500' },
-                    { l: 'Grasas', v: calc.macrosGramos.grasas + 'g', c: 'bg-rose-500' },
+                    { l: 'Proteínas', v: _mg.proteina + 'g', c: 'bg-blue-500' },
+                    { l: 'Carbohidratos', v: _mg.carbohidratos + 'g', c: 'bg-amber-500' },
+                    { l: 'Grasas', v: _mg.grasas + 'g', c: 'bg-rose-500' },
                   ].map(m => (
                     <div key={m.l} className="text-center">
                       <div className={`inline-block px-3 py-1.5 rounded-lg text-white text-sm font-bold ${m.c}`}>{m.v}</div>
@@ -807,7 +824,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   ))}
                 </div>
               </div>
-            )}
+            ); })()}
           </div>
         );
         if (obj === 'mantenimiento') return (
@@ -832,14 +849,14 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 </div>
               ))}
             </div>
-            {calc.macrosGramos && (
+            {_resolverMacros(calc, obj) && (() => { const _mg = _resolverMacros(calc, obj); return (
               <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
                 <p className={`text-xs font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Macros diarios</p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { l: 'Proteínas', v: calc.macrosGramos.proteina + 'g', c: 'bg-blue-500' },
-                    { l: 'Carbohidratos', v: calc.macrosGramos.carbohidratos + 'g', c: 'bg-amber-500' },
-                    { l: 'Grasas', v: calc.macrosGramos.grasas + 'g', c: 'bg-rose-500' },
+                    { l: 'Proteínas', v: _mg.proteina + 'g', c: 'bg-blue-500' },
+                    { l: 'Carbohidratos', v: _mg.carbohidratos + 'g', c: 'bg-amber-500' },
+                    { l: 'Grasas', v: _mg.grasas + 'g', c: 'bg-rose-500' },
                   ].map(m => (
                     <div key={m.l} className="text-center">
                       <div className={`inline-block px-3 py-1.5 rounded-lg text-white text-sm font-bold ${m.c}`}>{m.v}</div>
@@ -848,7 +865,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   ))}
                 </div>
               </div>
-            )}
+            ); })()}
           </div>
         );
         // volumen
@@ -874,14 +891,14 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 </div>
               ))}
             </div>
-            {calc.macrosGramos && (
+            {_resolverMacros(calc, obj) && (() => { const _mg = _resolverMacros(calc, obj); return (
               <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
                 <p className={`text-xs font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Macros diarios</p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { l: 'Proteínas', v: calc.macrosGramos.proteina + 'g', c: 'bg-blue-500' },
-                    { l: 'Carbohidratos', v: calc.macrosGramos.carbohidratos + 'g', c: 'bg-amber-500' },
-                    { l: 'Grasas', v: calc.macrosGramos.grasas + 'g', c: 'bg-rose-500' },
+                    { l: 'Proteínas', v: _mg.proteina + 'g', c: 'bg-blue-500' },
+                    { l: 'Carbohidratos', v: _mg.carbohidratos + 'g', c: 'bg-amber-500' },
+                    { l: 'Grasas', v: _mg.grasas + 'g', c: 'bg-rose-500' },
                   ].map(m => (
                     <div key={m.l} className="text-center">
                       <div className={`inline-block px-3 py-1.5 rounded-lg text-white text-sm font-bold ${m.c}`}>{m.v}</div>
@@ -890,7 +907,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   ))}
                 </div>
               </div>
-            )}
+            ); })()}
           </div>
         );
       };
@@ -1763,13 +1780,13 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               </div>
             ))}
           </div>
-          {calc.macrosGramos && (
+          {_resolverMacros(calc, obj) && (() => { const _mg = _resolverMacros(calc, obj); return (
             <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
               <p className={`text-xs font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Macros diarios</p>
               <div className="grid grid-cols-3 gap-2">
-                {[{ l: 'Proteínas', v: calc.macrosGramos.proteina + 'g', c: 'bg-blue-500' },
-                  { l: 'Carbohidratos', v: calc.macrosGramos.carbohidratos + 'g', c: 'bg-amber-500' },
-                  { l: 'Grasas', v: calc.macrosGramos.grasas + 'g', c: 'bg-rose-500' }].map(m => (
+                {[{ l: 'Proteínas', v: _mg.proteina + 'g', c: 'bg-blue-500' },
+                  { l: 'Carbohidratos', v: _mg.carbohidratos + 'g', c: 'bg-amber-500' },
+                  { l: 'Grasas', v: _mg.grasas + 'g', c: 'bg-rose-500' }].map(m => (
                   <div key={m.l} className="text-center">
                     <div className={`inline-block px-3 py-1.5 rounded-lg text-white text-sm font-bold ${m.c}`}>{m.v}</div>
                     <div className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{m.l}</div>
@@ -1777,7 +1794,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 ))}
               </div>
             </div>
-          )}
+          ); })()}
         </div>
       );
     };
@@ -1964,7 +1981,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           </div>
 
-          {/* Objetivo — v20260427vv: goal cards unificados, sin kcal subtitles */}
+          {/* Objetivo — v20260427ww: goal cards unificados, sin kcal subtitles */}
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-bullseye text-green-500"></i>
@@ -5290,7 +5307,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260427vv)
+// COMPONENTE: ModalComidaExterna (v20260427ww)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
 //   - Búsqueda en FOODS_DB + RECETAS_DB
@@ -5613,7 +5630,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260427vv)
+// COMPONENTE: HoyView — Dashboard diario (v20260427ww)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -5776,11 +5793,33 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   };
   var metaKcalDia = (perfil && perfil.caloriasObjetivo) || resumenHoy.calorias || 0;
   // Leer metas de macros desde el roadmap científico (LBM × factor), no desde el output del plan
-  var _rm  = perfil && (perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen);
-  var _mgr = _rm && _rm.calculados && _rm.calculados.macrosGramos;
-  var metaProtDia = _mgr ? Math.round(_mgr.proteina)      : (resumenHoy.proteinas     || 0);
-  var metaCarbDia = _mgr ? Math.round(_mgr.carbohidratos) : (resumenHoy.carbohidratos || 0);
-  var metaGrasDia = _mgr ? Math.round(_mgr.grasas)        : (resumenHoy.grasas        || 0);
+  var _rm   = perfil && (perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen);
+  var _calc = _rm && _rm.calculados;
+  var _mgr  = _calc && _calc.macrosGramos;   // presente en roadmaps nuevos (LBM-based)
+  // Proteína: macrosGramos > proteinaTarget (siempre en roadmap) > proteinaFloor del perfil > plan output
+  var metaProtDia = _mgr && _mgr.proteina
+    ? Math.round(_mgr.proteina)
+    : _calc && _calc.proteinaTarget
+    ? Math.round(_calc.proteinaTarget)
+    : (perfil && perfil.proteinaFloor)
+    ? Math.round(perfil.proteinaFloor)
+    : (resumenHoy.proteinas || 0);
+  // Carbos y grasas: macrosGramos > derivar desde proteinaTarget + split objetivo > plan output
+  var metaCarbDia, metaGrasDia;
+  if (_mgr && _mgr.carbohidratos) {
+    metaCarbDia = Math.round(_mgr.carbohidratos);
+    metaGrasDia = Math.round(_mgr.grasas);
+  } else if (metaProtDia > 0 && metaKcalDia > 0) {
+    // Derivar desde kcal restantes con split según objetivo
+    var _obj    = perfil && perfil.objetivo;
+    var _remKcal = Math.max(0, metaKcalDia - metaProtDia * 4);
+    var _carbPct = _obj === 'volumen' ? 0.60 : _obj === 'mantenimiento' ? 0.45 : 0.572;
+    metaCarbDia = Math.round(_remKcal * _carbPct / 4);
+    metaGrasDia = Math.round(_remKcal * (1 - _carbPct) / 9);
+  } else {
+    metaCarbDia = resumenHoy.carbohidratos || 0;
+    metaGrasDia = resumenHoy.grasas        || 0;
+  }
 
   const pctKcal = perfil && perfil.caloriasObjetivo && resumenTotal.calorias > 0
     ? Math.min(100, Math.round((resumenTotal.calorias / perfil.caloriasObjetivo) * 100)) : 0;
@@ -8096,7 +8135,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260427vv: Language state ───
+  // ─── v20260427ww: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
