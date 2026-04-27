@@ -8822,206 +8822,476 @@ function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
   );
 }
 
-// ─── Mapa ejercicio → grupo muscular (diagrama anatómico SVG) ───
-var EJERCICIO_MUSCULOS = {
-  // Día A — Empuje
-  'press pecho cables (bajo-arriba)':  'pecho',
-  'aperturas cable chest fly':          'pecho',
-  'press hombros cables bilateral':     'hombros',
-  'elevaciones laterales cable':        'hombros',
-  'tríceps pushdown cable':            'triceps',
-  'pike pushups':                       'hombros',
+// ─── Mapa ejercicio → patrón de movimiento (ilustración SVG) ───
+var EJERCICIO_TIPO = {
+  // Empuje horizontal
+  'press pecho cables (bajo-arriba)':  'press_h',
+  'cable crossover (alto-abajo)':      'press_h',
+  'aperturas cable chest fly':          'fly',
+  'flexiones de brazos':                'press_h',
+  'flexiones declinadas':               'press_h',
+  // Empuje vertical
+  'press hombros cables bilateral':    'press_v',
+  'pike pushups':                       'press_v',
+  // Apertura / Elevación
+  'elevaciones laterales cable':        'fly',
+  'rotación externa cable (hombro)':   'fly',
+  'face pulls cable':                   'pull_h',
+  // Tríceps
+  'tríceps pushdown cable':            'extend',
+  'tríceps overhead cable':            'extend',
+  'fondos en banco (triceps dip)':     'extend',
+  // Jalón / Pulldown
+  'lat pulldown cable':                 'pull_v',
+  'dead hang / inverted row':          'pull_v',
+  'pullover cable':                     'pull_v',
+  'high row cable':                     'pull_h',
+  // Remo
+  'rowing speediance (modo remo)':     'pull_h',
+  'cable row sentado':                  'pull_h',
+  'remo unilateral cable':              'pull_h',
+  // Bíceps
+  'curl bíceps cable supinado':        'curl',
+  'curl martillo cable':               'curl',
+  // Espalda / trapecio
+  'superman extensión espalda':        'hinge',
+  'shrug cable':                        'pull_v',
+  // Sentadilla
+  'squat con cable frontal':            'squat',
+  'sentadilla sumo amplia':            'squat',
+  'sentadilla goblet':                  'squat',
+  'sentadilla pistol asistida':        'squat',
+  'sentadillas con salto':              'squat',
+  // Zancada / Lunge
+  'bulgarian split squat':              'lunge',
+  'lunges alternados caminando':        'lunge',
+  'lunges con rotación':               'lunge',
+  'step-ups (cajón/silla)':           'lunge',
+  // Bisagra / isquios / glúteos
+  'romanian deadlift cable':            'hinge',
+  'curl de pierna cable':               'curl_pierna',
+  'glute kickbacks cable':              'hinge',
+  'hip thrust en el suelo':            'hip_thrust',
+  'abductores cable (de pie)':         'fly',
+  'frog pumps':                         'hip_thrust',
+  // Core
   'plancha frontal':                    'core',
   'plancha lateral alternada':          'core',
-  // Día B — Piernas
-  'squat con cable frontal':            'cuadriceps',
-  'romanian deadlift cable':            'isquiotibiales',
-  'bulgarian split squat':              'gluteos',
-  'glute kickbacks cable':              'gluteos',
-  'curl de pierna cable':               'isquiotibiales',
-  'hip thrust en el suelo':            'gluteos',
-  'lunges alternados caminando':        'cuadriceps',
-  'sentadilla sumo amplia':            'cuadriceps',
-  // Día C — Jalar / Espalda
-  'rowing speediance (modo remo)':     'espalda',
-  'cable row sentado':                  'espalda',
-  'lat pulldown cable':                 'espalda',
-  'remo unilateral cable':              'espalda',
-  'face pulls cable':                   'hombros',
-  'curl bíceps cable supinado':        'biceps',
-  'superman extensión espalda':        'espalda_baja',
-  'dead hang / inverted row':          'espalda',
-  // Día D — Full Body Circuito
-  'burpees (o half-burpee)':           'full_body',
-  'sentadillas con salto':              'cuadriceps',
-  'mountain climbers':                  'core',
-  'rowing explosivo':                   'espalda',
-  'flexiones de brazos':                'pecho',
-  'lunges con rotación':               'cuadriceps',
+  'mountain climbers':                  'full_body',
   'dead bug / hollow body':            'core',
+  // Full body / cardio
+  'burpees (o half-burpee)':           'full_body',
+  'rowing explosivo':                   'pull_h',
   'treadmill plano (ritmo moderado)':  'full_body',
-  // Extras / Upgrades
-  'cable crossover (alto-abajo)':      'pecho',
-  'tríceps overhead cable':            'triceps',
-  'fondos en banco (triceps dip)':     'triceps',
-  'rotación externa cable (hombro)':   'hombros',
-  'flexiones declinadas':               'pecho',
-  'step-ups (cajón/silla)':           'gluteos',
-  'abductores cable (de pie)':         'gluteos',
-  'sentadilla goblet':                  'cuadriceps',
-  'frog pumps':                         'gluteos',
-  'sentadilla pistol asistida':        'cuadriceps',
-  'curl martillo cable':               'biceps',
-  'pullover cable':                     'espalda',
-  'high row cable':                     'espalda',
-  'shrug cable':                        'trapecio',
 };
 
-function musculoParaEjercicio(nombre) {
-  return EJERCICIO_MUSCULOS[nombre.toLowerCase().trim()] || 'full_body';
+function tipoParaEjercicio(nombre) {
+  return EJERCICIO_TIPO[nombre.toLowerCase().trim()] || 'full_body';
 }
 
-// ─── Diagrama anatómico SVG — siempre disponible, sin red, crisp a cualquier tamaño ───
-function MusculoDiagrama({ nombre, darkMode }) {
-  var grupo = musculoParaEjercicio(nombre);
-  var BASE = darkMode ? '#3a5068' : '#94a3b8';
-  var H1   = '#f59e0b';
-  var H2   = '#fcd34d';
-  var HEAD = darkMode ? '#4a6275' : '#b8cdd9';
+// ─── Ilustración de movimiento SVG — stick figure con flecha de dirección ───
+function EjercicioIlustracion({ nombre, darkMode }) {
+  var tipo = tipoParaEjercicio(nombre);
+  var FIG = darkMode ? '#94a3b8' : '#475569';
+  var ARR = '#f59e0b';
+  var s = 3.5;
+  var R = 'round';
 
-  var p = {
-    lShould: BASE, rShould: BASE,
-    lPec: BASE, rPec: BASE,
-    lBicep: BASE, rBicep: BASE,
-    lTricep: BASE, rTricep: BASE,
-    upperAbs: BASE, lowerAbs: BASE,
-    trapecio: BASE,
-    upperBack: BASE, lowerBack: BASE,
-    lGlute: BASE, rGlute: BASE,
-    lQuad: BASE, rQuad: BASE,
-    lHam: BASE, rHam: BASE,
-    lCalf: BASE, rCalf: BASE,
+  var LABELS = {
+    press_h:     'Empuje horizontal',
+    press_v:     'Empuje vertical',
+    pull_v:      'Jalón / Pulldown',
+    pull_h:      'Remo / Tirón',
+    fly:         'Apertura / Elevación',
+    extend:      'Extensión tríceps',
+    curl:        'Curl bíceps',
+    curl_pierna: 'Curl de pierna',
+    squat:       'Sentadilla',
+    lunge:       'Zancada / Lunge',
+    hinge:       'Bisagra de cadera',
+    hip_thrust:  'Hip thrust',
+    core:        'Core / Plancha',
+    full_body:   'Full body',
   };
 
-  var view = 'front';
-  var etiqueta = '';
+  var subClr = darkMode ? '#64748b' : '#94a3b8';
+  var label = LABELS[tipo] || 'Ejercicio';
 
-  switch (grupo) {
-    case 'pecho':
-      p.lPec = H1; p.rPec = H1; p.lShould = H2; p.rShould = H2;
-      etiqueta = 'Pectoral'; break;
-    case 'hombros':
-      p.lShould = H1; p.rShould = H1; p.lTricep = H2; p.rTricep = H2;
-      etiqueta = 'Deltoides'; break;
-    case 'triceps':
-      p.lTricep = H1; p.rTricep = H1;
-      etiqueta = 'Tríceps'; break;
-    case 'biceps':
-      p.lBicep = H1; p.rBicep = H1;
-      etiqueta = 'Bíceps'; break;
-    case 'core':
-      p.upperAbs = H1; p.lowerAbs = H1;
-      etiqueta = 'Core'; break;
-    case 'espalda':
-      view = 'back'; p.upperBack = H1; p.lShould = H2; p.rShould = H2;
-      etiqueta = 'Espalda · Dorsales'; break;
-    case 'espalda_baja':
-      view = 'back'; p.lowerBack = H1; p.upperBack = H2;
-      etiqueta = 'Espalda baja'; break;
-    case 'trapecio':
-      view = 'back'; p.trapecio = H1; p.lShould = H2; p.rShould = H2;
-      etiqueta = 'Trapecio'; break;
-    case 'gluteos':
-      view = 'back'; p.lGlute = H1; p.rGlute = H1; p.lHam = H2; p.rHam = H2;
-      etiqueta = 'Glúteos'; break;
-    case 'cuadriceps':
-      p.lQuad = H1; p.rQuad = H1; p.lGlute = H2; p.rGlute = H2;
-      etiqueta = 'Cuádriceps'; break;
-    case 'isquiotibiales':
-      view = 'back'; p.lHam = H1; p.rHam = H1; p.lGlute = H2; p.rGlute = H2;
-      etiqueta = 'Isquiotibiales'; break;
-    case 'full_body': default:
-      p.lPec = H2; p.rPec = H2; p.lShould = H2; p.rShould = H2;
-      p.upperAbs = H2; p.lowerAbs = H2; p.lQuad = H2; p.rQuad = H2;
-      etiqueta = 'Full Body'; break;
+  // Arrow: line + filled arrowhead along direction (x1,y1)→(x2,y2)
+  function Arr(x1, y1, x2, y2) {
+    var dx = x2 - x1, dy = y2 - y1;
+    var d = Math.sqrt(dx * dx + dy * dy) || 1;
+    var ux = dx / d, uy = dy / d;
+    var px = -uy * 4, py = ux * 4;
+    var ax = x2 - ux * 8, ay = y2 - uy * 8;
+    return (
+      <g>
+        <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={ARR} strokeWidth="2.5" strokeLinecap="round" fill="none" />
+        <polygon points={(x2)+','+(y2)+' '+(ax+px)+','+(ay+py)+' '+(ax-px)+','+(ay-py)} fill={ARR} stroke="none" />
+      </g>
+    );
   }
 
-  var labelClr = H1;
-  var subClr = darkMode ? '#64748b' : '#94a3b8';
-  var vista = view === 'back' ? 'Vista posterior' : 'Vista frontal';
+  var body;
 
-  if (view === 'front') {
-    return (
-      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'6px', padding:'14px 0 10px' }}>
-        <svg viewBox="0 0 110 208" style={{ width:'84px', height:'auto' }} aria-label={'Músculo: ' + etiqueta}>
-          <circle cx="55" cy="18" r="13" fill={HEAD} />
-          <rect x="51" y="30" width="8" height="9" rx="2" fill={BASE} />
-          {/* Triceps — outer edge of upper arm, rendered first so bicep overlaps */}
-          <rect x="13" y="42" width="9" height="35" rx="4" fill={p.lTricep} />
-          <rect x="88" y="42" width="9" height="35" rx="4" fill={p.rTricep} />
-          {/* Shoulders */}
-          <ellipse cx="33" cy="45" rx="13" ry="8" fill={p.lShould} />
-          <ellipse cx="77" cy="45" rx="13" ry="8" fill={p.rShould} />
-          {/* Pectorals */}
-          <ellipse cx="45" cy="57" rx="12" ry="9" fill={p.lPec} />
-          <ellipse cx="65" cy="57" rx="12" ry="9" fill={p.rPec} />
-          {/* Upper Abs */}
-          <rect x="42" y="64" width="26" height="12" rx="4" fill={p.upperAbs} />
-          {/* Lower Abs */}
-          <rect x="43" y="77" width="24" height="12" rx="4" fill={p.lowerAbs} />
-          {/* Pelvis */}
-          <ellipse cx="55" cy="95" rx="19" ry="9" fill={BASE} />
-          {/* Biceps — front of upper arm, on top of tricep */}
-          <rect x="18" y="40" width="13" height="38" rx="6" fill={p.lBicep} />
-          <rect x="79" y="40" width="13" height="38" rx="6" fill={p.rBicep} />
+  switch (tipo) {
+
+    // ── EMPUJE HORIZONTAL (press pecho, flexiones) ────────────────────────────
+    case 'press_h':
+      body = (
+        <g fill="none" stroke={FIG} strokeWidth={s} strokeLinecap={R}>
+          {/* Profile: person facing right, one arm pushing forward */}
+          <circle cx="42" cy="20" r="9" fill={FIG} stroke="none" opacity="0.85" />
+          <line x1="42" y1="29" x2="42" y2="64" />
+          <line x1="26" y1="36" x2="58" y2="34" />
+          {/* Back arm bent */}
+          <line x1="26" y1="36" x2="16" y2="50" />
+          <line x1="16" y1="50" x2="14" y2="64" />
+          {/* Push arm extended forward */}
+          <line x1="58" y1="34" x2="78" y2="38" />
+          <line x1="78" y1="38" x2="96" y2="38" />
+          {/* Legs */}
+          <line x1="30" y1="64" x2="54" y2="64" />
+          <line x1="34" y1="64" x2="32" y2="96" />
+          <line x1="50" y1="64" x2="52" y2="96" />
+          <line x1="32" y1="96" x2="30" y2="128" />
+          <line x1="52" y1="96" x2="54" y2="128" />
+          {Arr(96, 38, 114, 38)}
+        </g>
+      );
+      break;
+
+    // ── EMPUJE VERTICAL (press hombros, pike pushup) ──────────────────────────
+    case 'press_v':
+      body = (
+        <g fill="none" stroke={FIG} strokeWidth={s} strokeLinecap={R}>
+          <circle cx="60" cy="22" r="9" fill={FIG} stroke="none" opacity="0.85" />
+          <line x1="60" y1="31" x2="60" y2="64" />
+          <line x1="38" y1="37" x2="82" y2="37" />
+          {/* Arms bent, hands pushing overhead */}
+          <line x1="38" y1="37" x2="26" y2="24" />
+          <line x1="26" y1="24" x2="26" y2="8" />
+          <line x1="82" y1="37" x2="94" y2="24" />
+          <line x1="94" y1="24" x2="94" y2="8" />
+          {/* Legs */}
+          <line x1="44" y1="64" x2="76" y2="64" />
+          <line x1="48" y1="64" x2="46" y2="96" />
+          <line x1="72" y1="64" x2="74" y2="96" />
+          <line x1="46" y1="96" x2="44" y2="126" />
+          <line x1="74" y1="96" x2="76" y2="126" />
+          {Arr(26, 8, 26, -6)}
+          {Arr(94, 8, 94, -6)}
+        </g>
+      );
+      break;
+
+    // ── JALÓN / PULLDOWN (lat pulldown, inverted row) ─────────────────────────
+    case 'pull_v':
+      body = (
+        <g fill="none" stroke={FIG} strokeWidth={s} strokeLinecap={R}>
+          {/* Overhead bar */}
+          <line x1="14" y1="14" x2="106" y2="14" strokeWidth="1.5" strokeDasharray="4,3" opacity="0.4" />
+          {/* Seated person */}
+          <circle cx="60" cy="42" r="9" fill={FIG} stroke="none" opacity="0.85" />
+          <line x1="60" y1="51" x2="58" y2="82" />
+          <line x1="38" y1="52" x2="82" y2="52" />
+          {/* Arms reaching up to bar */}
+          <line x1="38" y1="52" x2="20" y2="26" />
+          <line x1="82" y1="52" x2="100" y2="26" />
+          {/* Seated legs */}
+          <line x1="44" y1="82" x2="72" y2="82" />
+          <line x1="44" y1="82" x2="22" y2="88" />
+          <line x1="72" y1="82" x2="98" y2="88" />
+          <line x1="22" y1="88" x2="20" y2="122" />
+          <line x1="98" y1="88" x2="100" y2="122" />
+          {/* Pull down arrows */}
+          {Arr(20, 22, 28, 44)}
+          {Arr(100, 22, 92, 44)}
+        </g>
+      );
+      break;
+
+    // ── REMO / TIRÓN HORIZONTAL (cable row, rowing) ───────────────────────────
+    case 'pull_h':
+      body = (
+        <g fill="none" stroke={FIG} strokeWidth={s} strokeLinecap={R}>
+          {/* Seated, pulling toward torso */}
+          <circle cx="36" cy="34" r="9" fill={FIG} stroke="none" opacity="0.85" />
+          <line x1="36" y1="43" x2="38" y2="74" />
+          <line x1="20" y1="50" x2="52" y2="46" />
+          {/* Pulling arm — elbow back */}
+          <line x1="52" y1="46" x2="68" y2="50" />
+          {/* Resistance cable (dashed) */}
+          <line x1="68" y1="50" x2="110" y2="50" strokeWidth="1.5" strokeDasharray="4,3" opacity="0.38" />
+          {/* Support arm (bent) */}
+          <line x1="20" y1="50" x2="12" y2="62" />
+          <line x1="12" y1="62" x2="10" y2="76" />
+          {/* Hip & legs (seated) */}
+          <line x1="24" y1="74" x2="52" y2="74" />
+          <line x1="24" y1="74" x2="8" y2="80" />
+          <line x1="52" y1="74" x2="68" y2="80" />
+          <line x1="8" y1="80" x2="6" y2="116" />
+          <line x1="68" y1="80" x2="70" y2="116" />
+          {Arr(68, 50, 52, 50)}
+        </g>
+      );
+      break;
+
+    // ── APERTURA / ELEVACIÓN LATERAL (fly, lateral raise) ────────────────────
+    case 'fly':
+      body = (
+        <g fill="none" stroke={FIG} strokeWidth={s} strokeLinecap={R}>
+          <circle cx="60" cy="20" r="9" fill={FIG} stroke="none" opacity="0.85" />
+          <line x1="60" y1="29" x2="60" y2="62" />
+          <line x1="38" y1="35" x2="82" y2="35" />
+          {/* Arms spread wide (T-position) */}
+          <line x1="38" y1="35" x2="10" y2="48" />
+          <line x1="82" y1="35" x2="110" y2="48" />
+          {/* Legs */}
+          <line x1="44" y1="62" x2="76" y2="62" />
+          <line x1="48" y1="62" x2="46" y2="94" />
+          <line x1="72" y1="62" x2="74" y2="94" />
+          <line x1="46" y1="94" x2="44" y2="126" />
+          <line x1="74" y1="94" x2="76" y2="126" />
+          {/* Closing/raising arrows */}
+          {Arr(10, 48, 26, 42)}
+          {Arr(110, 48, 94, 42)}
+        </g>
+      );
+      break;
+
+    // ── EXTENSIÓN TRÍCEPS (pushdown, fondos) ──────────────────────────────────
+    case 'extend':
+      body = (
+        <g fill="none" stroke={FIG} strokeWidth={s} strokeLinecap={R}>
+          <circle cx="60" cy="18" r="9" fill={FIG} stroke="none" opacity="0.85" />
+          <line x1="60" y1="27" x2="60" y2="60" />
+          <line x1="38" y1="33" x2="82" y2="33" />
+          {/* Elbows tucked, forearms pushing down */}
+          <line x1="38" y1="33" x2="34" y2="50" />
+          <line x1="34" y1="50" x2="30" y2="74" />
+          <line x1="82" y1="33" x2="86" y2="50" />
+          <line x1="86" y1="50" x2="90" y2="74" />
+          {/* Legs */}
+          <line x1="44" y1="60" x2="76" y2="60" />
+          <line x1="48" y1="60" x2="46" y2="92" />
+          <line x1="72" y1="60" x2="74" y2="92" />
+          <line x1="46" y1="92" x2="44" y2="124" />
+          <line x1="74" y1="92" x2="76" y2="124" />
+          {Arr(60, 52, 60, 74)}
+        </g>
+      );
+      break;
+
+    // ── CURL BÍCEPS ───────────────────────────────────────────────────────────
+    case 'curl':
+      body = (
+        <g fill="none" stroke={FIG} strokeWidth={s} strokeLinecap={R}>
+          <circle cx="60" cy="18" r="9" fill={FIG} stroke="none" opacity="0.85" />
+          <line x1="60" y1="27" x2="60" y2="60" />
+          <line x1="38" y1="33" x2="82" y2="33" />
+          {/* Left arm hanging neutral */}
+          <line x1="38" y1="33" x2="30" y2="54" />
+          <line x1="30" y1="54" x2="26" y2="76" />
+          {/* Right arm curled up */}
+          <line x1="82" y1="33" x2="90" y2="54" />
+          <line x1="90" y1="54" x2="80" y2="37" />
+          {/* Legs */}
+          <line x1="44" y1="60" x2="76" y2="60" />
+          <line x1="48" y1="60" x2="46" y2="92" />
+          <line x1="72" y1="60" x2="74" y2="92" />
+          <line x1="46" y1="92" x2="44" y2="124" />
+          <line x1="74" y1="92" x2="76" y2="124" />
+          {/* Curved arc arrow for curl motion */}
+          <path d="M90,54 Q100,38 82,31" stroke={ARR} fill="none" strokeWidth="2.5" strokeLinecap={R} />
+          <polygon points="82,31 89,28 87,37" fill={ARR} stroke="none" />
+        </g>
+      );
+      break;
+
+    // ── CURL DE PIERNA ────────────────────────────────────────────────────────
+    case 'curl_pierna':
+      body = (
+        <g fill="none" stroke={FIG} strokeWidth={s} strokeLinecap={R}>
+          <circle cx="52" cy="18" r="9" fill={FIG} stroke="none" opacity="0.85" />
+          <line x1="52" y1="27" x2="52" y2="60" />
+          <line x1="36" y1="33" x2="68" y2="33" />
+          {/* Arms neutral */}
+          <line x1="36" y1="33" x2="28" y2="54" />
+          <line x1="28" y1="54" x2="26" y2="74" />
+          <line x1="68" y1="33" x2="76" y2="54" />
+          <line x1="76" y1="54" x2="78" y2="74" />
+          {/* Hip */}
+          <line x1="38" y1="60" x2="66" y2="60" />
+          {/* Standing leg (left) */}
+          <line x1="40" y1="60" x2="38" y2="94" />
+          <line x1="38" y1="94" x2="36" y2="126" />
+          {/* Curling leg (right) — thigh down, shin folded up */}
+          <line x1="64" y1="60" x2="64" y2="96" />
+          <line x1="64" y1="96" x2="82" y2="72" />
+          {/* Arc arrow */}
+          <path d="M64,96 Q86,92 82,70" stroke={ARR} fill="none" strokeWidth="2.5" strokeLinecap={R} />
+          <polygon points="82,70 77,78 85,78" fill={ARR} stroke="none" />
+        </g>
+      );
+      break;
+
+    // ── SENTADILLA (squat, goblet, pistol) ────────────────────────────────────
+    case 'squat':
+      body = (
+        <g fill="none" stroke={FIG} strokeWidth={s} strokeLinecap={R}>
+          {/* Bottom of squat: hips low, knees out */}
+          <circle cx="60" cy="36" r="9" fill={FIG} stroke="none" opacity="0.85" />
+          <line x1="60" y1="45" x2="60" y2="70" />
+          <line x1="42" y1="50" x2="78" y2="50" />
+          {/* Arms extended forward for balance */}
+          <line x1="42" y1="50" x2="20" y2="62" />
+          <line x1="78" y1="50" x2="100" y2="62" />
+          {/* Hip */}
+          <line x1="46" y1="70" x2="74" y2="70" />
+          {/* Thighs angled outward */}
+          <line x1="46" y1="70" x2="34" y2="100" />
+          <line x1="74" y1="70" x2="86" y2="100" />
+          {/* Shins angled to feet */}
+          <line x1="34" y1="100" x2="24" y2="128" />
+          <line x1="86" y1="100" x2="96" y2="128" />
+          {/* Arrow: drive up */}
+          {Arr(60, 70, 60, 50)}
+        </g>
+      );
+      break;
+
+    // ── ZANCADA / LUNGE (Bulgarian, lunge, step-up) ───────────────────────────
+    case 'lunge':
+      body = (
+        <g fill="none" stroke={FIG} strokeWidth={s} strokeLinecap={R}>
+          <circle cx="52" cy="24" r="9" fill={FIG} stroke="none" opacity="0.85" />
+          <line x1="52" y1="33" x2="52" y2="64" />
+          <line x1="36" y1="40" x2="68" y2="40" />
+          {/* Arms hanging */}
+          <line x1="36" y1="40" x2="28" y2="58" />
+          <line x1="68" y1="40" x2="76" y2="58" />
+          {/* Hip */}
+          <line x1="38" y1="64" x2="66" y2="64" />
+          {/* Front leg: bent knee forward */}
+          <line x1="40" y1="64" x2="26" y2="96" />
+          <line x1="26" y1="96" x2="16" y2="126" />
+          {/* Back leg: extended, knee near floor */}
+          <line x1="64" y1="64" x2="88" y2="88" />
+          <line x1="88" y1="88" x2="96" y2="120" />
+          {/* Arrow: drop down */}
+          {Arr(52, 64, 52, 82)}
+        </g>
+      );
+      break;
+
+    // ── BISAGRA DE CADERA (RDL, kickback, superman) ───────────────────────────
+    case 'hinge':
+      body = (
+        <g fill="none" stroke={FIG} strokeWidth={s} strokeLinecap={R}>
+          {/* Torso nearly horizontal, hips pushed back */}
+          <circle cx="24" cy="48" r="9" fill={FIG} stroke="none" opacity="0.85" />
+          <line x1="32" y1="50" x2="84" y2="60" />
+          <line x1="20" y1="44" x2="36" y2="48" />
+          {/* Arms hanging down */}
+          <line x1="24" y1="46" x2="24" y2="68" />
+          <line x1="36" y1="48" x2="38" y2="70" />
+          {/* Hip joint marker */}
+          <circle cx="86" cy="62" r="4" fill={FIG} stroke="none" opacity="0.55" />
+          {/* Legs: standing, slight knee bend */}
+          <line x1="84" y1="62" x2="76" y2="96" />
+          <line x1="88" y1="62" x2="96" y2="96" />
+          <line x1="76" y1="96" x2="74" y2="130" />
+          <line x1="96" y1="96" x2="98" y2="130" />
+          {/* Arrow: hips back */}
+          {Arr(76, 52, 94, 48)}
+        </g>
+      );
+      break;
+
+    // ── HIP THRUST (hip thrust, frog pumps) ───────────────────────────────────
+    case 'hip_thrust':
+      body = (
+        <g fill="none" stroke={FIG} strokeWidth={s} strokeLinecap={R}>
+          {/* Bench/floor support */}
+          <line x1="6" y1="74" x2="52" y2="74" strokeWidth="1.5" opacity="0.4" />
+          {/* Head on bench */}
+          <circle cx="18" cy="60" r="9" fill={FIG} stroke="none" opacity="0.85" />
+          {/* Torso angled from floor to raised hips */}
+          <line x1="26" y1="58" x2="74" y2="46" />
+          <line x1="18" y1="54" x2="30" y2="52" />
+          {/* Hips raised */}
+          <line x1="60" y1="44" x2="88" y2="48" />
+          {/* Thighs to feet on floor */}
+          <line x1="64" y1="44" x2="66" y2="80" />
+          <line x1="84" y1="48" x2="90" y2="82" />
+          <line x1="66" y1="80" x2="46" y2="92" />
+          <line x1="90" y1="82" x2="108" y2="92" />
+          {/* Floor */}
+          <line x1="6" y1="98" x2="114" y2="98" strokeWidth="1.5" opacity="0.25" />
+          {/* Arrow: hips drive up */}
+          {Arr(74, 72, 74, 52)}
+        </g>
+      );
+      break;
+
+    // ── CORE / PLANCHA ────────────────────────────────────────────────────────
+    case 'core':
+      body = (
+        <g fill="none" stroke={FIG} strokeWidth={s} strokeLinecap={R}>
+          {/* Plank: body horizontal, forearms on ground */}
+          <circle cx="20" cy="60" r="9" fill={FIG} stroke="none" opacity="0.85" />
+          <line x1="28" y1="62" x2="100" y2="62" />
           {/* Forearms */}
-          <rect x="19" y="79" width="11" height="29" rx="5" fill={BASE} />
-          <rect x="80" y="79" width="11" height="29" rx="5" fill={BASE} />
-          {/* Quads */}
-          <rect x="33" y="103" width="19" height="52" rx="8" fill={p.lQuad} />
-          <rect x="58" y="103" width="19" height="52" rx="8" fill={p.rQuad} />
-          {/* Calves */}
-          <rect x="34" y="157" width="16" height="36" rx="7" fill={p.lCalf} />
-          <rect x="60" y="157" width="16" height="36" rx="7" fill={p.rCalf} />
-        </svg>
-        <span style={{ fontSize:'11px', fontWeight:'700', color:labelClr, letterSpacing:'0.03em' }}>{etiqueta}</span>
-        <span style={{ fontSize:'10px', color:subClr }}>{vista}</span>
-      </div>
-    );
+          <line x1="36" y1="60" x2="28" y2="76" />
+          <line x1="54" y1="60" x2="46" y2="76" />
+          {/* Legs back */}
+          <line x1="88" y1="62" x2="96" y2="52" />
+          <line x1="96" y1="52" x2="106" y2="82" />
+          <line x1="98" y1="62" x2="106" y2="52" />
+          <line x1="106" y1="52" x2="116" y2="82" />
+          {/* Floor */}
+          <line x1="10" y1="88" x2="118" y2="88" strokeWidth="1.5" opacity="0.25" />
+          {/* Alignment indicator */}
+          <line x1="20" y1="50" x2="100" y2="50" stroke={ARR} strokeWidth="1.5" strokeDasharray="4,3" opacity="0.6" />
+        </g>
+      );
+      break;
+
+    // ── FULL BODY / CARDIO ─────────────────────────────────────────────────────
+    case 'full_body':
+    default:
+      body = (
+        <g fill="none" stroke={FIG} strokeWidth={s} strokeLinecap={R}>
+          {/* Jump position: arms overhead, legs spread */}
+          <circle cx="60" cy="20" r="9" fill={FIG} stroke="none" opacity="0.85" />
+          <line x1="60" y1="29" x2="60" y2="62" />
+          <line x1="38" y1="35" x2="82" y2="35" />
+          {/* Arms raised overhead */}
+          <line x1="38" y1="35" x2="22" y2="16" />
+          <line x1="22" y1="16" x2="14" y2="6" />
+          <line x1="82" y1="35" x2="98" y2="16" />
+          <line x1="98" y1="16" x2="106" y2="6" />
+          {/* Hip */}
+          <line x1="44" y1="62" x2="76" y2="62" />
+          {/* Legs spread/bent */}
+          <line x1="46" y1="62" x2="34" y2="96" />
+          <line x1="74" y1="62" x2="86" y2="96" />
+          <line x1="34" y1="96" x2="26" y2="128" />
+          <line x1="86" y1="96" x2="94" y2="128" />
+          {Arr(60, 56, 60, 36)}
+        </g>
+      );
+      break;
   }
 
   return (
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'6px', padding:'14px 0 10px' }}>
-      <svg viewBox="0 0 110 208" style={{ width:'84px', height:'auto' }} aria-label={'Músculo: ' + etiqueta}>
-        <circle cx="55" cy="18" r="13" fill={HEAD} />
-        <rect x="51" y="30" width="8" height="9" rx="2" fill={BASE} />
-        {/* Trapezius */}
-        <path d="M43,32 L67,32 L78,52 L32,52 Z" fill={p.trapecio} />
-        {/* Shoulders (posterior) */}
-        <ellipse cx="33" cy="50" rx="13" ry="7" fill={p.lShould} />
-        <ellipse cx="77" cy="50" rx="13" ry="7" fill={p.rShould} />
-        {/* Upper Back (lats / rhomboids) */}
-        <rect x="39" y="50" width="32" height="28" rx="5" fill={p.upperBack} />
-        {/* Lower Back / Erector spinae */}
-        <rect x="43" y="76" width="24" height="22" rx="4" fill={p.lowerBack} />
-        {/* Triceps (back view — fully visible) */}
-        <rect x="18" y="40" width="13" height="40" rx="6" fill={p.lTricep} />
-        <rect x="79" y="40" width="13" height="40" rx="6" fill={p.rTricep} />
-        {/* Forearms */}
-        <rect x="19" y="81" width="11" height="28" rx="5" fill={BASE} />
-        <rect x="80" y="81" width="11" height="28" rx="5" fill={BASE} />
-        {/* Glutes */}
-        <ellipse cx="46" cy="108" rx="14" ry="12" fill={p.lGlute} />
-        <ellipse cx="64" cy="108" rx="14" ry="12" fill={p.rGlute} />
-        {/* Hamstrings */}
-        <rect x="33" y="118" width="19" height="48" rx="8" fill={p.lHam} />
-        <rect x="58" y="118" width="19" height="48" rx="8" fill={p.rHam} />
-        {/* Calves */}
-        <rect x="34" y="168" width="16" height="32" rx="7" fill={p.lCalf} />
-        <rect x="60" y="168" width="16" height="32" rx="7" fill={p.rCalf} />
+      <svg viewBox="0 0 120 160" style={{ width:'96px', height:'auto' }}>
+        {body}
       </svg>
-      <span style={{ fontSize:'11px', fontWeight:'700', color:labelClr, letterSpacing:'0.03em' }}>{etiqueta}</span>
-      <span style={{ fontSize:'10px', color:subClr }}>{vista}</span>
+      <span style={{ fontSize:'11px', fontWeight:'700', color:ARR, letterSpacing:'0.03em' }}>{label}</span>
+      <span style={{ fontSize:'10px', color:subClr }}>Movimiento</span>
     </div>
   );
 }
@@ -9070,8 +9340,8 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
                   ? darkMode ? 'text-amber-400' : 'text-amber-600'
                   : darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
               }`}>
-              <i className="fas fa-person"></i>
-              <span>músculos</span>
+              <i className="fas fa-person-running"></i>
+              <span>técnica</span>
             </button>
           </div>
           {protEj && protEj.descripcion && (
@@ -9098,7 +9368,7 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
       {/* Diagrama anatómico del grupo muscular — SVG inline, sin red */}
       {mostrarDiagrama && (
         <div style={{ marginTop:'12px', borderRadius:'12px', background: darkMode ? 'rgba(55,65,81,0.4)' : '#f8fafc' }}>
-          <MusculoDiagrama nombre={e.nombre} darkMode={darkMode} />
+          <EjercicioIlustracion nombre={e.nombre} darkMode={darkMode} />
         </div>
       )}
 
