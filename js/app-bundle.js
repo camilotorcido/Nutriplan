@@ -3814,7 +3814,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
           {/* Barra de acento superior */}
           <div className={`h-2 ${faseInfo.tipoFase === 'dietBreak' ? 'bg-gradient-to-r from-violet-500 to-purple-500' : 'bg-gradient-to-r from-amber-500 to-orange-500'}`} />
 
-          <div className="px-6 pt-6 pb-7 space-y-5 min-w-0">
+          <div className="px-6 min-w-0" style={{ paddingTop: '24px', paddingBottom: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* ── Header: etiqueta + nombre de fase ── */}
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -3840,21 +3840,21 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
 
             {/* ── Métricas: calorías · pasos · días restantes ── */}
             <div className={`grid grid-cols-3 rounded-xl overflow-hidden ${darkMode ? 'bg-gray-700/60' : 'bg-amber-50'}`}>
-              <div className="text-center px-3 py-5">
+              <div className="text-center px-3" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
                 <div className={`text-[10px] font-bold uppercase tracking-wide mb-2 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Objetivo</div>
                 <div className={`text-3xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                   {faseInfo.calorias}
                 </div>
                 <div className={`text-[10px] mt-2 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>kcal/día</div>
               </div>
-              <div className={`text-center px-3 py-5 border-x ${darkMode ? 'border-gray-600' : 'border-amber-200/60'}`}>
+              <div className={`text-center px-3 border-x ${darkMode ? 'border-gray-600' : 'border-amber-200/60'}`} style={{ paddingTop: '20px', paddingBottom: '20px' }}>
                 <div className={`text-[10px] font-bold uppercase tracking-wide mb-2 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Pasos</div>
                 <div className={`text-3xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                   {Math.round(faseInfo.targetPasos / 1000)}k
                 </div>
                 <div className={`text-[10px] mt-2 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>diarios</div>
               </div>
-              <div className="text-center px-3 py-5">
+              <div className="text-center px-3" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
                 <div className={`text-[10px] font-bold uppercase tracking-wide mb-2 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Restantes</div>
                 <div className={`text-3xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                   {faseInfo.diasRestantesEnFase}
