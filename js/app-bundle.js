@@ -3481,11 +3481,49 @@ function AdherenceWidget({ darkMode, forceUpdate }) {
 // =============================================
 // COMPONENTE: ReverseSearch (Fase 2 - búsqueda inversa)
 // =============================================
-function ReverseSearch({ darkMode, onRecipeClick }) {
+function ReverseSearch({ darkMode, onRecipeClick, plan }) {
   const [ingredientesSeleccionados, setIngredientesSeleccionados] = React.useState([]);
   const [inputQuery, setInputQuery] = React.useState('');
   const [sugerencias, setSugerencias] = React.useState([]);
   const [minMatch, setMinMatch] = React.useState(0.4);
+  // Slot picker state: which card idx is expanded
+  const [expandedIdx, setExpandedIdx] = React.useState(null);
+
+  // Slots disponibles hoy (semana 1, día actual)
+  const diaActual = React.useMemo(() => obtenerDiaActual(), []);
+  const slotsHoy = React.useMemo(() => {
+    if (!plan) return [];
+    const semKeys = Object.keys(plan).filter(k => k.startsWith('semana_')).sort();
+    const semKey = semKeys[0] || 'semana_1';
+    const diaData = (plan[semKey] || {})[diaActual] || {};
+    const ORDEN_SLOTS = ['desayuno', 'snack_am', 'almuerzo', 'snack_pm', 'cena'];
+    return ORDEN_SLOTS
+      .filter(tipo => diaData[tipo])
+      .map(tipo => ({ tipo, nombre: getNombreReceta(diaData[tipo]) }));
+  }, [plan, diaActual]);
+
+  // Reemplazar un slot del plan hoy con la receta seleccionada
+  const usarEnPlan = (receta, tipo) => {
+    const planActual = window.cargarPlanSemanal ? window.cargarPlanSemanal() : null;
+    if (!planActual) {
+      if (window._NP_toast) window._NP_toast('No hay plan generado', 'error');
+      return;
+    }
+    const semKeys = Object.keys(planActual).filter(k => k.startsWith('semana_')).sort();
+    const semKey = semKeys[0] || 'semana_1';
+    if (!planActual[semKey] || !planActual[semKey][diaActual]) {
+      if (window._NP_toast) window._NP_toast('No hay plan para hoy', 'error');
+      return;
+    }
+    // Deep clone, reemplazar slot
+    const planMod = JSON.parse(JSON.stringify(planActual));
+    planMod[semKey][diaActual][tipo] = receta;
+    window.guardarPlanSemanal(planMod);
+    if (window._NP_setPlan) window._NP_setPlan(planMod);
+    const tipoLabel = NOMBRES_COMIDAS[tipo] || tipo;
+    if (window._NP_toast) window._NP_toast(`"${getNombreReceta(receta)}" reemplazó tu ${tipoLabel} de hoy ✓`);
+    setExpandedIdx(null);
+  };
 
   React.useEffect(() => {
     if (inputQuery.length >= 2 && typeof window.sugerirIngredientes === 'function') {
@@ -3608,36 +3646,82 @@ function ReverseSearch({ darkMode, onRecipeClick }) {
                 ingredientes_escalados: (r.receta.ingredientes || []).map(i => ({...i, cantidad_escalada: i.cantidad_base}))
               };
               const color = r.porcentaje >= 90 ? 'emerald' : r.porcentaje >= 70 ? 'green' : r.porcentaje >= 50 ? 'amber' : 'gray';
+              const slotPickerOpen = expandedIdx === idx;
               return (
-                <div key={idx} onClick={() => onRecipeClick(recetaConEscala)}
-                  className={`cursor-pointer rounded-xl p-3 border transition-all hover:shadow-md ${darkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' : 'bg-white border-gray-100 hover:bg-gray-50'}`}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium bg-${color}-100 text-${color}-700`}>
-                          {NOMBRES_COMIDAS[r.receta.tipo_comida]}
-                        </span>
-                        <span className={`text-[11px] font-bold text-${color}-500`}>{r.porcentaje}% match</span>
-                      </div>
-                      <h4 className={`font-semibold text-sm ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{getNombreReceta(r.receta)}</h4>
-                      <div className="flex flex-wrap gap-2 mt-1.5 text-[11px]">
-                        <span className="text-gray-500"><i className="fas fa-fire text-orange-400 mr-1"></i>{r.receta.calorias_base} kcal</span>
-                        {r.receta.tiempo_total_min > 0 && (
-                          <span className="text-indigo-500"><i className="fas fa-clock mr-1"></i>{r.receta.tiempo_total_min}′</span>
+                <div key={idx}
+                  className={`rounded-xl border transition-all overflow-hidden ${slotPickerOpen ? 'shadow-md' : 'hover:shadow-md'} ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+                  {/* Fila principal — clic abre modal de receta */}
+                  <div onClick={() => onRecipeClick(recetaConEscala)}
+                    className={`cursor-pointer p-3 ${slotPickerOpen ? '' : (darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50')}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium bg-${color}-100 text-${color}-700`}>
+                            {NOMBRES_COMIDAS[r.receta.tipo_comida]}
+                          </span>
+                          <span className={`text-[11px] font-bold text-${color}-500`}>{r.porcentaje}% match</span>
+                        </div>
+                        <h4 className={`font-semibold text-sm ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{getNombreReceta(r.receta)}</h4>
+                        <div className="flex flex-wrap gap-2 mt-1.5 text-[11px]">
+                          <span className="text-gray-500"><i className="fas fa-fire text-orange-400 mr-1"></i>{r.receta.calorias_base} kcal</span>
+                          {r.receta.tiempo_total_min > 0 && (
+                            <span className="text-indigo-500"><i className="fas fa-clock mr-1"></i>{r.receta.tiempo_total_min}′</span>
+                          )}
+                          {r.receta.costo_clp > 0 && (
+                            <span className="text-emerald-600"><i className="fas fa-coins mr-1"></i>${(Math.ceil(r.receta.costo_clp / 100) * 100).toLocaleString('es-CL')}</span>
+                          )}
+                        </div>
+                        {r.faltantes.length > 0 && (
+                          <div className={`text-[11px] mt-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            <span className="font-medium">Te falta:</span> {r.faltantes.slice(0, 4).join(', ')}
+                            {r.faltantes.length > 4 && ` +${r.faltantes.length - 4} más`}
+                          </div>
                         )}
-                        {r.receta.costo_clp > 0 && (
-                          <span className="text-emerald-600"><i className="fas fa-coins mr-1"></i>${(Math.ceil(r.receta.costo_clp / 100) * 100).toLocaleString('es-CL')}</span>
-                        )}
                       </div>
-                      {r.faltantes.length > 0 && (
-                        <div className={`text-[11px] mt-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          <span className="font-medium">Te falta:</span> {r.faltantes.slice(0, 4).join(', ')}
-                          {r.faltantes.length > 4 && ` +${r.faltantes.length - 4} más`}
+                      <i className="fas fa-chevron-right text-gray-300 text-sm mt-1 flex-shrink-0"></i>
+                    </div>
+                  </div>
+
+                  {/* Botón "Usar en mi plan" — solo si hay slots hoy */}
+                  {slotsHoy.length > 0 && (
+                    <div className={`px-3 pb-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                      {!slotPickerOpen ? (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setExpandedIdx(idx); }}
+                          className={`mt-2 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors ${darkMode ? 'text-amber-400 hover:text-amber-300' : 'text-amber-600 hover:text-amber-700'}`}>
+                          <i className="fas fa-calendar-plus text-xs"></i>
+                          Usar en mi plan de hoy
+                        </button>
+                      ) : (
+                        <div className="mt-2">
+                          <p className={`text-[11px] mb-2 font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            ¿Qué comida reemplazar hoy ({diaActual})?
+                          </p>
+                          <div className="flex flex-wrap gap-1.5 items-center">
+                            {slotsHoy.map(slot => (
+                              <button key={slot.tipo}
+                                onClick={(e) => { e.stopPropagation(); usarEnPlan(recetaConEscala, slot.tipo); }}
+                                className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-all cursor-pointer ${
+                                  darkMode
+                                    ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-amber-900/40 hover:border-amber-600 hover:text-amber-300'
+                                    : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-amber-50 hover:border-amber-400 hover:text-amber-700'
+                                }`}>
+                                {NOMBRES_COMIDAS[slot.tipo] || slot.tipo}
+                                <span className={`ml-1 font-normal text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>
+                                  · {slot.nombre.split(' ').slice(0, 2).join(' ')}
+                                </span>
+                              </button>
+                            ))}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setExpandedIdx(null); }}
+                              className={`text-[11px] px-2 py-1 cursor-pointer transition-colors ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}>
+                              Cancelar
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
-                    <i className="fas fa-chevron-right text-gray-300 text-sm mt-1"></i>
-                  </div>
+                  )}
                 </div>
               );
             })}
@@ -6805,7 +6889,7 @@ function CocinarTab({ darkMode, onRecipeClick, plan, factorComensales }) {
           </button>
         ))}
       </div>
-      {subVista === 'buscar'   && <ReverseSearch darkMode={darkMode} onRecipeClick={onRecipeClick} />}
+      {subVista === 'buscar'   && <ReverseSearch darkMode={darkMode} onRecipeClick={onRecipeClick} plan={plan} />}
       {subVista === 'crear'    && <RecipeGenerator darkMode={darkMode} onRecipeClick={onRecipeClick} />}
       {subVista === 'preparar' && <PrepararView darkMode={darkMode} plan={plan} factorComensales={factorComensales} />}
     </div>
@@ -9020,6 +9104,7 @@ function App() {
   // Exponer navegación y toast global para componentes profundos
   window._NP_nav = navegarA;
   window._NP_toast = mostrarToast;
+  window._NP_setPlan = setPlanSemanal;
 
   // ─── Elementos globales (loading overlay + toast) ───
   const globalOverlays = (
