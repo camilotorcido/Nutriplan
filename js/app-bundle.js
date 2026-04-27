@@ -6449,7 +6449,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 // =============================================
 // COMPONENTE: HoyView — Dashboard diario (v20260428ai)
 // =============================================
-function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
+function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swapping }) {
   const hoy = new Date();
   const diasJS    = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
   const diasEN    = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -6475,6 +6475,16 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
     const diasTranscurridos = Math.max(0, Math.floor((hoyMs - creadoMs) / 86400000));
     const semanaIdx = Math.min(keys.length - 1, Math.floor(diasTranscurridos / 7));
     return planSemanal[keys[semanaIdx]];
+  }, [planSemanal]);
+
+  const numSemanaActual = React.useMemo(() => {
+    if (!planSemanal) return 1;
+    const keys = Object.keys(planSemanal).filter(k => k.startsWith('semana_')).sort();
+    if (keys.length <= 1 || !planSemanal._fechaCreacion) return 1;
+    const creadoMs = new Date(planSemanal._fechaCreacion + 'T00:00:00').getTime();
+    const hoyMs = new Date().setHours(0, 0, 0, 0);
+    const diasTranscurridos = Math.max(0, Math.floor((hoyMs - creadoMs) / 86400000));
+    return Math.min(keys.length, Math.floor(diasTranscurridos / 7) + 1);
   }, [planSemanal]);
 
   const comidasHoy = semanaData ? (semanaData[diaActual] || {}) : {};
@@ -6860,6 +6870,25 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
                     <div className={`text-sm font-medium truncate ${(yaComido || extReemplazo) ? 'line-through opacity-60' : ''} ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{getNombreReceta(comida)}</div>
                   </div>
                   <span className={`text-xs font-bold flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{comida.calorias_escaladas || comida.calorias} kcal</span>
+                  {onSwapRecipe && !extReemplazo && (
+                    <button
+                      onClick={(ev) => { ev.stopPropagation(); onSwapRecipe(diaActual, tipo, numSemanaActual); }}
+                      disabled={!!(swapping && swapping.dia === diaActual && swapping.tipoComida === tipo)}
+                      aria-label={t(`Cambiar ${nombresComida[tipo]}`, `Swap ${nombresComida[tipo]}`)}
+                      style={{
+                        flexShrink: 0, width: '2rem', height: '2rem',
+                        borderRadius: '0.5rem', border: 'none',
+                        cursor: (swapping && swapping.dia === diaActual && swapping.tipoComida === tipo) ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'color 0.15s',
+                        background: 'transparent',
+                        color: (swapping && swapping.dia === diaActual && swapping.tipoComida === tipo)
+                          ? '#f97316' : (darkMode ? '#4b5563' : '#9ca3af')
+                      }}
+                    >
+                      <i className={`fas ${(swapping && swapping.dia === diaActual && swapping.tipoComida === tipo) ? 'fa-spinner fa-spin' : 'fa-shuffle'} text-xs`}></i>
+                    </button>
+                  )}
                   {typeof window.adherencia !== 'undefined' && !extReemplazo && (
                     /* A2: aria-label en botón adherencia */
                     <button onClick={toggleAdh}
@@ -9999,7 +10028,7 @@ function App() {
 
       <main key={pantalla} className="max-w-3xl mx-auto px-4 py-6 animate-fadeIn">
         {pantalla === "hoy" && (
-          <HoyView perfil={perfil} darkMode={darkMode} planSemanal={planSemanal} onNavigate={navegarA} />
+          <HoyView perfil={perfil} darkMode={darkMode} planSemanal={planSemanal} onNavigate={navegarA} onSwapRecipe={handleSwapRecipe} swapping={swapping} />
         )}
         {pantalla === "plan" && (planSemanal ? (
           <WeeklyPlan plan={planSemanal} perfil={perfil}
