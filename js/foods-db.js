@@ -1,5 +1,5 @@
 /* ============================================
-   Calibrate — Base de datos de alimentos comunes (v20260427zz)
+   Calibrate — Base de datos de alimentos comunes (v20260428aa)
    Usada por el modal "Comidas Externas" (estilo MyFitnessPal).
    Valores nutricionales por porción estándar indicada.
    ============================================ */

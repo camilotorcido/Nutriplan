@@ -6,7 +6,7 @@
    - Network-first para peticiones externas (TheMealDB, etc.)
    ============================================ */
 
-const VERSION = 'calibrate-v20260427zz';
+const VERSION = 'calibrate-v20260428aa';
 const CACHE_STATIC = 'calibrate-static-' + VERSION;
 const CACHE_RUNTIME = 'calibrate-runtime-' + VERSION;
 

@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260427zz: Bilingual ES/EN support
+   v20260428aa: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260427zz: Bilingual helpers ────────────────────────────────────────
+// ─── v20260428aa: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -379,7 +379,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260427zz: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260428aa: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
   // Previews para mantenimiento y volumen (paso 4)
@@ -650,7 +650,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     _mostrarExplicacion(perfilFinal);
   };
 
-  // ── v20260427zz: Wizard onboarding ──────────────────────────────────────
+  // ── v20260428aa: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -921,47 +921,122 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
         const bf = calc.bfActual;
         return (
           <div className="space-y-3">
-            <div className={`p-3 rounded-xl font-mono text-xs ${darkMode ? 'bg-gray-900 text-green-400' : 'bg-gray-50 text-gray-700 border border-gray-200'}`}>
-              <p className={`font-semibold font-sans mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Paso 1: BMR (Mifflin-St Jeor)</p>
-              {pfl.genero === 'femenino'
-                ? <p>BMR = (10 × {pfl.peso}) + (6.25 × {pfl.altura}) − (5 × {pfl.edad}) − 161</p>
-                : <p>BMR = (10 × {pfl.peso}) + (6.25 × {pfl.altura}) − (5 × {pfl.edad}) + 5</p>
-              }
-              {bmr && <p className="mt-1 font-sans font-bold">= <span className={darkMode ? 'text-yellow-300' : 'text-orange-600'}>{bmr} kcal/día</span></p>}
+            {/* 01 BMR */}
+            <div className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
+              <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                <span className="font-display text-[11px] font-bold tracking-widest" style={{color:'var(--color-accent)'}}>01</span>
+                <span className={`text-xs font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>BMR — Mifflin-St Jeor</span>
+              </div>
+              <div className="px-4 py-3">
+                <p className={`font-mono text-[11px] leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {pfl.genero === 'femenino'
+                    ? `(10×${pfl.peso}) + (6.25×${pfl.altura}) − (5×${pfl.edad}) − 161`
+                    : `(10×${pfl.peso}) + (6.25×${pfl.altura}) − (5×${pfl.edad}) + 5`}
+                </p>
+                {bmr && (
+                  <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                    <span className={`text-[10px] uppercase tracking-wider ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>resultado</span>
+                    <span className="font-display text-xl font-bold" style={{color:'var(--color-accent)'}}>{bmr} kcal/día</span>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className={`p-3 rounded-xl font-mono text-xs ${darkMode ? 'bg-gray-900 text-green-400' : 'bg-gray-50 text-gray-700 border border-gray-200'}`}>
-              <p className={`font-semibold font-sans mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Paso 2: TDEE (gasto total)</p>
-              <p>TDEE = BMR × factor actividad ({pfl.nivelActividad || 'moderada'})</p>
-              {tdee && <p className="mt-1 font-sans font-bold">= <span className={darkMode ? 'text-yellow-300' : 'text-orange-600'}>{tdee} kcal/día</span></p>}
+            {/* 02 TDEE */}
+            <div className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
+              <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                <span className="font-display text-[11px] font-bold tracking-widest" style={{color:'var(--color-accent)'}}>02</span>
+                <span className={`text-xs font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>TDEE — Gasto total diario</span>
+              </div>
+              <div className="px-4 py-3">
+                <p className={`font-mono text-[11px] leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BMR × factor actividad ({pfl.nivelActividad || 'moderada'})</p>
+                {tdee && (
+                  <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                    <span className={`text-[10px] uppercase tracking-wider ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>resultado</span>
+                    <span className="font-display text-xl font-bold" style={{color:'var(--color-accent)'}}>{tdee} kcal/día</span>
+                  </div>
+                )}
+              </div>
             </div>
+            {/* 03 LBM (condicional) */}
             {lbm && (
-              <div className={`p-3 rounded-xl font-mono text-xs ${darkMode ? 'bg-gray-900 text-green-400' : 'bg-gray-50 text-gray-700 border border-gray-200'}`}>
-                <p className={`font-semibold font-sans mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Paso 3: Masa magra (LBM)</p>
-                {bf && <p>BF% Navy = {bf}% → LBM = {pfl.peso} × (1 − {bf}/100)</p>}
-                <p className="mt-1 font-sans font-bold">LBM = <span className={darkMode ? 'text-yellow-300' : 'text-orange-600'}>{lbm} kg</span></p>
+              <div className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
+                <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                  <span className="font-display text-[11px] font-bold tracking-widest" style={{color:'var(--color-accent)'}}>03</span>
+                  <span className={`text-xs font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>Masa magra (LBM)</span>
+                </div>
+                <div className="px-4 py-3">
+                  {bf && <p className={`font-mono text-[11px] leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BF% Navy = {bf}%  →  {pfl.peso} × (1 − {bf}/100)</p>}
+                  <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                    <span className={`text-[10px] uppercase tracking-wider ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>resultado</span>
+                    <span className="font-display text-xl font-bold" style={{color:'var(--color-accent)'}}>{lbm} kg LBM</span>
+                  </div>
+                </div>
               </div>
             )}
-            <div className={`p-3 rounded-xl font-mono text-xs ${darkMode ? 'bg-gray-900 text-green-400' : 'bg-gray-50 text-gray-700 border border-gray-200'}`}>
-              <p className={`font-semibold font-sans mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Paso 4: Proteína target</p>
-              {obj === 'perdida' && <p>Proteína = LBM × 2.63 g/kg (mín: peso × 1.6)</p>}
-              {obj === 'mantenimiento' && <p>Proteína = LBM × 2.0 g/kg (mín: peso × 1.6)</p>}
-              {obj === 'volumen' && <p>Proteína = LBM × 2.4 g/kg (mín: peso × 1.8)</p>}
-              {calc.proteinaTarget && <p className="mt-1 font-sans font-bold">= <span className={darkMode ? 'text-yellow-300' : 'text-orange-600'}>{calc.proteinaTarget} g/día</span></p>}
+            {/* 04 Proteína */}
+            <div className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
+              <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                <span className="font-display text-[11px] font-bold tracking-widest" style={{color:'var(--color-accent)'}}>04</span>
+                <span className={`text-xs font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>Proteína target</span>
+              </div>
+              <div className="px-4 py-3">
+                <p className={`font-mono text-[11px] leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {obj === 'perdida' ? 'LBM × 2.63 g/kg  (mín: peso × 1.6)' : obj === 'mantenimiento' ? 'LBM × 2.0 g/kg  (mín: peso × 1.6)' : 'LBM × 2.4 g/kg  (mín: peso × 1.8)'}
+                </p>
+                {calc.proteinaTarget && (
+                  <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                    <span className={`text-[10px] uppercase tracking-wider ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>resultado</span>
+                    <span className="font-display text-xl font-bold" style={{color:'var(--color-accent)'}}>{calc.proteinaTarget} g/día</span>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className={`p-3 rounded-xl font-mono text-xs ${darkMode ? 'bg-gray-900 text-green-400' : 'bg-gray-50 text-gray-700 border border-gray-200'}`}>
-              <p className={`font-semibold font-sans mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Paso 5: Calorías objetivo</p>
-              {obj === 'perdida' && calc.caloriasCorte && <><p>Déficit = TDEE − {tdee} = {calc.caloriasCorte} kcal</p><p className="text-[10px] opacity-70 mt-0.5">(déficit según tasa de pérdida seleccionada)</p></>}
-              {obj === 'mantenimiento' && <p>Objetivo = TDEE exacto = {calc.caloriasObjetivo} kcal</p>}
-              {obj === 'volumen' && calc.caloriasObjetivo && <><p>Objetivo = TDEE + superávit = {calc.caloriasObjetivo} kcal</p><p className="text-[10px] opacity-70 mt-0.5">(superávit según tasa de ganancia seleccionada)</p></>}
+            {/* 05 Calorías objetivo */}
+            <div className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
+              <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                <span className="font-display text-[11px] font-bold tracking-widest" style={{color:'var(--color-accent)'}}>05</span>
+                <span className={`text-xs font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>Calorías objetivo</span>
+              </div>
+              <div className="px-4 py-3">
+                <p className={`font-mono text-[11px] leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {obj === 'perdida' ? 'TDEE − déficit por tasa de pérdida seleccionada' : obj === 'mantenimiento' ? 'TDEE exacto (sin déficit ni superávit)' : 'TDEE + superávit lean bulk'}
+                </p>
+                {(calc.caloriasCorte || calc.caloriasObjetivo) && (
+                  <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                    <span className={`text-[10px] uppercase tracking-wider ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>resultado</span>
+                    <span className="font-display text-xl font-bold" style={{color:'var(--color-accent)'}}>{calc.caloriasCorte || calc.caloriasObjetivo} kcal/día</span>
+                  </div>
+                )}
+              </div>
             </div>
+            {/* 06 Split macros */}
             {calc.macrosGramos && (
-              <div className={`p-3 rounded-xl font-mono text-xs ${darkMode ? 'bg-gray-900 text-green-400' : 'bg-gray-50 text-gray-700 border border-gray-200'}`}>
-                <p className={`font-semibold font-sans mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Paso 6: Split de macros</p>
-                {obj === 'perdida' && <p>Remanente = kcal − proteína×4. Split 57% carbos / 43% grasa</p>}
-                {obj === 'mantenimiento' && <p>Remanente = kcal − proteína×4. Split 45% carbos / 55% grasa</p>}
-                {obj === 'volumen' && <p>Remanente = kcal − proteína×4. Split 60% carbos / 40% grasa</p>}
-                <div className="mt-1.5 font-sans">
-                  <span className="text-blue-400">P: {calc.macrosGramos.proteina}g</span> · <span className="text-amber-400">C: {calc.macrosGramos.carbohidratos}g</span> · <span className="text-rose-400">G: {calc.macrosGramos.grasas}g</span>
+              <div className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
+                <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                  <span className="font-display text-[11px] font-bold tracking-widest" style={{color:'var(--color-accent)'}}>06</span>
+                  <span className={`text-xs font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>Split de macros</span>
+                </div>
+                <div className="px-4 py-3">
+                  <p className={`font-mono text-[11px] leading-relaxed mb-2.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {obj === 'perdida' ? 'Remanente ÷ 57% carbohidratos + 43% grasa' : obj === 'mantenimiento' ? 'Remanente ÷ 45% carbohidratos + 55% grasa' : 'Remanente ÷ 60% carbohidratos + 40% grasa'}
+                  </p>
+                  <div className={`pt-2.5 border-t flex items-center gap-4 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+                      <span className="font-display text-base font-bold text-blue-400">{calc.macrosGramos.proteina}g</span>
+                      <span className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>prot</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0"></span>
+                      <span className="font-display text-base font-bold text-amber-400">{calc.macrosGramos.carbohidratos}g</span>
+                      <span className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>carb</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0"></span>
+                      <span className="font-display text-base font-bold text-rose-400">{calc.macrosGramos.grasas}g</span>
+                      <span className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>grasa</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -1826,16 +1901,45 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             {nivelExplicacion === 'b' && (
               <div className="space-y-3">
                 {[
-                  { t: 'BMR (Mifflin-St Jeor)', b: pfl.genero === 'femenino' ? `(10×${pfl.peso}) + (6.25×${pfl.altura}) − (5×${pfl.edad}) − 161` : `(10×${pfl.peso}) + (6.25×${pfl.altura}) − (5×${pfl.edad}) + 5`, r: calc && calc.bmr ? calc.bmr + ' kcal/día' : null },
-                  { t: 'TDEE', b: `BMR × factor actividad (${pfl.nivelActividad || 'moderada'})`, r: calc && calc.tdee ? calc.tdee + ' kcal/día' : null },
-                  { t: 'Proteína target', b: obj === 'volumen' ? 'LBM × 2.4 g/kg (mín: peso × 1.8)' : obj === 'mantenimiento' ? 'LBM × 2.0 g/kg (mín: peso × 1.6)' : 'LBM × 2.63 g/kg (mín: peso × 1.6)', r: calc && calc.proteinaTarget ? calc.proteinaTarget + ' g/día' : null },
-                  { t: 'Calorías objetivo', b: obj === 'perdida' ? 'TDEE − déficit por tasa de pérdida' : obj === 'mantenimiento' ? 'TDEE exacto' : 'TDEE + superávit lean bulk', r: calc ? (calc.caloriasCorte || calc.caloriasObjetivo || null) && ((calc.caloriasCorte || calc.caloriasObjetivo) + ' kcal/día') : null },
-                  { t: 'Split macros', b: obj === 'perdida' ? 'Remanente: 57% carbos · 43% grasa' : obj === 'mantenimiento' ? 'Remanente: 45% carbos · 55% grasa' : 'Remanente: 60% carbos · 40% grasa', r: null },
+                  { step: '01', t: 'BMR — Mifflin-St Jeor', b: pfl.genero === 'femenino' ? `(10×${pfl.peso}) + (6.25×${pfl.altura}) − (5×${pfl.edad}) − 161` : `(10×${pfl.peso}) + (6.25×${pfl.altura}) − (5×${pfl.edad}) + 5`, r: calc && calc.bmr ? calc.bmr + ' kcal/día' : null },
+                  { step: '02', t: 'TDEE — Gasto total', b: `BMR × factor actividad (${pfl.nivelActividad || 'moderada'})`, r: calc && calc.tdee ? calc.tdee + ' kcal/día' : null },
+                  { step: '03', t: 'Proteína target', b: obj === 'volumen' ? 'LBM × 2.4 g/kg  (mín: peso × 1.8)' : obj === 'mantenimiento' ? 'LBM × 2.0 g/kg  (mín: peso × 1.6)' : 'LBM × 2.63 g/kg  (mín: peso × 1.6)', r: calc && calc.proteinaTarget ? calc.proteinaTarget + ' g/día' : null },
+                  { step: '04', t: 'Calorías objetivo', b: obj === 'perdida' ? 'TDEE − déficit por tasa de pérdida' : obj === 'mantenimiento' ? 'TDEE exacto (sin déficit)' : 'TDEE + superávit lean bulk', r: calc ? ((calc.caloriasCorte || calc.caloriasObjetivo) ? (calc.caloriasCorte || calc.caloriasObjetivo) + ' kcal/día' : null) : null },
+                  { step: '05', t: 'Split de macros', b: obj === 'perdida' ? 'Remanente ÷ 57% carbohidratos + 43% grasa' : obj === 'mantenimiento' ? 'Remanente ÷ 45% carbohidratos + 55% grasa' : 'Remanente ÷ 60% carbohidratos + 40% grasa', r: null, isMacros: true },
                 ].map(row => (
-                  <div key={row.t} className={`p-3 rounded-xl font-mono text-xs ${darkMode ? 'bg-gray-900 text-green-400' : 'bg-gray-50 text-gray-700 border border-gray-200'}`}>
-                    <p className={`font-sans font-semibold mb-1 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{row.t}</p>
-                    <p>{row.b}</p>
-                    {row.r && <p className={`mt-1 font-sans font-bold ${darkMode ? 'text-yellow-300' : 'text-orange-600'}`}>= {row.r}</p>}
+                  <div key={row.t} className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
+                    <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                      <span className="font-display text-[11px] font-bold tracking-widest" style={{color:'var(--color-accent)'}}>{row.step}</span>
+                      <span className={`text-xs font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{row.t}</span>
+                    </div>
+                    <div className="px-4 py-3">
+                      <p className={`font-mono text-[11px] leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{row.b}</p>
+                      {row.r && (
+                        <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                          <span className={`text-[10px] uppercase tracking-wider ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>resultado</span>
+                          <span className="font-display text-xl font-bold" style={{color:'var(--color-accent)'}}>{row.r}</span>
+                        </div>
+                      )}
+                      {row.isMacros && calc && calc.macrosGramos && (
+                        <div className={`mt-2.5 pt-2.5 border-t flex items-center gap-4 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+                            <span className="font-display text-base font-bold text-blue-400">{calc.macrosGramos.proteina}g</span>
+                            <span className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>prot</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0"></span>
+                            <span className="font-display text-base font-bold text-amber-400">{calc.macrosGramos.carbohidratos}g</span>
+                            <span className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>carb</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0"></span>
+                            <span className="font-display text-base font-bold text-rose-400">{calc.macrosGramos.grasas}g</span>
+                            <span className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>grasa</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1981,7 +2085,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           </div>
 
-          {/* Objetivo — v20260427zz: goal cards unificados, sin kcal subtitles */}
+          {/* Objetivo — v20260428aa: goal cards unificados, sin kcal subtitles */}
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-bullseye text-green-500"></i>
@@ -5313,7 +5417,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260427zz)
+// COMPONENTE: ModalComidaExterna (v20260428aa)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
 //   - Búsqueda en FOODS_DB + RECETAS_DB
@@ -5636,7 +5740,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260427zz)
+// COMPONENTE: HoyView — Dashboard diario (v20260428aa)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -8141,7 +8245,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260427zz: Language state ───
+  // ─── v20260428aa: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
