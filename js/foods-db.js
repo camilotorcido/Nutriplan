@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Base de datos de alimentos comunes (v20260426oo)
+   NutriPlan - Base de datos de alimentos comunes (v20260426pp)
    Usada por el modal "Comidas Externas" (estilo MyFitnessPal).
    Valores nutricionales por porción estándar indicada.
    ============================================ */
@@ -114,6 +114,107 @@
     { id:'f_ensalada_ces',  nombre:'Ensalada César',       nombre_en:'Caesar salad',          porcion:'1 porción (200g)', kcal:280, proteinas:8,  carbohidratos:12, grasas:22 },
     { id:'f_tacos',         nombre:'Tacos (2 unidades)',   nombre_en:'Tacos',                 porcion:'2 unidades',        kcal:360, proteinas:18, carbohidratos:38, grasas:14 },
     { id:'f_wrap',          nombre:'Wrap/Burrito',         nombre_en:'Wrap/Burrito',          porcion:'1 unidad',          kcal:400, proteinas:20, carbohidratos:45, grasas:14 },
+    { id:'f_ramen',         nombre:'Ramen',                nombre_en:'Ramen',                 porcion:'1 bowl (450ml)',    kcal:430, proteinas:22, carbohidratos:55, grasas:14 },
+    { id:'f_paella',        nombre:'Paella',               nombre_en:'Paella',                porcion:'250g',              kcal:380, proteinas:20, carbohidratos:52, grasas:10 },
+    { id:'f_pasta_bol',     nombre:'Pasta a la bolognesa', nombre_en:'Bolognese pasta',       porcion:'250g',              kcal:420, proteinas:22, carbohidratos:52, grasas:14 },
+    { id:'f_sandwich_jq',   nombre:'Sandwich jamón y queso',nombre_en:'Ham and cheese sandwich',porcion:'1 unidad',        kcal:350, proteinas:18, carbohidratos:35, grasas:14 },
+    { id:'f_omelette',      nombre:'Omelette de queso',    nombre_en:'Cheese omelette',       porcion:'2 huevos',          kcal:220, proteinas:16, carbohidratos:1,  grasas:17 },
+    { id:'f_ensalada_verde',nombre:'Ensalada verde',       nombre_en:'Green salad',           porcion:'200g',              kcal:45,  proteinas:2,  carbohidratos:8,  grasas:1  },
+    { id:'f_crema_sopa',    nombre:'Crema de verduras',    nombre_en:'Vegetable cream soup',  porcion:'300ml',             kcal:140, proteinas:4,  carbohidratos:18, grasas:6  },
+    { id:'f_bowl_arroz',    nombre:'Bowl de arroz con proteína',nombre_en:'Protein rice bowl',porcion:'350g',              kcal:480, proteinas:35, carbohidratos:58, grasas:10 },
+
+    // ── COMIDAS CHILENAS ADICIONALES ─────────────────────────────────────────
+    { id:'f_charquican',    nombre:'Charquicán',           nombre_en:'Charquicán stew',       porcion:'300g',              kcal:290, proteinas:18, carbohidratos:35, grasas:8  },
+    { id:'f_pastel_choclo', nombre:'Pastel de choclo',     nombre_en:'Chilean corn pie',      porcion:'350g',              kcal:480, proteinas:22, carbohidratos:55, grasas:18 },
+    { id:'f_porotos_riendas',nombre:'Porotos con riendas', nombre_en:'Beans with riendas',    porcion:'300g',              kcal:350, proteinas:18, carbohidratos:48, grasas:9  },
+    { id:'f_valdiviano',    nombre:'Valdiviano',           nombre_en:'Valdiviano soup',       porcion:'350ml',             kcal:180, proteinas:12, carbohidratos:18, grasas:5  },
+    { id:'f_chupe',         nombre:'Chupe de mariscos',    nombre_en:'Shellfish casserole',   porcion:'300g',              kcal:350, proteinas:25, carbohidratos:22, grasas:16 },
+    { id:'f_mote_huesillos',nombre:'Mote con huesillos',   nombre_en:'Mote con huesillos',    porcion:'1 vaso (400ml)',    kcal:320, proteinas:5,  carbohidratos:72, grasas:1  },
+    { id:'f_milhojas',      nombre:'Milhojas',             nombre_en:'Napoleon cake',         porcion:'1 porción (100g)', kcal:380, proteinas:5,  carbohidratos:45, grasas:20 },
+    { id:'f_leche_asada',   nombre:'Leche asada',          nombre_en:'Baked milk pudding',    porcion:'150g',              kcal:200, proteinas:7,  carbohidratos:28, grasas:7  },
+    { id:'f_kuchen',        nombre:'Kuchen de frutas',     nombre_en:'Fruit kuchen',          porcion:'1 trozo (100g)',    kcal:320, proteinas:5,  carbohidratos:42, grasas:15 },
+    { id:'f_costillar',     nombre:'Costillar de cerdo',   nombre_en:'Pork ribs',             porcion:'200g',              kcal:500, proteinas:36, carbohidratos:0,  grasas:39 },
+    { id:'f_plateada',      nombre:'Plateada al horno',    nombre_en:'Braised beef',          porcion:'150g',              kcal:330, proteinas:30, carbohidratos:0,  grasas:22 },
+    { id:'f_longaniza',     nombre:'Longaniza',            nombre_en:'Chilean sausage',       porcion:'1 unidad (80g)',    kcal:260, proteinas:12, carbohidratos:2,  grasas:23 },
+
+    // ── PESCADOS CHILENOS ─────────────────────────────────────────────────────
+    { id:'f_merluza',       nombre:'Merluza',              nombre_en:'Hake',                  porcion:'150g',              kcal:130, proteinas:27, carbohidratos:0,  grasas:2  },
+    { id:'f_reineta',       nombre:'Reineta',              nombre_en:'Pacific pomfret',       porcion:'150g',              kcal:185, proteinas:24, carbohidratos:0,  grasas:10 },
+    { id:'f_congrio',       nombre:'Congrio',              nombre_en:'Conger eel',            porcion:'150g',              kcal:195, proteinas:26, carbohidratos:0,  grasas:10 },
+    { id:'f_albacora',      nombre:'Albacora / Atún fresco',nombre_en:'Albacore tuna',        porcion:'150g',              kcal:240, proteinas:33, carbohidratos:0,  grasas:12 },
+    { id:'f_caballa',       nombre:'Caballa / Jurel',      nombre_en:'Mackerel / Jack',       porcion:'150g',              kcal:225, proteinas:26, carbohidratos:0,  grasas:13 },
+    { id:'f_sardinas',      nombre:'Sardinas en conserva',  nombre_en:'Canned sardines',      porcion:'100g',              kcal:200, proteinas:24, carbohidratos:0,  grasas:11 },
+
+    // ── DESAYUNO ─────────────────────────────────────────────────────────────
+    { id:'f_cereal',        nombre:'Cereal (corn flakes)', nombre_en:'Corn flakes cereal',    porcion:'40g (1 taza)',      kcal:150, proteinas:3,  carbohidratos:34, grasas:0  },
+    { id:'f_avena_leche',   nombre:'Avena con leche',      nombre_en:'Oatmeal with milk',     porcion:'200g',              kcal:260, proteinas:11, carbohidratos:38, grasas:7  },
+    { id:'f_pancakes',      nombre:'Pancakes (3 unidades)',nombre_en:'Pancakes',              porcion:'3 unidades',        kcal:350, proteinas:9,  carbohidratos:55, grasas:10 },
+    { id:'f_waffles',       nombre:'Waffles',              nombre_en:'Waffles',               porcion:'2 unidades',        kcal:370, proteinas:8,  carbohidratos:55, grasas:13 },
+    { id:'f_tostada_man',   nombre:'Tostada con mantequilla',nombre_en:'Buttered toast',      porcion:'1 rebanada',        kcal:130, proteinas:3,  carbohidratos:14, grasas:7  },
+    { id:'f_tostada_palta', nombre:'Tostada con palta',    nombre_en:'Avocado toast',         porcion:'1 rebanada + palta',kcal:220, proteinas:5,  carbohidratos:18, grasas:14 },
+    { id:'f_smoothie',      nombre:'Smoothie de frutas',   nombre_en:'Fruit smoothie',        porcion:'300ml',             kcal:200, proteinas:4,  carbohidratos:45, grasas:1  },
+    { id:'f_overnight_oats',nombre:'Overnight oats',       nombre_en:'Overnight oats',        porcion:'250g',              kcal:340, proteinas:15, carbohidratos:48, grasas:9  },
+    { id:'f_bol_yogurt',    nombre:'Bowl de yogurt con frutas',nombre_en:'Yogurt bowl',       porcion:'300g',              kcal:280, proteinas:18, carbohidratos:40, grasas:5  },
+
+    // ── FAST FOOD ─────────────────────────────────────────────────────────────
+    { id:'f_big_mac',       nombre:'Big Mac',              nombre_en:'Big Mac',               porcion:'1 unidad',          kcal:550, proteinas:25, carbohidratos:46, grasas:30 },
+    { id:'f_mcpollo',       nombre:'McPollo',              nombre_en:'McChicken',             porcion:'1 unidad',          kcal:430, proteinas:21, carbohidratos:42, grasas:20 },
+    { id:'f_papas_mcd',     nombre:'Papas fritas McDonald\'s',nombre_en:'McDonald\'s fries',  porcion:'porción mediana',   kcal:340, proteinas:4,  carbohidratos:44, grasas:16 },
+    { id:'f_nuggets',       nombre:'Nuggets de pollo (6)',  nombre_en:'Chicken nuggets (6)',  porcion:'6 piezas',          kcal:270, proteinas:14, carbohidratos:17, grasas:16 },
+    { id:'f_pizza_hawai',   nombre:'Pizza hawaiana',       nombre_en:'Hawaiian pizza',        porcion:'2 porciones',       kcal:520, proteinas:22, carbohidratos:64, grasas:18 },
+    { id:'f_subway',        nombre:'Subway 15cm pollo',    nombre_en:'6-inch chicken sub',    porcion:'1 sandwich',        kcal:330, proteinas:24, carbohidratos:42, grasas:6  },
+    { id:'f_shawarma',      nombre:'Shawarma',             nombre_en:'Shawarma',              porcion:'1 unidad',          kcal:450, proteinas:25, carbohidratos:48, grasas:16 },
+
+    // ── VERDURAS ADICIONALES ─────────────────────────────────────────────────
+    { id:'f_coliflor',      nombre:'Coliflor',             nombre_en:'Cauliflower',           porcion:'100g',              kcal:25,  proteinas:2,  carbohidratos:5,  grasas:0  },
+    { id:'f_berenjera',     nombre:'Berenjena',            nombre_en:'Eggplant',              porcion:'100g',              kcal:25,  proteinas:1,  carbohidratos:6,  grasas:0  },
+    { id:'f_puerro',        nombre:'Puerro',               nombre_en:'Leek',                  porcion:'100g',              kcal:61,  proteinas:1,  carbohidratos:14, grasas:0  },
+    { id:'f_alcachofa',     nombre:'Alcachofa',            nombre_en:'Artichoke',             porcion:'1 unidad (120g)',   kcal:60,  proteinas:4,  carbohidratos:13, grasas:0  },
+    { id:'f_rucula',        nombre:'Rúcula',               nombre_en:'Arugula',               porcion:'50g',               kcal:13,  proteinas:1,  carbohidratos:2,  grasas:0  },
+    { id:'f_berros',        nombre:'Berros',               nombre_en:'Watercress',            porcion:'50g',               kcal:11,  proteinas:1,  carbohidratos:1,  grasas:0  },
+    { id:'f_nabo',          nombre:'Nabo',                 nombre_en:'Turnip',                porcion:'100g',              kcal:28,  proteinas:1,  carbohidratos:6,  grasas:0  },
+    { id:'f_arvejas',       nombre:'Arvejas',              nombre_en:'Peas',                  porcion:'100g',              kcal:81,  proteinas:5,  carbohidratos:14, grasas:0  },
+    { id:'f_habas',         nombre:'Habas cocidas',        nombre_en:'Fava beans',            porcion:'100g',              kcal:88,  proteinas:8,  carbohidratos:16, grasas:0  },
+    { id:'f_poroto_verde',  nombre:'Porotos verdes',       nombre_en:'Green beans',           porcion:'100g',              kcal:31,  proteinas:2,  carbohidratos:7,  grasas:0  },
+
+    // ── FRUTAS ADICIONALES ───────────────────────────────────────────────────
+    { id:'f_frambuesa',     nombre:'Frambuesas',           nombre_en:'Raspberries',           porcion:'100g',              kcal:52,  proteinas:1,  carbohidratos:12, grasas:1  },
+    { id:'f_cereza',        nombre:'Cerezas',              nombre_en:'Cherries',              porcion:'100g',              kcal:63,  proteinas:1,  carbohidratos:16, grasas:0  },
+    { id:'f_mandarina',     nombre:'Mandarina',            nombre_en:'Mandarin',              porcion:'1 mediana (75g)',   kcal:53,  proteinas:1,  carbohidratos:13, grasas:0  },
+    { id:'f_limón',         nombre:'Limón / Lima',         nombre_en:'Lemon / Lime',          porcion:'1 unidad (50g)',    kcal:15,  proteinas:0,  carbohidratos:5,  grasas:0  },
+    { id:'f_piña',          nombre:'Piña',                 nombre_en:'Pineapple',             porcion:'150g',              kcal:75,  proteinas:1,  carbohidratos:20, grasas:0  },
+    { id:'f_papaya',        nombre:'Papaya',               nombre_en:'Papaya',                porcion:'150g',              kcal:60,  proteinas:1,  carbohidratos:15, grasas:0  },
+    { id:'f_coco',          nombre:'Coco rallado',         nombre_en:'Shredded coconut',      porcion:'20g',               kcal:100, proteinas:1,  carbohidratos:4,  grasas:9  },
+
+    // ── FRUTOS SECOS ADICIONALES ─────────────────────────────────────────────
+    { id:'f_pistachos',     nombre:'Pistachos',            nombre_en:'Pistachios',            porcion:'30g',               kcal:162, proteinas:6,  carbohidratos:8,  grasas:13 },
+    { id:'f_avellanas',     nombre:'Avellanas',            nombre_en:'Hazelnuts',             porcion:'30g',               kcal:188, proteinas:5,  carbohidratos:5,  grasas:18 },
+    { id:'f_castanias',     nombre:'Castañas',             nombre_en:'Chestnuts',             porcion:'50g',               kcal:99,  proteinas:2,  carbohidratos:21, grasas:1  },
+    { id:'f_semillas_girasol',nombre:'Semillas de girasol',nombre_en:'Sunflower seeds',       porcion:'30g',               kcal:174, proteinas:6,  carbohidratos:6,  grasas:15 },
+    { id:'f_semillas_zapallo',nombre:'Semillas de zapallo',nombre_en:'Pumpkin seeds',         porcion:'30g',               kcal:170, proteinas:9,  carbohidratos:4,  grasas:14 },
+
+    // ── LÁCTEOS ADICIONALES ──────────────────────────────────────────────────
+    { id:'f_helado',        nombre:'Helado',               nombre_en:'Ice cream',             porcion:'2 bolas (120g)',    kcal:250, proteinas:4,  carbohidratos:32, grasas:12 },
+    { id:'f_queso_cheddar', nombre:'Queso cheddar / laminado',nombre_en:'Cheddar cheese',    porcion:'30g (2 láminas)',   kcal:110, proteinas:7,  carbohidratos:0,  grasas:9  },
+    { id:'f_crema_leche',   nombre:'Crema de leche',       nombre_en:'Heavy cream',           porcion:'30ml (2 cdas)',     kcal:100, proteinas:1,  carbohidratos:1,  grasas:10 },
+    { id:'f_leche_evap',    nombre:'Leche evaporada',      nombre_en:'Evaporated milk',       porcion:'100ml',             kcal:135, proteinas:7,  carbohidratos:10, grasas:8  },
+
+    // ── GRANOS Y HARINAS ─────────────────────────────────────────────────────
+    { id:'f_cuscus',        nombre:'Cuscús cocido',        nombre_en:'Cooked couscous',       porcion:'150g',              kcal:175, proteinas:6,  carbohidratos:36, grasas:0  },
+    { id:'f_bulgur',        nombre:'Bulgur cocido',        nombre_en:'Cooked bulgur',         porcion:'150g',              kcal:150, proteinas:6,  carbohidratos:33, grasas:0  },
+    { id:'f_polenta',       nombre:'Polenta cocida',       nombre_en:'Cooked polenta',        porcion:'150g',              kcal:110, proteinas:2,  carbohidratos:24, grasas:0  },
+    { id:'f_harina',        nombre:'Harina de trigo',      nombre_en:'Wheat flour',           porcion:'30g (2 cdas)',      kcal:109, proteinas:3,  carbohidratos:23, grasas:0  },
+    { id:'f_harina_avena',  nombre:'Harina de avena',      nombre_en:'Oat flour',             porcion:'30g (2 cdas)',      kcal:114, proteinas:4,  carbohidratos:21, grasas:2  },
+    { id:'f_arroz_blanco',  nombre:'Arroz blanco (crudo)', nombre_en:'Raw white rice',        porcion:'50g (crudo)',        kcal:182, proteinas:4,  carbohidratos:40, grasas:0  },
+
+    // ── CONDIMENTOS Y ENDULZANTES ────────────────────────────────────────────
+    { id:'f_miel',          nombre:'Miel',                 nombre_en:'Honey',                 porcion:'15ml (1 cda)',      kcal:64,  proteinas:0,  carbohidratos:17, grasas:0  },
+    { id:'f_azucar',        nombre:'Azúcar',               nombre_en:'Sugar',                 porcion:'10g (1 cdita)',     kcal:39,  proteinas:0,  carbohidratos:10, grasas:0  },
+    { id:'f_mostaza',       nombre:'Mostaza',              nombre_en:'Mustard',               porcion:'10g (1 cdita)',     kcal:10,  proteinas:1,  carbohidratos:1,  grasas:1  },
+    { id:'f_salsa_soya',    nombre:'Salsa de soya',        nombre_en:'Soy sauce',             porcion:'15ml (1 cda)',      kcal:10,  proteinas:1,  carbohidratos:1,  grasas:0  },
+    { id:'f_salsa_tomate',  nombre:'Salsa de tomate',      nombre_en:'Tomato sauce',          porcion:'60ml (1/4 taza)',   kcal:30,  proteinas:1,  carbohidratos:6,  grasas:0  },
+    { id:'f_vinagre',       nombre:'Vinagre',              nombre_en:'Vinegar',               porcion:'15ml (1 cda)',      kcal:3,   proteinas:0,  carbohidratos:0,  grasas:0  },
+    { id:'f_crema_coco',    nombre:'Crema de coco',        nombre_en:'Coconut cream',         porcion:'60ml',              kcal:150, proteinas:1,  carbohidratos:3,  grasas:16 },
 
     // ── BEBIDAS ──────────────────────────────────────────────────────────────
     { id:'f_agua',          nombre:'Agua',                 nombre_en:'Water',                 porcion:'500ml',             kcal:0,   proteinas:0,  carbohidratos:0,  grasas:0  },

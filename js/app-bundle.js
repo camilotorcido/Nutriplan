@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260426oo: Bilingual ES/EN support
+   v20260426pp: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260426oo: Bilingual helpers ────────────────────────────────────────
+// ─── v20260426pp: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -364,7 +364,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260426oo: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260426pp: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
@@ -549,7 +549,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260426oo: Wizard onboarding ──────────────────────────────────────
+  // ── v20260426pp: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -4495,114 +4495,148 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260426oo)
-// Modal estilo MyFitnessPal para registrar comidas no planificadas
-// Busca en FOODS_DB (alimentos individuales) + RECETAS_DB (recetas del plan)
+// COMPONENTE: ModalComidaExterna (v20260426pp)
+// Meal builder estilo MyFitnessPal:
+//   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
+//   - Búsqueda en FOODS_DB + RECETAS_DB
+//   - Puede reemplazar una comida planificada del día
 // =============================================
-function ModalComidaExterna({ darkMode, diaActual, onAdd, onClose }) {
-  const [busqueda, setBusqueda] = React.useState('');
-  const [sugerencias, setSugerencias] = React.useState([]);
-  const [form, setForm] = React.useState({ nombre: '', kcal: '', proteinas_g: '', carbohidratos_g: '', grasas_g: '' });
-  const [error, setError] = React.useState('');
+function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, onAdd, onClose }) {
+  const [busqueda, setBusqueda]           = React.useState('');
+  const [sugerencias, setSugerencias]     = React.useState([]);
+  const [ingredientes, setIngredientes]   = React.useState([]); // [{nombre,kcal,proteinas,carbohidratos,grasas,qty}]
+  const [nombre, setNombre]               = React.useState('');
+  const [nombreManual, setNombreManual]   = React.useState(false);
+  const [reemplaza, setReemplaza]         = React.useState('');
+  const [manualKcal, setManualKcal]       = React.useState('');
+  const [manualProt, setManualProt]       = React.useState('');
+  const [manualCarb, setManualCarb]       = React.useState('');
+  const [manualGras, setManualGras]       = React.useState('');
+  const [error, setError]                 = React.useState('');
 
   // Colores inline para inputs — más robusto que clases Tailwind en dark mode
-  var inputColor     = darkMode ? '#f9fafb' : '#111827';
-  var inputBg        = darkMode ? '#1f2937' : '#ffffff';
-  var inputBgSearch  = darkMode ? '#1f2937' : '#f9fafb';
-  var inputBorder    = darkMode ? '#4b5563' : '#e5e7eb';
-  var placeholderCss = darkMode ? '#6b7280' : '#9ca3af';
+  var inputColor   = darkMode ? '#f9fafb' : '#111827';
+  var inputBg      = darkMode ? '#1f2937' : '#ffffff';
+  var inputBorder  = darkMode ? '#4b5563' : '#e5e7eb';
+  var searchBg     = darkMode ? '#374151' : '#f9fafb';
 
-  // Búsqueda unificada: FOODS_DB (prioridad) + RECETAS_DB (fallback)
+  // ── Totales calculados de la bandeja ────────────────────────────────────────
+  var totalesIngr = ingredientes.reduce(function(acc, ing) {
+    var q = parseFloat(ing.qty) || 1;
+    return {
+      kcal:          acc.kcal          + Math.round((ing.kcal          || 0) * q),
+      proteinas:     acc.proteinas     + Math.round((ing.proteinas     || 0) * q),
+      carbohidratos: acc.carbohidratos + Math.round((ing.carbohidratos || 0) * q),
+      grasas:        acc.grasas        + Math.round((ing.grasas        || 0) * q)
+    };
+  }, { kcal: 0, proteinas: 0, carbohidratos: 0, grasas: 0 });
+
+  var tieneIngredientes = ingredientes.length > 0;
+  var finalKcal = tieneIngredientes ? totalesIngr.kcal          : (parseFloat(manualKcal) || 0);
+  var finalProt = tieneIngredientes ? totalesIngr.proteinas     : (parseFloat(manualProt) || 0);
+  var finalCarb = tieneIngredientes ? totalesIngr.carbohidratos : (parseFloat(manualCarb) || 0);
+  var finalGras = tieneIngredientes ? totalesIngr.grasas        : (parseFloat(manualGras) || 0);
+
+  // ── Auto-nombre desde ingredientes ─────────────────────────────────────────
+  React.useEffect(function() {
+    if (nombreManual) return;
+    if (ingredientes.length === 0) { setNombre(''); return; }
+    var parts = ingredientes.map(function(ing) {
+      var q = parseFloat(ing.qty) || 1;
+      return (q !== 1 ? q + 'x ' : '') + ing.nombre;
+    });
+    setNombre(parts.join(' + '));
+  }, [ingredientes, nombreManual]);
+
+  // ── Búsqueda unificada FOODS_DB + RECETAS_DB ────────────────────────────────
   React.useEffect(function() {
     var q = busqueda.trim().toLowerCase();
     if (q.length < 2) { setSugerencias([]); return; }
-    var resultados = [];
+    var res = [];
     var lang = window._NP_lang || 'es';
-
-    // 1. FOODS_DB — alimentos individuales con porción
     if (typeof window.FOODS_DB !== 'undefined') {
       window.FOODS_DB.forEach(function(f) {
-        var nombreBuscar = (lang === 'en' && f.nombre_en) ? f.nombre_en : f.nombre;
-        if (nombreBuscar.toLowerCase().includes(q)) {
-          resultados.push({
-            _tipo: 'alimento',
-            nombre: (lang === 'en' && f.nombre_en) ? f.nombre_en : f.nombre,
-            porcion: f.porcion,
-            kcal: f.kcal,
-            proteinas: f.proteinas,
-            carbohidratos: f.carbohidratos,
-            grasas: f.grasas
-          });
-        }
+        var n = (lang === 'en' && f.nombre_en) ? f.nombre_en : f.nombre;
+        if (n.toLowerCase().includes(q))
+          res.push({ _tipo:'alimento', nombre:n, porcion:f.porcion, kcal:f.kcal, proteinas:f.proteinas, carbohidratos:f.carbohidratos, grasas:f.grasas });
       });
     }
-
-    // 2. RECETAS_DB — recetas del plan (si no hay suficientes alimentos)
     if (typeof RECETAS_DB !== 'undefined') {
       RECETAS_DB.forEach(function(r) {
-        var nombreReceta = (typeof getNombreReceta === 'function') ? getNombreReceta(r) : (r.nombre || '');
-        if (nombreReceta.toLowerCase().includes(q)) {
-          resultados.push({
-            _tipo: 'receta',
-            nombre: nombreReceta,
-            porcion: null,
-            kcal: r.calorias || r.calorias_base || r.calorias_escaladas || 0,
-            proteinas: r.proteinas || r.proteinas_base || r.proteinas_escaladas || 0,
-            carbohidratos: r.carbohidratos || r.carbohidratos_base || r.carbohidratos_escalados || 0,
-            grasas: r.grasas || r.grasas_base || r.grasas_escaladas || 0
-          });
-        }
+        var n = (typeof getNombreReceta === 'function') ? getNombreReceta(r) : (r.nombre || '');
+        if (n.toLowerCase().includes(q))
+          res.push({ _tipo:'receta', nombre:n, porcion:null,
+            kcal:r.calorias||r.calorias_base||0, proteinas:r.proteinas||r.proteinas_base||0,
+            carbohidratos:r.carbohidratos||r.carbohidratos_base||0, grasas:r.grasas||r.grasas_base||0 });
       });
     }
-
-    setSugerencias(resultados.slice(0, 8));
+    setSugerencias(res.slice(0, 8));
   }, [busqueda]);
 
-  function seleccionarItem(item) {
-    setForm({
-      nombre: item.nombre,
-      kcal: String(item.kcal || ''),
-      proteinas_g: String(item.proteinas || ''),
-      carbohidratos_g: String(item.carbohidratos || ''),
-      grasas_g: String(item.grasas || '')
+  // ── Handlers ────────────────────────────────────────────────────────────────
+  function agregarItem(item) {
+    setIngredientes(function(prev) {
+      var idx = prev.findIndex(function(x) { return x.nombre === item.nombre; });
+      if (idx >= 0) {
+        return prev.map(function(x, i) {
+          return i === idx ? Object.assign({}, x, { qty: (parseFloat(x.qty) || 1) + 1 }) : x;
+        });
+      }
+      return prev.concat([Object.assign({}, item, { qty: 1 })]);
     });
     setBusqueda('');
     setSugerencias([]);
   }
 
-  function campo(key, val) {
-    setForm(function(prev) { var n = Object.assign({}, prev); n[key] = val; return n; });
+  function cambiarQty(idx, delta) {
+    setIngredientes(function(prev) {
+      return prev.map(function(x, i) {
+        if (i !== idx) return x;
+        var next = Math.max(0.5, ((parseFloat(x.qty) || 1) + delta));
+        next = Math.round(next * 2) / 2; // snap to 0.5
+        return Object.assign({}, x, { qty: next });
+      });
+    });
+  }
+
+  function quitarIngrediente(idx) {
+    setIngredientes(function(prev) { return prev.filter(function(_, i) { return i !== idx; }); });
   }
 
   function handleSubmit() {
-    if (!form.nombre.trim()) { setError(t('El nombre es obligatorio','Name is required')); return; }
-    var kcal = parseFloat(form.kcal);
-    if (isNaN(kcal) || kcal <= 0) { setError(t('Las calorías son obligatorias','Calories are required')); return; }
+    var nombreFinal = nombre.trim();
+    if (!nombreFinal) { setError(t('El nombre es obligatorio','Name is required')); return; }
+    if (finalKcal <= 0) { setError(t('Agrega alimentos o ingresa las calorías','Add foods or enter calories')); return; }
     setError('');
-    var comida = {
+    onAdd({
       id: 'ext_' + Date.now(),
-      nombre: form.nombre.trim(),
-      kcal: Math.round(kcal),
-      proteinas_g: Math.round(parseFloat(form.proteinas_g) || 0),
-      carbohidratos_g: Math.round(parseFloat(form.carbohidratos_g) || 0),
-      grasas_g: Math.round(parseFloat(form.grasas_g) || 0),
+      nombre: nombreFinal,
+      kcal: Math.round(finalKcal),
+      proteinas_g: Math.round(finalProt),
+      carbohidratos_g: Math.round(finalCarb),
+      grasas_g: Math.round(finalGras),
+      reemplaza: reemplaza || null,
       timestamp: Date.now()
-    };
-    onAdd(comida);
+    });
     onClose();
   }
 
+  // Comidas del plan disponibles para reemplazar
+  var tiposOrdenM = ['desayuno','snack_am','almuerzo','snack_pm','cena'];
+  var comidasPlan = tiposOrdenM.filter(function(tipo) { return comidasHoy && comidasHoy[tipo]; });
+
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm animate-fadeIn"
       onClick={function(e) { if (e.target === e.currentTarget) onClose(); }}>
-      <div className={`w-full max-w-md rounded-t-2xl shadow-2xl ${darkMode ? 'bg-gray-900 border-t border-gray-700' : 'bg-white'} animate-slideUp`}
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
+      <div className={`w-full max-w-md rounded-t-2xl shadow-2xl ${darkMode ? 'bg-gray-900 border-t border-gray-700' : 'bg-white'}`}
+        style={{ maxHeight:'90vh', display:'flex', flexDirection:'column', paddingBottom:'env(safe-area-inset-bottom, 16px)' }}>
 
         {/* Header */}
-        <div className={`flex items-center justify-between px-5 py-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+        <div className={`flex-shrink-0 flex items-center justify-between px-5 py-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
           <h3 className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
             <i className="fas fa-circle-plus text-green-500 mr-2"></i>
-            {t('Agregar comida externa','Add extra meal')}
+            {t('Armar comida','Build a meal')}
           </h3>
           <button onClick={onClose} aria-label={t('Cerrar','Close')}
             className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-colors ${darkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-400 hover:bg-gray-100'}`}>
@@ -4610,39 +4644,41 @@ function ModalComidaExterna({ darkMode, diaActual, onAdd, onClose }) {
           </button>
         </div>
 
-        <div className="px-5 py-4 space-y-3">
-          {/* Búsqueda autocomplete */}
+        {/* Scrollable body */}
+        <div style={{ overflowY:'auto', flex:1 }} className="px-5 py-4 space-y-3">
+
+          {/* ── Buscador ─────────────────────────────────────────────────── */}
           <div className="relative">
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border"
-              style={{ backgroundColor: inputBgSearch, borderColor: inputBorder }}>
+              style={{ backgroundColor:searchBg, borderColor:inputBorder }}>
               <i className={`fas fa-magnifying-glass text-sm flex-shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
-              <input type="text" value={busqueda}
+              <input type="text" value={busqueda} autoFocus
                 onChange={function(e) { setBusqueda(e.target.value); }}
-                placeholder={t('Buscar alimento o receta...','Search food or recipe...')}
-                style={{ background: 'transparent', color: inputColor, caretColor: '#10b981', flex: 1, fontSize: '14px', outline: 'none', border: 'none' }} />
+                placeholder={t('Buscar alimento o ingrediente...','Search food or ingredient...')}
+                style={{ background:'transparent', color:inputColor, caretColor:'#10b981',
+                  flex:1, fontSize:'14px', outline:'none', border:'none' }} />
               {busqueda && (
                 <button onClick={function() { setBusqueda(''); setSugerencias([]); }}
-                  style={{ color: placeholderCss, cursor: 'pointer' }}>
+                  style={{ color:'#6b7280', cursor:'pointer', padding:0, background:'none', border:'none' }}>
                   <i className="fas fa-times text-xs"></i>
                 </button>
               )}
             </div>
-            {/* Dropdown resultados */}
             {sugerencias.length > 0 && (
-              <div className={`absolute top-full left-0 right-0 mt-1 rounded-xl border shadow-xl z-10 overflow-hidden ${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+              <div className={`absolute top-full left-0 right-0 mt-1 rounded-xl border shadow-xl z-20 overflow-hidden ${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
                 {sugerencias.map(function(item, idx) {
-                  var esAlimento = item._tipo === 'alimento';
                   return (
-                    <button key={idx} onClick={function() { seleccionarItem(item); }}
-                      className={`w-full text-left px-4 py-2.5 flex items-start gap-3 transition-colors cursor-pointer border-b last:border-0 ${darkMode ? 'hover:bg-gray-700 border-gray-700' : 'hover:bg-gray-50 border-gray-100'}`}>
-                      <i className={`fas ${esAlimento ? 'fa-apple-whole' : 'fa-bowl-food'} text-xs mt-1 flex-shrink-0 ${esAlimento ? 'text-green-500' : 'text-amber-500'}`}></i>
+                    <button key={idx} onClick={function() { agregarItem(item); }}
+                      className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors cursor-pointer border-b last:border-0 ${darkMode ? 'hover:bg-gray-700 border-gray-700' : 'hover:bg-green-50 border-gray-100'}`}>
+                      <i className={`fas ${item._tipo === 'alimento' ? 'fa-apple-whole' : 'fa-bowl-food'} text-xs flex-shrink-0 ${item._tipo === 'alimento' ? 'text-green-500' : 'text-amber-500'}`}></i>
                       <div className="flex-1 min-w-0">
-                        <div className={`text-sm font-semibold truncate ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{item.nombre}</div>
-                        {item.porcion && (
-                          <div className="text-xs" style={{ color: placeholderCss }}>{item.porcion}</div>
-                        )}
+                        <div className="text-sm font-semibold truncate" style={{ color:inputColor }}>{item.nombre}</div>
+                        {item.porcion && <div className="text-xs" style={{ color:'#9ca3af' }}>{item.porcion}</div>}
                       </div>
-                      <span className={`text-xs font-bold flex-shrink-0 mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{item.kcal} kcal</span>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-xs font-bold" style={{ color:'#6b7280' }}>{item.kcal} kcal</span>
+                        <i className="fas fa-plus text-xs text-green-500"></i>
+                      </div>
                     </button>
                   );
                 })}
@@ -4650,58 +4686,121 @@ function ModalComidaExterna({ darkMode, diaActual, onAdd, onClose }) {
             )}
           </div>
 
-          {/* Nombre */}
-          <div>
-            <label className={`text-xs font-bold mb-1 block ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              {t('Nombre','Name')} <span className="text-red-400">*</span>
-            </label>
-            <input type="text" value={form.nombre}
-              onChange={function(e) { campo('nombre', e.target.value); }}
-              placeholder={t('Ej: 2 huevos con tomate','E.g. 2 eggs with tomato')}
-              style={{ display:'block', width:'100%', padding:'10px 12px', borderRadius:'12px', border:'1px solid ' + inputBorder,
-                backgroundColor: inputBg, color: inputColor, fontSize:'14px', outline:'none', boxSizing:'border-box' }} />
-          </div>
-
-          {/* Calorías */}
-          <div>
-            <label className={`text-xs font-bold mb-1 block ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              {t('Calorías (kcal)','Calories (kcal)')} <span className="text-red-400">*</span>
-            </label>
-            <input type="number" value={form.kcal}
-              onChange={function(e) { campo('kcal', e.target.value); }}
-              placeholder="0" min="0" step="1"
-              style={{ display:'block', width:'100%', padding:'10px 12px', borderRadius:'12px', border:'1px solid ' + inputBorder,
-                backgroundColor: inputBg, color: inputColor, fontSize:'14px', outline:'none', boxSizing:'border-box' }} />
-          </div>
-
-          {/* Macros */}
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { key: 'proteinas_g',     label: t('Proteínas g','Protein g'),  color: '#3b82f6' },
-              { key: 'carbohidratos_g', label: t('Carbs g','Carbs g'),        color: '#f59e0b' },
-              { key: 'grasas_g',        label: t('Grasas g','Fat g'),         color: '#a855f7' }
-            ].map(function(f) {
-              return (
-                <div key={f.key}>
-                  <label className="text-xs font-bold mb-1 block" style={{ color: f.color }}>{f.label}</label>
-                  <input type="number" value={form[f.key]}
-                    onChange={function(e) { campo(f.key, e.target.value); }}
-                    placeholder="0" min="0" step="0.1"
-                    style={{ display:'block', width:'100%', padding:'8px 10px', borderRadius:'12px', border:'1px solid ' + inputBorder,
-                      backgroundColor: inputBg, color: inputColor, fontSize:'13px', outline:'none', boxSizing:'border-box' }} />
+          {/* ── Bandeja de ingredientes ───────────────────────────────────── */}
+          {tieneIngredientes && (
+            <div className={`rounded-xl border overflow-hidden ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              {ingredientes.map(function(ing, idx) {
+                var q = parseFloat(ing.qty) || 1;
+                var subKcal = Math.round((ing.kcal || 0) * q);
+                var qLabel = (q % 1 === 0) ? q + 'x' : q + 'x';
+                return (
+                  <div key={idx} className={`flex items-center gap-2 px-3 py-2 border-b last:border-0 ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-gray-50'}`}>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate" style={{ color:inputColor }}>{ing.nombre}</div>
+                    </div>
+                    {/* Qty stepper */}
+                    <div className="flex items-center gap-0.5 flex-shrink-0">
+                      <button onClick={function() { cambiarQty(idx, -0.5); }}
+                        style={{ width:22, height:22, borderRadius:6, cursor:'pointer', fontSize:14, fontWeight:'bold', border:'none',
+                          backgroundColor: darkMode ? '#374151' : '#e5e7eb', color: darkMode ? '#d1d5db' : '#374151' }}>−</button>
+                      <span style={{ minWidth:28, textAlign:'center', fontSize:12, fontWeight:'bold', color:inputColor }}>{qLabel}</span>
+                      <button onClick={function() { cambiarQty(idx, +0.5); }}
+                        style={{ width:22, height:22, borderRadius:6, cursor:'pointer', fontSize:14, fontWeight:'bold', border:'none',
+                          backgroundColor: darkMode ? '#374151' : '#e5e7eb', color: darkMode ? '#d1d5db' : '#374151' }}>+</button>
+                    </div>
+                    <span style={{ fontSize:11, fontWeight:'bold', color:'#6b7280', minWidth:52, textAlign:'right', flexShrink:0 }}>{subKcal} kcal</span>
+                    <button onClick={function() { quitarIngrediente(idx); }}
+                      style={{ color: darkMode ? '#4b5563' : '#d1d5db', cursor:'pointer', border:'none', background:'none', padding:0, flexShrink:0 }}
+                      className="hover:text-red-500">
+                      <i className="fas fa-times text-xs"></i>
+                    </button>
+                  </div>
+                );
+              })}
+              {/* Fila total */}
+              <div className={`flex items-center justify-between px-3 py-2 ${darkMode ? 'bg-gray-700/40' : 'bg-white'}`}>
+                <span className="text-xs font-bold uppercase tracking-wider" style={{ color:'#6b7280' }}>Total</span>
+                <div className="flex gap-2 text-xs font-bold">
+                  <span className="text-green-500">{totalesIngr.kcal} kcal</span>
+                  <span className="text-blue-400">{totalesIngr.proteinas}P</span>
+                  <span className="text-amber-400">{totalesIngr.carbohidratos}C</span>
+                  <span className="text-purple-400">{totalesIngr.grasas}G</span>
                 </div>
-              );
-            })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Entrada manual (solo si bandeja vacía) ───────────────────── */}
+          {!tieneIngredientes && (
+            <div className={`rounded-xl p-3 border ${darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-100'}`}>
+              <p className="text-xs mb-2.5" style={{ color:'#9ca3af' }}>
+                {t('O ingresa los macros manualmente:','Or enter macros manually:')}
+              </p>
+              <div className="grid grid-cols-4 gap-1.5">
+                {[
+                  { label:'kcal *', color:inputColor, val:manualKcal, set:setManualKcal },
+                  { label:t('Prot g','Prot g'), color:'#3b82f6', val:manualProt, set:setManualProt },
+                  { label:t('Carbs g','Carbs g'), color:'#f59e0b', val:manualCarb, set:setManualCarb },
+                  { label:t('Grasas g','Fat g'), color:'#a855f7', val:manualGras, set:setManualGras }
+                ].map(function(f, fi) {
+                  return (
+                    <div key={fi}>
+                      <label className="text-xs font-bold mb-1 block" style={{ color:f.color }}>{f.label}</label>
+                      <input type="number" value={f.val} onChange={function(e) { f.set(e.target.value); }}
+                        placeholder="0" min="0" step="1"
+                        style={{ display:'block', width:'100%', padding:'6px 8px', borderRadius:8, border:'1px solid '+inputBorder,
+                          backgroundColor:inputBg, color:inputColor, fontSize:13, outline:'none', boxSizing:'border-box' }} />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Nombre de la comida ───────────────────────────────────────── */}
+          <div>
+            <label className="text-xs font-bold mb-1 block" style={{ color:'#6b7280' }}>
+              {t('Nombre de la comida','Meal name')} <span style={{ color:'#f87171' }}>*</span>
+            </label>
+            <input type="text" value={nombre}
+              onChange={function(e) { setNombre(e.target.value); setNombreManual(true); }}
+              placeholder={t('Ej: 2 huevos con tomate','E.g. 2 eggs with tomato')}
+              style={{ display:'block', width:'100%', padding:'10px 12px', borderRadius:12, border:'1px solid '+inputBorder,
+                backgroundColor:inputBg, color:inputColor, fontSize:14, outline:'none', boxSizing:'border-box' }} />
           </div>
+
+          {/* ── ¿Reemplaza comida del plan? ───────────────────────────────── */}
+          {comidasPlan.length > 0 && (
+            <div>
+              <label className="text-xs font-bold mb-1 flex items-center gap-1.5" style={{ color:'#6b7280' }}>
+                <i className="fas fa-arrows-rotate text-amber-500"></i>
+                {t('¿Reemplaza una comida del plan?','Replaces a planned meal?')}
+              </label>
+              <select value={reemplaza} onChange={function(e) { setReemplaza(e.target.value); }}
+                style={{ display:'block', width:'100%', padding:'10px 12px', borderRadius:12, border:'1px solid '+inputBorder,
+                  backgroundColor:inputBg, color:inputColor, fontSize:14, outline:'none', boxSizing:'border-box', cursor:'pointer' }}>
+                <option value="">{t('No reemplaza ninguna','Does not replace any')}</option>
+                {comidasPlan.map(function(tipo) {
+                  return <option key={tipo} value={tipo}>{nombresComida[tipo] || tipo}</option>;
+                })}
+              </select>
+              {reemplaza && (
+                <p className="text-xs mt-1" style={{ color:'#f59e0b' }}>
+                  <i className="fas fa-info-circle mr-1"></i>
+                  {t('Los macros de esa comida del plan serán reemplazados por estos.','This will replace that meal\'s macros in your daily totals.')}
+                </p>
+              )}
+            </div>
+          )}
 
           {error && (
-            <div className="flex items-center gap-2 text-red-500 text-xs animate-slideDown">
+            <div className="flex items-center gap-2 text-xs" style={{ color:'#f87171' }}>
               <i className="fas fa-exclamation-circle"></i>
               <span>{error}</span>
             </div>
           )}
 
-          {/* Botones */}
+          {/* ── Botones ───────────────────────────────────────────────────── */}
           <div className="flex gap-2 pt-1">
             <button onClick={onClose}
               className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
@@ -4719,7 +4818,7 @@ function ModalComidaExterna({ darkMode, diaActual, onAdd, onClose }) {
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260426oo)
+// COMPONENTE: HoyView — Dashboard diario (v20260426pp)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -4818,11 +4917,21 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
       grasas:        acc.grasas        + (c.grasas_g         || 0)
     };
   }, { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0 });
+  // Comidas del plan reemplazadas por una externa → se descuentan del resumen
+  const tiposReemplazados = comidasExt.filter(function(c) { return c.reemplaza; }).map(function(c) { return c.reemplaza; });
+  var resumenBase = resumenHoy;
+  if (tiposReemplazados.length > 0) {
+    var comidasHoyEfectivas = {};
+    Object.keys(comidasHoy).forEach(function(tipo) {
+      if (tiposReemplazados.indexOf(tipo) === -1) comidasHoyEfectivas[tipo] = comidasHoy[tipo];
+    });
+    resumenBase = calcularResumenDiario(comidasHoyEfectivas);
+  }
   const resumenTotal = {
-    calorias:      resumenHoy.calorias      + resumenExt.calorias,
-    proteinas:     resumenHoy.proteinas     + Math.round(resumenExt.proteinas),
-    carbohidratos: resumenHoy.carbohidratos + Math.round(resumenExt.carbohidratos),
-    grasas:        resumenHoy.grasas        + Math.round(resumenExt.grasas),
+    calorias:      resumenBase.calorias      + resumenExt.calorias,
+    proteinas:     resumenBase.proteinas     + Math.round(resumenExt.proteinas),
+    carbohidratos: resumenBase.carbohidratos + Math.round(resumenExt.carbohidratos),
+    grasas:        resumenBase.grasas        + Math.round(resumenExt.grasas),
     costo_clp:     resumenHoy.costo_clp
   };
 
@@ -4891,6 +5000,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
             {tiposOrden.map(tipo => {
               const comida = comidasHoy[tipo];
               if (!comida) return null;
+              // Comida reemplazada por entrada externa
+              const extReemplazo = comidasExt.find(function(c) { return c.reemplaza === tipo; });
               // N11: estado de adherencia para el día de hoy
               const semanaActualIdx = semanaData ? 1 : 1;
               const estadoAdh = (typeof window.adherencia !== 'undefined' && window.adherencia.estado)
@@ -4906,14 +5017,21 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
                 }
               };
               return (
-                <div key={tipo} className="px-5 py-2.5 flex items-center gap-3">
+                <div key={tipo} className={`px-5 py-2.5 flex items-center gap-3 ${extReemplazo ? (darkMode ? 'opacity-50' : 'opacity-40') : ''}`}>
                   <i className={`fas ${iconosComida[tipo]} text-sm w-4 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
                   <div className="flex-1 min-w-0">
-                    <div className={`text-[11px] font-bold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{nombresComida[tipo]}</div>
-                    <div className={`text-sm font-medium truncate ${yaComido ? 'line-through opacity-60' : ''} ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{getNombreReceta(comida)}</div>
+                    <div className="flex items-center gap-1.5">
+                      <div className={`text-[11px] font-bold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{nombresComida[tipo]}</div>
+                      {extReemplazo && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600">
+                          {t('reemplazado','replaced')}
+                        </span>
+                      )}
+                    </div>
+                    <div className={`text-sm font-medium truncate ${(yaComido || extReemplazo) ? 'line-through opacity-60' : ''} ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{getNombreReceta(comida)}</div>
                   </div>
                   <span className={`text-xs font-bold flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{comida.calorias_escaladas || comida.calorias} kcal</span>
-                  {typeof window.adherencia !== 'undefined' && (
+                  {typeof window.adherencia !== 'undefined' && !extReemplazo && (
                     /* A2: aria-label en botón adherencia */
                     <button onClick={toggleAdh}
                       aria-label={yaComido ? t(`Marcar ${nombresComida[tipo]} como no comido`,`Mark ${nombresComida[tipo]} as not eaten`) : t(`Marcar ${nombresComida[tipo]} como comido`,`Mark ${nombresComida[tipo]} as eaten`)}
@@ -4922,6 +5040,11 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
                       }`}>
                       <i className={`fas ${yaComido ? 'fa-check' : 'fa-circle'} text-xs`}></i>
                     </button>
+                  )}
+                  {extReemplazo && (
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
+                      <i className="fas fa-check text-white text-xs"></i>
+                    </div>
                   )}
                 </div>
               );
@@ -5095,11 +5218,21 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
         <ModalComidaExterna
           darkMode={darkMode}
           diaActual={diaActual}
+          comidasHoy={comidasHoy}
+          nombresComida={nombresComida}
           onAdd={function(comida) {
             var nuevas = comidasExt.concat([comida]);
             setComidasExt(nuevas);
             _guardarComidasExt(fechaHoyIso, nuevas);
             _agregarAdherenciaExt(diaActual, comida);
+            // Si reemplaza una comida planificada → marcarla como comida
+            if (comida.reemplaza && typeof window.adherencia !== 'undefined') {
+              var planReemplazada = comidasHoy[comida.reemplaza];
+              window.adherencia.marcar(diaActual, comida.reemplaza, true, {
+                kcal_plan: planReemplazada ? (planReemplazada.calorias_escaladas || planReemplazada.calorias || 0) : 0,
+                proteinas_plan: planReemplazada ? (planReemplazada.proteinas_escaladas || planReemplazada.proteinas || 0) : 0
+              }, 1);
+            }
             setRefresh(function(r) { return r + 1; });
           }}
           onClose={function() { setShowModalExt(false); }}
@@ -7060,7 +7193,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260426oo: Language state ───
+  // ─── v20260426pp: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
