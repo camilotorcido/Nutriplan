@@ -8681,63 +8681,50 @@ function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
   );
 }
 
-// ─── Traducción ES→EN para búsqueda en Wger (ejercicios del protocolo) ───
-function ejercicioToEnSearch(nombre) {
-  var n = nombre.toLowerCase().trim();
-  var exacto = {
-    'press pecho cables': 'cable chest press',
-    'aperturas cable chest fly': 'cable fly',
-    'press hombros cables bilateral': 'cable shoulder press',
-    'elevaciones laterales cable': 'cable lateral raise',
-    'tríceps pushdown cable': 'cable pushdown',
-    'pike pushups': 'pike push-up',
-    'plancha frontal': 'plank',
-    'plancha lateral alternada': 'side plank',
-    'jalón al pecho': 'lat pulldown',
-    'jalón agarre neutro': 'lat pulldown neutral grip',
-    'remo cable sentado': 'seated cable row',
-    'remo con mancuerna': 'dumbbell row',
-    'curl bíceps cable': 'cable bicep curl',
-    'curl martillo': 'hammer curl',
-    'sentadilla goblet': 'goblet squat',
-    'sentadilla': 'squat',
-    'zancada': 'lunge',
-    'hip thrust': 'hip thrust',
-    'peso muerto rumano': 'romanian deadlift',
-    'curl femoral': 'lying leg curl',
-    'extensión cuádriceps': 'leg extension',
-    'elevación de talones': 'calf raise',
-    'press de banca': 'bench press',
-    'dominadas': 'pull-up',
-    'fondos': 'triceps dip',
-    'face pull': 'face pull',
-  };
-  if (exacto[n]) return exacto[n];
-  // Sustituciones de palabras clave
-  var t = n;
-  t = t.replace(/tr[ií]ceps/g,         'triceps');
-  t = t.replace(/cables?/g,             'cable');
-  t = t.replace(/press\s+pecho/g,       'chest press');
-  t = t.replace(/aperturas?/g,          'fly');
-  t = t.replace(/hombros?/g,            'shoulder');
-  t = t.replace(/elevaciones\s+laterales/g, 'lateral raise');
-  t = t.replace(/plancha\s+lateral/g,   'side plank');
-  t = t.replace(/plancha/g,             'plank');
-  t = t.replace(/sentadilla/g,          'squat');
-  t = t.replace(/zancadas?/g,           'lunge');
-  t = t.replace(/jal[oó]n/g,           'lat pulldown');
-  t = t.replace(/remo/g,               'row');
-  t = t.replace(/b[ií]cep[s]?/g,       'bicep');
-  t = t.replace(/\bpecho\b/g,           'chest');
-  t = t.replace(/mancuernas?/g,         'dumbbell');
-  t = t.replace(/peso\s+muerto/g,       'deadlift');
-  t = t.replace(/rumano/g,              'romanian');
-  t = t.replace(/femoral/g,             'leg curl');
-  t = t.replace(/bilateral/g,           '');
-  return t.replace(/\s+/g, ' ').trim();
+// ─── Mapa ejercicio → artículo Wikipedia para foto de referencia ───
+// Fuente: Wikipedia REST API /page/summary/{title} → thumbnail.source
+var WIKI_ARTICULOS = {
+  // Día A — Empuje
+  'press pecho cables':               'Bench_press',
+  'aperturas cable chest fly':        'Fly_(exercise)',
+  'press hombros cables bilateral':   'Shoulder_press',
+  'elevaciones laterales cable':      'Fly_(exercise)',
+  'tríceps pushdown cable':           'Pushdown_(exercise)',
+  'pike pushups':                     'Push-up',
+  'plancha frontal':                  'Plank_(exercise)',
+  'plancha lateral alternada':        'Side_plank',
+  // Jalón / espalda
+  'jalón al pecho':                   'Lat_pulldown',
+  'jalón agarre neutro':              'Lat_pulldown',
+  'remo cable sentado':               'Bent-over_row',
+  'remo con mancuerna':               'Bent-over_row',
+  'dominadas':                        'Pull-up_(exercise)',
+  'face pull':                        'Fly_(exercise)',
+  // Bíceps
+  'curl bíceps cable':                'Biceps_curl',
+  'curl martillo':                    'Hammer_curl',
+  // Piernas
+  'sentadilla goblet':                'Squat_(exercise)',
+  'sentadilla':                       'Squat_(exercise)',
+  'zancada':                          'Lunge_(exercise)',
+  'hip thrust':                       'Hip_thrust',
+  'peso muerto rumano':               'Romanian_deadlift',
+  'curl femoral':                     'Leg_curl',
+  'extensión cuádriceps':             'Leg_extension',
+  'elevación de talones':             'Calf_raise',
+  'step up':                          'Step_up_(exercise)',
+  // Pecho
+  'press de banca':                   'Bench_press',
+  'fondos':                           'Dip_(exercise)',
+  // Core
+  'crunch':                           'Crunch_(exercise)',
+};
+
+function wikiArticleForEjercicio(nombre) {
+  return WIKI_ARTICULOS[nombre.toLowerCase().trim()] || null;
 }
 
-// ─── EjercicioCard: tarjeta individual con fotos de referencia vía Wger ───
+// ─── EjercicioCard: tarjeta individual con foto de referencia vía Wikipedia ───
 function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, bajó, onToggle, onSetPeso, onSetReps }) {
   const [mostrarFotos, setMostrarFotos] = React.useState(false);
   const [fotoEstado, setFotoEstado] = React.useState('idle'); // idle | loading | ok | vacio | error
@@ -8752,31 +8739,16 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
   function fetchFotos() {
     if (fotoEstado !== 'idle') return;
     setFotoEstado('loading');
-    // Traducir nombre ES→EN antes de buscar en Wger (idioma=2: inglés)
-    const searchTerm = ejercicioToEnSearch(e.nombre);
-    const term = encodeURIComponent(searchTerm);
-    fetch('https://wger.de/api/v2/exercise/search/?term=' + term + '&language=2&format=json')
+    // Wikipedia REST API: free, CORS-open, sin API key, foto real del ejercicio
+    const articulo = wikiArticleForEjercicio(e.nombre);
+    if (!articulo) { setFotoEstado('vacio'); return; }
+    fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(articulo))
       .then(r => r.json())
       .then(data => {
-        const sugerencias = data.suggestions || [];
-        if (!sugerencias.length) { setFotoEstado('vacio'); return; }
-        const primera = sugerencias[0].data;
-        // Wger puede devolver la imagen ya en el resultado de búsqueda
-        if (primera.image) {
-          setFotos([primera.image]);
-          setFotoEstado('ok');
-          return;
-        }
-        // Fallback: pedir imágenes por base_id
-        const baseId = primera.base_id;
-        return fetch('https://wger.de/api/v2/exerciseimage/?exercise_base=' + baseId + '&format=json')
-          .then(r => r.json())
-          .then(imgData => {
-            const imgs = (imgData.results || []).map(r => r.image);
-            if (!imgs.length) { setFotoEstado('vacio'); return; }
-            setFotos(imgs.slice(0, 2));
-            setFotoEstado('ok');
-          });
+        const img = data.thumbnail && data.thumbnail.source;
+        if (!img) { setFotoEstado('vacio'); return; }
+        setFotos([img]);
+        setFotoEstado('ok');
       })
       .catch(() => setFotoEstado('error'));
   }
@@ -8836,38 +8808,35 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
         </button>
       </div>
 
-      {/* Panel de fotos de referencia (Wger exercise images) */}
+      {/* Panel de foto de referencia (Wikipedia) */}
       {mostrarFotos && (
-        <div className={`mt-3 rounded-lg overflow-hidden ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+        <div className={`mt-3 rounded-xl overflow-hidden ${darkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
           {fotoEstado === 'loading' && (
-            <div className="flex items-center justify-center gap-2 py-5 text-xs text-gray-400">
+            <div className="flex items-center justify-center gap-2 py-6 text-xs text-gray-400">
               <div className="w-4 h-4 border-2 border-gray-300 border-t-amber-500 rounded-full animate-spin"></div>
-              <span>Buscando fotos...</span>
+              <span>Cargando foto...</span>
             </div>
           )}
           {fotoEstado === 'ok' && (
-            <div className={`grid gap-1 p-1 ${fotos.length >= 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              {fotos.map((url, idx) => (
-                <div key={idx} className="relative rounded-md overflow-hidden bg-white">
-                  <img src={url} alt={idx === 0 ? 'Posición inicial' : 'Posición final'}
-                    className="w-full object-contain"
-                    style={{ maxHeight: '160px' }} />
-                  <div className={`absolute bottom-0 left-0 right-0 text-center text-[10px] font-bold py-0.5 ${darkMode ? 'bg-gray-900/70 text-gray-300' : 'bg-black/30 text-white'}`}>
-                    {idx === 0 ? 'Inicio' : 'Final'}
-                  </div>
-                </div>
-              ))}
+            <div className="relative">
+              <img src={fotos[0]} alt={e.nombre}
+                className="w-full object-cover object-top"
+                style={{ maxHeight: '220px' }} />
+              <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-3 py-1.5 bg-black/40">
+                <span className="text-[11px] text-white font-medium">{e.nombre}</span>
+                <span className="text-[9px] text-white/50">Wikipedia</span>
+              </div>
             </div>
           )}
           {fotoEstado === 'vacio' && (
-            <div className="text-center py-4 text-xs text-gray-400">
-              <i className="fas fa-image mr-1 opacity-50"></i>
-              Sin fotos disponibles para este ejercicio
+            <div className="text-center py-5 text-xs text-gray-400">
+              <i className="fas fa-image mr-1 opacity-40"></i>
+              Sin foto disponible para este ejercicio
             </div>
           )}
           {fotoEstado === 'error' && (
-            <div className="text-center py-4 text-xs text-gray-400">
-              <i className="fas fa-circle-exclamation mr-1 opacity-50"></i>
+            <div className="text-center py-5 text-xs text-gray-400">
+              <i className="fas fa-circle-exclamation mr-1 opacity-40"></i>
               No se pudo cargar — verifica tu conexión
             </div>
           )}
