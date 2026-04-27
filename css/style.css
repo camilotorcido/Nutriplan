@@ -451,3 +451,220 @@ html.dark select option {
     --tw-gradient-from: var(--color-accent-dark) var(--tw-gradient-from-position) !important;
     --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   CALIBRATE — UX IMPROVEMENTS v20260428ad
+   Cursor · Typography scale · Animations · Objective themes
+   ══════════════════════════════════════════════════════════════ */
+
+/* ─── Global cursor rules ─── */
+button,
+[role="button"],
+.nav-pill,
+.day-tab,
+.meal-card,
+select,
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"],
+label[for],
+.cursor-clickable {
+    cursor: pointer;
+}
+
+/* ─── Typography semantic scale ─── */
+/* .cal-overline: labels/categorías, always uppercase */
+.cal-overline {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.625rem;    /* 10px */
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    line-height: 1.4;
+}
+/* .cal-caption: metadata, timestamps, de-emphasized info */
+.cal-caption {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.75rem;     /* 12px */
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--color-ink-muted);
+}
+/* .cal-body: default body text */
+.cal-body {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.875rem;    /* 14px */
+    font-weight: 400;
+    line-height: 1.6;
+}
+/* .cal-display: large numeric metrics (monospace) */
+.cal-display {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 2rem;        /* 32px */
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+/* .cal-display-sm: smaller numeric metric */
+.cal-display-sm {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.25rem;     /* 20px */
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+}
+
+/* ─── Extra animation keyframes ─── */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes checkBounce {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.35); }
+    60%  { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+
+@keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+}
+
+/* ─── Animation utility classes ─── */
+.animate-fadeUp {
+    animation: fadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-checkBounce {
+    animation: checkBounce 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Stagger children for card lists */
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+
+/* ─── Check/adherence button — large touch target ─── */
+.cal-check-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--color-border);
+    background: transparent;
+    color: var(--color-ink-muted);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.cal-check-btn:hover {
+    border-color: var(--color-success);
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+.cal-check-btn.checked {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: white;
+    animation: checkBounce 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ─── Objective-based header themes ─── */
+/* Applied via data-objetivo attribute on #root or .objetivo-header */
+.objetivo-header[data-obj="perdida"] {
+    background: linear-gradient(135deg, #C0523A 0%, #8B3A2A 100%);
+}
+.objetivo-header[data-obj="volumen"] {
+    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+}
+.objetivo-header[data-obj="mantenimiento"],
+.objetivo-header[data-obj="default"] {
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
+}
+
+/* ─── Empty state component ─── */
+.cal-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    gap: 0.75rem;
+}
+.cal-empty-state__icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-accent-light);
+    color: var(--color-accent);
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+.cal-empty-state__title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-ink);
+}
+.cal-empty-state__desc {
+    font-size: 0.8125rem;
+    color: var(--color-ink-muted);
+    max-width: 22ch;
+    line-height: 1.5;
+}
+
+/* ─── Nav active pill — brand mustard override ─── */
+/* Overrides hardcoded bg-green-500 / bg-orange-500 in nav JSX */
+.nav-pill-active {
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark)) !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(200, 148, 58, 0.35) !important;
+}
+
+/* ─── 7-day adherence dots widget ─── */
+.adh-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+.adh-dot--ok     { background: var(--color-success); }
+.adh-dot--partial { background: var(--color-accent); }
+.adh-dot--miss   { background: var(--color-alert); }
+.adh-dot--empty  { background: var(--color-border); }
+
+/* ─── Shimmer skeleton loading ─── */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--color-border) 25%,
+        #EDE7DC 50%,
+        var(--color-border) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+}
+html.dark .skeleton {
+    background: linear-gradient(
+        90deg,
+        #374151 25%,
+        #4b5563 50%,
+        #374151 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}

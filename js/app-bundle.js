@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260428ac: Bilingual ES/EN support
+   v20260428ad: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260428ac: Bilingual helpers ────────────────────────────────────────
+// ─── v20260428ad: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -335,6 +335,28 @@ function _resolverMacros(calc, obj) {
 }
 
 // =============================================
+// COMPONENTE: EmptyState — reutilizable en toda la app
+// =============================================
+// Uso: <EmptyState icon="fa-utensils" title="Sin recetas" desc="..." cta="..." onCta={fn} darkMode={dm} />
+function EmptyState({ icon, title, desc, cta, onCta, darkMode }) {
+  return (
+    <div className="cal-empty-state">
+      <div className="cal-empty-state__icon">
+        <i className={`fas ${icon || 'fa-inbox'}`}></i>
+      </div>
+      <p className="cal-empty-state__title" style={{ color: darkMode ? '#f9fafb' : undefined }}>{title}</p>
+      {desc && <p className="cal-empty-state__desc">{desc}</p>}
+      {cta && onCta && (
+        <button onClick={onCta}
+          className="mt-3 px-5 py-2.5 rounded-xl text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors flex items-center gap-2">
+          {cta}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// =============================================
 // COMPONENTE: ProfileSetup
 // =============================================
 function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBack, tienePlan, lang, onLangChange }) {
@@ -379,7 +401,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260428ac: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260428ad: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
   // Previews para mantenimiento y volumen (paso 4)
@@ -650,7 +672,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     _mostrarExplicacion(perfilFinal);
   };
 
-  // ── v20260428ac: Wizard onboarding ──────────────────────────────────────
+  // ── v20260428ad: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -2085,7 +2107,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           </div>
 
-          {/* Objetivo — v20260428ac: goal cards unificados, sin kcal subtitles */}
+          {/* Objetivo — v20260428ad: goal cards unificados, sin kcal subtitles */}
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-bullseye text-green-500"></i>
@@ -3898,7 +3920,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
               : yaMarcadoNo ? (darkMode ? 'bg-gray-800/50 border-gray-600 opacity-60' : 'bg-gray-100 border-gray-300 opacity-70')
               : (darkMode ? colores.bgDark + ' ' + colores.borderDark : colores.bg + ' ' + colores.border)
             }`}>
-              {/* Checkbox de adherencia */}
+              {/* Checkbox de adherencia — 44×44 touch target */}
               <div className="absolute top-2 right-2 flex gap-1">
                 <button
                   onClick={(e) => {
@@ -3912,13 +3934,9 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                       setForceUpdate(x => x + 1);
                     }
                   }}
-                  className={`w-6 h-6 flex items-center justify-center rounded-full text-xs transition-all active:scale-90 ${
-                    yaComido
-                      ? 'bg-emerald-500 text-white'
-                      : darkMode ? 'bg-gray-700 text-gray-400 hover:text-emerald-400' : 'bg-white/70 text-gray-400 hover:text-emerald-600'
-                  }`}
+                  className={`cal-check-btn ${yaComido ? 'checked' : ''}`}
                   title={yaComido ? 'Marcado como comido' : 'Marcar como comido'}>
-                  <i className="fas fa-check text-[11px]"></i>
+                  <i className={`fas fa-check ${yaComido ? 'text-sm' : 'text-xs opacity-50'}`}></i>
                 </button>
               </div>
               <div className="flex items-start justify-between">
@@ -4146,6 +4164,25 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
   );
 }
 
+
+// =============================================
+// CALIBRATE — Design tokens (JS side)
+// =============================================
+
+// Colores de macros: consistentes en todo el bundle
+const MACRO_COLORS = {
+  proteinas: { solid: '#3B82F6', light: '#DBEAFE', label: 'Proteína' },
+  carbohidratos: { solid: '#F59E0B', light: '#FEF3C7', label: 'Carbos' },
+  grasas: { solid: '#F43F5E', light: '#FFE4E6', label: 'Grasa' },
+};
+
+// Gradientes de header según objetivo del usuario
+const OBJETIVO_GRADIENTS = {
+  'perdida':       'linear-gradient(135deg, #C0523A 0%, #8B3A2A 100%)',
+  'volumen':       'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+  'mantenimiento': 'linear-gradient(135deg, #C8943A 0%, #A67830 100%)',
+  'default':       'linear-gradient(135deg, #C8943A 0%, #A67830 100%)',
+};
 
 // =============================================
 // UTILIDAD: Reescalar cantidades dentro del texto de instrucciones
@@ -5448,7 +5485,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260428ac)
+// COMPONENTE: ModalComidaExterna (v20260428ad)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
 //   - Búsqueda en FOODS_DB + RECETAS_DB
@@ -5771,7 +5808,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260428ac)
+// COMPONENTE: HoyView — Dashboard diario (v20260428ad)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -5968,13 +6005,52 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   return (
     <div className="space-y-4 animate-fadeIn">
       {/* Saludo */}
-      <div className="rounded-2xl px-5 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md">
-        <p className="text-sm font-medium opacity-90">{fechaStr}</p>
-        <h2 className="text-xl font-extrabold font-display mt-0.5">{saludo}{nombreCorto ? ', ' + nombreCorto : ''} 👋</h2>
-        {perfil && (
-          <p className="text-sm opacity-80 mt-1">{perfil.caloriasObjetivo} kcal · {perfil.numSemanas > 1 ? perfil.numSemanas + t(' semanas',' weeks') : t('1 semana','1 week')}</p>
-        )}
-      </div>
+      {(() => {
+        const obj = perfil && perfil.objetivo ? perfil.objetivo.toLowerCase() : 'default';
+        const headerGradient = OBJETIVO_GRADIENTS[obj] || OBJETIVO_GRADIENTS['default'];
+        const objetivoLabel = { perdida: 'Pérdida de grasa', volumen: 'Ganancia muscular', mantenimiento: 'Mantenimiento' }[obj] || '';
+        return (
+          <div className="rounded-2xl px-5 py-4 text-white shadow-md" style={{ background: headerGradient }}>
+            <p className="text-sm font-medium opacity-90">{fechaStr}{objetivoLabel ? ' · ' + objetivoLabel : ''}</p>
+            <h2 className="text-xl font-extrabold font-display mt-0.5">{saludo}{nombreCorto ? ', ' + nombreCorto : ''} 👋</h2>
+            {perfil && (
+              <p className="text-sm opacity-80 mt-1">{perfil.caloriasObjetivo} kcal · {perfil.numSemanas > 1 ? perfil.numSemanas + t(' semanas',' weeks') : t('1 semana','1 week')}</p>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* ── 7-day adherence mini-widget ──────────────────────────────────── */}
+      {typeof window.adherencia !== 'undefined' && (() => {
+        const dias7 = window.adherencia.historial(7);
+        const hayDatos = dias7.some(d => d.total > 0);
+        if (!hayDatos) return null;
+        const DIAS_LABEL = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+        const hoyIdx = new Date().getDay();
+        return (
+          <div className={`rounded-2xl px-5 py-3 flex items-center justify-between ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+            <span className={`text-xs font-semibold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <i className="fas fa-calendar-check mr-1.5"></i>Adherencia 7d
+            </span>
+            <div className="flex items-center gap-2">
+              {dias7.map((d, i) => {
+                let dotClass = 'adh-dot adh-dot--empty';
+                if (d.total > 0) {
+                  const pct = d.cumplidos / d.total;
+                  dotClass = pct >= 0.8 ? 'adh-dot adh-dot--ok' : pct >= 0.4 ? 'adh-dot adh-dot--partial' : 'adh-dot adh-dot--miss';
+                }
+                const isToday = d.dia_semana === ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][hoyIdx] && i === 6;
+                return (
+                  <div key={d.fecha} className="flex flex-col items-center gap-1" title={`${d.dia_semana}: ${d.cumplidos}/${d.total}`}>
+                    <span className={dotClass} style={isToday ? { boxShadow: '0 0 0 2px var(--color-accent)' } : {}}></span>
+                    <span className={`text-[9px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{d.dia_semana.slice(0,1)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Progreso del día ─────────────────────────────────────────────── */}
       {metaKcalDia > 0 && (
@@ -6021,9 +6097,9 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
             {/* Macros */}
             <div className={`grid grid-cols-3 gap-3 pt-1 border-t ${darkMode ? 'border-gray-700' : 'border-gray-50'}`}>
               {[
-                { labelEs: 'Proteína', labelEn: 'Protein', val: consumidoHoy.proteinas, meta: metaProtDia, barColor: '#3b82f6' },
-                { labelEs: 'Carbos',   labelEn: 'Carbs',   val: consumidoHoy.carbohidratos, meta: metaCarbDia, barColor: '#f59e0b' },
-                { labelEs: 'Grasas',   labelEn: 'Fat',     val: consumidoHoy.grasas, meta: metaGrasDia, barColor: '#a855f7' }
+                { labelEs: 'Proteína', labelEn: 'Protein', val: consumidoHoy.proteinas, meta: metaProtDia, barColor: MACRO_COLORS.proteinas.solid },
+                { labelEs: 'Carbos',   labelEn: 'Carbs',   val: consumidoHoy.carbohidratos, meta: metaCarbDia, barColor: MACRO_COLORS.carbohidratos.solid },
+                { labelEs: 'Grasas',   labelEn: 'Fat',     val: consumidoHoy.grasas, meta: metaGrasDia, barColor: MACRO_COLORS.grasas.solid }
               ].map(function(m) {
                 var pct = m.meta > 0 ? Math.min(100, Math.round((m.val / m.meta) * 100)) : 0;
                 return (
@@ -6068,7 +6144,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
                 <div className="flex gap-3 text-gray-400">
                   <span><span className="text-blue-500 font-semibold">{resumenTotal.proteinas}g</span> {t('prot','prot')}</span>
                   <span><span className="text-amber-500 font-semibold">{resumenTotal.carbohidratos}g</span> {t('carb','carb')}</span>
-                  <span><span className="text-purple-500 font-semibold">{resumenTotal.grasas}g</span> {t('grasas','fat')}</span>
+                  <span><span className="text-rose-500 font-semibold">{resumenTotal.grasas}g</span> {t('grasas','fat')}</span>
                 </div>
               </div>
               {pctKcal > 0 && (
@@ -6078,7 +6154,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
               )}
             </div>
           )}
-          <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
+          <div className={`divide-y stagger-children ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
             {tiposOrden.map(tipo => {
               const comida = comidasHoy[tipo];
               if (!comida) return null;
@@ -6099,7 +6175,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
                 }
               };
               return (
-                <div key={tipo} className={`px-5 py-2.5 flex items-center gap-3 ${extReemplazo ? (darkMode ? 'opacity-50' : 'opacity-40') : ''}`}>
+                <div key={tipo} className={`px-5 py-2.5 flex items-center gap-3 animate-fadeUp ${extReemplazo ? (darkMode ? 'opacity-50' : 'opacity-40') : ''}`}>
                   <i className={`fas ${iconosComida[tipo]} text-sm w-4 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
@@ -6134,13 +6210,15 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
           </div>
         </div>
       ) : (
-        <div className={`rounded-2xl p-6 text-center ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-amber-50 border border-amber-200'}`}>
-          <i className="fas fa-calendar-plus text-3xl text-amber-400 mb-3"></i>
-          <p className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-amber-800'}`}>{t('Todavía no tienes un plan semanal','You don\'t have a weekly plan yet')}</p>
-          <button onClick={() => onNavigate('plan')}
-            className="px-4 py-2 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
-            <i className="fas fa-plus mr-1.5"></i>{t('Crear mi plan','Create my plan')}
-          </button>
+        <div className={`rounded-2xl ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100'}`}>
+          <EmptyState
+            icon="fa-calendar-plus"
+            title={t('Sin plan semanal','No weekly plan yet')}
+            desc={t('Genera tu plan para ver las comidas de hoy y registrar tu progreso.','Generate your plan to see today\'s meals and track your progress.')}
+            cta={<><i className="fas fa-plus mr-1.5"></i>{t('Crear mi plan','Create my plan')}</>}
+            onCta={() => onNavigate('plan')}
+            darkMode={darkMode}
+          />
         </div>
       )}
 
@@ -6426,10 +6504,13 @@ function NutricionLogView({ perfil, darkMode }) {
   };
 
   if (datos.nConRegistro === 0) return (
-    <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800' : 'bg-white border border-gray-100'}`}>
-      <i className="fas fa-chart-pie text-4xl text-amber-400 mb-3 block"></i>
-      <h3 className={`text-base font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Sin datos para el período</h3>
-      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Marca tus comidas como consumidas en la vista «Hoy» para ver el historial nutricional aquí.</p>
+    <div className={`rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white border border-gray-100'}`}>
+      <EmptyState
+        icon="fa-chart-pie"
+        title="Sin datos para el período"
+        desc="Marca tus comidas como consumidas en la vista «Hoy» para ver el historial nutricional aquí."
+        darkMode={darkMode}
+      />
     </div>
   );
 
@@ -6438,18 +6519,33 @@ function NutricionLogView({ perfil, darkMode }) {
   return (
     <div className="space-y-4 animate-fadeIn">
 
-      {/* ── Selector de período ── */}
-      <div className={`flex rounded-xl p-1 gap-1 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-        {[{d:7,l:'7 días'},{d:14,l:'2 semanas'},{d:30,l:'30 días'}].map(opt => (
-          <button key={opt.d} onClick={() => setDias(opt.d)}
-            className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              dias === opt.d
-                ? darkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-800 shadow-sm'
-                : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
-            }`}>
-            {opt.l}
-          </button>
-        ))}
+      {/* ── Selector de período + Export ── */}
+      <div className="flex gap-2">
+        <div className={`flex flex-1 rounded-xl p-1 gap-1 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+          {[{d:7,l:'7 días'},{d:14,l:'2 semanas'},{d:30,l:'30 días'}].map(opt => (
+            <button key={opt.d} onClick={() => setDias(opt.d)}
+              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                dias === opt.d
+                  ? darkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-800 shadow-sm'
+                  : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+              }`}>
+              {opt.l}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => {
+            if (typeof window.exports !== 'undefined' && window.exports.logCSV) {
+              window.exports.logCSV(dias);
+            } else {
+              alert('Módulo de exportación no disponible');
+            }
+          }}
+          title="Exportar log como CSV"
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all flex-shrink-0 ${darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+          <i className="fas fa-download text-xs"></i>
+          CSV
+        </button>
       </div>
 
       {/* ── Promedios diarios + adherencia ── */}
@@ -6584,27 +6680,29 @@ function FitnessTab({ perfil, darkMode }) {
   const tieneRoadmapActivo = perfil && (perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen);
   if (!tieneRoadmapActivo) {
     return (
-      <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>
-        <i className="fas fa-flask text-4xl text-green-400 mb-3"></i>
-        <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{t('Plan científico no configurado','Scientific plan not set up')}</h3>
-        <p className="text-sm">{t('Ve a tu perfil y configura tu objetivo (pérdida, mantenimiento o volumen) para ver tu roadmap y progreso.','Go to your profile and set your goal to see your roadmap and progress.')}</p>
+      <div className={`rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white border border-gray-100'}`}>
+        <EmptyState
+          icon="fa-flask"
+          title={t('Plan científico no configurado','Scientific plan not set up')}
+          desc={t('Ve a tu perfil y configura tu objetivo (pérdida, mantenimiento o volumen) para ver tu roadmap y progreso.','Set your goal in your profile to see your roadmap and progress.')}
+          darkMode={darkMode}
+        />
       </div>
     );
   }
 
   return (
     <div className="animate-fadeIn">
-      <div className="grid grid-cols-5 gap-1 mb-4">
+      {/* Sub-tab bar — horizontal scroll on mobile, no cramped grid */}
+      <div className={`flex gap-1.5 mb-4 p-1 rounded-xl overflow-x-auto ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
         {subs.map(s => (
           <button key={s.k} onClick={() => cambiarSub(s.k)}
-            className={`py-2 px-1 rounded-xl font-medium text-[11px] flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
               subVista === s.k
-                ? s.k === 'nutricion'
-                  ? 'text-white shadow-md' + ' ' + (darkMode ? 'bg-amber-600' : 'bg-gradient-to-b from-amber-500 to-orange-500')
-                  : 'bg-gradient-to-b from-orange-500 to-red-500 text-white shadow-md'
-                : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                ? 'nav-pill-active'
+                : darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-white'
             }`}>
-            <i className={`fas ${s.icon} text-sm`}></i>
+            <i className={`fas ${s.icon}`}></i>
             <span>{s.l}</span>
           </button>
         ))}
@@ -8518,7 +8616,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260428ac: Language state ───
+  // ─── v20260428ad: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
@@ -8752,9 +8850,10 @@ function App() {
       if (plan._buscoOnline && plan._recetasOnlineUsadas > 0) {
         mostrarToast(`¡Plan generado con ${plan._recetasOnlineUsadas} recetas de internet!`);
       } else {
-        mostrarToast("¡Plan semanal generado exitosamente!");
+        mostrarToast("¡Tu plan semanal está listo! 🎉");
       }
-      setPantalla("hoy");
+      // Navegar al Plan para que el usuario vea lo que se generó
+      setPantalla("plan");
     } catch (e) {
       console.error("Error generando plan:", e);
       // Fallback síncrono
@@ -8762,7 +8861,7 @@ function App() {
       setPlanSemanal(plan);
       guardarPlanSemanal(plan);
       mostrarToast("Plan generado (modo offline)", "info");
-      setPantalla("hoy");
+      setPantalla("plan");
     } finally {
       setCargando(false);
       window.scrollTo(0, 0);
@@ -8847,7 +8946,12 @@ function App() {
     mostrarToast("Datos reiniciados correctamente", "info");
     window.scrollTo(0, 0);
   };
-  const navegarA = (destino) => { setPantalla(destino); window.scrollTo(0, 0); };
+  const navegarA = (destino) => {
+    // "tienda" es el nav label — internamente enruta a "despensa" por defecto
+    const dest = destino === 'tienda' ? 'despensa' : destino;
+    setPantalla(dest);
+    window.scrollTo(0, 0);
+  };
   // Exponer navegación y toast global para componentes profundos
   window._NP_nav = navegarA;
   window._NP_toast = mostrarToast;
@@ -8976,16 +9080,13 @@ function App() {
               ...((perfil && (perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen)) ? [
                 { id: "fitness", label: "Fitness",                  short: "Fitness",           icon: "fa-dumbbell" }
               ] : []),
-              { id: "cocinar",  label: t("¿Qué cocino?","Recipes"), short: t("Cocinar","Cook"), icon: "fa-magnifying-glass" },
-              { id: "despensa", label: t("Despensa","Pantry"),      short: t("Despensa","Pantry"), icon: "fa-warehouse" },
-              { id: "compras",  label: t("Compras","Shopping"),     short: t("Compras","Shop"), icon: "fa-cart-shopping" }
+              { id: "cocinar",  label: t("Recetas","Recipes"),       short: t("Recetas","Recipes"), icon: "fa-utensils" },
+              { id: "tienda",   label: t("Tienda","Store"),          short: t("Tienda","Store"),  icon: "fa-bag-shopping" }
             ].map(tab => (
               <button key={tab.id} onClick={() => navegarA(tab.id)}
                 className={`nav-pill flex-shrink-0 sm:flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                  pantalla === tab.id
-                    ? tab.id === 'fitness'
-                      ? 'bg-orange-500 text-white shadow-md'
-                      : 'bg-green-500 text-white shadow-md'
+                  pantalla === tab.id || (tab.id === 'tienda' && (pantalla === 'despensa' || pantalla === 'compras'))
+                    ? 'nav-pill-active'
                     : darkMode
                       ? 'text-gray-500 hover:bg-gray-700 hover:text-gray-300'
                       : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
@@ -9003,40 +9104,83 @@ function App() {
         {pantalla === "hoy" && (
           <HoyView perfil={perfil} darkMode={darkMode} planSemanal={planSemanal} onNavigate={navegarA} />
         )}
-        {pantalla === "plan" && planSemanal && (
+        {pantalla === "plan" && (planSemanal ? (
           <WeeklyPlan plan={planSemanal} perfil={perfil}
             onRecipeClick={(receta) => setRecetaSeleccionada(receta)}
             onRegenerate={handleRegenerar}
             onSwapRecipe={handleSwapRecipe}
             darkMode={darkMode}
             swapping={swapping} />
-        )}
+        ) : (
+          <div className={`rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white border border-gray-100'}`}>
+            <EmptyState
+              icon="fa-calendar-days"
+              title="No tienes un plan todavía"
+              desc="Completa tu perfil para que Calibrate genere tu plan semanal personalizado."
+              cta={<><i className="fas fa-user-cog mr-1.5"></i>Ir al perfil</>}
+              onCta={() => navegarA('perfil')}
+              darkMode={darkMode}
+            />
+          </div>
+        ))}
         {pantalla === "fitness" && (
           <FitnessTab perfil={perfil} darkMode={darkMode} />
         )}
         {pantalla === "cocinar" && (
           <CocinarTab darkMode={darkMode} onRecipeClick={(r) => setRecetaSeleccionada(r)} plan={planSemanal} factorComensales={factorComensales} />
         )}
-        {pantalla === "despensa" && (planSemanal
-          ? <Pantry plan={planSemanal} onNavigateToShopping={() => navegarA("compras")} darkMode={darkMode} />
-          : <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-amber-50 border border-amber-200'}`}>
-              <i className="fas fa-warehouse text-3xl text-amber-400 mb-3"></i>
-              <p className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-amber-800'}`}>Primero genera tu plan semanal para ver la despensa</p>
-              <button onClick={() => navegarA('plan')} className="px-4 py-2 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
-                <i className="fas fa-calendar-days mr-1.5"></i>Ir al Plan
-              </button>
+        {(pantalla === "tienda" || pantalla === "despensa" || pantalla === "compras") && (() => {
+          const tiendaSub = pantalla === "compras" ? "compras" : "despensa";
+          const noHayPlan = !planSemanal;
+          return (
+            <div className="animate-fadeIn">
+              {/* Sub-tab switcher */}
+              <div className={`flex gap-2 mb-4 p-1 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                <button
+                  onClick={() => navegarA('despensa')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                    tiendaSub === 'despensa'
+                      ? 'nav-pill-active'
+                      : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+                  }`}>
+                  <i className="fas fa-warehouse text-sm"></i>
+                  {t('Despensa','Pantry')}
+                </button>
+                <button
+                  onClick={() => navegarA('compras')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                    tiendaSub === 'compras'
+                      ? 'nav-pill-active'
+                      : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+                  }`}>
+                  <i className="fas fa-cart-shopping text-sm"></i>
+                  {t('Compras','Shopping')}
+                </button>
+              </div>
+
+              {noHayPlan ? (
+                <div className="cal-empty-state">
+                  <div className="cal-empty-state__icon">
+                    <i className={`fas ${tiendaSub === 'compras' ? 'fa-cart-shopping' : 'fa-warehouse'}`}></i>
+                  </div>
+                  <p className="cal-empty-state__title">Primero genera tu plan</p>
+                  <p className="cal-empty-state__desc">
+                    {tiendaSub === 'compras'
+                      ? 'Tu lista de compras aparece aquí una vez que tengas un plan semanal activo.'
+                      : 'Tu despensa aparece aquí una vez que tengas un plan semanal activo.'}
+                  </p>
+                  <button onClick={() => navegarA('plan')}
+                    className="mt-3 px-5 py-2.5 rounded-xl text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors flex items-center gap-2">
+                    <i className="fas fa-calendar-days"></i>Ir al Plan
+                  </button>
+                </div>
+              ) : tiendaSub === 'compras'
+                ? <ShoppingList plan={planSemanal} darkMode={darkMode} />
+                : <Pantry plan={planSemanal} onNavigateToShopping={() => navegarA("compras")} darkMode={darkMode} />
+              }
             </div>
-        )}
-        {pantalla === "compras" && (planSemanal
-          ? <ShoppingList plan={planSemanal} darkMode={darkMode} />
-          : <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-amber-50 border border-amber-200'}`}>
-              <i className="fas fa-cart-shopping text-3xl text-amber-400 mb-3"></i>
-              <p className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-amber-800'}`}>Primero genera tu plan semanal para ver la lista de compras</p>
-              <button onClick={() => navegarA('plan')} className="px-4 py-2 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors">
-                <i className="fas fa-calendar-days mr-1.5"></i>Ir al Plan
-              </button>
-            </div>
-        )}
+          );
+        })()}
       </main>
 
       <footer className={`text-center py-6 text-xs no-print ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
