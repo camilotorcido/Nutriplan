@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260428ah: Bilingual ES/EN support
+   v20260428ai: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260428ah: Bilingual helpers ────────────────────────────────────────
+// ─── v20260428ai: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -401,7 +401,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260428ah: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260428ai: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
   // Previews para mantenimiento y volumen (paso 4)
@@ -672,7 +672,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     _mostrarExplicacion(perfilFinal);
   };
 
-  // ── v20260428ah: Wizard onboarding ──────────────────────────────────────
+  // ── v20260428ai: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -2107,7 +2107,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           </div>
 
-          {/* Objetivo — v20260428ah: goal cards unificados, sin kcal subtitles */}
+          {/* Objetivo — v20260428ai: goal cards unificados, sin kcal subtitles */}
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-bullseye text-green-500"></i>
@@ -5488,7 +5488,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260428ah)
+// COMPONENTE: ModalComidaExterna (v20260428ai)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
 //   - Búsqueda en FOODS_DB + RECETAS_DB
@@ -5811,7 +5811,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260428ah)
+// COMPONENTE: HoyView — Dashboard diario (v20260428ai)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -6470,24 +6470,45 @@ function NutricionLogView({ perfil, darkMode }) {
       const fecha   = d.toISOString().split('T')[0];
       const diaData = adher[fecha] || {};
       const extData = ext[fecha]   || [];
-      let kcal = 0, prot = 0, total = 0, consumidas = 0;
+
+      // Tipos del plan reemplazados por comidas externas → no contar del plan
+      const tiposReemplazados = extData.filter(c => c.reemplaza).map(c => c.reemplaza);
+
+      let kcalPlan = 0, protPlan = 0, total = 0, consumidas = 0;
 
       ORDEN.forEach(tipo => {
+        if (tiposReemplazados.includes(tipo)) return; // reemplazado → se suma vía extData
         const key = Object.keys(diaData).find(k => k.split(':')[1] === tipo);
         if (!key) return;
         const m = diaData[key];
         total++;
-        if (m.comido) { consumidas++; kcal += m.kcal_plan || 0; prot += m.proteinas_plan || 0; }
+        if (m.comido) { consumidas++; kcalPlan += m.kcal_plan || 0; protPlan += m.proteinas_plan || 0; }
       });
-      extData.forEach(c => { total++; consumidas++; kcal += c.kcal || 0; prot += c.proteinas_g || 0; });
 
-      const rem = Math.max(0, kcal - prot * 4);
+      // Comidas externas: siempre consumidas, usar sus macros reales
+      let kcalExt = 0, protExt = 0, carbExt = 0, fatExt = 0;
+      extData.forEach(c => {
+        total++;
+        consumidas++;
+        kcalExt += c.kcal            || 0;
+        protExt += c.proteinas_g     || 0;
+        carbExt += c.carbohidratos_g || 0;
+        fatExt  += c.grasas_g        || 0;
+      });
+
+      const kcal = kcalPlan + kcalExt;
+      const prot = protPlan + protExt;
+
+      // Carb/fat: exactos en externos + estimación para comidas del plan
+      const remPlan = Math.max(0, kcalPlan - protPlan * 4);
+      const carb = Math.round(remPlan * carbRatio / 4)     + carbExt;
+      const fat  = Math.round(remPlan * (1 - carbRatio) / 9) + fatExt;
+
       diasData.push({
         fecha, label: DIA_SHORT[d.getDay()], dia: d.getDate(),
         tieneRegistro: total > 0,
         kcal: Math.round(kcal), prot: Math.round(prot),
-        carb: Math.round(rem * carbRatio / 4),
-        fat:  Math.round(rem * (1 - carbRatio) / 9),
+        carb, fat,
         adherencia: total > 0 ? Math.round(consumidas / total * 100) : null,
         total, consumidas
       });
@@ -8660,7 +8681,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260428ah: Language state ───
+  // ─── v20260428ai: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
