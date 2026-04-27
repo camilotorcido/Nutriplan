@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260427qq: Bilingual ES/EN support
+   v20260427rr: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260427qq: Bilingual helpers ────────────────────────────────────────
+// ─── v20260427rr: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -364,9 +364,18 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260427qq: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260427rr: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
+  // Previews para mantenimiento y volumen (paso 4)
+  const [roadmapMantPreview, setRoadmapMantPreview] = React.useState(null);
+  const [roadmapVolPreview, setRoadmapVolPreview] = React.useState(null);
+  // Pantalla de explicación post-wizard
+  const [showExplicacion, setShowExplicacion] = React.useState(false);
+  const [nivelExplicacion, setNivelExplicacion] = React.useState('a');
+  const [perfilParaExplicar, setPerfilParaExplicar] = React.useState(null);
+  // Modal metodología en modo edición
+  const [verMetodologia, setVerMetodologia] = React.useState(false);
 
   React.useEffect(() => {
     const { peso, altura, edad, genero, nivelActividad, objetivo } = perfil;
@@ -403,7 +412,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
   // v20260418x: Preview del roadmap de Fat Loss en vivo mientras el usuario ajusta inputs
   React.useEffect(() => {
-    if (!perfil.fatLossMode || !window.NP_Roadmap) { setRoadmapPreview(null); return; }
+    if (perfil.objetivo !== 'perdida' || !window.NP_Roadmap) { setRoadmapPreview(null); return; }
     if (!perfil.peso || !perfil.altura || !perfil.edad) { setRoadmapPreview(null); return; }
     const tieneNavy = perfil.cintura && perfil.cuello;
     const tieneBF = perfil.bfOverride && parseFloat(perfil.bfOverride) > 0;
@@ -434,15 +443,53 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     }
   }, [perfil.fatLossMode, perfil.peso, perfil.altura, perfil.edad, perfil.genero, perfil.cintura, perfil.cuello, perfil.cadera, perfil.bfOverride, perfil.nivelActividad, perfil.pesoTarget, perfil.bfTarget, perfil.tasaPerdida, perfil.timelineMesesDeseado]);
 
+  // Preview Mantenimiento — se actualiza en vivo para step 4
+  React.useEffect(() => {
+    if (perfil.objetivo !== 'mantenimiento' || !window.NP_Roadmap || !window.NP_Roadmap.generarMantenimiento) { setRoadmapMantPreview(null); return; }
+    if (!perfil.peso || !perfil.altura || !perfil.edad) { setRoadmapMantPreview(null); return; }
+    try {
+      const factorNum = (FACTORES_ACTIVIDAD[perfil.nivelActividad] || {}).valor || 1.45;
+      const preview = window.NP_Roadmap.generarMantenimiento({
+        peso: parseFloat(perfil.peso), altura: parseFloat(perfil.altura), edad: parseFloat(perfil.edad),
+        genero: perfil.genero === 'femenino' ? 'F' : 'M',
+        cintura: perfil.cintura ? parseFloat(perfil.cintura) : null,
+        cuello: perfil.cuello ? parseFloat(perfil.cuello) : null,
+        cadera: perfil.cadera ? parseFloat(perfil.cadera) : null,
+        bfOverride: perfil.bfOverride || null, factorActividad: factorNum
+      });
+      setRoadmapMantPreview(preview);
+    } catch(e) { console.warn('[Mant] preview error:', e.message); setRoadmapMantPreview(null); }
+  }, [perfil.objetivo, perfil.peso, perfil.altura, perfil.edad, perfil.genero, perfil.cintura, perfil.cuello, perfil.cadera, perfil.bfOverride, perfil.nivelActividad]);
+
+  // Preview Volumen — se actualiza en vivo para step 4
+  React.useEffect(() => {
+    if (perfil.objetivo !== 'volumen' || !window.NP_Roadmap || !window.NP_Roadmap.generarVolumen) { setRoadmapVolPreview(null); return; }
+    if (!perfil.peso || !perfil.altura || !perfil.edad) { setRoadmapVolPreview(null); return; }
+    try {
+      const factorNum = (FACTORES_ACTIVIDAD[perfil.nivelActividad] || {}).valor || 1.45;
+      const preview = window.NP_Roadmap.generarVolumen({
+        peso: parseFloat(perfil.peso), altura: parseFloat(perfil.altura), edad: parseFloat(perfil.edad),
+        genero: perfil.genero === 'femenino' ? 'F' : 'M',
+        cintura: perfil.cintura ? parseFloat(perfil.cintura) : null,
+        cuello: perfil.cuello ? parseFloat(perfil.cuello) : null,
+        cadera: perfil.cadera ? parseFloat(perfil.cadera) : null,
+        bfOverride: perfil.bfOverride || null, factorActividad: factorNum,
+        tasaGanancia: perfil.tasaGanancia || 'moderada',
+        pesoObjetivo: perfil.pesoObjetivoVol ? parseFloat(perfil.pesoObjetivoVol) : null
+      });
+      setRoadmapVolPreview(preview);
+    } catch(e) { console.warn('[Vol] preview error:', e.message); setRoadmapVolPreview(null); }
+  }, [perfil.objetivo, perfil.peso, perfil.altura, perfil.edad, perfil.genero, perfil.cintura, perfil.cuello, perfil.cadera, perfil.bfOverride, perfil.nivelActividad, perfil.tasaGanancia, perfil.pesoObjetivoVol]);
+
   const handleObjetivoChange = (objetivo) => {
-    const esFatLoss = objetivo === 'perdida';
-    const macrosCustom = cargarMacrosCustom();
-    const macros = esFatLoss
+    // Pérdida de peso siempre usa el motor científico (Fat Loss / Precision Nutrition)
+    // Mantenimiento y Volumen también usan metodología LBM-based (se activan en handleSubmit)
+    const macrosDefault = objetivo === 'perdida'
       ? { proteinas: 33, carbohidratos: 38, grasas: 29 }
-      : (macrosCustom && macrosCustom[objetivo])
-        ? macrosCustom[objetivo]
-        : { ...MACROS_PREDETERMINADOS[objetivo] };
-    setPerfil(prev => ({ ...prev, objetivo, macros, fatLossMode: esFatLoss }));
+      : objetivo === 'mantenimiento'
+      ? { proteinas: 30, carbohidratos: 42, grasas: 28 }
+      : { proteinas: 30, carbohidratos: 50, grasas: 20 };
+    setPerfil(prev => ({ ...prev, objetivo, macros: macrosDefault, fatLossMode: objetivo === 'perdida' }));
   };
 
   const handleMacroChange = (macro, valor) => {
@@ -460,20 +507,17 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
   const validar = () => {
     const err = {};
-    // Fat Loss Mode requiere siempre datos corporales completos (para BMR + Navy)
-    if (perfil.fatLossMode) {
+    // Todos los objetivos científicos requieren datos corporales completos (para BMR)
+    const esObjetivoBase = perfil.objetivo === 'perdida' || perfil.objetivo === 'mantenimiento' || perfil.objetivo === 'volumen';
+    if (esObjetivoBase || !usarCaloriasManual) {
       if (!perfil.edad || perfil.edad < 15 || perfil.edad > 100) err.edad = "Edad debe ser entre 15 y 100 años";
       if (!perfil.peso || perfil.peso < 30 || perfil.peso > 300) err.peso = "Peso debe ser entre 30 y 300 kg";
       if (!perfil.altura || perfil.altura < 100 || perfil.altura > 250) err.altura = "Altura debe ser entre 100 y 250 cm";
-    } else if (!usarCaloriasManual) {
-      if (!perfil.edad || perfil.edad < 15 || perfil.edad > 100) err.edad = "Edad debe ser entre 15 y 100 años";
-      if (!perfil.peso || perfil.peso < 30 || perfil.peso > 300) err.peso = "Peso debe ser entre 30 y 300 kg";
-      if (!perfil.altura || perfil.altura < 100 || perfil.altura > 250) err.altura = "Altura debe ser entre 100 y 250 cm";
-    } else {
+    } else if (usarCaloriasManual) {
       if (!perfil.caloriasManual || perfil.caloriasManual < 800 || perfil.caloriasManual > 6000) err.caloriasManual = "Calorías debe ser entre 800 y 6000 kcal";
     }
-    // Macros se validan solo fuera de Fat Loss Mode (FL los fija automáticamente)
-    if (!perfil.fatLossMode) {
+    // Macros se validan solo en objetivos sin metodología científica (FL/Mant/Vol los fijan automáticamente)
+    if (!perfil.fatLossMode && perfil.objetivo !== 'mantenimiento' && perfil.objetivo !== 'volumen') {
       const sumaMacros = perfil.macros.proteinas + perfil.macros.carbohidratos + perfil.macros.grasas;
       if (sumaMacros !== 100) err.macros = "Los macros deben sumar exactamente 100%";
     }
@@ -481,38 +525,35 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     return Object.keys(err).length === 0;
   };
 
+  const _mostrarExplicacion = (perfilFinal) => {
+    setPerfilParaExplicar(perfilFinal);
+    setShowExplicacion(true);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validar()) return;
     const excluidos = perfil.ingredientesExcluidosTexto
       .split(",").map(i => i.trim()).filter(i => i.length > 0);
+    const factorNum = (FACTORES_ACTIVIDAD[perfil.nivelActividad] || {}).valor || 1.45;
+    const inputsBase = {
+      peso: parseFloat(perfil.peso), altura: parseFloat(perfil.altura), edad: parseFloat(perfil.edad),
+      genero: perfil.genero === 'femenino' ? 'F' : 'M',
+      cintura: perfil.cintura ? parseFloat(perfil.cintura) : null,
+      cuello: perfil.cuello ? parseFloat(perfil.cuello) : null,
+      cadera: perfil.cadera ? parseFloat(perfil.cadera) : null,
+      bfOverride: perfil.bfOverride || null,
+      factorActividad: factorNum
+    };
 
-    // v20260418x: si Fat Loss Mode activo, delegar al orquestador
-    if (perfil.fatLossMode && window.NP_FatLoss && roadmapPreview) {
+    // ── Pérdida de peso: Precision Nutrition / Fat Loss ──
+    if (perfil.objetivo === 'perdida' && window.NP_FatLoss && roadmapPreview) {
       try {
-        const factorInfo = FACTORES_ACTIVIDAD[perfil.nivelActividad];
-        const factorNum = factorInfo ? factorInfo.valor : 1.45;
-        const perfilPrevioMerge = {
-          ...perfil,
-          edad: parseFloat(perfil.edad),
-          peso: parseFloat(perfil.peso),
-          altura: parseFloat(perfil.altura),
-          ingredientesExcluidos: excluidos,
-          numSemanas: perfil.numSemanas || 1
-        };
-        // Persistir datos generales antes de activar (activar sobrescribe campos base)
-        guardarPerfil(perfilPrevioMerge);
+        const perfilPrevio = { ...perfil, edad: parseFloat(perfil.edad), peso: parseFloat(perfil.peso), altura: parseFloat(perfil.altura), ingredientesExcluidos: excluidos, numSemanas: perfil.numSemanas || 1 };
+        guardarPerfil(perfilPrevio);
         guardarMacrosCustom({ [perfil.objetivo]: perfil.macros });
         window.NP_FatLoss.activar({
-          peso: parseFloat(perfil.peso),
-          altura: parseFloat(perfil.altura),
-          edad: parseFloat(perfil.edad),
-          genero: perfil.genero === 'femenino' ? 'F' : 'M',
-          cintura: perfil.cintura ? parseFloat(perfil.cintura) : null,
-          cuello: perfil.cuello ? parseFloat(perfil.cuello) : null,
-          cadera: perfil.cadera ? parseFloat(perfil.cadera) : null,
-          bfOverride: perfil.bfOverride || null,
-          factorActividad: factorNum,
+          ...inputsBase,
           pesoTarget: perfil.pesoTarget ? parseFloat(perfil.pesoTarget) : null,
           bfTarget: perfil.bfTarget ? parseFloat(perfil.bfTarget) : null,
           tasaPerdida: perfil.tasaPerdida || 'moderada',
@@ -520,19 +561,64 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           complementoPreferido: perfil.complementoPreferido || 'whey'
         });
         const nuevoPerfil = cargarPerfil();
-        // Recalcular caloriasObjetivo con las calorías de la fase activa
         nuevoPerfil.caloriasObjetivo = window.NP_FatLoss.caloriasEfectivas() || nuevoPerfil.caloriasManual;
-        nuevoPerfil.tdee = nuevoPerfil.roadmap ? nuevoPerfil.roadmap.calculados.tdee : tdeeInfo.tdee;
+        nuevoPerfil.tdee = nuevoPerfil.roadmap ? nuevoPerfil.roadmap.calculados.tdee : (tdeeInfo && tdeeInfo.tdee);
+        nuevoPerfil.ingredientesExcluidos = excluidos;
+        nuevoPerfil.numSemanas = perfil.numSemanas || 1;
         guardarPerfil(nuevoPerfil);
-        onComplete(nuevoPerfil);
+        _mostrarExplicacion(nuevoPerfil);
         return;
       } catch (err) {
         console.error('[FatLoss] Error al activar:', err);
-        alert('Error al activar Fat Loss Mode: ' + err.message + '\nSe guardará el perfil estándar.');
-        // Cae al flujo normal
+        alert('Error al activar Fat Loss Mode: ' + err.message);
       }
     }
 
+    // ── Mantenimiento: LBM-based ──
+    if (perfil.objetivo === 'mantenimiento' && window.NP_FatLoss && window.NP_FatLoss.activarMantenimiento) {
+      try {
+        const perfilPrevio = { ...perfil, edad: parseFloat(perfil.edad), peso: parseFloat(perfil.peso), altura: parseFloat(perfil.altura), ingredientesExcluidos: excluidos, numSemanas: perfil.numSemanas || 1 };
+        guardarPerfil(perfilPrevio);
+        const nuevoPerfil = window.NP_FatLoss.activarMantenimiento(inputsBase);
+        nuevoPerfil.ingredientesExcluidos = excluidos;
+        nuevoPerfil.numSemanas = perfil.numSemanas || 1;
+        nuevoPerfil.sinGluten = perfil.sinGluten; nuevoPerfil.sinLactosa = perfil.sinLactosa;
+        nuevoPerfil.vegetariano = perfil.vegetariano; nuevoPerfil.modoSobras = perfil.modoSobras;
+        nuevoPerfil.usaThermomix = perfil.usaThermomix; nuevoPerfil.soloRapidas = perfil.soloRapidas;
+        guardarPerfil(nuevoPerfil);
+        _mostrarExplicacion(nuevoPerfil);
+        return;
+      } catch (err) {
+        console.error('[Mant] Error al activar:', err);
+        alert('Error al activar Mantenimiento: ' + err.message);
+      }
+    }
+
+    // ── Volumen / Ganancia muscular: LBM-based ──
+    if (perfil.objetivo === 'volumen' && window.NP_FatLoss && window.NP_FatLoss.activarVolumen) {
+      try {
+        const perfilPrevio = { ...perfil, edad: parseFloat(perfil.edad), peso: parseFloat(perfil.peso), altura: parseFloat(perfil.altura), ingredientesExcluidos: excluidos, numSemanas: perfil.numSemanas || 1 };
+        guardarPerfil(perfilPrevio);
+        const nuevoPerfil = window.NP_FatLoss.activarVolumen({
+          ...inputsBase,
+          tasaGanancia: perfil.tasaGanancia || 'moderada',
+          pesoObjetivo: perfil.pesoObjetivoVol ? parseFloat(perfil.pesoObjetivoVol) : null
+        });
+        nuevoPerfil.ingredientesExcluidos = excluidos;
+        nuevoPerfil.numSemanas = perfil.numSemanas || 1;
+        nuevoPerfil.sinGluten = perfil.sinGluten; nuevoPerfil.sinLactosa = perfil.sinLactosa;
+        nuevoPerfil.vegetariano = perfil.vegetariano; nuevoPerfil.modoSobras = perfil.modoSobras;
+        nuevoPerfil.usaThermomix = perfil.usaThermomix; nuevoPerfil.soloRapidas = perfil.soloRapidas;
+        guardarPerfil(nuevoPerfil);
+        _mostrarExplicacion(nuevoPerfil);
+        return;
+      } catch (err) {
+        console.error('[Vol] Error al activar:', err);
+        alert('Error al activar Volumen: ' + err.message);
+      }
+    }
+
+    // ── Fallback: flujo legado (sin datos corporales completos) ──
     const perfilFinal = {
       ...perfil,
       edad: perfil.edad ? parseFloat(perfil.edad) : 0,
@@ -546,10 +632,10 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     };
     guardarPerfil(perfilFinal);
     guardarMacrosCustom({ [perfil.objetivo]: perfil.macros });
-    onComplete(perfilFinal);
+    _mostrarExplicacion(perfilFinal);
   };
 
-  // ── v20260427qq: Wizard onboarding ──────────────────────────────────────
+  // ── v20260427rr: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -616,11 +702,17 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
       { titulo: t('¿Qué quieres lograr?','What is your goal?'),
         subtitulo: t('Esto define tu plan calórico','This sets your calorie plan'),
         icono: 'fa-bullseye' },
-      { titulo: perfil.fatLossMode ? t('Medidas corporales','Body measurements') : t('Tu plan calórico','Your calorie plan'),
-        subtitulo: perfil.fatLossMode
-          ? t('Para diseñar tu roadmap de pérdida de grasa personalizado','To design your personalized fat loss roadmap')
-          : t('Calculamos tus calorías automáticamente','We calculate your calories automatically'),
-        icono: perfil.fatLossMode ? 'fa-ruler' : 'fa-fire-flame-curved' },
+      { titulo: perfil.objetivo === 'perdida'
+          ? t('Medidas corporales','Body measurements')
+          : perfil.objetivo === 'volumen'
+          ? t('Plan de crecimiento','Growth plan')
+          : t('Composición corporal','Body composition'),
+        subtitulo: perfil.objetivo === 'perdida'
+          ? t('Diseña tu roadmap de pérdida de grasa por fases','Design your phased fat loss roadmap')
+          : perfil.objetivo === 'volumen'
+          ? t('Define tu objetivo y tasa de ganancia muscular','Define your muscle gain goal and rate')
+          : t('Optimiza tus macros con base en tu composición corporal real','Optimize macros based on your real body composition'),
+        icono: perfil.objetivo === 'perdida' ? 'fa-ruler' : perfil.objetivo === 'volumen' ? 'fa-dumbbell' : 'fa-scale-balanced' },
       { titulo: t('Equipamiento','Equipment'),
         subtitulo: t('Marca lo que tienes disponible para entrenar en casa','Mark what you have available for home training'),
         icono: 'fa-dumbbell' },
@@ -638,12 +730,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
         if (!perfil.peso || perfil.peso < 30 || perfil.peso > 300)       err.peso   = t('Ingresa un peso válido (30–300 kg)','Enter a valid weight (30–300 kg)');
         if (!perfil.altura || perfil.altura < 100 || perfil.altura > 250) err.altura = t('Ingresa una altura válida (100–250 cm)','Enter a valid height (100–250 cm)');
       }
-      if (pasoWizard === 4 && !perfil.fatLossMode) {
-        if (usarCaloriasManual && (!perfil.caloriasManual || perfil.caloriasManual < 800 || perfil.caloriasManual > 6000))
-          err.caloriasManual = t('Las calorías deben estar entre 800 y 6000 kcal','Calories must be between 800 and 6000 kcal');
-        const suma = perfil.macros.proteinas + perfil.macros.carbohidratos + perfil.macros.grasas;
-        if (suma !== 100) { setMacroError(t(`Los macros suman ${suma}%, deben sumar 100%`,`Macros add up to ${suma}%, must be 100%`)); err.macros = true; }
-        else setMacroError('');
+      // Paso 4: validaciones por objetivo (mantenimiento y volumen son siempre válidos, BF% es opcional)
+      if (pasoWizard === 4 && perfil.objetivo === 'perdida' && !roadmapPreview) {
+        err.roadmap = t('Completa las medidas o el BF% para generar el roadmap','Complete measurements or BF% to generate roadmap');
       }
       if (Object.keys(err).length > 0) { setErrores(err); return; }
       setErrores({});
@@ -656,11 +745,310 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
     const retroceder = () => { if (pasoWizard > 1) setPasoWizard(p => p - 1); };
 
-    const btnFinalDisabled = pasoWizard === TOTAL_PASOS && perfil.fatLossMode && !roadmapPreview;
+    const btnFinalDisabled = false; // validaciones en avanzar()
 
     const handleWizardKey = (e) => {
       if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); avanzar(); }
     };
+
+    // ── Pantalla de explicación post-wizard ────────────────────────────────
+    if (showExplicacion && perfilParaExplicar) {
+      const pfl = perfilParaExplicar;
+      const obj = pfl.objetivo || 'perdida';
+      const rm = pfl.roadmap || pfl.roadmapMantenimiento || pfl.roadmapVolumen;
+      const calc = rm ? rm.calculados : null;
+
+      // Colores por objetivo
+      const objColor = obj === 'perdida' ? { from: 'from-orange-500', to: 'to-red-500', badge: 'bg-orange-100 text-orange-700', accent: 'text-orange-600' }
+        : obj === 'mantenimiento' ? { from: 'from-green-500', to: 'to-emerald-600', badge: 'bg-green-100 text-green-700', accent: 'text-green-600' }
+        : { from: 'from-blue-500', to: 'to-indigo-600', badge: 'bg-blue-100 text-blue-700', accent: 'text-blue-600' };
+
+      const objLabel = obj === 'perdida' ? 'Pérdida de peso' : obj === 'mantenimiento' ? 'Mantenimiento' : 'Volumen muscular';
+      const objMeta = obj === 'perdida' ? 'Precision Nutrition'
+        : obj === 'mantenimiento' ? 'Recomposición corporal'
+        : 'Lean bulk científico';
+
+      // Nivel A: explicación en lenguaje llano
+      const nivelA = () => {
+        if (!calc) return null;
+        if (obj === 'perdida') return (
+          <div className="space-y-3">
+            <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-orange-50'}`}>
+              <p className={`text-sm font-semibold mb-1 ${darkMode ? 'text-orange-300' : 'text-orange-700'}`}>Tu plan de pérdida de peso</p>
+              <p className={`text-xs leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                Calculamos cuántas calorías quema tu cuerpo en reposo y con tu actividad diaria. Luego creamos un déficit moderado para quemar grasa sin perder músculo. Cada ~10 semanas hay una pausa de dieta (diet break) para que tu metabolismo se recupere.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { l: 'Calorías diarias', v: calc.caloriasCorte + ' kcal', icon: 'fa-fire', c: 'text-orange-500' },
+                { l: 'Proteína diaria', v: calc.proteinaTarget + ' g', icon: 'fa-egg', c: 'text-blue-500' },
+                { l: 'BF% actual estimado', v: calc.bfActual != null ? calc.bfActual + '%' : 'Sin medidas', icon: 'fa-person', c: 'text-purple-500' },
+                { l: 'Duración estimada', v: calc.mesesTotales ? calc.mesesTotales + ' meses' : '—', icon: 'fa-calendar', c: 'text-green-500' },
+              ].map(x => (
+                <div key={x.l} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                  <i className={`fas ${x.icon} ${x.c} text-sm mb-1.5`}></i>
+                  <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{x.l}</div>
+                  <div className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{x.v}</div>
+                </div>
+              ))}
+            </div>
+            {calc.macrosGramos && (
+              <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                <p className={`text-xs font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Distribución de macros diarios</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { l: 'Proteínas', v: calc.macrosGramos.proteina + 'g', c: 'bg-blue-500' },
+                    { l: 'Carbohidratos', v: calc.macrosGramos.carbohidratos + 'g', c: 'bg-amber-500' },
+                    { l: 'Grasas', v: calc.macrosGramos.grasas + 'g', c: 'bg-rose-500' },
+                  ].map(m => (
+                    <div key={m.l} className="text-center">
+                      <div className={`inline-block px-3 py-1.5 rounded-lg text-white text-sm font-bold ${m.c}`}>{m.v}</div>
+                      <div className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{m.l}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+        if (obj === 'mantenimiento') return (
+          <div className="space-y-3">
+            <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-green-50'}`}>
+              <p className={`text-sm font-semibold mb-1 ${darkMode ? 'text-green-300' : 'text-green-700'}`}>Tu plan de mantenimiento</p>
+              <p className={`text-xs leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                Calculamos exactamente cuántas calorías necesitas para mantener tu peso. Con proteína alta basada en tu masa muscular real, favorecemos la recomposición: mantener (o ganar) músculo mientras el porcentaje de grasa baja gradualmente.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { l: 'Calorías diarias (TDEE)', v: calc.caloriasObjetivo + ' kcal', icon: 'fa-fire', c: 'text-green-500' },
+                { l: 'Proteína diaria', v: calc.proteinaTarget + ' g', icon: 'fa-egg', c: 'text-blue-500' },
+                { l: 'TDEE calculado', v: calc.tdee + ' kcal', icon: 'fa-calculator', c: 'text-purple-500' },
+                { l: 'BF% estimado', v: calc.bfActual != null ? calc.bfActual + '%' : 'Sin medidas', icon: 'fa-person', c: 'text-amber-500' },
+              ].map(x => (
+                <div key={x.l} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                  <i className={`fas ${x.icon} ${x.c} text-sm mb-1.5`}></i>
+                  <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{x.l}</div>
+                  <div className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{x.v}</div>
+                </div>
+              ))}
+            </div>
+            {calc.macrosGramos && (
+              <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                <p className={`text-xs font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Macros diarios</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { l: 'Proteínas', v: calc.macrosGramos.proteina + 'g', c: 'bg-blue-500' },
+                    { l: 'Carbohidratos', v: calc.macrosGramos.carbohidratos + 'g', c: 'bg-amber-500' },
+                    { l: 'Grasas', v: calc.macrosGramos.grasas + 'g', c: 'bg-rose-500' },
+                  ].map(m => (
+                    <div key={m.l} className="text-center">
+                      <div className={`inline-block px-3 py-1.5 rounded-lg text-white text-sm font-bold ${m.c}`}>{m.v}</div>
+                      <div className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{m.l}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+        // volumen
+        return (
+          <div className="space-y-3">
+            <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
+              <p className={`text-sm font-semibold mb-1 ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>Tu plan de volumen muscular</p>
+              <p className={`text-xs leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                Calculamos tu gasto energético total y le sumamos un superávit controlado para que tu cuerpo tenga los recursos para construir músculo. Con proteína muy alta basada en masa muscular real, minimizamos la grasa ganada durante el proceso.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { l: 'Calorías diarias', v: calc.caloriasObjetivo + ' kcal', icon: 'fa-fire', c: 'text-blue-500' },
+                { l: 'Proteína diaria', v: calc.proteinaTarget + ' g', icon: 'fa-egg', c: 'text-blue-500' },
+                { l: 'Superávit', v: '+' + (calc.caloriasObjetivo - calc.tdee) + ' kcal/día', icon: 'fa-arrow-trend-up', c: 'text-green-500' },
+                { l: 'Duración est.', v: calc.mesesEstimados ? calc.mesesEstimados + ' meses' : '—', icon: 'fa-calendar', c: 'text-purple-500' },
+              ].map(x => (
+                <div key={x.l} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                  <i className={`fas ${x.icon} ${x.c} text-sm mb-1.5`}></i>
+                  <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{x.l}</div>
+                  <div className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{x.v}</div>
+                </div>
+              ))}
+            </div>
+            {calc.macrosGramos && (
+              <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                <p className={`text-xs font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Macros diarios</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { l: 'Proteínas', v: calc.macrosGramos.proteina + 'g', c: 'bg-blue-500' },
+                    { l: 'Carbohidratos', v: calc.macrosGramos.carbohidratos + 'g', c: 'bg-amber-500' },
+                    { l: 'Grasas', v: calc.macrosGramos.grasas + 'g', c: 'bg-rose-500' },
+                  ].map(m => (
+                    <div key={m.l} className="text-center">
+                      <div className={`inline-block px-3 py-1.5 rounded-lg text-white text-sm font-bold ${m.c}`}>{m.v}</div>
+                      <div className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{m.l}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      // Nivel B: fórmulas paso a paso
+      const nivelB = () => {
+        if (!calc) return null;
+        const bmr = calc.bmr || pfl.bmr;
+        const tdee = calc.tdee || pfl.tdee;
+        const lbm = calc.lbmActual;
+        const bf = calc.bfActual;
+        return (
+          <div className="space-y-3">
+            <div className={`p-3 rounded-xl font-mono text-xs ${darkMode ? 'bg-gray-900 text-green-400' : 'bg-gray-50 text-gray-700 border border-gray-200'}`}>
+              <p className={`font-semibold font-sans mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Paso 1: BMR (Mifflin-St Jeor)</p>
+              {pfl.genero === 'femenino'
+                ? <p>BMR = (10 × {pfl.peso}) + (6.25 × {pfl.altura}) − (5 × {pfl.edad}) − 161</p>
+                : <p>BMR = (10 × {pfl.peso}) + (6.25 × {pfl.altura}) − (5 × {pfl.edad}) + 5</p>
+              }
+              {bmr && <p className="mt-1 font-sans font-bold">= <span className={darkMode ? 'text-yellow-300' : 'text-orange-600'}>{bmr} kcal/día</span></p>}
+            </div>
+            <div className={`p-3 rounded-xl font-mono text-xs ${darkMode ? 'bg-gray-900 text-green-400' : 'bg-gray-50 text-gray-700 border border-gray-200'}`}>
+              <p className={`font-semibold font-sans mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Paso 2: TDEE (gasto total)</p>
+              <p>TDEE = BMR × factor actividad ({pfl.nivelActividad || 'moderada'})</p>
+              {tdee && <p className="mt-1 font-sans font-bold">= <span className={darkMode ? 'text-yellow-300' : 'text-orange-600'}>{tdee} kcal/día</span></p>}
+            </div>
+            {lbm && (
+              <div className={`p-3 rounded-xl font-mono text-xs ${darkMode ? 'bg-gray-900 text-green-400' : 'bg-gray-50 text-gray-700 border border-gray-200'}`}>
+                <p className={`font-semibold font-sans mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Paso 3: Masa magra (LBM)</p>
+                {bf && <p>BF% Navy = {bf}% → LBM = {pfl.peso} × (1 − {bf}/100)</p>}
+                <p className="mt-1 font-sans font-bold">LBM = <span className={darkMode ? 'text-yellow-300' : 'text-orange-600'}>{lbm} kg</span></p>
+              </div>
+            )}
+            <div className={`p-3 rounded-xl font-mono text-xs ${darkMode ? 'bg-gray-900 text-green-400' : 'bg-gray-50 text-gray-700 border border-gray-200'}`}>
+              <p className={`font-semibold font-sans mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Paso 4: Proteína target</p>
+              {obj === 'perdida' && <p>Proteína = LBM × 2.63 g/kg (mín: peso × 1.6)</p>}
+              {obj === 'mantenimiento' && <p>Proteína = LBM × 2.0 g/kg (mín: peso × 1.6)</p>}
+              {obj === 'volumen' && <p>Proteína = LBM × 2.4 g/kg (mín: peso × 1.8)</p>}
+              {calc.proteinaTarget && <p className="mt-1 font-sans font-bold">= <span className={darkMode ? 'text-yellow-300' : 'text-orange-600'}>{calc.proteinaTarget} g/día</span></p>}
+            </div>
+            <div className={`p-3 rounded-xl font-mono text-xs ${darkMode ? 'bg-gray-900 text-green-400' : 'bg-gray-50 text-gray-700 border border-gray-200'}`}>
+              <p className={`font-semibold font-sans mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Paso 5: Calorías objetivo</p>
+              {obj === 'perdida' && calc.caloriasCorte && <><p>Déficit = TDEE − {tdee} = {calc.caloriasCorte} kcal</p><p className="text-[10px] opacity-70 mt-0.5">(déficit según tasa de pérdida seleccionada)</p></>}
+              {obj === 'mantenimiento' && <p>Objetivo = TDEE exacto = {calc.caloriasObjetivo} kcal</p>}
+              {obj === 'volumen' && calc.caloriasObjetivo && <><p>Objetivo = TDEE + superávit = {calc.caloriasObjetivo} kcal</p><p className="text-[10px] opacity-70 mt-0.5">(superávit según tasa de ganancia seleccionada)</p></>}
+            </div>
+            {calc.macrosGramos && (
+              <div className={`p-3 rounded-xl font-mono text-xs ${darkMode ? 'bg-gray-900 text-green-400' : 'bg-gray-50 text-gray-700 border border-gray-200'}`}>
+                <p className={`font-semibold font-sans mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Paso 6: Split de macros</p>
+                {obj === 'perdida' && <p>Remanente = kcal − proteína×4. Split 57% carbos / 43% grasa</p>}
+                {obj === 'mantenimiento' && <p>Remanente = kcal − proteína×4. Split 45% carbos / 55% grasa</p>}
+                {obj === 'volumen' && <p>Remanente = kcal − proteína×4. Split 60% carbos / 40% grasa</p>}
+                <div className="mt-1.5 font-sans">
+                  <span className="text-blue-400">P: {calc.macrosGramos.proteina}g</span> · <span className="text-amber-400">C: {calc.macrosGramos.carbohidratos}g</span> · <span className="text-rose-400">G: {calc.macrosGramos.grasas}g</span>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      // Nivel C: evidencia científica
+      const nivelC = () => (
+        <div className="space-y-3">
+          <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+            <p className={`text-xs font-bold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Ecuación BMR: Mifflin-St Jeor (1990)</p>
+            <p className={`text-[11px] leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Considerada la fórmula más precisa para población general moderna. Error típico ±10% vs calorimetría indirecta. Superior a Harris-Benedict en individuos con sobrepeso.
+            </p>
+            <p className={`text-[10px] mt-1.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mifflin MD et al. Am J Clin Nutr. 1990;51(2):241-7.</p>
+          </div>
+          <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+            <p className={`text-xs font-bold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Proteína alta en déficit: Helms et al. (2014)</p>
+            <p className={`text-[11px] leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              En contexto de déficit calórico, 2.3–3.1 g/kg de LBM minimiza pérdida de masa magra. El punto de 2.63 g/kg representa el centro del rango recomendado para atletas naturales.
+            </p>
+            <p className={`text-[10px] mt-1.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Helms ER et al. Int J Sport Nutr Exerc Metab. 2014;24(2):127-38.</p>
+          </div>
+          {obj === 'perdida' && (
+            <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+              <p className={`text-xs font-bold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Diet breaks: Peos et al. (2019)</p>
+              <p className={`text-[11px] leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Pausas de 2 semanas a TDEE cada 10 semanas de déficit restauran leptina, cortisol y T3. El grupo con diet breaks perdió igual grasa que el continuo pero preservó más masa magra y tuvo mejor adherencia a 6 meses.
+              </p>
+              <p className={`text-[10px] mt-1.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Peos JJ et al. Int J Obes. 2019;43(10):2017-2026.</p>
+            </div>
+          )}
+          <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+            <p className={`text-xs font-bold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>BF% método Navy (Hodgdon & Beckett, 1984)</p>
+            <p className={`text-[11px] leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Correlación r=0.89 con DEXA en hombres, r=0.84 en mujeres. Equivalente a bioimpedancia de consumo en precisión. El error típico es ±3–4% de BF absoluto.
+            </p>
+            <p className={`text-[10px] mt-1.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Hodgdon JA, Beckett MB. Naval Health Research Center. 1984.</p>
+          </div>
+          {obj === 'volumen' && (
+            <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+              <p className={`text-xs font-bold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Lean bulk — límite de ganancia muscular (Lyle McDonald)</p>
+              <p className={`text-[11px] leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Un hombre principiante puede ganar ~0.9 kg/mes de músculo real; un intermedio ~0.45 kg. Superávits &gt;500 kcal aumentan grasa sin acelerar la síntesis proteica. El rango 200–400 kcal optimiza la ratio músculo/grasa.
+              </p>
+              <p className={`text-[10px] mt-1.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>McDonald L. The Muscle Gain Truth. 2005. / Barbalho et al. J Strength Cond Res. 2020.</p>
+            </div>
+          )}
+        </div>
+      );
+
+      return (
+        <div className={`min-h-screen py-6 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`}>
+          <div className="max-w-md mx-auto">
+            {/* Header gradient */}
+            <div className={`bg-gradient-to-br ${objColor.from} ${objColor.to} rounded-2xl p-5 text-white mb-5 shadow-lg`}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold tracking-widest opacity-80 uppercase">Tu plan está listo</span>
+                <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full font-medium">{objMeta}</span>
+              </div>
+              <h2 className="text-2xl font-extrabold font-display mb-1">{objLabel}</h2>
+              <p className="text-sm opacity-80">Basado en tu fisiología real, no en promedios genéricos.</p>
+            </div>
+
+            {/* Selector de nivel */}
+            <div className={`flex rounded-xl p-1 mb-5 gap-1 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+              {[
+                { k: 'a', l: 'Resultados' },
+                { k: 'b', l: 'Fórmulas' },
+                { k: 'c', l: 'Evidencia' },
+              ].map(nv => (
+                <button key={nv.k} type="button" onClick={() => setNivelExplicacion(nv.k)}
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    nivelExplicacion === nv.k
+                      ? `${darkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-800 shadow-sm'}`
+                      : `${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`
+                  }`}>
+                  {nv.l}
+                </button>
+              ))}
+            </div>
+
+            {/* Contenido según nivel */}
+            <div className="mb-5">
+              {nivelExplicacion === 'a' && nivelA()}
+              {nivelExplicacion === 'b' && nivelB()}
+              {nivelExplicacion === 'c' && nivelC()}
+            </div>
+
+            {/* CTA */}
+            <button type="button" onClick={() => onComplete(perfilParaExplicar)}
+              className={`w-full py-4 rounded-2xl text-white font-bold text-base transition-all active:scale-[0.98] shadow-lg cursor-pointer bg-gradient-to-r ${objColor.from} ${objColor.to}`}>
+              <i className="fas fa-check mr-2"></i>Comenzar mi plan
+            </button>
+            <p className={`text-[11px] text-center mt-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+              Puedes revisar esta metodología en cualquier momento desde tu perfil.
+            </p>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className={`min-h-screen py-6 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`} onKeyDown={handleWizardKey}>
@@ -791,57 +1179,43 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             {/* ── Paso 3: Objetivo ── */}
             {pasoWizard === 3 && (
               <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-2">
-                  {Object.entries(AJUSTES_OBJETIVO).map(([key, info]) => (
-                    <button key={key} type="button" onClick={() => handleObjetivoChange(key)}
-                      className={`py-3 px-2 rounded-xl text-center transition-all ${
-                        perfil.objetivo === key
-                          ? 'bg-green-500 text-white shadow-lg shadow-green-200'
-                          : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                      }`}>
-                      <i className={`fas ${key === 'perdida' ? 'fa-arrow-trend-down' : key === 'mantenimiento' ? 'fa-scale-balanced' : 'fa-arrow-trend-up'} text-lg mb-1`}></i>
-                      <div className="font-medium text-xs leading-tight">{t(info.label, AJUSTES_OBJETIVO_EN[key] || info.label)}</div>
-                      <div className={`text-xs mt-0.5 ${perfil.objetivo === key ? 'text-green-100' : 'text-gray-400'}`}>
-                        {info.valor > 0 ? '+' : ''}{info.valor} kcal
-                      </div>
-                    </button>
-                  ))}
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { key: 'perdida',       icono: 'fa-arrow-trend-down', label: t('Pérdida de peso','Weight loss'),      tag: 'Precision Nutrition', color: 'orange' },
+                    { key: 'mantenimiento', icono: 'fa-scale-balanced',   label: t('Mantenimiento','Maintenance'),         tag: t('Recomposición','Recomposition'), color: 'green' },
+                    { key: 'volumen',       icono: 'fa-arrow-trend-up',   label: t('Volumen muscular','Muscle gain'),      tag: t('Lean bulk','Lean bulk'), color: 'blue' }
+                  ].map(({ key, icono, label, tag, color }) => {
+                    const activo = perfil.objetivo === key;
+                    const colorMap = { orange: activo ? 'bg-orange-500 text-white shadow-lg' : '', green: activo ? 'bg-green-500 text-white shadow-lg shadow-green-200' : '', blue: activo ? 'bg-blue-500 text-white shadow-lg' : '' };
+                    return (
+                      <button key={key} type="button" onClick={() => handleObjetivoChange(key)}
+                        className={`py-4 px-2 rounded-xl text-center transition-all cursor-pointer ${
+                          activo ? colorMap[color] : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                        }`}>
+                        <i className={`fas ${icono} text-xl mb-2 block`}></i>
+                        <div className="font-semibold text-xs leading-tight">{label}</div>
+                        <div className={`text-[10px] mt-1 ${activo ? 'opacity-80' : 'text-gray-400'}`}>{tag}</div>
+                      </button>
+                    );
+                  })}
                 </div>
-                {/* Fat Loss Mode toggle — aparece solo cuando se elige pérdida */}
-                {perfil.objetivo === 'perdida' && (
-                  <div className={`animate-fadeIn rounded-xl border-2 p-3 transition-all cursor-pointer select-none ${
-                    perfil.fatLossMode
-                      ? darkMode ? 'border-orange-500 bg-orange-900/20' : 'border-orange-400 bg-orange-50'
-                      : darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
-                  }`} onClick={() => handleChange('fatLossMode', !perfil.fatLossMode)}>
-                    <div className="flex items-start gap-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
-                        perfil.fatLossMode ? 'bg-orange-500' : darkMode ? 'bg-gray-600' : 'bg-gray-200'
-                      }`}>
-                        <i className={`fas fa-fire text-sm ${perfil.fatLossMode ? 'text-white' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className={`text-sm font-semibold flex items-center gap-2 flex-wrap ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                          {t('Plan Fat Loss — Precision Nutrition','Fat Loss Plan — Precision Nutrition')}
-                          {perfil.fatLossMode && <span className="text-xs font-normal bg-orange-500 text-white px-2 py-0.5 rounded-full">{t('Activado','Active')}</span>}
-                        </div>
-                        <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          {t('Roadmap por fases con diet breaks. Requiere medidas corporales.','Phased roadmap with diet breaks. Requires body measurements.')}
-                        </div>
-                      </div>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
-                        perfil.fatLossMode ? 'border-orange-500 bg-orange-500' : darkMode ? 'border-gray-500' : 'border-gray-300'
-                      }`}>
-                        {perfil.fatLossMode && <i className="fas fa-check text-white text-[10px]"></i>}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* Descripción del objetivo seleccionado */}
+                <div className={`text-xs p-3 rounded-xl ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-600'}`}>
+                  {perfil.objetivo === 'perdida' && (
+                    <span><i className="fas fa-fire-flame-curved text-orange-500 mr-1.5"></i>{t('Roadmap por fases con diet breaks, basado en tu masa magra real. Metodología Precision Nutrition + evidencia meta-analítica.','Phased roadmap with diet breaks, based on your actual lean mass. Precision Nutrition methodology + meta-analytic evidence.')}</span>
+                  )}
+                  {perfil.objetivo === 'mantenimiento' && (
+                    <span><i className="fas fa-scale-balanced text-green-500 mr-1.5"></i>{t('Calorías exactas a tu TDEE. Proteína calculada sobre masa magra para optimizar composición corporal sin subir ni bajar de peso.','Exact TDEE calories. Protein calculated on lean mass to optimize body composition without weight change.')}</span>
+                  )}
+                  {perfil.objetivo === 'volumen' && (
+                    <span><i className="fas fa-dumbbell text-blue-500 mr-1.5"></i>{t('Superávit calórico controlado para maximizar ganancia muscular con mínima grasa acumulada (lean bulk). Proteína elevada sobre masa magra.','Controlled caloric surplus to maximize muscle gain with minimal fat (lean bulk). Elevated protein based on lean mass.')}</span>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* ── Paso 4a: Fat Loss — medidas corporales ── */}
-            {pasoWizard === 4 && perfil.fatLossMode && (
+            {/* ── Paso 4a: Pérdida de peso — medidas corporales ── */}
+            {pasoWizard === 4 && perfil.objetivo === 'perdida' && (
               <div className="space-y-4">
                 <div>
                   <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Medidas corporales</div>
@@ -941,124 +1315,202 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               </div>
             )}
 
-            {/* ── Paso 4b: Plan calórico normal ── */}
-            {pasoWizard === 4 && !perfil.fatLossMode && (
+            {/* ── Paso 4b: Mantenimiento — BF% opcional + preview ── */}
+            {pasoWizard === 4 && perfil.objetivo === 'mantenimiento' && (
               <div className="space-y-4">
-                {/* Calorías auto vs manual */}
-                <div>
-                  <div className="flex gap-2 mb-3">
-                    <button type="button" onClick={() => setUsarCaloriasManual(false)}
-                      className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                        !usarCaloriasManual ? 'bg-green-500 text-white shadow-md shadow-green-200' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                      }`}>
-                      <i className="fas fa-calculator mr-1.5"></i>Automático
-                    </button>
-                    <button type="button" onClick={() => setUsarCaloriasManual(true)}
-                      className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                        usarCaloriasManual ? 'bg-green-500 text-white shadow-md shadow-green-200' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                      }`}>
-                      <i className="fas fa-pen mr-1.5"></i>Manual
-                    </button>
-                  </div>
-                  {usarCaloriasManual ? (
-                    <div>
-                      <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Calorías diarias (kcal)</label>
-                      <input type="number" value={perfil.caloriasManual}
-                        onChange={(e) => handleChange('caloriasManual', e.target.value)}
-                        className={`w-full px-4 py-3 rounded-xl border transition-colors text-lg font-semibold ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} ${errores.caloriasManual ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
-                        placeholder="Ej: 2000" min="800" max="6000" />
-                      {errores.caloriasManual && <p className="text-red-500 text-xs mt-1">{errores.caloriasManual}</p>}
-                    </div>
-                  ) : (
-                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      <i className="fas fa-info-circle mr-1"></i>
-                      Las calorías se calculan según tus datos, nivel de actividad y objetivo.
-                    </p>
-                  )}
+                <div className={`p-3 rounded-xl border ${darkMode ? 'bg-green-900/20 border-green-800/40' : 'bg-green-50 border-green-100'}`}>
+                  <p className={`text-xs font-medium ${darkMode ? 'text-green-300' : 'text-green-700'}`}>
+                    <i className="fas fa-flask mr-1.5"></i>
+                    Metodología científica: TDEE exacto + proteína basada en masa magra (LBM × 2.0 g/kg). Distribución de macros optimizada para recomposición.
+                  </p>
                 </div>
-                {/* Macros */}
+                {/* BF% opcional */}
                 <div>
-                  <div className={`text-xs font-semibold mb-2 uppercase tracking-wide flex items-center justify-between ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    <span>Distribución de macros</span>
-                    <span className={`text-[11px] font-bold ${(perfil.macros.proteinas + perfil.macros.carbohidratos + perfil.macros.grasas) === 100 ? 'text-green-500' : 'text-red-500'}`}>
-                      {perfil.macros.proteinas + perfil.macros.carbohidratos + perfil.macros.grasas}% / 100%
-                    </span>
+                  <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Composición corporal <span className={`normal-case font-normal ml-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>(opcional, mejora la precisión)</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}><span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-1"></span>Proteínas %</label>
-                      <input type="number" value={perfil.macros.proteinas} onChange={(e) => handleMacroChange('proteinas', e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'} focus:border-blue-500`} min="10" max="60" />
+                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cintura (cm)</label>
+                      <input type="number" step="0.5" value={perfil.cintura || ''} onChange={(e) => handleChange('cintura', e.target.value)}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="85" />
                     </div>
                     <div>
-                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}><span className="inline-block w-2 h-2 bg-amber-500 rounded-full mr-1"></span>Carbos %</label>
-                      <input type="number" value={perfil.macros.carbohidratos} onChange={(e) => handleMacroChange('carbohidratos', e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'} focus:border-amber-500`} min="10" max="70" />
+                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cuello (cm)</label>
+                      <input type="number" step="0.5" value={perfil.cuello || ''} onChange={(e) => handleChange('cuello', e.target.value)}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="40" />
                     </div>
+                    {perfil.genero === 'femenino' && (
+                      <div>
+                        <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cadera (cm)</label>
+                        <input type="number" step="0.5" value={perfil.cadera || ''} onChange={(e) => handleChange('cadera', e.target.value)}
+                          className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
+                      </div>
+                    )}
                     <div>
-                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}><span className="inline-block w-2 h-2 bg-rose-500 rounded-full mr-1"></span>Grasas %</label>
-                      <input type="number" value={perfil.macros.grasas} onChange={(e) => handleMacroChange('grasas', e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'} focus:border-rose-500`} min="10" max="50" />
+                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BF% manual (opcional)</label>
+                      <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange('bfOverride', e.target.value)}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Sino: Navy auto" />
                     </div>
                   </div>
-                  <div className={`mt-2 h-2.5 rounded-full overflow-hidden flex ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                    <div className="bg-blue-500 transition-all"   style={{ width: `${perfil.macros.proteinas}%` }}></div>
-                    <div className="bg-amber-500 transition-all"  style={{ width: `${perfil.macros.carbohidratos}%` }}></div>
-                    <div className="bg-rose-500 transition-all"   style={{ width: `${perfil.macros.grasas}%` }}></div>
-                  </div>
-                  {macroError && (
-                    <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-xs flex items-center gap-2">
-                      <i className="fas fa-exclamation-circle"></i>{macroError}
-                    </div>
-                  )}
+                  <p className={`text-[11px] mt-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <i className="fas fa-info-circle mr-1"></i>
+                    Con cintura + cuello calculamos BF% por método Navy. Más preciso que solo peso.
+                  </p>
                 </div>
-                {/* TDEE preview en tiempo real */}
-                {tdeeInfo ? (
-                  <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-4 text-white animate-scaleIn">
-                    <div className="text-xs font-bold tracking-wider opacity-80 mb-2">TU OBJETIVO NUTRICIONAL</div>
-                    <div className="flex gap-2 mb-2">
-                      {!usarCaloriasManual && tdeeInfo.bmr && (
-                        <div className="flex-1 bg-white/20 rounded-lg p-2 text-center">
-                          <div className="text-[10px] opacity-80">BMR</div>
-                          <div className="text-sm font-bold">{tdeeInfo.bmr}</div>
-                          <div className="text-[10px] opacity-70">kcal</div>
+                {/* Preview */}
+                {roadmapMantPreview ? (
+                  <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-4 text-white animate-fadeIn">
+                    <div className="text-xs font-bold tracking-wider opacity-90 mb-2">PLAN DE MANTENIMIENTO</div>
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      {[
+                        { l: 'TDEE', v: roadmapMantPreview.calculados.tdee + ' kcal' },
+                        { l: 'Calorías/día', v: roadmapMantPreview.calculados.caloriasObjetivo + ' kcal' },
+                        { l: 'Proteína', v: roadmapMantPreview.calculados.proteinaTarget + ' g/día' },
+                        { l: 'BF estimado', v: roadmapMantPreview.calculados.bfActual != null ? roadmapMantPreview.calculados.bfActual + '%' : '—' },
+                      ].map(x => (
+                        <div key={x.l} className="bg-white/20 rounded-lg p-2 text-center">
+                          <div className="text-[10px] opacity-80 leading-tight">{x.l}</div>
+                          <div className="text-sm font-bold mt-0.5">{x.v}</div>
                         </div>
-                      )}
-                      {!usarCaloriasManual && tdeeInfo.tdee && (
-                        <div className="flex-1 bg-white/20 rounded-lg p-2 text-center">
-                          <div className="text-[10px] opacity-80">TDEE</div>
-                          <div className="text-sm font-bold">{tdeeInfo.tdee}</div>
-                          <div className="text-[10px] opacity-70">kcal</div>
+                      ))}
+                    </div>
+                    {roadmapMantPreview.calculados.macrosGramos && (
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-blue-500/30 rounded-lg p-2 text-center">
+                          <div className="text-[10px] opacity-80">Proteínas</div>
+                          <div className="text-sm font-bold">{roadmapMantPreview.calculados.macrosGramos.proteina}g</div>
                         </div>
-                      )}
-                      <div className="flex-[2] bg-white/30 rounded-lg p-2 text-center">
-                        <div className="text-[10px] opacity-80">Objetivo</div>
-                        <div className="text-2xl font-extrabold font-display">{tdeeInfo.caloriasObjetivo}</div>
-                        <div className="text-[10px] opacity-80">kcal/día</div>
+                        <div className="bg-amber-500/30 rounded-lg p-2 text-center">
+                          <div className="text-[10px] opacity-80">Carbos</div>
+                          <div className="text-sm font-bold">{roadmapMantPreview.calculados.macrosGramos.carbohidratos}g</div>
+                        </div>
+                        <div className="bg-rose-500/30 rounded-lg p-2 text-center">
+                          <div className="text-[10px] opacity-80">Grasas</div>
+                          <div className="text-sm font-bold">{roadmapMantPreview.calculados.macrosGramos.grasas}g</div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-blue-500/30 rounded-lg p-2 text-center">
-                        <div className="text-[10px] opacity-80">Proteínas</div>
-                        <div className="text-sm font-bold">{tdeeInfo.macrosG.proteinas_g}g</div>
-                      </div>
-                      <div className="bg-amber-500/30 rounded-lg p-2 text-center">
-                        <div className="text-[10px] opacity-80">Carbos</div>
-                        <div className="text-sm font-bold">{tdeeInfo.macrosG.carbohidratos_g}g</div>
-                      </div>
-                      <div className="bg-rose-500/30 rounded-lg p-2 text-center">
-                        <div className="text-[10px] opacity-80">Grasas</div>
-                        <div className="text-sm font-bold">{tdeeInfo.macrosG.grasas_g}g</div>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 ) : (
-                  !usarCaloriasManual && (
-                    <div className={`text-xs p-3 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-green-50 text-green-700 border border-green-100'}`}>
-                      <i className="fas fa-info-circle mr-1"></i>
-                      Completa tus datos en el paso 1 para ver el cálculo automático de calorías.
+                  <div className={`text-xs p-3 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-green-50 text-green-700 border border-green-100'}`}>
+                    <i className="fas fa-info-circle mr-1"></i>
+                    Completa los datos corporales del paso anterior para ver el preview de tu plan.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Paso 4c: Volumen — BF% + tasa de ganancia + preview ── */}
+            {pasoWizard === 4 && perfil.objetivo === 'volumen' && (
+              <div className="space-y-4">
+                <div className={`p-3 rounded-xl border ${darkMode ? 'bg-blue-900/20 border-blue-800/40' : 'bg-blue-50 border-blue-100'}`}>
+                  <p className={`text-xs font-medium ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                    <i className="fas fa-flask mr-1.5"></i>
+                    Lean bulk científico: superávit controlado (200–400 kcal) + proteína LBM × 2.4 g/kg. Minimiza grasa ganada mientras maximiza masa muscular.
+                  </p>
+                </div>
+                {/* BF% opcional */}
+                <div>
+                  <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Composición corporal <span className={`normal-case font-normal ml-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>(opcional)</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cintura (cm)</label>
+                      <input type="number" step="0.5" value={perfil.cintura || ''} onChange={(e) => handleChange('cintura', e.target.value)}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="85" />
                     </div>
-                  )
+                    <div>
+                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cuello (cm)</label>
+                      <input type="number" step="0.5" value={perfil.cuello || ''} onChange={(e) => handleChange('cuello', e.target.value)}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="40" />
+                    </div>
+                    {perfil.genero === 'femenino' && (
+                      <div>
+                        <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cadera (cm)</label>
+                        <input type="number" step="0.5" value={perfil.cadera || ''} onChange={(e) => handleChange('cadera', e.target.value)}
+                          className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
+                      </div>
+                    )}
+                    <div>
+                      <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BF% manual (opcional)</label>
+                      <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange('bfOverride', e.target.value)}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Sino: Navy auto" />
+                    </div>
+                  </div>
+                </div>
+                {/* Tasa de ganancia */}
+                <div>
+                  <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tasa de ganancia muscular</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { k: 'conservadora', l: 'Conservadora', s: '+200 kcal · ~0.2 kg/mes' },
+                      { k: 'moderada',     l: 'Moderada',     s: '+300 kcal · ~0.3 kg/mes' },
+                      { k: 'agresiva',     l: 'Agresiva',     s: '+400 kcal · ~0.5 kg/mes' },
+                    ].map(tr => {
+                      const activo = (perfil.tasaGanancia || 'moderada') === tr.k;
+                      return (
+                        <button key={tr.k} type="button" onClick={() => handleChange('tasaGanancia', tr.k)}
+                          className={`px-2 py-2 rounded-lg text-xs border transition-colors cursor-pointer ${
+                            activo
+                              ? 'bg-blue-500 text-white border-blue-500'
+                              : darkMode ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                          }`}>
+                          <div className="font-semibold">{tr.l}</div>
+                          <div className={`text-[11px] mt-0.5 ${activo ? 'text-blue-100' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{tr.s}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {/* Peso objetivo opcional */}
+                <div>
+                  <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Peso objetivo (kg) <span className="font-normal opacity-70">— opcional</span></label>
+                  <input type="number" step="0.5" value={perfil.pesoObjetivoVol || ''} onChange={(e) => handleChange('pesoObjetivoVol', e.target.value)}
+                    className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
+                    placeholder={`Ej: ${perfil.peso ? Math.round(Number(perfil.peso) + 5) : 80}`} />
+                  <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Se calcula el tiempo estimado para alcanzarlo con tu tasa seleccionada.</p>
+                </div>
+                {/* Preview */}
+                {roadmapVolPreview ? (
+                  <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-4 text-white animate-fadeIn">
+                    <div className="text-xs font-bold tracking-wider opacity-90 mb-2">PLAN DE VOLUMEN</div>
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      {[
+                        { l: 'TDEE', v: roadmapVolPreview.calculados.tdee + ' kcal' },
+                        { l: 'Objetivo/día', v: roadmapVolPreview.calculados.caloriasObjetivo + ' kcal' },
+                        { l: 'Proteína', v: roadmapVolPreview.calculados.proteinaTarget + ' g/día' },
+                        { l: 'Duración est.', v: roadmapVolPreview.calculados.mesesEstimados ? roadmapVolPreview.calculados.mesesEstimados + ' meses' : '—' },
+                      ].map(x => (
+                        <div key={x.l} className="bg-white/20 rounded-lg p-2 text-center">
+                          <div className="text-[10px] opacity-80 leading-tight">{x.l}</div>
+                          <div className="text-sm font-bold mt-0.5">{x.v}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {roadmapVolPreview.calculados.macrosGramos && (
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-blue-400/30 rounded-lg p-2 text-center">
+                          <div className="text-[10px] opacity-80">Proteínas</div>
+                          <div className="text-sm font-bold">{roadmapVolPreview.calculados.macrosGramos.proteina}g</div>
+                        </div>
+                        <div className="bg-amber-500/30 rounded-lg p-2 text-center">
+                          <div className="text-[10px] opacity-80">Carbos</div>
+                          <div className="text-sm font-bold">{roadmapVolPreview.calculados.macrosGramos.carbohidratos}g</div>
+                        </div>
+                        <div className="bg-rose-500/30 rounded-lg p-2 text-center">
+                          <div className="text-[10px] opacity-80">Grasas</div>
+                          <div className="text-sm font-bold">{roadmapVolPreview.calculados.macrosGramos.grasas}g</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className={`text-xs p-3 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-blue-50 text-blue-700 border border-blue-100'}`}>
+                    <i className="fas fa-info-circle mr-1"></i>
+                    Completa los datos del paso anterior para ver el preview de tu plan de volumen.
+                  </div>
                 )}
               </div>
             )}
@@ -1253,8 +1705,8 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                     : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-200 hover:shadow-xl active:scale-[0.98]'
               }`}>
               {pasoWizard === TOTAL_PASOS ? (
-                <><i className={`fas ${perfil.fatLossMode ? 'fa-fire' : 'fa-calendar-alt'} text-sm`}></i>
-                  {perfil.fatLossMode ? t('Activar Fat Loss','Activate Fat Loss') : t('Generar mi plan','Generate my plan')}</>
+                <><i className={`fas ${perfil.objetivo === 'perdida' ? 'fa-fire' : perfil.objetivo === 'volumen' ? 'fa-arrow-trend-up' : 'fa-scale-balanced'} text-sm`}></i>
+                  {' '}{t('Generar mi plan','Generate my plan')}</>
               ) : (
                 <>{t('Continuar','Continue')} <i className="fas fa-arrow-right text-sm"></i></>
               )}
@@ -1266,6 +1718,134 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     );
   }
   // ── fin wizard ────────────────────────────────────────────────────────────
+
+  // ── Modal: ver metodología desde modo edición ─────────────────────────────
+  if (verMetodologia && perfilInicial) {
+    const pfl = perfilInicial;
+    const obj = pfl.objetivo || (pfl.fatLossMode ? 'perdida' : null);
+    const rm = pfl.roadmap || pfl.roadmapMantenimiento || pfl.roadmapVolumen;
+    const calc = rm ? rm.calculados : null;
+    const objColor = !obj || obj === 'perdida' ? { from: 'from-orange-500', to: 'to-red-500' }
+      : obj === 'mantenimiento' ? { from: 'from-green-500', to: 'to-emerald-600' }
+      : { from: 'from-blue-500', to: 'to-indigo-600' };
+    const objLabel = !obj || obj === 'perdida' ? 'Pérdida de peso'
+      : obj === 'mantenimiento' ? 'Mantenimiento' : 'Volumen muscular';
+    const objMeta = !obj || obj === 'perdida' ? 'Precision Nutrition'
+      : obj === 'mantenimiento' ? 'Recomposición corporal' : 'Lean bulk científico';
+
+    // Nivel A simple cards
+    const _nivelAEdit = () => {
+      if (!calc) return (
+        <div className={`p-4 rounded-xl text-sm ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-50 text-gray-500'}`}>
+          Reconfigura tu perfil para ver los cálculos actualizados.
+        </div>
+      );
+      const rows = obj === 'perdida'
+        ? [{ l: 'Calorías diarias', v: (calc.caloriasCorte || calc.caloriasObjetivo || '—') + ' kcal', i: 'fa-fire', c: 'text-orange-500' },
+           { l: 'Proteína diaria', v: (calc.proteinaTarget || '—') + ' g', i: 'fa-egg', c: 'text-blue-500' },
+           { l: 'BF% estimado', v: calc.bfActual != null ? calc.bfActual + '%' : 'Sin medidas', i: 'fa-person', c: 'text-purple-500' },
+           { l: 'Duración est.', v: calc.mesesTotales ? calc.mesesTotales + ' meses' : '—', i: 'fa-calendar', c: 'text-green-500' }]
+        : obj === 'mantenimiento'
+        ? [{ l: 'Calorías (TDEE)', v: (calc.caloriasObjetivo || '—') + ' kcal', i: 'fa-fire', c: 'text-green-500' },
+           { l: 'Proteína diaria', v: (calc.proteinaTarget || '—') + ' g', i: 'fa-egg', c: 'text-blue-500' },
+           { l: 'TDEE calculado', v: (calc.tdee || '—') + ' kcal', i: 'fa-calculator', c: 'text-purple-500' },
+           { l: 'BF% estimado', v: calc.bfActual != null ? calc.bfActual + '%' : 'Sin medidas', i: 'fa-person', c: 'text-amber-500' }]
+        : [{ l: 'Calorías diarias', v: (calc.caloriasObjetivo || '—') + ' kcal', i: 'fa-fire', c: 'text-blue-500' },
+           { l: 'Proteína diaria', v: (calc.proteinaTarget || '—') + ' g', i: 'fa-egg', c: 'text-blue-500' },
+           { l: 'Superávit', v: calc.tdee ? '+' + (calc.caloriasObjetivo - calc.tdee) + ' kcal' : '—', i: 'fa-arrow-trend-up', c: 'text-green-500' },
+           { l: 'BF% estimado', v: calc.bfActual != null ? calc.bfActual + '%' : 'Sin medidas', i: 'fa-person', c: 'text-purple-500' }];
+      return (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            {rows.map(x => (
+              <div key={x.l} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                <i className={`fas ${x.i} ${x.c} text-sm mb-1.5`}></i>
+                <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{x.l}</div>
+                <div className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{x.v}</div>
+              </div>
+            ))}
+          </div>
+          {calc.macrosGramos && (
+            <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+              <p className={`text-xs font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Macros diarios</p>
+              <div className="grid grid-cols-3 gap-2">
+                {[{ l: 'Proteínas', v: calc.macrosGramos.proteina + 'g', c: 'bg-blue-500' },
+                  { l: 'Carbohidratos', v: calc.macrosGramos.carbohidratos + 'g', c: 'bg-amber-500' },
+                  { l: 'Grasas', v: calc.macrosGramos.grasas + 'g', c: 'bg-rose-500' }].map(m => (
+                  <div key={m.l} className="text-center">
+                    <div className={`inline-block px-3 py-1.5 rounded-lg text-white text-sm font-bold ${m.c}`}>{m.v}</div>
+                    <div className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{m.l}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    return (
+      <div className={`min-h-screen py-6 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`}>
+        <div className="max-w-md mx-auto">
+          <button onClick={() => setVerMetodologia(false)}
+            className={`mb-4 flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors ${darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+            <i className="fas fa-arrow-left text-xs"></i>Volver al perfil
+          </button>
+          <div className={`bg-gradient-to-br ${objColor.from} ${objColor.to} rounded-2xl p-5 text-white mb-5 shadow-lg`}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold tracking-widest opacity-80 uppercase">Mi metodología</span>
+              <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full font-medium">{objMeta}</span>
+            </div>
+            <h2 className="text-xl font-extrabold font-display">{objLabel}</h2>
+          </div>
+          <div className={`flex rounded-xl p-1 mb-5 gap-1 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+            {[{ k: 'a', l: 'Resultados' }, { k: 'b', l: 'Fórmulas' }, { k: 'c', l: 'Evidencia' }].map(nv => (
+              <button key={nv.k} type="button" onClick={() => setNivelExplicacion(nv.k)}
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${nivelExplicacion === nv.k ? darkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-800 shadow-sm' : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
+                {nv.l}
+              </button>
+            ))}
+          </div>
+          <div>
+            {nivelExplicacion === 'a' && _nivelAEdit()}
+            {nivelExplicacion === 'b' && (
+              <div className="space-y-3">
+                {[
+                  { t: 'BMR (Mifflin-St Jeor)', b: pfl.genero === 'femenino' ? `(10×${pfl.peso}) + (6.25×${pfl.altura}) − (5×${pfl.edad}) − 161` : `(10×${pfl.peso}) + (6.25×${pfl.altura}) − (5×${pfl.edad}) + 5`, r: calc && calc.bmr ? calc.bmr + ' kcal/día' : null },
+                  { t: 'TDEE', b: `BMR × factor actividad (${pfl.nivelActividad || 'moderada'})`, r: calc && calc.tdee ? calc.tdee + ' kcal/día' : null },
+                  { t: 'Proteína target', b: obj === 'volumen' ? 'LBM × 2.4 g/kg (mín: peso × 1.8)' : obj === 'mantenimiento' ? 'LBM × 2.0 g/kg (mín: peso × 1.6)' : 'LBM × 2.63 g/kg (mín: peso × 1.6)', r: calc && calc.proteinaTarget ? calc.proteinaTarget + ' g/día' : null },
+                  { t: 'Calorías objetivo', b: obj === 'perdida' ? 'TDEE − déficit por tasa de pérdida' : obj === 'mantenimiento' ? 'TDEE exacto' : 'TDEE + superávit lean bulk', r: calc ? (calc.caloriasCorte || calc.caloriasObjetivo || null) && ((calc.caloriasCorte || calc.caloriasObjetivo) + ' kcal/día') : null },
+                  { t: 'Split macros', b: obj === 'perdida' ? 'Remanente: 57% carbos · 43% grasa' : obj === 'mantenimiento' ? 'Remanente: 45% carbos · 55% grasa' : 'Remanente: 60% carbos · 40% grasa', r: null },
+                ].map(row => (
+                  <div key={row.t} className={`p-3 rounded-xl font-mono text-xs ${darkMode ? 'bg-gray-900 text-green-400' : 'bg-gray-50 text-gray-700 border border-gray-200'}`}>
+                    <p className={`font-sans font-semibold mb-1 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{row.t}</p>
+                    <p>{row.b}</p>
+                    {row.r && <p className={`mt-1 font-sans font-bold ${darkMode ? 'text-yellow-300' : 'text-orange-600'}`}>= {row.r}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+            {nivelExplicacion === 'c' && (
+              <div className="space-y-3">
+                {[
+                  { t: 'Mifflin-St Jeor (1990)', b: 'Fórmula BMR más precisa para población moderna. Error ±10% vs calorimetría indirecta. Superior a Harris-Benedict en personas con sobrepeso.', ref: 'Mifflin MD et al. Am J Clin Nutr. 1990;51(2):241-7.' },
+                  { t: 'Helms et al. (2014) — Proteína en déficit', b: 'En déficit calórico, 2.3–3.1 g/kg LBM minimiza pérdida de masa magra. El punto 2.63 g/kg es el centro del rango recomendado para atletas naturales.', ref: 'Helms ER et al. Int J Sport Nutr Exerc Metab. 2014;24(2):127-38.' },
+                  ...(obj === 'perdida' ? [{ t: 'Peos et al. (2019) — Diet breaks', b: 'Pausas de 2 semanas a TDEE cada 10 semanas restauran leptina, cortisol y T3. Igual pérdida de grasa, más masa magra preservada y mejor adherencia a 6 meses.', ref: 'Peos JJ et al. Int J Obes. 2019;43(10):2017-2026.' }] : []),
+                  { t: 'Hodgdon & Beckett (1984) — Navy BF%', b: 'Correlación r=0.89 con DEXA en hombres. Error típico ±3–4% de BF absoluto. Equivalente a bioimpedancia de consumo.', ref: 'Hodgdon JA, Beckett MB. Naval Health Research Center. 1984.' },
+                ].map(row => (
+                  <div key={row.t} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                    <p className={`text-xs font-bold mb-1 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{row.t}</p>
+                    <p className={`text-[11px] leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{row.b}</p>
+                    <p className={`text-[10px] mt-1.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{row.ref}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen py-8 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`}>
@@ -1291,6 +1871,33 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* ── Mi metodología (visible si hay roadmap/plan científico) ── */}
+          {perfilInicial && (perfilInicial.roadmap || perfilInicial.roadmapMantenimiento || perfilInicial.roadmapVolumen || perfilInicial.fatLossMode) && (
+            <button type="button" onClick={() => { setVerMetodologia(true); setNivelExplicacion('a'); }}
+              className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border transition-all cursor-pointer ${
+                darkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' : 'bg-white border-gray-100 hover:bg-gray-50 shadow-sm'
+              }`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                  (perfilInicial.objetivo === 'mantenimiento') ? 'bg-green-100' : (perfilInicial.objetivo === 'volumen') ? 'bg-blue-100' : 'bg-orange-100'
+                }`}>
+                  <i className={`fas fa-flask text-sm ${
+                    (perfilInicial.objetivo === 'mantenimiento') ? 'text-green-600' : (perfilInicial.objetivo === 'volumen') ? 'text-blue-600' : 'text-orange-600'
+                  }`}></i>
+                </div>
+                <div className="text-left">
+                  <div className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Mi metodología</div>
+                  <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {perfilInicial.objetivo === 'mantenimiento' ? 'Recomposición · TDEE exacto'
+                      : perfilInicial.objetivo === 'volumen' ? 'Lean bulk · LBM × 2.4 g/kg proteína'
+                      : 'Precision Nutrition · LBM × 2.63 g/kg proteína'}
+                  </div>
+                </div>
+              </div>
+              <i className={`fas fa-chevron-right text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
+            </button>
+          )}
+
           {/* Datos Personales */}
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
@@ -1587,8 +2194,8 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           </div>
           )}
 
-          {/* Calorías Objetivo Manual - oculto cuando Fat Loss Mode, lo define el roadmap */}
-          {!perfil.fatLossMode && (
+          {/* Calorías Objetivo Manual - oculto cuando objetivo científico (lo define el roadmap) */}
+          {!perfil.fatLossMode && perfil.objetivo !== 'mantenimiento' && perfil.objetivo !== 'volumen' && (
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-fire-flame-curved text-green-500"></i>
@@ -1639,8 +2246,8 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           </div>
           )}
 
-          {/* Macros Editables - oculto cuando Fat Loss Mode, los fija automáticamente */}
-          {!perfil.fatLossMode && (
+          {/* Macros Editables - oculto cuando objetivo científico, los fija automáticamente */}
+          {!perfil.fatLossMode && perfil.objetivo !== 'mantenimiento' && perfil.objetivo !== 'volumen' && (
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-chart-pie text-green-500"></i>
@@ -1817,8 +2424,8 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </p>
           </div>
 
-          {/* Panel TDEE - oculto cuando Fat Loss Mode, lo reemplaza el roadmap preview */}
-          {tdeeInfo && !perfil.fatLossMode && (
+          {/* Panel TDEE - oculto cuando objetivo científico, cada modo tiene su propio preview */}
+          {tdeeInfo && !perfil.fatLossMode && perfil.objetivo !== 'mantenimiento' && perfil.objetivo !== 'volumen' && (
             <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg animate-scaleIn">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <i className="fas fa-calculator"></i>
@@ -1869,16 +2476,26 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           )}
 
-          <button type="submit" disabled={perfil.fatLossMode ? !roadmapPreview : (!tdeeInfo || macroError)}
+          <button type="submit" disabled={
+            perfil.objetivo === 'perdida' ? !roadmapPreview
+            : perfil.objetivo === 'mantenimiento' ? !roadmapMantPreview
+            : perfil.objetivo === 'volumen' ? !roadmapVolPreview
+            : (!tdeeInfo || macroError)
+          }
             className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all ${
-              (perfil.fatLossMode ? !!roadmapPreview : (tdeeInfo && !macroError))
-                ? (perfil.fatLossMode
+              (perfil.objetivo === 'perdida' ? !!roadmapPreview
+                : perfil.objetivo === 'mantenimiento' ? !!roadmapMantPreview
+                : perfil.objetivo === 'volumen' ? !!roadmapVolPreview
+                : (tdeeInfo && !macroError))
+                ? perfil.objetivo === 'perdida'
                     ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-200 hover:shadow-xl hover:shadow-orange-300 active:scale-[0.98]'
-                    : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-200 hover:shadow-xl hover:shadow-green-300 active:scale-[0.98]')
+                    : perfil.objetivo === 'volumen'
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-200 hover:shadow-xl active:scale-[0.98]'
+                    : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-200 hover:shadow-xl hover:shadow-green-300 active:scale-[0.98]'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}>
-            <i className={`fas ${perfil.fatLossMode ? 'fa-fire' : 'fa-calendar-alt'} mr-2`}></i>
-            {tienePlan ? 'Guardar y Regenerar Plan' : (perfil.fatLossMode ? 'Activar modo pérdida de peso' : 'Generar Plan Semanal')}
+            <i className={`fas ${perfil.objetivo === 'perdida' ? 'fa-fire' : perfil.objetivo === 'volumen' ? 'fa-arrow-trend-up' : 'fa-scale-balanced'} mr-2`}></i>
+            {tienePlan ? 'Guardar y Regenerar Plan' : 'Generar Plan Semanal'}
           </button>
         </form>
       </div>
@@ -4495,7 +5112,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260427qq)
+// COMPONENTE: ModalComidaExterna (v20260427rr)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
 //   - Búsqueda en FOODS_DB + RECETAS_DB
@@ -4818,7 +5435,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260427qq)
+// COMPONENTE: HoyView — Dashboard diario (v20260427rr)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -4862,7 +5479,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   };
 
   const [refresh, setRefresh] = React.useState(0);
-  const tieneEntrenamiento = !!(perfil && perfil.fatLossMode && window.NP_Training);
+  const tieneEntrenamiento = !!(perfil && (perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen) && window.NP_Training);
 
   const entrenoHoy = React.useMemo(() => {
     if (!tieneEntrenamiento) return null;
@@ -5364,12 +5981,13 @@ function FitnessTab({ perfil, darkMode }) {
   const cambiarSub = (k) => { setSubVista(k); localStorage.setItem('nutriplan_fitness_subtab', k); };
   const [refresh, setRefresh] = React.useState(0);
 
-  if (!perfil || !perfil.fatLossMode || !perfil.roadmap) {
+  const tieneRoadmapActivo = perfil && (perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen);
+  if (!tieneRoadmapActivo) {
     return (
       <div className={`rounded-2xl p-8 text-center ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>
-        <i className="fas fa-fire text-4xl text-orange-400 mb-3"></i>
-        <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{t('Modo pérdida no activado','Fat loss mode not active')}</h3>
-        <p className="text-sm">{t('Ve a tu perfil y elegí "Pérdida de peso" como objetivo para ver tu roadmap y progreso.','Go to your profile and choose "Weight loss" as your goal to see your roadmap and progress.')}</p>
+        <i className="fas fa-flask text-4xl text-green-400 mb-3"></i>
+        <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{t('Plan científico no configurado','Scientific plan not set up')}</h3>
+        <p className="text-sm">{t('Ve a tu perfil y configura tu objetivo (pérdida, mantenimiento o volumen) para ver tu roadmap y progreso.','Go to your profile and set your goal to see your roadmap and progress.')}</p>
       </div>
     );
   }
@@ -7297,7 +7915,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260427qq: Language state ───
+  // ─── v20260427rr: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
@@ -7747,7 +8365,7 @@ function App() {
             {[
               { id: "hoy",      label: t("Hoy","Today"),           short: t("Hoy","Today"),    icon: "fa-house" },
               { id: "plan",     label: t("Plan","Plan"),           short: t("Plan","Plan"),    icon: "fa-calendar-days" },
-              ...(perfil && perfil.fatLossMode ? [
+              ...((perfil && (perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen)) ? [
                 { id: "fitness", label: "Fitness",                  short: "Fitness",           icon: "fa-dumbbell" }
               ] : []),
               { id: "cocinar",  label: t("¿Qué cocino?","Recipes"), short: t("Cocinar","Cook"), icon: "fa-magnifying-glass" },

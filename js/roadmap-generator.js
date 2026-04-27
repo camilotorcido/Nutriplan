@@ -219,8 +219,19 @@ function generarRoadmapFatLoss(input) {
   }
 
   const caloriasCorte = tdee - deficitDiario;
-  // Proteína: 2.2 g/kg bodyweight (≈ 1g/lb, estándar Precision Nutrition)
-  const proteinaTarget = Math.round(input.peso * 2.2);
+  // Proteína basada en LBM (Helms et al. 2014 · 2.63 g/kg LBM ≈ 1.2 g/lb LBM)
+  // Floor: nunca bajar de 1.6 g/kg peso total (protección hormonal)
+  const proteinaTarget = Math.max(
+    Math.round(lbmActual * 2.63),
+    Math.round(input.peso * 1.6)
+  );
+  // Macros en gramos exactos (split 57% carbos / 43% grasas del remanente)
+  const _kcalRestantes = caloriasCorte - proteinaTarget * 4;
+  const macrosGramos = {
+    proteina:      proteinaTarget,
+    carbohidratos: Math.round((_kcalRestantes * 0.572) / 4),
+    grasas:        Math.round((_kcalRestantes * 0.428) / 9)
+  };
 
   // Diet breaks: cada ~10 semanas activas, 2 semanas a TDEE
   const cantDietBreaks = Math.max(0, Math.floor(semanasActivas / 10));
@@ -260,6 +271,12 @@ function generarRoadmapFatLoss(input) {
       deficitDiario,
       caloriasCorte,
       proteinaTarget,
+      macrosGramos,
+      macrosKcal: {
+        proteina:      proteinaTarget * 4,
+        carbohidratos: macrosGramos.carbohidratos * 4,
+        grasas:        macrosGramos.grasas * 9
+      },
       tasaSemanal: Math.round(tasaSemanal * 100) / 100,
       semanasActivas,
       semanasTotales,
@@ -342,15 +359,151 @@ function progresoRoadmap(roadmap, pesoActualReal, fechaHoy) {
   };
 }
 
+// ─── Presets tasa de ganancia (Volumen) ───
+const TASA_GANANCIA_PRESETS = {
+  conservadora: { surplusKcal: 200, kgMuscPorMes: 0.2, etiqueta: 'Conservadora', desc: 'Lean bulk. Mínima grasa acumulada.' },
+  moderada:     { surplusKcal: 300, kgMuscPorMes: 0.3, etiqueta: 'Moderada',     desc: 'Balance óptimo. Recomendado.' },
+  agresiva:     { surplusKcal: 400, kgMuscPorMes: 0.5, etiqueta: 'Agresiva',     desc: 'Mayor volumen y fuerza. Requiere entrenamiento intenso.' }
+};
+
+// ─── Generador Mantenimiento ───
+function generarRoadmapMantenimiento(input) {
+  /*
+    input: { peso, altura, edad, genero, factorActividad,
+             bfOverride?, cintura?, cuello?, cadera? }
+  */
+  const bmr = calcularBMRFatLoss(input.peso, input.altura, input.edad, input.genero);
+  const tdee = calcularTDEEFatLoss(bmr, input.factorActividad);
+
+  const bfCalculado = calcularBFNavy(input.genero, input.altura, input.cintura, input.cuello, input.cadera);
+  const bfActual = (input.bfOverride != null && input.bfOverride !== '')
+    ? Number(input.bfOverride)
+    : (bfCalculado != null ? Math.round(bfCalculado * 10) / 10 : null);
+
+  const lbmActual = bfActual != null ? input.peso * (1 - bfActual / 100) : null;
+
+  // Proteína: 2.0 g/kg LBM (mantenimiento). Floor: 1.6 g/kg peso
+  const proteinaTarget = lbmActual != null
+    ? Math.max(Math.round(lbmActual * 2.0), Math.round(input.peso * 1.6))
+    : Math.round(input.peso * 1.6);
+
+  // Restante: 45% carbos / 55% grasas (split equilibrado)
+  const kcalRestantes = tdee - proteinaTarget * 4;
+  const carbohidratos = Math.round((kcalRestantes * 0.45) / 4);
+  const grasas        = Math.round((kcalRestantes * 0.55) / 9);
+
+  const macrosGramos = { proteina: proteinaTarget, carbohidratos, grasas };
+  const totalKcalCheck = proteinaTarget * 4 + carbohidratos * 4 + grasas * 9;
+
+  return {
+    tipo: 'mantenimiento',
+    fechaGeneracion: new Date().toISOString(),
+    inputs: {
+      peso: input.peso, altura: input.altura, edad: input.edad, genero: input.genero,
+      cintura: input.cintura || null, cuello: input.cuello || null, cadera: input.cadera || null,
+      bfOverride: input.bfOverride != null && input.bfOverride !== '' ? Number(input.bfOverride) : null,
+      factorActividad: input.factorActividad
+    },
+    calculados: {
+      bmr: Math.round(bmr), tdee,
+      bfActual,
+      bfCalculadoNavy: bfCalculado != null ? Math.round(bfCalculado * 10) / 10 : null,
+      lbmActual: lbmActual ? Math.round(lbmActual * 10) / 10 : null,
+      caloriasObjetivo: tdee,
+      proteinaTarget,
+      macrosGramos,
+      macrosKcal: { proteina: proteinaTarget * 4, carbohidratos: carbohidratos * 4, grasas: grasas * 9 },
+      pctProteina:      Math.round((proteinaTarget * 4 / tdee) * 100),
+      pctCarbos:        Math.round((carbohidratos * 4 / tdee) * 100),
+      pctGrasas:        Math.round((grasas * 9 / tdee) * 100),
+      verificacionKcal: totalKcalCheck
+    }
+  };
+}
+
+// ─── Generador Volumen / Ganancia muscular ───
+function generarRoadmapVolumen(input) {
+  /*
+    input: { peso, altura, edad, genero, factorActividad,
+             bfOverride?, cintura?, cuello?, cadera?,
+             tasaGanancia: 'conservadora'|'moderada'|'agresiva',
+             pesoObjetivo? }
+  */
+  const bmr = calcularBMRFatLoss(input.peso, input.altura, input.edad, input.genero);
+  const tdee = calcularTDEEFatLoss(bmr, input.factorActividad);
+
+  const bfCalculado = calcularBFNavy(input.genero, input.altura, input.cintura, input.cuello, input.cadera);
+  const bfActual = (input.bfOverride != null && input.bfOverride !== '')
+    ? Number(input.bfOverride)
+    : (bfCalculado != null ? Math.round(bfCalculado * 10) / 10 : null);
+
+  const lbmActual = bfActual != null ? input.peso * (1 - bfActual / 100) : null;
+
+  const preset = TASA_GANANCIA_PRESETS[input.tasaGanancia || 'moderada'];
+  const surplus = preset.surplusKcal;
+  const caloriasObjetivo = tdee + surplus;
+
+  // Proteína: 2.4 g/kg LBM (síntesis muscular). Floor: 1.8 g/kg peso
+  const proteinaTarget = lbmActual != null
+    ? Math.max(Math.round(lbmActual * 2.4), Math.round(input.peso * 1.8))
+    : Math.round(input.peso * 1.8);
+
+  // Restante: 60% carbos / 40% grasas (dominio de carbos para glucógeno y rendimiento)
+  const kcalRestantes = caloriasObjetivo - proteinaTarget * 4;
+  const carbohidratos = Math.round((kcalRestantes * 0.60) / 4);
+  const grasas        = Math.round((kcalRestantes * 0.40) / 9);
+
+  const macrosGramos = { proteina: proteinaTarget, carbohidratos, grasas };
+
+  // Timeline estimado
+  const kgMuscPorMes = preset.kgMuscPorMes;
+  const pesoObjetivo = input.pesoObjetivo ? Number(input.pesoObjetivo) : null;
+  const mesesEstimados = pesoObjetivo && pesoObjetivo > input.peso
+    ? Math.ceil((pesoObjetivo - input.peso) / kgMuscPorMes)
+    : null;
+
+  return {
+    tipo: 'volumen',
+    fechaGeneracion: new Date().toISOString(),
+    inputs: {
+      peso: input.peso, altura: input.altura, edad: input.edad, genero: input.genero,
+      cintura: input.cintura || null, cuello: input.cuello || null, cadera: input.cadera || null,
+      bfOverride: input.bfOverride != null && input.bfOverride !== '' ? Number(input.bfOverride) : null,
+      factorActividad: input.factorActividad,
+      tasaGanancia: input.tasaGanancia || 'moderada',
+      pesoObjetivo: pesoObjetivo
+    },
+    calculados: {
+      bmr: Math.round(bmr), tdee, surplus,
+      bfActual,
+      bfCalculadoNavy: bfCalculado != null ? Math.round(bfCalculado * 10) / 10 : null,
+      lbmActual: lbmActual ? Math.round(lbmActual * 10) / 10 : null,
+      caloriasObjetivo,
+      proteinaTarget,
+      macrosGramos,
+      macrosKcal: { proteina: proteinaTarget * 4, carbohidratos: carbohidratos * 4, grasas: grasas * 9 },
+      pctProteina:      Math.round((proteinaTarget * 4 / caloriasObjetivo) * 100),
+      pctCarbos:        Math.round((carbohidratos * 4 / caloriasObjetivo) * 100),
+      pctGrasas:        Math.round((grasas * 9 / caloriasObjetivo) * 100),
+      kgMuscPorMes,
+      mesesEstimados,
+      tasaGanancia: input.tasaGanancia || 'moderada'
+    }
+  };
+}
+
 // ─── Exponer a window (convención del proyecto) ───
 if (typeof window !== 'undefined') {
   window.NP_Roadmap = {
     generar: generarRoadmapFatLoss,
+    generarMantenimiento: generarRoadmapMantenimiento,
+    generarVolumen: generarRoadmapVolumen,
     faseActual: faseActualFatLoss,
     progreso: progresoRoadmap,
     calcularBMR: calcularBMRFatLoss,
     calcularTDEE: calcularTDEEFatLoss,
     calcularBFNavy: calcularBFNavy,
-    TASA_PERDIDA_PRESETS: TASA_PERDIDA_PRESETS_FL
+    TASA_PERDIDA_PRESETS: TASA_PERDIDA_PRESETS_FL,
+    TASA_GANANCIA_PRESETS: TASA_GANANCIA_PRESETS
   };
 }

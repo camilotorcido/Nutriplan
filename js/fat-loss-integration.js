@@ -32,10 +32,14 @@ function activarFatLossMode(wizardInputs) {
     // Fat loss impone calorías de la fase 1 como default
     caloriasManual: roadmap.fases[0].calorias,
     proteinaFloor: roadmap.calculados.proteinaTarget,
-    // Macros forzados a 33/38/29: proteína dominante para preservar masa magra
-    // Coincide con roadmap.calculados.proteinaTarget (2.2 g/kg peso).
-    // Se aplica siempre en FL — ignora macros personalizados previos.
-    macros: { proteinas: 33, carbohidratos: 38, grasas: 29 }
+    // Macros basados en LBM (Helms 2014: LBM × 2.63). Split 57/43 carb/fat del remanente.
+    // Los porcentajes son aproximados; los gramos son los valores exactos a seguir.
+    macros: {
+      proteinas:      roadmap.calculados.macrosGramos ? Math.round((roadmap.calculados.macrosGramos.proteina * 4 / roadmap.calculados.caloriasCorte) * 100) : 33,
+      carbohidratos:  roadmap.calculados.macrosGramos ? Math.round((roadmap.calculados.macrosGramos.carbohidratos * 4 / roadmap.calculados.caloriasCorte) * 100) : 38,
+      grasas:         roadmap.calculados.macrosGramos ? Math.round((roadmap.calculados.macrosGramos.grasas * 9 / roadmap.calculados.caloriasCorte) * 100) : 29
+    },
+    macrosGramos: roadmap.calculados.macrosGramos || null
   });
 
   if (typeof guardarPerfil === 'function') guardarPerfil(perfilActualizado);
@@ -193,10 +197,86 @@ function sincronizarConFaseActual() {
   return perfil;
 }
 
+// ─── Activar Mantenimiento Mode ───
+function activarMantenimientoMode(wizardInputs) {
+  if (!window.NP_Roadmap || !window.NP_Roadmap.generarMantenimiento) {
+    throw new Error('NP_Roadmap.generarMantenimiento no disponible.');
+  }
+  const roadmap = window.NP_Roadmap.generarMantenimiento(wizardInputs);
+  const perfilPrevio = typeof cargarPerfil === 'function' ? (cargarPerfil() || {}) : {};
+  const { calculados } = roadmap;
+
+  const perfilActualizado = Object.assign({}, perfilPrevio, {
+    objetivo: 'mantenimiento',
+    fatLossMode: false,
+    mantenimientoMode: true,
+    roadmapMantenimiento: roadmap,
+    peso: wizardInputs.peso,
+    altura: wizardInputs.altura,
+    edad: wizardInputs.edad,
+    genero: wizardInputs.genero,
+    cintura: wizardInputs.cintura || null,
+    cuello: wizardInputs.cuello || null,
+    cadera: wizardInputs.cadera || null,
+    bfOverride: wizardInputs.bfOverride != null && wizardInputs.bfOverride !== '' ? Number(wizardInputs.bfOverride) : null,
+    tdee: calculados.tdee,
+    caloriasObjetivo: calculados.caloriasObjetivo,
+    proteinaFloor: calculados.proteinaTarget,
+    macros: {
+      proteinas: calculados.pctProteina,
+      carbohidratos: calculados.pctCarbos,
+      grasas: calculados.pctGrasas
+    },
+    macrosGramos: calculados.macrosGramos
+  });
+
+  if (typeof guardarPerfil === 'function') guardarPerfil(perfilActualizado);
+  return perfilActualizado;
+}
+
+// ─── Activar Volumen Mode ───
+function activarVolumenMode(wizardInputs) {
+  if (!window.NP_Roadmap || !window.NP_Roadmap.generarVolumen) {
+    throw new Error('NP_Roadmap.generarVolumen no disponible.');
+  }
+  const roadmap = window.NP_Roadmap.generarVolumen(wizardInputs);
+  const perfilPrevio = typeof cargarPerfil === 'function' ? (cargarPerfil() || {}) : {};
+  const { calculados } = roadmap;
+
+  const perfilActualizado = Object.assign({}, perfilPrevio, {
+    objetivo: 'volumen',
+    fatLossMode: false,
+    volumenMode: true,
+    roadmapVolumen: roadmap,
+    peso: wizardInputs.peso,
+    altura: wizardInputs.altura,
+    edad: wizardInputs.edad,
+    genero: wizardInputs.genero,
+    cintura: wizardInputs.cintura || null,
+    cuello: wizardInputs.cuello || null,
+    cadera: wizardInputs.cadera || null,
+    bfOverride: wizardInputs.bfOverride != null && wizardInputs.bfOverride !== '' ? Number(wizardInputs.bfOverride) : null,
+    tdee: calculados.tdee,
+    caloriasObjetivo: calculados.caloriasObjetivo,
+    proteinaFloor: calculados.proteinaTarget,
+    macros: {
+      proteinas: calculados.pctProteina,
+      carbohidratos: calculados.pctCarbos,
+      grasas: calculados.pctGrasas
+    },
+    macrosGramos: calculados.macrosGramos
+  });
+
+  if (typeof guardarPerfil === 'function') guardarPerfil(perfilActualizado);
+  return perfilActualizado;
+}
+
 // ─── Exponer a window ───
 if (typeof window !== 'undefined') {
   window.NP_FatLoss = {
     activar: activarFatLossMode,
+    activarMantenimiento: activarMantenimientoMode,
+    activarVolumen: activarVolumenMode,
     desactivar: desactivarFatLossMode,
     recalcular: recalcularRoadmap,
     overrideFase: aplicarOverrideFase,
