@@ -3808,73 +3808,83 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
 
   return (
     <div className="animate-fadeIn">
-      {/* Banner Fat Loss Mode — tarjeta estilo sistema, light/dark aware */}
+      {/* Banner Fat Loss Mode */}
       {faseInfo && (
         <div className={`mb-4 rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           {/* Barra de acento superior */}
-          <div className={`h-1 ${faseInfo.tipoFase === 'dietBreak' ? 'bg-gradient-to-r from-violet-500 to-purple-500' : 'bg-gradient-to-r from-amber-500 to-orange-500'}`} />
+          <div className={`h-1.5 ${faseInfo.tipoFase === 'dietBreak' ? 'bg-gradient-to-r from-violet-500 to-purple-500' : 'bg-gradient-to-r from-amber-500 to-orange-500'}`} />
 
-          <div className="px-4 pt-3.5 pb-4 space-y-2.5">
-            {/* Fila principal */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                {/* Label + badges */}
-                <div className="flex items-center flex-wrap gap-1.5 mb-1.5">
-                  <i className={`fas ${faseInfo.tipoFase === 'dietBreak' ? 'fa-pause-circle text-violet-500' : 'fa-fire text-amber-500'} text-sm`}></i>
-                  <span className={`text-[11px] font-bold tracking-widest uppercase ${faseInfo.tipoFase === 'dietBreak' ? (darkMode ? 'text-violet-400' : 'text-violet-600') : (darkMode ? 'text-amber-400' : 'text-amber-600')}`}>
-                    {faseInfo.tipoFase === 'dietBreak' ? 'Diet Break' : 'Fat Loss Mode'}
-                  </span>
-                  {faseInfo.completado && (
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${darkMode ? 'bg-green-900/60 text-green-400' : 'bg-green-100 text-green-700'}`}>COMPLETADO</span>
-                  )}
-                  {faseInfo.porEmpezar && (
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>PROGRAMADO</span>
-                  )}
-                </div>
-                {/* Nombre de fase */}
-                <h3 className={`text-base font-bold leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {faseInfo.nombreFase}
-                </h3>
-                {/* Día / mes / restantes */}
-                <p className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Día {faseInfo.diaDentroDeFase} de fase · Mes {faseInfo.mesInicio}{faseInfo.mesFin !== faseInfo.mesInicio ? '–'+faseInfo.mesFin : ''}
-                  {faseInfo.diasRestantesEnFase > 0 && ` · ${faseInfo.diasRestantesEnFase}d restantes`}
-                </p>
+          <div className="px-5 pt-5 pb-5 space-y-4">
+            {/* ── Header: etiqueta + nombre de fase ── */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <i className={`fas ${faseInfo.tipoFase === 'dietBreak' ? 'fa-pause-circle text-violet-500' : 'fa-fire text-amber-500'} text-sm`}></i>
+                <span className={`text-[10px] font-bold tracking-widest uppercase ${faseInfo.tipoFase === 'dietBreak' ? (darkMode ? 'text-violet-400' : 'text-violet-600') : (darkMode ? 'text-amber-400' : 'text-amber-600')}`}>
+                  {faseInfo.tipoFase === 'dietBreak' ? 'Diet Break' : 'Fat Loss Mode'}
+                </span>
+                {faseInfo.completado && (
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${darkMode ? 'bg-green-900/60 text-green-400' : 'bg-green-100 text-green-700'}`}>COMPLETADO</span>
+                )}
+                {faseInfo.porEmpezar && (
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>PROGRAMADO</span>
+                )}
               </div>
+              <h3 className={`text-xl font-bold leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                {faseInfo.nombreFase}
+              </h3>
+              <p className={`text-xs mt-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Día {faseInfo.diaDentroDeFase} de fase · Mes {faseInfo.mesInicio}{faseInfo.mesFin !== faseInfo.mesInicio ? '–' + faseInfo.mesFin : ''}
+                {faseInfo.diasRestantesEnFase > 0 && ` · ${faseInfo.diasRestantesEnFase}d restantes`}
+              </p>
+            </div>
 
-              {/* Objetivo */}
-              <div className={`text-right flex-shrink-0 rounded-xl px-3 py-2 ${darkMode ? 'bg-gray-700' : 'bg-amber-50 border border-amber-100'}`}>
-                <div className={`text-[10px] font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-amber-600'}`}>Objetivo</div>
-                <div className={`text-2xl font-extrabold leading-none mt-0.5 ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            {/* ── Métricas: calorías · pasos · días restantes ── */}
+            <div className={`grid grid-cols-3 rounded-xl overflow-hidden ${darkMode ? 'bg-gray-700/60' : 'bg-amber-50'}`}>
+              <div className="text-center px-2 py-3">
+                <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Objetivo</div>
+                <div className={`text-2xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                   {faseInfo.calorias}
                 </div>
-                <div className={`text-[11px] mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  kcal · {faseInfo.targetPasos.toLocaleString()} pasos
+                <div className={`text-[10px] mt-1 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>kcal/día</div>
+              </div>
+              <div className={`text-center px-2 py-3 border-x ${darkMode ? 'border-gray-600' : 'border-amber-200/60'}`}>
+                <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Pasos</div>
+                <div className={`text-2xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                  {Math.round(faseInfo.targetPasos / 1000)}k
                 </div>
+                <div className={`text-[10px] mt-1 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>diarios</div>
+              </div>
+              <div className="text-center px-2 py-3">
+                <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Restantes</div>
+                <div className={`text-2xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                  {faseInfo.diasRestantesEnFase}
+                </div>
+                <div className={`text-[10px] mt-1 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>días</div>
               </div>
             </div>
 
-            {/* Foco de la fase */}
+            {/* ── Foco de la fase ── */}
             {faseInfo.foco && (
-              <div className={`text-xs rounded-xl px-3 py-2 ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-600'}`}>
-                <i className="fas fa-bullseye text-amber-500 mr-1.5"></i>{faseInfo.foco}
+              <div className="flex items-start gap-3">
+                <i className="fas fa-bullseye text-amber-500 mt-0.5 flex-shrink-0"></i>
+                <p className={`text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{faseInfo.foco}</p>
               </div>
             )}
 
-            {/* Próximo hito */}
+            {/* ── Próximo hito ── */}
             {faseInfo.proximoHito && (
-              <div className={`text-xs rounded-xl px-3 py-1.5 flex items-center gap-2 flex-wrap ${darkMode ? 'bg-gray-700/60 text-gray-400' : 'bg-gray-50 text-gray-500'}`}>
-                <i className={`fas fa-forward-fast text-[10px] ${faseInfo.tipoFase === 'dietBreak' ? 'text-violet-400' : 'text-amber-500'}`}></i>
+              <div className={`flex items-center gap-2.5 text-sm rounded-xl px-4 py-3 ${darkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-50 text-gray-500'}`}>
+                <i className={`fas fa-forward-fast flex-shrink-0 ${faseInfo.tipoFase === 'dietBreak' ? 'text-violet-400' : 'text-amber-500'}`}></i>
                 <span>Próximo:</span>
-                <span className={`font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{faseInfo.proximoHito.nombre}</span>
-                <span>en {faseInfo.proximoHito.enDias} días</span>
+                <span className={`font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{faseInfo.proximoHito.nombre}</span>
+                <span className="ml-auto text-xs opacity-70">en {faseInfo.proximoHito.enDias}d</span>
               </div>
             )}
 
-            {/* Desincronización */}
+            {/* ── Desincronización ── */}
             {desincronizacion && desincronizacion.desincronizado && (
-              <div className={`rounded-xl px-3 py-2.5 flex items-center justify-between gap-2 text-xs ${darkMode ? 'bg-yellow-900/30 border border-yellow-800/50' : 'bg-yellow-50 border border-yellow-200'}`}>
-                <div className={darkMode ? 'text-yellow-300' : 'text-yellow-800'}>
+              <div className={`rounded-xl px-4 py-3 flex items-center justify-between gap-3 text-sm ${darkMode ? 'bg-yellow-900/30 border border-yellow-800/50' : 'bg-yellow-50 border border-yellow-200'}`}>
+                <div className={`flex-1 text-xs leading-snug ${darkMode ? 'text-yellow-300' : 'text-yellow-800'}`}>
                   <i className="fas fa-triangle-exclamation mr-1.5"></i>
                   <b>Plan desincronizado.</b> La fase pide {desincronizacion.caloriasNuevaFase} kcal, el plan tiene {desincronizacion.caloriasActuales}.
                 </div>
@@ -3883,7 +3893,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                     window.NP_FatLoss.sincronizar();
                     if (typeof onRegenerate === 'function') onRegenerate();
                   }
-                }} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors ${darkMode ? 'bg-yellow-600 text-yellow-100 hover:bg-yellow-500' : 'bg-yellow-600 text-white hover:bg-yellow-700'}`}>
+                }} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors flex-shrink-0 ${darkMode ? 'bg-yellow-600 text-yellow-100 hover:bg-yellow-500' : 'bg-yellow-600 text-white hover:bg-yellow-700'}`}>
                   Regenerar
                 </button>
               </div>
