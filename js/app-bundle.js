@@ -8733,7 +8733,17 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
   const [fotos, setFotos] = React.useState([]);
 
   const eqId = getEquipoId(e.equipo);
-  const eqNoDisp = eqId !== 'peso_corporal' && !equiposDisp.includes(eqId);
+  const esPesoCorporal = eqId === 'peso_corporal';
+  const eqNoDisp = !esPesoCorporal && !equiposDisp.includes(eqId);
+
+  // Estado local para el input de texto del peso (permite escribir "12.5" sin interrupciones)
+  const pesoInicial = e.peso != null ? e.peso : (previo ? previo.peso : 0);
+  const [pesoStr, setPesoStr] = React.useState(() => String(pesoInicial));
+  // Sincronizar cuando el padre cambia e.peso (ej: botones +/-)
+  React.useEffect(() => {
+    const v = e.peso != null ? e.peso : 0;
+    setPesoStr(String(v));
+  }, [e.peso]);
   const eqInfo = eqNoDisp && window.NP_RoadmapData && window.NP_RoadmapData.EQUIPOS_DISPONIBLES
     ? window.NP_RoadmapData.EQUIPOS_DISPONIBLES.find(eq => eq.id === eqId)
     : null;
@@ -8846,19 +8856,42 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
       )}
 
       <div className="flex gap-2 mt-3">
-        {/* Stepper de peso: [−] valor [+] */}
-        <div className={`flex items-center flex-shrink-0 rounded-lg border overflow-hidden ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
-          <button onClick={() => onSetPeso(i, Math.max(0, (Number(e.peso) || 0) - 2.5))}
-            className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>−</button>
-          <div className={`flex items-center justify-center gap-1 px-3 h-9 min-w-[4.5rem] border-x ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
-            <span className={`text-sm font-bold tabular-nums ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-              {e.peso != null ? e.peso : (previo ? previo.peso : '0')}
-            </span>
-            <span className={`text-xs font-medium ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>kg</span>
+        {/* Stepper de peso — oculto en ejercicios de peso corporal */}
+        {!esPesoCorporal && (
+          <div className={`flex items-center flex-shrink-0 rounded-lg border overflow-hidden ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+            <button onClick={() => {
+              const cur = parseFloat(pesoStr) || 0;
+              const next = Math.max(0, Math.round((cur - 2.5) * 10) / 10);
+              onSetPeso(i, next);
+              setPesoStr(String(next));
+            }} className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>−</button>
+
+            <div className={`flex items-center justify-center gap-1 px-2 h-9 border-x ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={pesoStr}
+                onChange={ev => setPesoStr(ev.target.value)}
+                onBlur={() => {
+                  const val = Math.max(0, parseFloat(pesoStr) || 0);
+                  onSetPeso(i, val);
+                  setPesoStr(String(val));
+                }}
+                className={`text-sm font-bold tabular-nums text-center bg-transparent border-none outline-none ${darkMode ? 'text-white' : 'text-gray-800'}`}
+                style={{ width: '2.8rem' }}
+              />
+              <span className={`text-xs font-medium flex-shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>kg</span>
+            </div>
+
+            <button onClick={() => {
+              const cur = parseFloat(pesoStr) || 0;
+              const next = Math.round((cur + 2.5) * 10) / 10;
+              onSetPeso(i, next);
+              setPesoStr(String(next));
+            }} className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>+</button>
           </div>
-          <button onClick={() => onSetPeso(i, (Number(e.peso) || 0) + 2.5)}
-            className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>+</button>
-        </div>
+        )}
+
         <input type="text" value={e.repsReales || ''}
           onChange={ev => onSetReps(i, ev.target.value)}
           className={`flex-1 px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`}
