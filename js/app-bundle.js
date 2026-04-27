@@ -3779,6 +3779,20 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
   const [diaSeleccionado, setDiaSeleccionado] = React.useState(() => {
     return DIAS_SEMANA.includes(diaActual) ? diaActual : DIAS_SEMANA[0];
   });
+  // Comidas externas de hoy (para mostrar reemplazos en el día actual)
+  const fechaHoyIsoWP = new Date().toISOString().split('T')[0];
+  const semanaHoyIdx = React.useMemo(() => {
+    const keys = Object.keys(planNorm).filter(k => k.startsWith('semana_')).sort();
+    if (keys.length <= 1 || !planNorm._fechaCreacion) return 1;
+    const creadoMs = new Date(planNorm._fechaCreacion + 'T00:00:00').getTime();
+    const hoyMs = new Date().setHours(0, 0, 0, 0);
+    const diasTranscurridos = Math.max(0, Math.floor((hoyMs - creadoMs) / 86400000));
+    return Math.min(keys.length, Math.floor(diasTranscurridos / 7) + 1);
+  }, [planNorm]);
+  const comidasExtHoy = React.useMemo(() => {
+    if (typeof _comidasExtFecha !== 'function') return [];
+    return _comidasExtFecha(fechaHoyIsoWP);
+  }, [fechaHoyIsoWP, forceUpdate]);
   const comidasDia = semanaData[diaSeleccionado] || {};
   const resumen = calcularResumenDiario(comidasDia);
   const tiposComidaOrden = ["desayuno", "snack_am", "almuerzo", "snack_pm", "cena"];
@@ -4054,6 +4068,47 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
             ? window.adherencia.estado(diaSeleccionado, tipo, semanaActiva) : null;
           const yaComido = estadoAdherencia?.comido === true;
           const yaMarcadoNo = estadoAdherencia?.comido === false;
+          // Mostrar comida externa si reemplaza este slot en el día de hoy
+          const esViendoHoy = diaSeleccionado === diaActual && semanaActiva === semanaHoyIdx;
+          const extReemplazo = esViendoHoy ? comidasExtHoy.find(function(c) { return c.reemplaza === tipo; }) : null;
+          if (extReemplazo) {
+            return (
+              <div key={tipo} className={`meal-card rounded-xl p-4 border relative ${darkMode ? 'bg-emerald-900/30 border-emerald-700' : 'bg-emerald-50 border-emerald-300'}`}>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`${colores.badge} px-2 py-0.5 rounded-lg text-xs font-medium`}>
+                        <i className={`fas ${iconosComida[tipo]} mr-1`}></i>{NOMBRES_COMIDAS[tipo]}
+                      </span>
+                      <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
+                        comido
+                      </span>
+                    </div>
+                    <h4 className={`font-semibold text-sm mt-2 ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{extReemplazo.nombre}</h4>
+                    <div className="flex flex-wrap gap-3 mt-2">
+                      <span className="text-xs text-gray-500"><i className="fas fa-fire text-orange-400 mr-1"></i>{extReemplazo.kcal} kcal</span>
+                      <span className="text-xs text-blue-500">P: {extReemplazo.proteinas_g}g</span>
+                      <span className="text-xs text-amber-600">C: {extReemplazo.carbohidratos_g}g</span>
+                      <span className="text-xs text-rose-500">G: {extReemplazo.grasas_g}g</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={function(e) {
+                      e.stopPropagation();
+                      var nuevas = comidasExtHoy.filter(function(x) { return x.id !== extReemplazo.id; });
+                      if (typeof _guardarComidasExt === 'function') _guardarComidasExt(fechaHoyIsoWP, nuevas);
+                      if (typeof _eliminarAdherenciaExt === 'function') _eliminarAdherenciaExt(diaActual, extReemplazo.id);
+                      setForceUpdate(function(x) { return x + 1; });
+                    }}
+                    title="Deshacer reemplazo"
+                    aria-label="Deshacer reemplazo"
+                    style={{ width: 32, height: 32, minWidth: 32, background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: darkMode ? '#4b5563' : '#9ca3af' }}>
+                    <i className="fas fa-rotate-left text-sm"></i>
+                  </button>
+                </div>
+              </div>
+            );
+          }
           return (
             <div key={tipo} className={`meal-card rounded-xl p-4 border relative ${
               yaComido ? (darkMode ? 'bg-emerald-900/30 border-emerald-700' : 'bg-emerald-50 border-emerald-300')
