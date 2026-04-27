@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260428ag: Bilingual ES/EN support
+   v20260428ah: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260428ag: Bilingual helpers ────────────────────────────────────────
+// ─── v20260428ah: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -401,7 +401,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260428ag: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260428ah: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
   // Previews para mantenimiento y volumen (paso 4)
@@ -672,7 +672,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     _mostrarExplicacion(perfilFinal);
   };
 
-  // ── v20260428ag: Wizard onboarding ──────────────────────────────────────
+  // ── v20260428ah: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -2107,7 +2107,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           </div>
 
-          {/* Objetivo — v20260428ag: goal cards unificados, sin kcal subtitles */}
+          {/* Objetivo — v20260428ah: goal cards unificados, sin kcal subtitles */}
           <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               <i className="fas fa-bullseye text-green-500"></i>
@@ -5488,7 +5488,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260428ag)
+// COMPONENTE: ModalComidaExterna (v20260428ah)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
 //   - Búsqueda en FOODS_DB + RECETAS_DB
@@ -5811,7 +5811,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260428ag)
+// COMPONENTE: HoyView — Dashboard diario (v20260428ah)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -6023,30 +6023,61 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
         );
       })()}
 
-      {/* ── 7-day adherence mini-widget ──────────────────────────────────── */}
+      {/* ── Semana actual Lun→Dom (adherencia) ──────────────────────────── */}
       {typeof window.adherencia !== 'undefined' && (() => {
-        const dias7 = window.adherencia.historial(7);
-        const hayDatos = dias7.some(d => d.total > 0);
+        // Calcular lunes de la semana actual
+        const hoy = new Date();
+        const hoyFecha = hoy.toISOString().split('T')[0];
+        const dow = hoy.getDay(); // 0=Dom,1=Lun..6=Sáb
+        const diffLunes = dow === 0 ? -6 : 1 - dow;
+        const lunes = new Date(hoy);
+        lunes.setDate(hoy.getDate() + diffLunes);
+
+        // L M X J V S D  (X=Miércoles para no duplicar M)
+        const LABELS = ['L','M','X','J','V','S','D'];
+
+        // Leer adherencia directo — evita depender de historial() que usa días corridos
+        let adherData = {};
+        try { adherData = JSON.parse(localStorage.getItem('nutriplan_adherencia') || '{}'); } catch(e) {}
+
+        const semana = LABELS.map((label, i) => {
+          const d = new Date(lunes);
+          d.setDate(lunes.getDate() + i);
+          const fecha = d.toISOString().split('T')[0];
+          const esFuturo = fecha > hoyFecha;
+          const isHoy = fecha === hoyFecha;
+          const diaData = adherData[fecha] || {};
+          let total = 0, cumplidos = 0;
+          Object.values(diaData).forEach(e => { total++; if (e.comido) cumplidos++; });
+          return { label, fecha, esFuturo, isHoy, total, cumplidos };
+        });
+
+        const hayDatos = semana.some(d => !d.esFuturo && d.total > 0);
         if (!hayDatos) return null;
-        const DIAS_LABEL = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-        const hoyIdx = new Date().getDay();
+
         return (
           <div className={`rounded-2xl px-5 py-3 flex items-center justify-between ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-            <span className={`text-xs font-semibold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              <i className="fas fa-calendar-check mr-1.5"></i>Adherencia 7d
+            <span className={`text-xs font-semibold uppercase tracking-wider flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <i className="fas fa-calendar-check mr-1.5"></i>Esta semana
             </span>
             <div className="flex items-center gap-2">
-              {dias7.map((d, i) => {
+              {semana.map(d => {
                 let dotClass = 'adh-dot adh-dot--empty';
-                if (d.total > 0) {
+                if (d.esFuturo) {
+                  dotClass = 'adh-dot adh-dot--empty';
+                } else if (d.total > 0) {
                   const pct = d.cumplidos / d.total;
                   dotClass = pct >= 0.8 ? 'adh-dot adh-dot--ok' : pct >= 0.4 ? 'adh-dot adh-dot--partial' : 'adh-dot adh-dot--miss';
                 }
-                const isToday = d.dia_semana === ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][hoyIdx] && i === 6;
                 return (
-                  <div key={d.fecha} className="flex flex-col items-center gap-1" title={`${d.dia_semana}: ${d.cumplidos}/${d.total}`}>
-                    <span className={dotClass} style={isToday ? { boxShadow: '0 0 0 2px var(--color-accent)' } : {}}></span>
-                    <span className={`text-[9px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{d.dia_semana.slice(0,1)}</span>
+                  <div key={d.fecha} className="flex flex-col items-center gap-1"
+                    title={d.esFuturo ? d.label : `${d.label}: ${d.cumplidos}/${d.total}`}>
+                    <span className={dotClass}
+                      style={d.isHoy ? { boxShadow: '0 0 0 2px var(--color-accent)', opacity: 1 } : d.esFuturo ? { opacity: 0.25 } : {}}></span>
+                    <span className={`text-[9px] ${d.isHoy ? 'font-bold' : ''} ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}
+                      style={d.esFuturo ? { opacity: 0.4 } : {}}>
+                      {d.label}
+                    </span>
                   </div>
                 );
               })}
@@ -8629,7 +8660,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260428ag: Language state ───
+  // ─── v20260428ah: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
