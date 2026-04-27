@@ -5573,7 +5573,8 @@ function ShoppingList({ plan, darkMode }) {
 
 // =============================================
 // COMPONENTE: BarcodeScannerModal
-// Escanea código de barras → busca en Open Food Facts → agrega a consumido
+// Escanea código de barras → busca en Open Food Facts primero,
+// luego en UPCitemdb como fallback (identificación + macros manuales)
 // =============================================
 function BarcodeScannerModal({ darkMode, onAdd, onClose }) {
   var videoRef = React.useRef(null);
@@ -5581,9 +5582,13 @@ function BarcodeScannerModal({ darkMode, onAdd, onClose }) {
   var scanningRef = React.useRef(true);
   var detectorRef = React.useRef(null);
 
-  var [fase, setFase] = React.useState('scanning'); // 'scanning'|'fetching'|'found'|'not_found'|'manual'
+  // 'scanning'|'fetching'|'found'|'identificado'|'not_found'|'manual'
+  var [fase, setFase] = React.useState('scanning');
+  var [fetchMsg, setFetchMsg] = React.useState('Buscando producto…');
   var [producto, setProducto] = React.useState(null);
   var [gramos, setGramos] = React.useState(100);
+  // Macros manuales para fase 'identificado' (UPCitemdb encontró nombre pero sin nutrición)
+  var [macrosManual, setMacrosManual] = React.useState({ kcal: '', prot: '', carb: '', fat: '' });
   var [errorMsg, setErrorMsg] = React.useState('');
   var [manualCode, setManualCode] = React.useState('');
   var [soportado] = React.useState(typeof window.BarcodeDetector !== 'undefined');
@@ -5641,6 +5646,9 @@ function BarcodeScannerModal({ darkMode, onAdd, onClose }) {
 
   function buscarProducto(codigo) {
     setFase('fetching');
+    setFetchMsg('Consultando Open Food Facts…');
+
+    // ── Fuente 1: Open Food Facts ─────────────────────────────────────────────
     fetch('https://world.openfoodfacts.org/api/v0/product/' + codigo + '.json')
       .then(function(res) { return res.json(); })
       .then(function(data) {
@@ -5658,14 +5666,41 @@ function BarcodeScannerModal({ darkMode, onAdd, onClose }) {
             marca: p.brands || '',
             imagen: p.image_front_small_url || null,
             barcode: codigo,
+            fuente: 'off',
             kcal100: kcal100, prot100: prot100, carb100: carb100, fat100: fat100
           });
           setGramos(porcion);
           setFase('found');
-        } else {
-          setErrorMsg('Código ' + codigo + ' no encontrado en Open Food Facts');
-          setFase('not_found');
+          return;
         }
+
+        // ── Fuente 2: UPCitemdb (fallback — identifica producto, sin nutrición) ──
+        setFetchMsg('No encontrado en OFF · Consultando UPCitemdb…');
+        fetch('https://api.upcitemdb.com/prod/trial/lookup?upc=' + codigo)
+          .then(function(res) { return res.json(); })
+          .then(function(upc) {
+            if (upc.code === 'OK' && upc.items && upc.items.length > 0) {
+              var item = upc.items[0];
+              setProducto({
+                nombre: item.title || 'Producto escaneado',
+                marca: item.brand || '',
+                imagen: (item.images && item.images.length > 0) ? item.images[0] : null,
+                barcode: codigo,
+                fuente: 'upcitemdb'
+              });
+              setMacrosManual({ kcal: '', prot: '', carb: '', fat: '' });
+              setGramos(100);
+              setFase('identificado');
+            } else {
+              setErrorMsg('Código ' + codigo + ' no encontrado en ninguna base de datos');
+              setFase('not_found');
+            }
+          })
+          .catch(function() {
+            // UPCitemdb falló (sin red o rate limit) — mostrar not_found igualmente
+            setErrorMsg('Código ' + codigo + ' no encontrado en Open Food Facts');
+            setFase('not_found');
+          });
       })
       .catch(function() {
         setErrorMsg('Error de red al consultar el código');
@@ -5688,10 +5723,32 @@ function BarcodeScannerModal({ darkMode, onAdd, onClose }) {
     onClose();
   }
 
+  // Para fase 'identificado': agregar usando macros que el usuario leyó del rótulo
+  function confirmarAgregarManual() {
+    if (!producto) return;
+    var g = Math.max(1, parseInt(gramos) || 100);
+    var kcal100 = parseFloat(macrosManual.kcal) || 0;
+    var prot100 = parseFloat(macrosManual.prot) || 0;
+    var carb100 = parseFloat(macrosManual.carb) || 0;
+    var fat100  = parseFloat(macrosManual.fat)  || 0;
+    onAdd({
+      id: 'scan_' + Date.now(),
+      nombre: producto.nombre + (g !== 100 ? ' (' + g + 'g)' : ''),
+      kcal: Math.round(kcal100 * g / 100),
+      proteinas_g: parseFloat((prot100 * g / 100).toFixed(1)),
+      carbohidratos_g: parseFloat((carb100 * g / 100).toFixed(1)),
+      grasas_g: parseFloat((fat100 * g / 100).toFixed(1)),
+      timestamp: Date.now()
+    });
+    onClose();
+  }
+
   function reiniciarEscaner() {
     setProducto(null);
     setErrorMsg('');
     setManualCode('');
+    setMacrosManual({ kcal: '', prot: '', carb: '', fat: '' });
+    setFetchMsg('Buscando producto…');
     scanningRef.current = true;
     setFase('scanning');
     iniciarCamara();
@@ -5761,7 +5818,7 @@ function BarcodeScannerModal({ darkMode, onAdd, onClose }) {
           {fase === 'fetching' && (
             <div className="flex flex-col items-center justify-center py-12 gap-4">
               <div className="w-12 h-12 rounded-full border-4 border-amber-100 border-t-amber-500" style={{ animation: 'spin 0.8s linear infinite' }} />
-              <p className={'text-sm ' + (darkMode ? 'text-gray-300' : 'text-gray-600')}>Buscando producto…</p>
+              <p className={'text-sm text-center ' + (darkMode ? 'text-gray-300' : 'text-gray-600')}>{fetchMsg}</p>
             </div>
           )}
 
@@ -5825,6 +5882,116 @@ function BarcodeScannerModal({ darkMode, onAdd, onClose }) {
             </div>
           )}
 
+          {/* ── FASE: identificado — UPCitemdb encontró el producto pero sin nutrición ── */}
+          {fase === 'identificado' && producto && (
+            <div className="space-y-4 animate-fadeIn">
+              {/* Product card */}
+              <div className={'rounded-2xl p-4 ' + (darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-gray-50 border border-gray-200')}>
+                <div className="flex items-start gap-3">
+                  {producto.imagen && (
+                    <img src={producto.imagen} alt={producto.nombre}
+                      className="w-14 h-14 rounded-xl object-contain bg-white border border-gray-200 flex-shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                      <h4 className={'font-bold text-sm leading-tight ' + (darkMode ? 'text-white' : 'text-gray-900')}>{producto.nombre}</h4>
+                      <span className={'text-[10px] px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0 ' + (darkMode ? 'bg-blue-900/50 text-blue-400' : 'bg-blue-100 text-blue-700')}>
+                        UPCitemdb
+                      </span>
+                    </div>
+                    {producto.marca && <p className={'text-xs ' + (darkMode ? 'text-gray-400' : 'text-gray-500')}>{producto.marca}</p>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Aviso */}
+              <div className={'rounded-xl p-3 text-xs flex gap-2 ' + (darkMode ? 'bg-amber-900/20 border border-amber-800/40 text-amber-300' : 'bg-amber-50 border border-amber-200 text-amber-800')}>
+                <i className="fas fa-circle-info flex-shrink-0 mt-0.5"></i>
+                <span>Producto identificado pero sin datos nutricionales en línea. Ingresa los macros que aparecen en el rótulo del envase (valores <strong>por 100 g</strong>).</span>
+              </div>
+
+              {/* Inputs macros por 100g */}
+              <div className={'rounded-xl p-4 space-y-3 ' + (darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200')}>
+                <p className={'text-xs font-semibold uppercase tracking-wide ' + (darkMode ? 'text-gray-400' : 'text-gray-500')}>Por 100 g</p>
+                {[
+                  { key: 'kcal', label: 'Calorías', unit: 'kcal', color: 'text-orange-500' },
+                  { key: 'prot', label: 'Proteínas', unit: 'g', color: 'text-blue-400' },
+                  { key: 'carb', label: 'Carbohidratos', unit: 'g', color: 'text-amber-400' },
+                  { key: 'fat',  label: 'Grasas',        unit: 'g', color: 'text-rose-400' }
+                ].map(function(m) {
+                  return (
+                    <div key={m.key} className="flex items-center gap-3">
+                      <label className={'text-xs font-medium w-28 flex-shrink-0 ' + m.color}>{m.label}</label>
+                      <div className="relative flex-1">
+                        <input type="number" inputMode="decimal" min="0"
+                          value={macrosManual[m.key]}
+                          onChange={function(e) {
+                            var val = e.target.value;
+                            setMacrosManual(function(prev) {
+                              var next = {}; Object.keys(prev).forEach(function(k) { next[k] = prev[k]; });
+                              next[m.key] = val; return next;
+                            });
+                          }}
+                          placeholder="0"
+                          style={{ background: darkMode ? '#1f2937' : '#fff', color: darkMode ? '#f9fafb' : '#111827',
+                            border: '1px solid ' + (darkMode ? '#4b5563' : '#e5e7eb'),
+                            width: '100%', padding: '7px 32px 7px 10px', borderRadius: 10, fontSize: 14, outline: 'none' }} />
+                        <span className={'absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] ' + (darkMode ? 'text-gray-500' : 'text-gray-400')}>{m.unit}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Gram picker (igual que 'found') */}
+              <div>
+                <label className={'block text-xs font-semibold mb-2 ' + (darkMode ? 'text-gray-300' : 'text-gray-600')}>
+                  ¿Cuántos gramos consumiste?
+                </label>
+                <div className="flex items-center gap-2">
+                  <button onClick={function() { setGramos(function(p) { return Math.max(5, parseInt(p)-10); }); }}
+                    className={'w-10 h-10 rounded-xl font-bold text-lg flex items-center justify-center cursor-pointer transition-colors flex-shrink-0 ' + (darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')}>−</button>
+                  <div className="relative flex-1">
+                    <input type="number" value={gramos}
+                      onChange={function(e) { var v = parseInt(e.target.value) || 1; setGramos(Math.max(1, Math.min(2000, v))); }}
+                      style={{ background: darkMode ? '#1f2937' : '#fff', color: darkMode ? '#f9fafb' : '#111827',
+                        border: '1px solid ' + (darkMode ? '#4b5563' : '#e5e7eb'),
+                        width: '100%', padding: '8px 36px 8px 12px', borderRadius: 12, fontSize: 16, fontWeight: 700, textAlign: 'center', outline: 'none' }} />
+                    <span className={'absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium ' + (darkMode ? 'text-gray-400' : 'text-gray-500')}>g</span>
+                  </div>
+                  <button onClick={function() { setGramos(function(p) { return Math.min(2000, parseInt(p)+10); }); }}
+                    className={'w-10 h-10 rounded-xl font-bold text-lg flex items-center justify-center cursor-pointer transition-colors flex-shrink-0 ' + (darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')}>+</button>
+                </div>
+                <div className="flex gap-1.5 mt-2 flex-wrap">
+                  {[50, 100, 150, 200, 300].map(function(gv) {
+                    var isActive = parseInt(gramos) === gv;
+                    return (
+                      <button key={gv} onClick={function() { setGramos(gv); }}
+                        className={'text-xs px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ' + (isActive
+                          ? 'bg-amber-500 border-amber-500 text-white'
+                          : (darkMode ? 'border-gray-600 text-gray-300 hover:border-amber-600 hover:text-amber-300' : 'border-gray-200 text-gray-600 hover:border-amber-400 hover:text-amber-700'))}>
+                        {gv}g
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-2">
+                <button onClick={reiniciarEscaner}
+                  className={'py-2.5 px-4 rounded-xl text-sm font-medium border transition-colors cursor-pointer flex-shrink-0 ' + (darkMode ? 'border-gray-600 text-gray-200 hover:bg-gray-700' : 'border-gray-200 text-gray-700 hover:bg-gray-50')}>
+                  <i className="fas fa-redo text-xs mr-1.5"></i>Otro
+                </button>
+                <button onClick={confirmarAgregarManual}
+                  disabled={!macrosManual.kcal || parseFloat(macrosManual.kcal) <= 0}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 transition-all cursor-pointer shadow-md disabled:opacity-40 disabled:cursor-not-allowed">
+                  <i className="fas fa-plus mr-2"></i>Agregar {gramos}g
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* ── FASE: found ── */}
           {fase === 'found' && producto && (
             <div className="space-y-4 animate-fadeIn">
@@ -5836,8 +6003,13 @@ function BarcodeScannerModal({ darkMode, onAdd, onClose }) {
                       className="w-14 h-14 rounded-xl object-contain bg-white border border-gray-200 flex-shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <h4 className={'font-bold text-sm leading-tight ' + (darkMode ? 'text-white' : 'text-gray-900')}>{producto.nombre}</h4>
-                    {producto.marca && <p className={'text-xs mt-0.5 ' + (darkMode ? 'text-gray-400' : 'text-gray-500')}>{producto.marca}</p>}
+                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                      <h4 className={'font-bold text-sm leading-tight ' + (darkMode ? 'text-white' : 'text-gray-900')}>{producto.nombre}</h4>
+                      <span className={'text-[10px] px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0 ' + (darkMode ? 'bg-green-900/50 text-green-400' : 'bg-green-100 text-green-700')}>
+                        OFF
+                      </span>
+                    </div>
+                    {producto.marca && <p className={'text-xs ' + (darkMode ? 'text-gray-400' : 'text-gray-500')}>{producto.marca}</p>}
                     <p className={'text-[10px] mt-1.5 font-medium ' + (darkMode ? 'text-gray-500' : 'text-gray-400')}>Por 100 g:</p>
                     <div className="flex flex-wrap gap-2 mt-0.5 text-[11px]">
                       <span className="text-orange-500 font-bold">{producto.kcal100} kcal</span>
