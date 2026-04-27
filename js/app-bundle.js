@@ -82,9 +82,28 @@ var AJUSTES_OBJETIVO_EN = {
 
 // ─── Helpers: Comidas Externas ─────────────────────────────────────────────
 var _EXT_KEY = 'nutriplan_comidas_externas';
+function _repararNombreUtf8(str) {
+  if (typeof str !== 'string' || !/[\x80-\xFF]/.test(str)) return str;
+  try {
+    var bytes = new Uint8Array(str.length);
+    for (var i = 0; i < str.length; i++) {
+      var c = str.charCodeAt(i);
+      if (c > 255) return str;
+      bytes[i] = c;
+    }
+    var decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+    return decoded.includes('�') ? str : decoded;
+  } catch(e) { return str; }
+}
 function _comidasExtFecha(fecha) {
-  try { var a = JSON.parse(localStorage.getItem(_EXT_KEY) || '{}'); return a[fecha] || []; }
-  catch(e) { return []; }
+  try {
+    var a = JSON.parse(localStorage.getItem(_EXT_KEY) || '{}');
+    var lista = a[fecha] || [];
+    // Reparar nombres con encoding Latin-1 roto (proteÃna → proteína)
+    return lista.map(function(c) {
+      return c && c.nombre ? Object.assign({}, c, { nombre: _repararNombreUtf8(c.nombre) }) : c;
+    });
+  } catch(e) { return []; }
 }
 function _guardarComidasExt(fecha, lista) {
   try {
@@ -6559,6 +6578,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
   }, { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0 });
   // Comidas del plan reemplazadas por una externa → se descuentan del resumen
   const tiposReemplazados = comidasExt.filter(function(c) { return c.reemplaza; }).map(function(c) { return c.reemplaza; });
+  const comidasExtAdicional = comidasExt.filter(function(c) { return !c.reemplaza; });
   var resumenBase = resumenHoy;
   if (tiposReemplazados.length > 0) {
     var comidasHoyEfectivas = {};
@@ -6855,22 +6875,58 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                   setRefresh(r => r + 1);
                 }
               };
+              // Slot reemplazado por comida externa → mostrar la comida externa en el slot
+              if (extReemplazo) {
+                return (
+                  <div key={tipo} className="px-5 py-2.5 flex items-center gap-3 animate-fadeUp">
+                    <i className={`fas ${iconosComida[tipo]} text-sm w-4 text-center text-green-500`}></i>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <div className={`text-[11px] font-bold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{nombresComida[tipo]}</div>
+                        <span style={{ fontSize: '10px', fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
+                          {t('comido','eaten')}
+                        </span>
+                      </div>
+                      <div className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{extReemplazo.nombre}</div>
+                      <div className="text-xs mt-0.5">
+                        <span className="text-blue-400 font-semibold">{extReemplazo.proteinas_g}g</span>{' '}{t('prot','prot')}
+                        {' · '}<span className="text-amber-400 font-semibold">{extReemplazo.carbohidratos_g}g</span>{' '}{t('carb','carb')}
+                        {' · '}<span className="text-rose-400 font-semibold">{extReemplazo.grasas_g}g</span>{' '}{t('grasas','fat')}
+                      </div>
+                    </div>
+                    <span className={`text-xs font-bold flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{extReemplazo.kcal} kcal</span>
+                    <button
+                      onClick={function() {
+                        var nuevas = comidasExt.filter(function(x) { return x.id !== extReemplazo.id; });
+                        setComidasExt(nuevas);
+                        _guardarComidasExt(fechaHoyIso, nuevas);
+                        _eliminarAdherenciaExt(diaActual, extReemplazo.id);
+                        setRefresh(function(r) { return r + 1; });
+                      }}
+                      aria-label={t('Deshacer reemplazo','Undo replacement')}
+                      title={t('Deshacer reemplazo','Undo replacement')}
+                      style={{
+                        flexShrink: 0, width: '2rem', height: '2rem',
+                        borderRadius: '0.5rem', border: 'none', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'transparent', transition: 'color 0.15s',
+                        color: darkMode ? '#4b5563' : '#9ca3af'
+                      }}>
+                      <i className="fas fa-rotate-left text-xs"></i>
+                    </button>
+                  </div>
+                );
+              }
+              // Slot del plan normal
               return (
-                <div key={tipo} className={`px-5 py-2.5 flex items-center gap-3 animate-fadeUp ${extReemplazo ? (darkMode ? 'opacity-50' : 'opacity-40') : ''}`}>
+                <div key={tipo} className="px-5 py-2.5 flex items-center gap-3 animate-fadeUp">
                   <i className={`fas ${iconosComida[tipo]} text-sm w-4 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <div className={`text-[11px] font-bold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{nombresComida[tipo]}</div>
-                      {extReemplazo && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600">
-                          {t('reemplazado','replaced')}
-                        </span>
-                      )}
-                    </div>
-                    <div className={`text-sm font-medium truncate ${(yaComido || extReemplazo) ? 'line-through opacity-60' : ''} ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{getNombreReceta(comida)}</div>
+                    <div className={`text-[11px] font-bold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{nombresComida[tipo]}</div>
+                    <div className={`text-sm font-medium truncate ${yaComido ? 'line-through opacity-60' : ''} ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{getNombreReceta(comida)}</div>
                   </div>
                   <span className={`text-xs font-bold flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{comida.calorias_escaladas || comida.calorias} kcal</span>
-                  {onSwapRecipe && !extReemplazo && (
+                  {onSwapRecipe && (
                     <button
                       onClick={(ev) => { ev.stopPropagation(); onSwapRecipe(diaActual, tipo, numSemanaActual); }}
                       disabled={!!(swapping && swapping.dia === diaActual && swapping.tipoComida === tipo)}
@@ -6880,17 +6936,14 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                         borderRadius: '0.5rem', border: 'none',
                         cursor: (swapping && swapping.dia === diaActual && swapping.tipoComida === tipo) ? 'not-allowed' : 'pointer',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'color 0.15s',
-                        background: 'transparent',
+                        transition: 'color 0.15s', background: 'transparent',
                         color: (swapping && swapping.dia === diaActual && swapping.tipoComida === tipo)
                           ? '#f97316' : (darkMode ? '#4b5563' : '#9ca3af')
-                      }}
-                    >
+                      }}>
                       <i className={`fas ${(swapping && swapping.dia === diaActual && swapping.tipoComida === tipo) ? 'fa-spinner fa-spin' : 'fa-shuffle'} text-xs`}></i>
                     </button>
                   )}
-                  {typeof window.adherencia !== 'undefined' && !extReemplazo && (
-                    /* A2: aria-label en botón adherencia */
+                  {typeof window.adherencia !== 'undefined' && (
                     <button onClick={toggleAdh}
                       aria-label={yaComido ? t(`Marcar ${nombresComida[tipo]} como no comido`,`Mark ${nombresComida[tipo]} as not eaten`) : t(`Marcar ${nombresComida[tipo]} como comido`,`Mark ${nombresComida[tipo]} as eaten`)}
                       className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
@@ -6898,11 +6951,6 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                       }`}>
                       <i className={`fas ${yaComido ? 'fa-check' : 'fa-circle'} text-xs`}></i>
                     </button>
-                  )}
-                  {extReemplazo && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
-                      <i className="fas fa-check text-white text-xs"></i>
-                    </div>
                   )}
                 </div>
               );
@@ -6941,14 +6989,14 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             </button>
           </div>
         </div>
-        {comidasExt.length === 0 ? (
+        {comidasExtAdicional.length === 0 ? (
           <button onClick={function() { setShowModalExt(true); }}
             className={`w-full px-5 py-4 text-center text-xs transition-colors cursor-pointer ${darkMode ? 'text-gray-500 hover:bg-gray-700/50' : 'text-gray-400 hover:bg-gray-50'}`}>
             <i className="fas fa-plus-circle mr-1.5"></i>{t('Registrar comida no planificada','Log an unplanned meal')}
           </button>
         ) : (
           <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
-            {comidasExt.map(function(c) {
+            {comidasExtAdicional.map(function(c) {
               return (
                 <div key={c.id} className="px-5 py-2.5 flex items-center gap-3">
                   <i className={`fas fa-utensils text-sm w-4 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
