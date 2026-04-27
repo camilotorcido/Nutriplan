@@ -3,7 +3,7 @@
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
    unidades de compra, historial 14 días
-   v20260426pp: Bilingual ES/EN support
+   v20260427qq: Bilingual ES/EN support
    ============================================ */
 
 // ─── Safety net: garantizar que storage.js haya expuesto funciones ───
@@ -53,7 +53,7 @@ var cargarDarkMode = window.cargarDarkMode;
 var guardarDarkMode = window.guardarDarkMode;
 var limpiarTodo = window.limpiarTodo;
 
-// ─── v20260426pp: Bilingual helpers ────────────────────────────────────────
+// ─── v20260427qq: Bilingual helpers ────────────────────────────────────────
 /**
  * Translate helper: returns `en` when app language is English, `es` otherwise.
  * Reads window._NP_lang which is set by the App component on every render.
@@ -364,7 +364,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   );
   // v20260418x: Fat Loss Mode preview
   const [roadmapPreview, setRoadmapPreview] = React.useState(null);
-  // v20260426pp: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
+  // v20260427qq: Wizard onboarding — null = modo edición (form completo), 0 = lang picker, 1-6 = paso activo
   const [pasoWizard, setPasoWizard] = React.useState(!perfilInicial ? 0 : null);
   const [equiposWizard, setEquiposWizard] = React.useState(leerEquipos);
 
@@ -549,7 +549,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     onComplete(perfilFinal);
   };
 
-  // ── v20260426pp: Wizard onboarding ──────────────────────────────────────
+  // ── v20260427qq: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
     // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
@@ -4495,7 +4495,7 @@ function ShoppingList({ plan, darkMode }) {
 // FatLossTab eliminado — reemplazado por FitnessTab (N12)
 
 // =============================================
-// COMPONENTE: ModalComidaExterna (v20260426pp)
+// COMPONENTE: ModalComidaExterna (v20260427qq)
 // Meal builder estilo MyFitnessPal:
 //   - Tray de ingredientes con qty ajustable (½x, 1x, 2x…)
 //   - Búsqueda en FOODS_DB + RECETAS_DB
@@ -4818,7 +4818,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260426pp)
+// COMPONENTE: HoyView — Dashboard diario (v20260427qq)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   const hoy = new Date();
@@ -4953,6 +4953,37 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
     }
   };
 
+  // ── Progreso diario: kcal y macros consumidos hasta ahora ──────────────────
+  var consumidoHoy = { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0 };
+  tiposOrden.forEach(function(tipo) {
+    if (tiposReemplazados.indexOf(tipo) >= 0) return; // reemplazado por externa → cuenta en comidasExt
+    var comida = comidasHoy[tipo];
+    if (!comida) return;
+    var estadoAdh = (typeof window.adherencia !== 'undefined' && window.adherencia.estado)
+      ? window.adherencia.estado(diaActual, tipo, 1) : null;
+    if (!estadoAdh || !estadoAdh.comido) return;
+    consumidoHoy.calorias      += comida.calorias_escaladas      || comida.calorias      || 0;
+    consumidoHoy.proteinas     += comida.proteinas_escaladas     || comida.proteinas     || 0;
+    consumidoHoy.carbohidratos += comida.carbohidratos_escalados || comida.carbohidratos || 0;
+    consumidoHoy.grasas        += comida.grasas_escaladas        || comida.grasas        || 0;
+  });
+  comidasExt.forEach(function(c) {
+    consumidoHoy.calorias      += c.kcal            || 0;
+    consumidoHoy.proteinas     += c.proteinas_g      || 0;
+    consumidoHoy.carbohidratos += c.carbohidratos_g  || 0;
+    consumidoHoy.grasas        += c.grasas_g         || 0;
+  });
+  consumidoHoy = {
+    calorias:      Math.round(consumidoHoy.calorias),
+    proteinas:     Math.round(consumidoHoy.proteinas),
+    carbohidratos: Math.round(consumidoHoy.carbohidratos),
+    grasas:        Math.round(consumidoHoy.grasas)
+  };
+  var metaKcalDia = (perfil && perfil.caloriasObjetivo) || resumenHoy.calorias || 0;
+  var metaProtDia = resumenHoy.proteinas     || 0;
+  var metaCarbDia = resumenHoy.carbohidratos || 0;
+  var metaGrasDia = resumenHoy.grasas        || 0;
+
   const pctKcal = perfil && perfil.caloriasObjetivo && resumenTotal.calorias > 0
     ? Math.min(100, Math.round((resumenTotal.calorias / perfil.caloriasObjetivo) * 100)) : 0;
 
@@ -4966,6 +4997,79 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
           <p className="text-sm opacity-80 mt-1">{perfil.caloriasObjetivo} kcal · {perfil.numSemanas > 1 ? perfil.numSemanas + t(' semanas',' weeks') : t('1 semana','1 week')}</p>
         )}
       </div>
+
+      {/* ── Progreso del día ─────────────────────────────────────────────── */}
+      {metaKcalDia > 0 && (
+        <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+          <div className={`px-5 py-3 flex items-center justify-between border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <i className="fas fa-chart-line mr-2"></i>{t('Progreso del día','Daily progress')}
+            </h3>
+            {consumidoHoy.calorias > 0 && (
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                consumidoHoy.calorias >= metaKcalDia
+                  ? 'bg-green-500/20 text-green-600'
+                  : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'
+              }`}>
+                {Math.min(100, Math.round((consumidoHoy.calorias / metaKcalDia) * 100))}%
+              </span>
+            )}
+          </div>
+          <div className="px-5 py-4 space-y-4">
+            {/* Kcal principal */}
+            <div>
+              <div className="flex items-end justify-between mb-2">
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-3xl font-extrabold font-display leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {consumidoHoy.calorias}
+                  </span>
+                  <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>
+                    / {metaKcalDia} kcal
+                  </span>
+                </div>
+                <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  {metaKcalDia - consumidoHoy.calorias > 0
+                    ? (metaKcalDia - consumidoHoy.calorias) + t(' kcal restantes',' kcal left')
+                    : t('¡Meta alcanzada! 🎯','Goal reached! 🎯')}
+                </span>
+              </div>
+              <div className={`w-full h-3 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                <div
+                  className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-green-500 to-emerald-400"
+                  style={{ width: Math.min(100, consumidoHoy.calorias > 0 ? Math.round((consumidoHoy.calorias / metaKcalDia) * 100) : 0) + '%' }}>
+                </div>
+              </div>
+            </div>
+            {/* Macros */}
+            <div className={`grid grid-cols-3 gap-3 pt-1 border-t ${darkMode ? 'border-gray-700' : 'border-gray-50'}`}>
+              {[
+                { labelEs: 'Proteína', labelEn: 'Protein', val: consumidoHoy.proteinas, meta: metaProtDia, barColor: '#3b82f6' },
+                { labelEs: 'Carbos',   labelEn: 'Carbs',   val: consumidoHoy.carbohidratos, meta: metaCarbDia, barColor: '#f59e0b' },
+                { labelEs: 'Grasas',   labelEn: 'Fat',     val: consumidoHoy.grasas, meta: metaGrasDia, barColor: '#a855f7' }
+              ].map(function(m) {
+                var pct = m.meta > 0 ? Math.min(100, Math.round((m.val / m.meta) * 100)) : 0;
+                return (
+                  <div key={m.labelEs}>
+                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      {t(m.labelEs, m.labelEn)}
+                    </div>
+                    <div className="flex items-baseline gap-0.5">
+                      <span className={`text-base font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{m.val}</span>
+                      <span className={`text-[10px] ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>/{m.meta}g</span>
+                    </div>
+                    <div className={`w-full h-1.5 rounded-full overflow-hidden mt-1.5 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                      <div className="h-full rounded-full transition-all duration-500"
+                        style={{ width: pct + '%', backgroundColor: m.barColor }}>
+                      </div>
+                    </div>
+                    <div className={`text-[10px] mt-0.5 font-semibold ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>{pct}%</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Comidas del día */}
       {planSemanal ? (
@@ -7193,7 +7297,7 @@ function App() {
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
 
-  // ─── v20260426pp: Language state ───
+  // ─── v20260427qq: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
