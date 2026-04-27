@@ -1,5 +1,5 @@
 /* ============================================
-   NutriPlan - Base de datos de alimentos comunes (v20260427ww)
+   NutriPlan - Base de datos de alimentos comunes (v20260427xx)
    Usada por el modal "Comidas Externas" (estilo MyFitnessPal).
    Valores nutricionales por porción estándar indicada.
    ============================================ */
