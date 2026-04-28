@@ -1,5 +1,5 @@
 /* ============================================
-   Calibrate — Base de datos de alimentos comunes (v20260428ai)
+   Calibrate — Base de datos de alimentos comunes (v20260428bv)
    Usada por el modal "Comidas Externas" (estilo MyFitnessPal).
    Valores nutricionales por porción estándar indicada.
    ============================================ */
@@ -341,6 +341,101 @@
     { id:'f_higo',           nombre:'Higo',                 nombre_en:'Fig',                   porcion:'2 unidades (80g)', kcal:62,  proteinas:1,  carbohidratos:16, grasas:0  },
     { id:'f_datiles',        nombre:'Dátiles',              nombre_en:'Dates',                 porcion:'3 unidades (30g)', kcal:83,  proteinas:1,  carbohidratos:22, grasas:0  },
     { id:'f_maracuya',       nombre:'Maracuyá',             nombre_en:'Passion fruit',         porcion:'100g',              kcal:97,  proteinas:2,  carbohidratos:23, grasas:1  },
+
+    // ── CEREALES PARA NIÑOS ──────────────────────────────────────────────────
+    { id:'f_froot_loops',    nombre:'Froot Loops',          nombre_en:'Froot Loops',           porcion:'1 taza (29g)',      kcal:110, proteinas:1,  carbohidratos:25, grasas:1  },
+    { id:'f_choco_krispis',  nombre:'Choco Krispis',        nombre_en:'Cocoa Krispies',        porcion:'1 taza (31g)',      kcal:120, proteinas:2,  carbohidratos:27, grasas:1  },
+    { id:'f_zucaritas',      nombre:'Zucaritas (Frosted Flakes)',nombre_en:'Frosted Flakes',   porcion:'1 taza (31g)',      kcal:120, proteinas:1,  carbohidratos:28, grasas:0  },
+    { id:'f_lucky_charms',   nombre:'Lucky Charms',         nombre_en:'Lucky Charms',          porcion:'3/4 taza (27g)',   kcal:110, proteinas:2,  carbohidratos:22, grasas:1  },
+    { id:'f_honey_stars',    nombre:'Honey Stars / Golden Grams',nombre_en:'Honey Stars',      porcion:'1 taza (30g)',      kcal:115, proteinas:2,  carbohidratos:25, grasas:1  },
+    { id:'f_cinnamon_tc',    nombre:'Cinnamon Toast Crunch',nombre_en:'Cinnamon Toast Crunch', porcion:'3/4 taza (31g)',   kcal:130, proteinas:1,  carbohidratos:25, grasas:3  },
+    { id:'f_nesquik_cer',    nombre:'Nesquik Cereal',       nombre_en:'Nesquik Cereal',        porcion:'1 taza (30g)',      kcal:118, proteinas:2,  carbohidratos:25, grasas:1  },
+    { id:'f_corn_pops',      nombre:'Corn Pops',            nombre_en:'Corn Pops',             porcion:'1 taza (31g)',      kcal:120, proteinas:1,  carbohidratos:27, grasas:0  },
+    { id:'f_cocoa_puffs',    nombre:'Cocoa Puffs',          nombre_en:'Cocoa Puffs',           porcion:'3/4 taza (27g)',   kcal:100, proteinas:1,  carbohidratos:22, grasas:1  },
+    { id:'f_honey_nut_ch',   nombre:'Honey Nut Cheerios',   nombre_en:'Honey Nut Cheerios',    porcion:'3/4 taza (28g)',   kcal:110, proteinas:3,  carbohidratos:22, grasas:2  },
+
+    // ── AVENA (variedades) ───────────────────────────────────────────────────
+    { id:'f_avena_quaker',   nombre:'Avena Quaker tradicional',nombre_en:'Quaker oats',        porcion:'40g (cruda)',       kcal:150, proteinas:5,  carbohidratos:27, grasas:3  },
+    { id:'f_avena_inst',     nombre:'Avena instantánea (sobre)',nombre_en:'Instant oatmeal packet',porcion:'1 sobre (35g)', kcal:130, proteinas:4,  carbohidratos:24, grasas:2  },
+    { id:'f_avena_leche2',   nombre:'Avena con leche preparada',nombre_en:'Oatmeal with milk ready',porcion:'1 taza (250ml)',kcal:210, proteinas:9,  carbohidratos:33, grasas:6  },
+    { id:'f_avena_miel',     nombre:'Avena con miel y plátano',nombre_en:'Oatmeal honey banana',porcion:'1 tazón (300g)',   kcal:290, proteinas:8,  carbohidratos:55, grasas:5  },
+
+    // ── GALLETAS ─────────────────────────────────────────────────────────────
+    { id:'f_oreo',           nombre:'Galletas Oreo (3 unidades)',nombre_en:'Oreo cookies',     porcion:'3 galletas (34g)', kcal:160, proteinas:1,  carbohidratos:25, grasas:7  },
+    { id:'f_ritz',           nombre:'Galletas Ritz (5 unidades)',nombre_en:'Ritz crackers',    porcion:'5 galletas (16g)', kcal:80,  proteinas:1,  carbohidratos:10, grasas:4  },
+    { id:'f_triton',         nombre:'Galletas Tritón (4 unidades)',nombre_en:'Triton cookies', porcion:'4 galletas (28g)', kcal:130, proteinas:1,  carbohidratos:19, grasas:6  },
+    { id:'f_soda_gall',      nombre:'Galletas Soda (6 unidades)',nombre_en:'Soda crackers',    porcion:'6 galletas (30g)', kcal:130, proteinas:2,  carbohidratos:22, grasas:4  },
+    { id:'f_bromato',        nombre:'Galletas Bromato (5 unidades)',nombre_en:'Bromato crackers',porcion:'5 galletas (25g)',kcal:110, proteinas:2,  carbohidratos:17, grasas:4  },
+    { id:'f_vino_galleta',   nombre:'Galletas de vino (4 unidades)',nombre_en:'Wine cookies',  porcion:'4 galletas (32g)', kcal:145, proteinas:2,  carbohidratos:23, grasas:5  },
+    { id:'f_coco_galleta',   nombre:'Galletas de coco (3 unidades)',nombre_en:'Coconut cookies',porcion:'3 galletas (24g)',kcal:120, proteinas:1,  carbohidratos:18, grasas:5  },
+    { id:'f_cream_cracker',  nombre:'Cream Crackers (5 unidades)',nombre_en:'Cream crackers',  porcion:'5 galletas (25g)', kcal:110, proteinas:2,  carbohidratos:18, grasas:3  },
+    { id:'f_digestive',      nombre:'Galletas Digestive (2 unidades)',nombre_en:'Digestive biscuits',porcion:'2 galletas (30g)',kcal:140,proteinas:2,carbohidratos:20,grasas:6 },
+    { id:'f_cookie_chips',   nombre:'Cookie con chips de chocolate',nombre_en:'Chocolate chip cookie',porcion:'1 grande (45g)',kcal:210,proteinas:3,carbohidratos:28,grasas:10},
+    { id:'f_picaroco',       nombre:'Galletas Picaroco (4 unidades)',nombre_en:'Picaroco crackers',porcion:'4 galletas (28g)',kcal:130,proteinas:2,carbohidratos:20,grasas:5 },
+    { id:'f_cartago',        nombre:'Galletas Cartago (4 unidades)',nombre_en:'Cartago cookies', porcion:'4 galletas (32g)', kcal:155, proteinas:2,  carbohidratos:22, grasas:6  },
+
+    // ── PAPAS FRITAS (snacks) ─────────────────────────────────────────────────
+    { id:'f_lays_clasicas',  nombre:'Lays clásicas',        nombre_en:'Lays original chips',   porcion:'bolsa pequeña (28g)',kcal:152, proteinas:2,  carbohidratos:15, grasas:10 },
+    { id:'f_pringles',       nombre:'Pringles original',    nombre_en:'Pringles original',      porcion:'14 chips (30g)',    kcal:160, proteinas:1,  carbohidratos:17, grasas:10 },
+    { id:'f_pehuén',         nombre:'Papas fritas Pehuén',  nombre_en:'Pehuén chips',          porcion:'1 bolsa (30g)',     kcal:158, proteinas:2,  carbohidratos:17, grasas:9  },
+    { id:'f_doritos',        nombre:'Doritos',              nombre_en:'Doritos',               porcion:'11 chips (28g)',    kcal:140, proteinas:2,  carbohidratos:18, grasas:7  },
+    { id:'f_cheetos',        nombre:'Cheetos',              nombre_en:'Cheetos',               porcion:'1 bolsa (28g)',     kcal:150, proteinas:2,  carbohidratos:15, grasas:10 },
+    { id:'f_nachos',         nombre:'Nachos / Tostitos',   nombre_en:'Tortilla chips',        porcion:'1 bolsa (28g)',     kcal:135, proteinas:2,  carbohidratos:19, grasas:6  },
+    { id:'f_yupi',           nombre:'Papas fritas Yupi',   nombre_en:'Yupi chips',            porcion:'1 bolsa (28g)',     kcal:145, proteinas:2,  carbohidratos:16, grasas:8  },
+    { id:'f_pringles_jq',    nombre:'Pringles queso',       nombre_en:'Pringles cheese',       porcion:'14 chips (30g)',    kcal:160, proteinas:2,  carbohidratos:16, grasas:10 },
+
+    // ── CHOCOLATES Y DULCES CHILENOS ─────────────────────────────────────────
+    { id:'f_trencito',       nombre:'Trencito (1 barra)',   nombre_en:'Trencito chocolate bar', porcion:'1 barra (50g)',    kcal:250, proteinas:3,  carbohidratos:34, grasas:12 },
+    { id:'f_super8',         nombre:'Super 8 (1 unidad)',   nombre_en:'Super 8 wafer bar',     porcion:'1 unidad (30g)',    kcal:145, proteinas:2,  carbohidratos:20, grasas:6  },
+    { id:'f_chasqui',        nombre:'Chasqui (1 unidad)',   nombre_en:'Chasqui chocolate',     porcion:'1 unidad (30g)',    kcal:145, proteinas:1,  carbohidratos:22, grasas:6  },
+    { id:'f_sahne_nuss',     nombre:'Chocolate Sahne-Nuss (1 onza)',nombre_en:'Sahne-Nuss chocolate',porcion:'30g',         kcal:175, proteinas:3,  carbohidratos:16, grasas:12 },
+    { id:'f_choco_leche',    nombre:'Chocolate con leche',  nombre_en:'Milk chocolate',        porcion:'30g (¼ barra)',    kcal:160, proteinas:2,  carbohidratos:18, grasas:10 },
+    { id:'f_alfajor',        nombre:'Alfajor',              nombre_en:'Alfajor cookie',        porcion:'1 unidad (50g)',    kcal:200, proteinas:2,  carbohidratos:33, grasas:7  },
+    { id:'f_berlines',       nombre:'Berlín / Berlín',      nombre_en:'Berliner donut',        porcion:'1 unidad (80g)',    kcal:310, proteinas:5,  carbohidratos:45, grasas:12 },
+    { id:'f_brownie',        nombre:'Brownie',              nombre_en:'Brownie',               porcion:'1 trozo (50g)',     kcal:220, proteinas:3,  carbohidratos:32, grasas:10 },
+    { id:'f_caramelos',      nombre:'Caramelos (puñado)',   nombre_en:'Hard candy',            porcion:'5 unidades (20g)', kcal:80,  proteinas:0,  carbohidratos:20, grasas:0  },
+    { id:'f_butter_toffee',  nombre:'Butter Toffee (10 unidades)',nombre_en:'Butter toffee candy',porcion:'10 uds (40g)',   kcal:170, proteinas:1,  carbohidratos:33, grasas:4  },
+    { id:'f_chupete',        nombre:'Chupete / Paleta',     nombre_en:'Lollipop',              porcion:'1 unidad (17g)',    kcal:70,  proteinas:0,  carbohidratos:17, grasas:0  },
+    { id:'f_gomitas',        nombre:'Gomitas / Jelly beans',nombre_en:'Gummy candy',           porcion:'10 unidades (30g)',kcal:105, proteinas:2,  carbohidratos:24, grasas:0  },
+
+    // ── BEBIDAS ESPECIFICAS ──────────────────────────────────────────────────
+    { id:'f_milo_bebida',    nombre:'Milo con leche (1 vaso)',nombre_en:'Milo with milk',      porcion:'200ml leche + 20g', kcal:200, proteinas:9,  carbohidratos:27, grasas:7  },
+    { id:'f_nesquik_beb',    nombre:'Nesquik con leche (1 vaso)',nombre_en:'Nesquik with milk',porcion:'200ml leche + 15g', kcal:185, proteinas:8,  carbohidratos:28, grasas:5  },
+    { id:'f_cocacola',       nombre:'Coca-Cola (lata)',      nombre_en:'Coca-Cola can',         porcion:'350ml (1 lata)',    kcal:140, proteinas:0,  carbohidratos:39, grasas:0  },
+    { id:'f_cocacola_zero',  nombre:'Coca-Cola Zero (lata)', nombre_en:'Coke Zero can',        porcion:'350ml (1 lata)',    kcal:0,   proteinas:0,  carbohidratos:0,  grasas:0  },
+    { id:'f_pepsi',          nombre:'Pepsi (lata)',          nombre_en:'Pepsi can',             porcion:'350ml (1 lata)',    kcal:150, proteinas:0,  carbohidratos:41, grasas:0  },
+    { id:'f_sprite',         nombre:'Sprite / 7UP (lata)',   nombre_en:'Sprite / 7UP can',     porcion:'350ml (1 lata)',    kcal:140, proteinas:0,  carbohidratos:38, grasas:0  },
+    { id:'f_bilz',           nombre:'Bilz (lata)',           nombre_en:'Bilz soda',             porcion:'350ml (1 lata)',    kcal:145, proteinas:0,  carbohidratos:40, grasas:0  },
+    { id:'f_gatorade',       nombre:'Gatorade (botella)',    nombre_en:'Gatorade',              porcion:'500ml',             kcal:130, proteinas:0,  carbohidratos:34, grasas:0  },
+    { id:'f_powerade',       nombre:'Powerade (botella)',    nombre_en:'Powerade',              porcion:'500ml',             kcal:120, proteinas:0,  carbohidratos:33, grasas:0  },
+    { id:'f_jugo_andina',    nombre:'Andina del Valle (botella)',nombre_en:'Andina del Valle juice',porcion:'250ml',         kcal:110, proteinas:0,  carbohidratos:28, grasas:0  },
+    { id:'f_jugo_watts',     nombre:"Jugo Watt's",          nombre_en:"Watt's juice",          porcion:'200ml',             kcal:90,  proteinas:0,  carbohidratos:23, grasas:0  },
+    { id:'f_néctar',         nombre:'Néctar de fruta (200ml)',nombre_en:'Fruit nectar',        porcion:'200ml (1 cajita)', kcal:95,  proteinas:0,  carbohidratos:24, grasas:0  },
+
+    // ── PANES Y MASAS CHILENAS ────────────────────────────────────────────────
+    { id:'f_pan_amasado',    nombre:'Pan amasado',          nombre_en:'Pan amasado (Chilean flatbread)',porcion:'1 unidad (70g)',kcal:220,proteinas:5,carbohidratos:40,grasas:5 },
+    { id:'f_dobladita',      nombre:'Dobladitas (2 unidades)',nombre_en:'Dobladitas rolls',    porcion:'2 unidades (60g)', kcal:195, proteinas:4,  carbohidratos:35, grasas:5  },
+    { id:'f_rosca',          nombre:'Rosca',                nombre_en:'Rosca bread ring',      porcion:'1 unidad (50g)',    kcal:170, proteinas:4,  carbohidratos:32, grasas:3  },
+    { id:'f_churro',         nombre:'Churro (1 unidad)',    nombre_en:'Churro',                porcion:'1 unidad (60g)',    kcal:230, proteinas:3,  carbohidratos:34, grasas:9  },
+
+    // ── COMIDAS RÁPIDAS CHILENAS ─────────────────────────────────────────────
+    { id:'f_choripan',       nombre:'Choripán',             nombre_en:'Chorizo sandwich',      porcion:'1 unidad',          kcal:420, proteinas:16, carbohidratos:40, grasas:22 },
+    { id:'f_barros_luco',    nombre:'Barros Luco',          nombre_en:'Barros Luco sandwich',  porcion:'1 unidad',          kcal:480, proteinas:32, carbohidratos:38, grasas:22 },
+    { id:'f_barros_jarpa',   nombre:'Barros Jarpa',         nombre_en:'Barros Jarpa sandwich', porcion:'1 unidad',          kcal:430, proteinas:26, carbohidratos:38, grasas:18 },
+    { id:'f_lomo_pobre',     nombre:'Lomo a lo pobre',      nombre_en:'Lomo a lo pobre',       porcion:'1 porción',         kcal:680, proteinas:40, carbohidratos:55, grasas:28 },
+    { id:'f_arrollado',      nombre:'Arrollado de huaso',   nombre_en:'Arrollado de huaso',    porcion:'100g',              kcal:250, proteinas:18, carbohidratos:1,  grasas:20 },
+    { id:'f_prieta',         nombre:'Prieta (2 unidades)',  nombre_en:'Blood sausage',         porcion:'2 unidades (100g)', kcal:300, proteinas:14, carbohidratos:6,  grasas:26 },
+    { id:'f_anticucho',      nombre:'Anticucho (2 pinchos)',nombre_en:'Anticucho skewers',     porcion:'2 pinchos (120g)', kcal:240, proteinas:22, carbohidratos:6,  grasas:14 },
+
+    // ── POSTRES Y LÁCTEOS DE CONSUMO MASIVO ──────────────────────────────────
+    { id:'f_danette',        nombre:'Danette chocolate',    nombre_en:'Danette chocolate pudding',porcion:'1 unidad (110g)',kcal:120, proteinas:4,  carbohidratos:19, grasas:3  },
+    { id:'f_flan_soprole',   nombre:'Flan Soprole',         nombre_en:'Soprole flan',          porcion:'1 unidad (115g)',   kcal:130, proteinas:4,  carbohidratos:24, grasas:2  },
+    { id:'f_natilla',        nombre:'Natilla',              nombre_en:'Natilla pudding',        porcion:'1 unidad (100g)',   kcal:140, proteinas:4,  carbohidratos:21, grasas:5  },
+    { id:'f_yogurt_yogs',    nombre:'Yogurt Yogs (frutado)',nombre_en:'Yogs fruit yogurt',      porcion:'1 unidad (100g)',   kcal:90,  proteinas:3,  carbohidratos:17, grasas:1  },
+    { id:'f_helado_palito',  nombre:'Helado de palito',     nombre_en:'Popsicle / ice lolly',  porcion:'1 unidad (70g)',    kcal:80,  proteinas:0,  carbohidratos:20, grasas:0  },
+    { id:'f_helado_pote',    nombre:'Helado (pote familiar)',nombre_en:'Ice cream tub',        porcion:'2 bolas (100g)',    kcal:200, proteinas:3,  carbohidratos:27, grasas:10 },
+    { id:'f_manjar',         nombre:'Manjar / Dulce de leche',nombre_en:'Dulce de leche',      porcion:'1 cda (20g)',       kcal:65,  proteinas:1,  carbohidratos:13, grasas:1  },
+    { id:'f_mermelada',      nombre:'Mermelada',            nombre_en:'Jam / Jelly',           porcion:'1 cda (20g)',       kcal:55,  proteinas:0,  carbohidratos:14, grasas:0  },
 
   ];
 
