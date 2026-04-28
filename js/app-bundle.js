@@ -10318,7 +10318,9 @@ function ChatPanel({ darkMode }) {
       }
     } catch(e) {
       console.error('[ChatPanel]', e);
-      setError('Error al conectar con el asistente. Intenta de nuevo.');
+      var msg = (e && e.message) ? e.message : String(e);
+      var code = (e && e.code) ? ' [' + e.code + ']' : '';
+      setError(msg + code);
     } finally {
       setLoading(false);
     }

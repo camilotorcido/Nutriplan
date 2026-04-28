@@ -94,7 +94,7 @@ INSTRUCCIONES:
 
 // ── Cloud Function ─────────────────────────────────────────────────────────
 exports.calibrateChat = onCall(
-  { secrets: [ANTHROPIC_KEY], region: 'us-central1', cors: true },
+  { secrets: [ANTHROPIC_KEY], region: 'us-central1', cors: true, invoker: 'public' },
   async (request) => {
     // Validación básica
     if (!request.data || !Array.isArray(request.data.messages)) {
