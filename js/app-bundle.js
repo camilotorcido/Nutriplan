@@ -3770,7 +3770,7 @@ function SlotAcciones({
   const [showSobras, setShowSobras] = React.useState(false);
   // position: fixed requiere coordenadas absolutas del viewport para escapar
   // el stacking context del card (bg-color/30 translúcido) que causaba glass effect
-  const [dropdownPos, setDropdownPos] = React.useState({ top: 0, right: 0 });
+  const [dropdownPos, setDropdownPos] = React.useState({ top: 0, left: 0 });
   const containerRef = React.useRef(null);
   const histBtnRef = React.useRef(null);
   const sobrasBtnRef = React.useRef(null);
@@ -3799,8 +3799,10 @@ function SlotAcciones({
   const sobras = obtenerSobrasDisponibles(plan, diaSeleccionado, semanaActiva);
 
   // position: fixed → renderiza fuera del card, sin heredar glass/blur del padre
+  // Usamos `left` (no `right`) para posicionamiento predecible:
+  // left = btn.right - dropdown_width → alinea borde derecho del dropdown con el botón
   const dropdownStyle = {
-    position: 'fixed', top: dropdownPos.top, right: dropdownPos.right, zIndex: 9999,
+    position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, zIndex: 9999,
     borderRadius: '12px', overflow: 'hidden',
     boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
     backgroundColor: darkMode ? '#1f2937' : '#ffffff',
@@ -3832,7 +3834,9 @@ function SlotAcciones({
               e.stopPropagation();
               if (!showHist && histBtnRef.current) {
                 const r = histBtnRef.current.getBoundingClientRect();
-                setDropdownPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+                const W = 260; // maxWidth del dropdown de historial
+                const left = Math.max(8, Math.min(r.right - W, window.innerWidth - W - 8));
+                setDropdownPos({ top: r.bottom + 4, left });
               }
               setShowHist(h => !h); setShowSobras(false);
             }}
@@ -3879,7 +3883,9 @@ function SlotAcciones({
               e.stopPropagation();
               if (!showSobras && sobrasBtnRef.current) {
                 const r = sobrasBtnRef.current.getBoundingClientRect();
-                setDropdownPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+                const W = 290; // maxWidth del dropdown de sobras
+                const left = Math.max(8, Math.min(r.right - W, window.innerWidth - W - 8));
+                setDropdownPos({ top: r.bottom + 4, left });
               }
               setShowSobras(s => !s); setShowHist(false);
             }}
