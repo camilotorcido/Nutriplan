@@ -10191,6 +10191,276 @@ function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange }) {
   );
 }
 
+// =============================================
+// COMPONENTE: ChatPanel — Asistente IA Calibrate
+// Proxy → Firebase Cloud Function → Claude API
+// =============================================
+function ChatPanel({ darkMode }) {
+  const [open, setOpen]       = React.useState(false);
+  const [input, setInput]     = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError]     = React.useState('');
+  const [messages, setMessages] = React.useState(function() {
+    try { return JSON.parse(localStorage.getItem('calibrate_chat_history') || '[]'); }
+    catch(e) { return []; }
+  });
+  const bottomRef = React.useRef(null);
+  const inputRef  = React.useRef(null);
+
+  // ── Serializar contexto desde localStorage ──────────────────────────────
+  function buildContexto() {
+    var perfil = (typeof cargarPerfil === 'function') ? (cargarPerfil() || {}) : {};
+    var plan   = (typeof cargarPlanSemanal === 'function') ? (cargarPlanSemanal() || {}) : {};
+    var DIAS   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    var diaActual = DIAS[new Date().getDay()];
+    var semana1   = plan.semana_1 || plan;
+    var planHoy   = (semana1 && semana1[diaActual]) || {};
+    var rm    = perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen;
+    var calcs = rm && rm.calculados;
+    var mg    = calcs && calcs.macrosGramos;
+    var macrosObjetivo = {
+      kcal:          (calcs && (calcs.caloriasCorte || calcs.caloriasObjetivo)) || perfil.caloriasObjetivo || 0,
+      proteinas:     (mg && mg.proteina)       || 0,
+      carbohidratos: (mg && mg.carbohidratos)  || 0,
+      grasas:        (mg && mg.grasas)         || 0
+    };
+    var hoy = new Date().toISOString().split('T')[0];
+    var extMap = {};
+    try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
+    var extHoy = extMap[hoy] || [];
+    var macrosConsumidos = extHoy.reduce(function(acc, c) {
+      return { kcal: acc.kcal + (c.kcal||0), proteinas: acc.proteinas + (c.proteinas_g||0),
+               carbohidratos: acc.carbohidratos + (c.carbohidratos_g||0), grasas: acc.grasas + (c.grasas_g||0) };
+    }, { kcal:0, proteinas:0, carbohidratos:0, grasas:0 });
+    return { perfil, planHoy, macrosObjetivo, macrosConsumidos, diaActual };
+  }
+
+  // ── Ejecutar tool calls localmente ─────────────────────────────────────
+  function ejecutarTool(name, input_) {
+    if (name === 'registrar_comida') {
+      var hoy = new Date().toISOString().split('T')[0];
+      var extMap = {};
+      try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
+      var nueva = {
+        id: 'chat_' + Date.now(),
+        nombre: input_.nombre, kcal: input_.kcal,
+        proteinas_g: input_.proteinas_g, carbohidratos_g: input_.carbohidratos_g, grasas_g: input_.grasas_g,
+        reemplaza: input_.reemplaza || null, fuente: 'chat'
+      };
+      extMap[hoy] = (extMap[hoy] || []).concat([nueva]);
+      localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
+      // Notificar al resto de la app para que actualice la UI
+      window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
+      return { ok: true, registrado: nueva };
+    }
+    if (name === 'buscar_alimento') {
+      var q = (input_.query || '').toLowerCase();
+      var res = (window.FOODS_DB || []).filter(function(f) { return f.nombre.toLowerCase().includes(q); })
+        .slice(0, 5).map(function(f) { return { nombre:f.nombre, porcion:f.porcion, kcal:f.kcal, proteinas:f.proteinas, carbohidratos:f.carbohidratos, grasas:f.grasas }; });
+      return { resultados: res };
+    }
+    if (name === 'get_resumen_dia') {
+      var ctx = buildContexto();
+      return { consumido: ctx.macrosConsumidos, objetivo: ctx.macrosObjetivo,
+        diferencia: { kcal: ctx.macrosObjetivo.kcal - ctx.macrosConsumidos.kcal,
+          proteinas: ctx.macrosObjetivo.proteinas - ctx.macrosConsumidos.proteinas,
+          carbohidratos: ctx.macrosObjetivo.carbohidratos - ctx.macrosConsumidos.carbohidratos,
+          grasas: ctx.macrosObjetivo.grasas - ctx.macrosConsumidos.grasas } };
+    }
+    return { error: 'tool desconocida: ' + name };
+  }
+
+  // ── Enviar mensaje ──────────────────────────────────────────────────────
+  async function sendMessage() {
+    var texto = input.trim();
+    if (!texto || loading) return;
+    if (typeof firebase === 'undefined' || !firebase.functions) {
+      setError('Firebase Functions no disponible. Intenta recargar la app.');
+      return;
+    }
+
+    var displayMsgs = messages.concat([{ role:'user', content: texto }]);
+    setMessages(displayMsgs);
+    setInput('');
+    setLoading(true);
+    setError('');
+
+    try {
+      var fn = firebase.functions().httpsCallable('calibrateChat');
+      var contexto = buildContexto();
+      // historial para API (puede incluir bloques tool_use como arrays)
+      var apiHistory = displayMsgs.slice();
+      var maxRondas = 5;
+
+      while (maxRondas-- > 0) {
+        var result = await fn({ messages: apiHistory, contexto: contexto });
+        var data = result.data;
+        var textBlocks = data.content.filter(function(b) { return b.type === 'text'; });
+        var toolBlocks = data.content.filter(function(b) { return b.type === 'tool_use'; });
+
+        if (data.stop_reason === 'tool_use' && toolBlocks.length > 0) {
+          // Agregar respuesta del asistente con tool_use al historial de API
+          apiHistory = apiHistory.concat([{ role:'assistant', content: data.content }]);
+          // Ejecutar tools y agregar tool_results
+          var toolResults = toolBlocks.map(function(tb) {
+            return { type:'tool_result', tool_use_id: tb.id, content: JSON.stringify(ejecutarTool(tb.name, tb.input)) };
+          });
+          apiHistory = apiHistory.concat([{ role:'user', content: toolResults }]);
+          continue;
+        }
+
+        // Respuesta final de texto
+        var textoRespuesta = textBlocks.map(function(b) { return b.text; }).join('\n').trim();
+        if (textoRespuesta) {
+          displayMsgs = displayMsgs.concat([{ role:'assistant', content: textoRespuesta }]);
+        }
+        break;
+      }
+    } catch(e) {
+      console.error('[ChatPanel]', e);
+      setError('Error al conectar con el asistente. Intenta de nuevo.');
+    } finally {
+      setLoading(false);
+    }
+
+    setMessages(displayMsgs);
+    localStorage.setItem('calibrate_chat_history', JSON.stringify(displayMsgs.slice(-20)));
+  }
+
+  // ── Auto-scroll ─────────────────────────────────────────────────────────
+  React.useEffect(function() {
+    if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior:'smooth' });
+  }, [messages, loading]);
+
+  // ── Focus al abrir ──────────────────────────────────────────────────────
+  React.useEffect(function() {
+    if (open && inputRef.current) setTimeout(function() { inputRef.current && inputRef.current.focus(); }, 100);
+  }, [open]);
+
+  var borderColor = darkMode ? '#374151' : '#e5e7eb';
+  var bgPanel     = darkMode ? '#111827' : '#ffffff';
+  var bgMsg       = darkMode ? '#1f2937' : '#f3f4f6';
+  var colorText   = darkMode ? '#f3f4f6' : '#111827';
+  var colorMuted  = darkMode ? '#9ca3af' : '#6b7280';
+
+  return React.createElement(React.Fragment, null,
+    /* ── Botón flotante ── */
+    React.createElement('button', {
+      onClick: function() { setOpen(function(o) { return !o; }); },
+      title: 'Asistente IA',
+      style: {
+        position:'fixed', bottom:24, right:24, zIndex:1000,
+        width:52, height:52, borderRadius:'50%', border:'none',
+        background:'linear-gradient(135deg,#10b981,#059669)',
+        color:'#fff', fontSize:22, cursor:'pointer',
+        boxShadow:'0 4px 20px rgba(16,185,129,0.45)',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        transition:'transform 0.15s, box-shadow 0.15s'
+      }
+    }, open ? '✕' : React.createElement('i', { className:'fas fa-comment-dots' })),
+
+    /* ── Panel ── */
+    open && React.createElement('div', {
+      style: {
+        position:'fixed', bottom:88, right:24, zIndex:999,
+        width: Math.min(380, window.innerWidth - 32),
+        height: Math.min(520, window.innerHeight - 130),
+        borderRadius:20, background:bgPanel,
+        border:'1px solid '+borderColor,
+        boxShadow:'0 20px 60px rgba(0,0,0,0.25)',
+        display:'flex', flexDirection:'column', overflow:'hidden'
+      }
+    },
+      /* Header */
+      React.createElement('div', {
+        style:{ padding:'13px 16px', borderBottom:'1px solid '+borderColor,
+          display:'flex', alignItems:'center', gap:10, flexShrink:0 }
+      },
+        React.createElement('div', {
+          style:{ width:34, height:34, borderRadius:'50%',
+            background:'linear-gradient(135deg,#10b981,#059669)',
+            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }
+        }, React.createElement('i', { className:'fas fa-robot', style:{ color:'#fff', fontSize:15 } })),
+        React.createElement('div', { style:{ flex:1 } },
+          React.createElement('div', { style:{ fontWeight:700, fontSize:14, color:colorText } }, 'Calibrate IA'),
+          React.createElement('div', { style:{ fontSize:11, color:'#10b981' } }, '● En línea')
+        ),
+        React.createElement('button', {
+          onClick: function() { setMessages([]); localStorage.removeItem('calibrate_chat_history'); },
+          title:'Borrar conversación',
+          style:{ background:'transparent', border:'none', cursor:'pointer', color:colorMuted, fontSize:13, padding:'4px 6px', borderRadius:6 }
+        }, React.createElement('i', { className:'fas fa-trash-can' }))
+      ),
+
+      /* Mensajes */
+      React.createElement('div', {
+        style:{ flex:1, overflowY:'auto', padding:'14px', display:'flex', flexDirection:'column', gap:10 }
+      },
+        messages.length === 0 && React.createElement('div', {
+          style:{ textAlign:'center', padding:'32px 16px', color:colorMuted }
+        },
+          React.createElement('div', { style:{ fontSize:36, marginBottom:10 } }, '🥗'),
+          React.createElement('div', { style:{ fontSize:13, lineHeight:1.5 } },
+            'Hola, soy tu asistente nutricional.', React.createElement('br'), '¿Qué comiste hoy?'
+          )
+        ),
+        messages.map(function(m, i) {
+          var esUser = m.role === 'user';
+          return React.createElement('div', { key:i, style:{ display:'flex', justifyContent: esUser ? 'flex-end' : 'flex-start' } },
+            React.createElement('div', {
+              style:{
+                maxWidth:'80%', padding:'9px 13px',
+                borderRadius: esUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                background: esUser ? 'linear-gradient(135deg,#10b981,#059669)' : bgMsg,
+                color: esUser ? '#fff' : colorText,
+                fontSize:13, lineHeight:1.55, whiteSpace:'pre-wrap', wordBreak:'break-word'
+              }
+            }, m.content)
+          );
+        }),
+        loading && React.createElement('div', { style:{ display:'flex', justifyContent:'flex-start' } },
+          React.createElement('div', {
+            style:{ padding:'10px 14px', borderRadius:'18px 18px 18px 4px', background:bgMsg, color:colorMuted, fontSize:13, letterSpacing:3 }
+          }, '●●●')
+        ),
+        error && React.createElement('div', { style:{ textAlign:'center', color:'#f87171', fontSize:12, padding:'4px 0' } }, error),
+        React.createElement('div', { ref:bottomRef })
+      ),
+
+      /* Input */
+      React.createElement('div', {
+        style:{ padding:'10px 12px', borderTop:'1px solid '+borderColor, display:'flex', gap:8, flexShrink:0, alignItems:'center' }
+      },
+        React.createElement('input', {
+          ref: inputRef,
+          value: input,
+          onChange: function(e) { setInput(e.target.value); },
+          onKeyDown: function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } },
+          placeholder: 'Escribe aquí…',
+          disabled: loading,
+          style:{
+            flex:1, padding:'9px 13px', borderRadius:12, fontSize:13,
+            border:'1px solid '+borderColor,
+            background: darkMode ? '#1f2937' : '#f9fafb',
+            color: colorText, outline:'none'
+          }
+        }),
+        React.createElement('button', {
+          onClick: sendMessage,
+          disabled: loading || !input.trim(),
+          style:{
+            width:38, height:38, borderRadius:12, border:'none', flexShrink:0,
+            background: (loading || !input.trim()) ? (darkMode ? '#374151' : '#e5e7eb') : 'linear-gradient(135deg,#10b981,#059669)',
+            color: (loading || !input.trim()) ? colorMuted : '#fff',
+            cursor: (loading || !input.trim()) ? 'not-allowed' : 'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:16
+          }
+        }, React.createElement('i', { className:'fas fa-paper-plane', style:{ fontSize:14 } }))
+      )
+    )
+  );
+}
+
 function App() {
   const [pantalla, setPantalla] = React.useState("loading");
   const [perfil, setPerfil] = React.useState(null);
@@ -10903,6 +11173,11 @@ function App() {
       {recetaSeleccionada && <RecipeModal receta={recetaSeleccionada} onClose={() => setRecetaSeleccionada(null)} darkMode={darkMode} factorComensales={factorComensales} usaThermomix={perfil?.usaThermomix !== false} />}
 
       {globalOverlays}
+
+      {/* Asistente IA — siempre disponible */}
+      {pantalla !== 'loading' && pantalla !== 'onboarding' && (
+        <ChatPanel darkMode={darkMode} />
+      )}
     </div>
   );
 }

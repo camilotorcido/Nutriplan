@@ -104,10 +104,16 @@ exports.calibrateChat = onCall(
     const { messages, contexto } = request.data;
 
     // Sanitizar mensajes (solo roles válidos, sin campos extra)
+    // content puede ser string (texto normal) o array (tool_use / tool_result blocks)
     const mensajesLimpios = messages
       .filter(m => m.role === 'user' || m.role === 'assistant')
-      .slice(-20) // máx 20 turnos de historial
-      .map(m => ({ role: m.role, content: String(m.content).slice(0, 4000) }));
+      .slice(-30) // máx 30 para incluir rondas de tool_use
+      .map(m => ({
+        role: m.role,
+        content: Array.isArray(m.content)
+          ? m.content   // bloques tool_use / tool_result — pasarlos tal cual
+          : String(m.content).slice(0, 4000)
+      }));
 
     if (mensajesLimpios.length === 0) {
       throw new HttpsError('invalid-argument', 'Sin mensajes válidos');
