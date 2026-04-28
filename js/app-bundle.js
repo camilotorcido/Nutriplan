@@ -6724,7 +6724,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
     try { return JSON.parse(localStorage.getItem('nutriplan_comidas_frecuentes') || '[]'); }
     catch(e) { return []; }
   });
-  const [modo, setModo] = React.useState('manual'); // 'manual' | 'buscar'
+  const [modo, setModo] = React.useState('buscar'); // 'buscar' | 'manual'
 
   // Colores inline para inputs — más robusto que clases Tailwind en dark mode
   var inputColor   = darkMode ? '#f9fafb' : '#111827';
@@ -6892,8 +6892,8 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
           {/* ── Tab switcher ─────────────────────────────────────────────── */}
           <div style={{ display:'flex', borderRadius:12, border:'1px solid '+inputBorder, overflow:'hidden', flexShrink:0 }}>
             {[
-              { key:'manual', icon:'fa-pen-to-square', label: t('Entrada rápida','Quick entry') },
-              { key:'buscar', icon:'fa-magnifying-glass', label: t('Buscar alimentos','Search foods') }
+              { key:'buscar', icon:'fa-magnifying-glass', label: t('Buscar alimentos','Search foods') },
+              { key:'manual', icon:'fa-pen-to-square', label: t('Entrada rápida','Quick entry') }
             ].map(function(tab) {
               var active = modo === tab.key;
               return (
@@ -6902,7 +6902,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
                     backgroundColor: active ? '#10b981' : (darkMode ? '#111827' : '#f9fafb'),
                     color: active ? '#ffffff' : (darkMode ? '#6b7280' : '#9ca3af'),
                     fontSize:12, fontWeight:'600', transition:'background-color 0.15s',
-                    borderRight: tab.key === 'manual' ? '1px solid '+inputBorder : 'none' }}>
+                    borderRight: tab.key === 'buscar' ? '1px solid '+inputBorder : 'none' }}>
                   <i className={'fas '+tab.icon} style={{ marginRight:5 }}></i>{tab.label}
                 </button>
               );
