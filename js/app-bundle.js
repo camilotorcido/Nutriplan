@@ -6634,6 +6634,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
     try { return JSON.parse(localStorage.getItem('nutriplan_comidas_frecuentes') || '[]'); }
     catch(e) { return []; }
   });
+  const [modo, setModo] = React.useState('manual'); // 'manual' | 'buscar'
 
   // Colores inline para inputs — más robusto que clases Tailwind en dark mode
   var inputColor   = darkMode ? '#f9fafb' : '#111827';
@@ -6653,7 +6654,11 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
   }, { kcal: 0, proteinas: 0, carbohidratos: 0, grasas: 0 });
 
   var tieneIngredientes = ingredientes.length > 0;
-  var finalKcal = tieneIngredientes ? totalesIngr.kcal          : (parseFloat(manualKcal) || 0);
+  // Modo manual: kcal auto-calculadas en render (P×4 + C×4 + G×9) — sin useEffect, sin timing bugs
+  var autoKcalMacros = Math.round(
+    (parseFloat(manualProt)||0)*4 + (parseFloat(manualCarb)||0)*4 + (parseFloat(manualGras)||0)*9
+  );
+  var finalKcal = tieneIngredientes ? totalesIngr.kcal : (modo === 'manual' ? autoKcalMacros : (parseFloat(manualKcal) || 0));
   var finalProt = tieneIngredientes ? totalesIngr.proteinas     : (parseFloat(manualProt) || 0);
   var finalCarb = tieneIngredientes ? totalesIngr.carbohidratos : (parseFloat(manualCarb) || 0);
   var finalGras = tieneIngredientes ? totalesIngr.grasas        : (parseFloat(manualGras) || 0);
@@ -6727,7 +6732,9 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
   function handleSubmit() {
     var nombreFinal = nombre.trim();
     if (!nombreFinal) { setError(t('El nombre es obligatorio','Name is required')); return; }
-    if (finalKcal <= 0) { setError(t('Agrega alimentos o ingresa las calorías','Add foods or enter calories')); return; }
+    if (finalKcal <= 0) { setError(modo === 'manual'
+      ? t('Ingresa al menos un macro (proteínas, carbohidratos o grasas)','Enter at least one macro (protein, carbs or fat)')
+      : t('Agrega alimentos o ingresa los macros','Add foods or enter macros')); return; }
     setError('');
     // ── Guardar en comidas frecuentes ──────────────────────────────────────
     try {
@@ -6792,6 +6799,26 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
         {/* Scrollable body */}
         <div style={{ overflowY:'auto', flex:1 }} className="px-5 py-4 space-y-3">
 
+          {/* ── Tab switcher ─────────────────────────────────────────────── */}
+          <div style={{ display:'flex', borderRadius:12, border:'1px solid '+inputBorder, overflow:'hidden', flexShrink:0 }}>
+            {[
+              { key:'manual', icon:'fa-pen-to-square', label: t('Entrada rápida','Quick entry') },
+              { key:'buscar', icon:'fa-magnifying-glass', label: t('Buscar alimentos','Search foods') }
+            ].map(function(tab) {
+              var active = modo === tab.key;
+              return (
+                <button key={tab.key} onClick={function() { setModo(tab.key); }}
+                  style={{ flex:1, padding:'9px 4px', border:'none', cursor:'pointer',
+                    backgroundColor: active ? '#10b981' : (darkMode ? '#111827' : '#f9fafb'),
+                    color: active ? '#ffffff' : (darkMode ? '#6b7280' : '#9ca3af'),
+                    fontSize:12, fontWeight:'600', transition:'background-color 0.15s',
+                    borderRight: tab.key === 'manual' ? '1px solid '+inputBorder : 'none' }}>
+                  <i className={'fas '+tab.icon} style={{ marginRight:5 }}></i>{tab.label}
+                </button>
+              );
+            })}
+          </div>
+
           {/* ── Comidas recientes ────────────────────────────────────────── */}
           {recurrentes.length > 0 && (
             <div>
@@ -6803,18 +6830,19 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
                   return (
                     <button key={ri} onClick={function() {
                       setNombre(r.nombre); setNombreManual(true);
-                      setManualKcal(String(r.kcal));
                       setManualProt(String(r.proteinas_g));
                       setManualCarb(String(r.carbohidratos_g));
                       setManualGras(String(r.grasas_g));
+                      setManualKcal('');
                       setIngredientes([]);
+                      setModo('manual');
                     }}
                       style={{ flexShrink:0, padding:'5px 10px', borderRadius:20, cursor:'pointer',
                         border:'1px solid ' + (darkMode ? '#4b5563' : '#d1d5db'),
                         backgroundColor: darkMode ? '#1f2937' : '#f9fafb',
                         color: darkMode ? '#d1d5db' : '#374151',
                         fontSize:12, fontWeight:'500', whiteSpace:'nowrap', lineHeight:'1.4' }}>
-                      {r.nombre.length > 20 ? r.nombre.slice(0, 20) + '…' : r.nombre}
+                      {r.nombre.length > 22 ? r.nombre.slice(0, 22) + '…' : r.nombre}
                       <span style={{ color:'#10b981', marginLeft:5, fontWeight:'700' }}>{r.kcal}</span>
                     </button>
                   );
@@ -6823,154 +6851,230 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
             </div>
           )}
 
-          {/* ── Buscador ─────────────────────────────────────────────────── */}
-          <div className="relative">
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border"
-              style={{ backgroundColor:searchBg, borderColor:inputBorder }}>
-              <i className={`fas fa-magnifying-glass text-sm flex-shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
-              <input type="text" value={busqueda} autoFocus
-                onChange={function(e) { setBusqueda(e.target.value); }}
-                placeholder={t('Buscar alimento o ingrediente...','Search food or ingredient...')}
-                style={{ background:'transparent', color:inputColor, caretColor:'#10b981',
-                  flex:1, fontSize:'14px', outline:'none', border:'none' }} />
-              {busqueda && (
-                <button onClick={function() { setBusqueda(''); setSugerencias([]); }}
-                  style={{ color:'#6b7280', cursor:'pointer', padding:0, background:'none', border:'none' }}>
-                  <i className="fas fa-times text-xs"></i>
-                </button>
-              )}
-            </div>
-            {sugerencias.length > 0 && (
-              <div className={`absolute top-full left-0 right-0 mt-1 rounded-xl border shadow-xl z-20 overflow-hidden ${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
-                {sugerencias.map(function(item, idx) {
-                  return (
-                    <button key={idx} onClick={function() { agregarItem(item); }}
-                      className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors cursor-pointer border-b last:border-0 ${darkMode ? 'hover:bg-gray-700 border-gray-700' : 'hover:bg-green-50 border-gray-100'}`}>
-                      <i className={`fas ${item._tipo === 'alimento' ? 'fa-apple-whole' : 'fa-bowl-food'} text-xs flex-shrink-0 ${item._tipo === 'alimento' ? 'text-green-500' : 'text-amber-500'}`}></i>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold truncate" style={{ color:inputColor }}>{item.nombre}</div>
-                        {item.porcion && <div className="text-xs" style={{ color:'#9ca3af' }}>{item.porcion}</div>}
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <span className="text-xs font-bold" style={{ color:'#6b7280' }}>{item.kcal} kcal</span>
-                        <i className="fas fa-plus text-xs text-green-500"></i>
-                      </div>
-                    </button>
-                  );
-                })}
+          {/* ══ MODO ENTRADA RÁPIDA ══════════════════════════════════════════ */}
+          {modo === 'manual' && (
+            <>
+              {/* ── Nombre ───────────────────────────────────────────────── */}
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:'700', color:'#6b7280', marginBottom:5 }}>
+                  {t('Nombre de la comida','Meal name')} <span style={{ color:'#f87171' }}>*</span>
+                </label>
+                <input type="text" value={nombre} autoFocus
+                  onChange={function(e) { setNombre(e.target.value); setNombreManual(true); }}
+                  placeholder={t('Ej: Pollo con arroz y ensalada','E.g. Chicken with rice and salad')}
+                  style={{ display:'block', width:'100%', padding:'10px 12px', borderRadius:12,
+                    border:'1px solid '+inputBorder, backgroundColor:inputBg, color:inputColor,
+                    fontSize:14, outline:'none', boxSizing:'border-box' }} />
               </div>
-            )}
-          </div>
 
-          {/* ── Bandeja de ingredientes ───────────────────────────────────── */}
-          {tieneIngredientes && (
-            <div className={`rounded-xl border overflow-hidden ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              {ingredientes.map(function(ing, idx) {
-                var q = parseFloat(ing.qty) || 1;
-                var subKcal = Math.round((ing.kcal || 0) * q);
-                var qLabel = (q % 1 === 0) ? q + 'x' : q + 'x';
-                return (
-                  <div key={idx} className={`flex items-center gap-2 px-3 py-2 border-b last:border-0 ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-gray-50'}`}>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate" style={{ color:inputColor }}>{ing.nombre}</div>
-                    </div>
-                    {/* Qty stepper */}
-                    <div className="flex items-center gap-0.5 flex-shrink-0">
-                      <button onClick={function() { cambiarQty(idx, -0.5); }}
-                        style={{ width:22, height:22, borderRadius:6, cursor:'pointer', fontSize:14, fontWeight:'bold', border:'none',
-                          backgroundColor: darkMode ? '#374151' : '#e5e7eb', color: darkMode ? '#d1d5db' : '#374151' }}>−</button>
-                      <span style={{ minWidth:28, textAlign:'center', fontSize:12, fontWeight:'bold', color:inputColor }}>{qLabel}</span>
-                      <button onClick={function() { cambiarQty(idx, +0.5); }}
-                        style={{ width:22, height:22, borderRadius:6, cursor:'pointer', fontSize:14, fontWeight:'bold', border:'none',
-                          backgroundColor: darkMode ? '#374151' : '#e5e7eb', color: darkMode ? '#d1d5db' : '#374151' }}>+</button>
-                    </div>
-                    <span style={{ fontSize:11, fontWeight:'bold', color:'#6b7280', minWidth:52, textAlign:'right', flexShrink:0 }}>{subKcal} kcal</span>
-                    <button onClick={function() { quitarIngrediente(idx); }}
-                      style={{ color: darkMode ? '#4b5563' : '#d1d5db', cursor:'pointer', border:'none', background:'none', padding:0, flexShrink:0 }}
-                      className="hover:text-red-500">
-                      <i className="fas fa-times text-xs"></i>
-                    </button>
-                  </div>
-                );
-              })}
-              {/* Fila total */}
-              <div className={`flex items-center justify-between px-3 py-2 ${darkMode ? 'bg-gray-700/40' : 'bg-white'}`}>
-                <span className="text-xs font-bold uppercase tracking-wider" style={{ color:'#6b7280' }}>Total</span>
-                <div className="flex gap-2 text-xs font-bold">
-                  <span className="text-green-500">{totalesIngr.kcal} kcal</span>
-                  <span className="text-blue-400">{totalesIngr.proteinas}P</span>
-                  <span className="text-amber-400">{totalesIngr.carbohidratos}C</span>
-                  <span className="text-purple-400">{totalesIngr.grasas}G</span>
+              {/* ── Macros grid ───────────────────────────────────────────── */}
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:'700', color:'#6b7280', marginBottom:8 }}>
+                  {t('Macronutrientes','Macronutrients')}
+                </label>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+                  {[
+                    { label:t('Proteínas','Protein'),      unit:'g', color:'#3b82f6', val:manualProt, set:setManualProt },
+                    { label:t('Carbohidratos','Carbs'),    unit:'g', color:'#f59e0b', val:manualCarb, set:setManualCarb },
+                    { label:t('Grasas','Fat'),             unit:'g', color:'#a855f7', val:manualGras, set:setManualGras }
+                  ].map(function(f, fi) {
+                    return (
+                      <div key={fi}>
+                        <label style={{ display:'block', fontSize:10, fontWeight:'700', color:f.color, marginBottom:4 }}>
+                          {f.label} <span style={{ fontWeight:'400', color:'#9ca3af' }}>({f.unit})</span>
+                        </label>
+                        <input type="number" value={f.val}
+                          onChange={function(e) { f.set(e.target.value); }}
+                          placeholder="0" min="0" step="1" inputMode="numeric"
+                          style={{ display:'block', width:'100%', padding:'9px 10px', borderRadius:10,
+                            border:'2px solid '+(f.val ? f.color+'66' : inputBorder),
+                            backgroundColor:inputBg, color:inputColor, fontSize:15,
+                            outline:'none', boxSizing:'border-box', fontWeight:'700',
+                            transition:'border-color 0.15s' }} />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* ── Entrada manual (solo si bandeja vacía) ───────────────────── */}
-          {!tieneIngredientes && (
-            <div className={`rounded-xl p-3 border ${darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-100'}`}>
-              <p className="text-xs mb-2.5" style={{ color:'#9ca3af' }}>
-                {t('O ingresa los macros manualmente:','Or enter macros manually:')}
-              </p>
-              <div className="grid grid-cols-4 gap-1.5">
-                {[
-                  { label:'kcal *', color:inputColor, val:manualKcal, set:setManualKcal },
-                  { label:t('Prot g','Prot g'), color:'#3b82f6', val:manualProt, set:setManualProt },
-                  { label:t('Carbs g','Carbs g'), color:'#f59e0b', val:manualCarb, set:setManualCarb },
-                  { label:t('Grasas g','Fat g'), color:'#a855f7', val:manualGras, set:setManualGras }
-                ].map(function(f, fi) {
-                  return (
-                    <div key={fi}>
-                      <label className="text-xs font-bold mb-1 block" style={{ color:f.color }}>{f.label}</label>
-                      <input type="number" value={f.val} onChange={function(e) { f.set(e.target.value); }}
-                        placeholder="0" min="0" step="1"
-                        style={{ display:'block', width:'100%', padding:'6px 8px', borderRadius:8, border:'1px solid '+inputBorder,
-                          backgroundColor:inputBg, color:inputColor, fontSize:13, outline:'none', boxSizing:'border-box' }} />
-                    </div>
-                  );
-                })}
+              {/* ── Calorías auto-calculadas ─────────────────────────────── */}
+              <div style={{
+                display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+                padding:'14px 16px', borderRadius:14,
+                backgroundColor: darkMode ? (finalKcal>0 ? '#052e16' : '#111827') : (finalKcal>0 ? '#f0fdf4' : '#f9fafb'),
+                border:'1px solid '+(darkMode ? (finalKcal>0?'#166534':'#374151') : (finalKcal>0?'#bbf7d0':'#e5e7eb')),
+                transition:'background-color 0.2s, border-color 0.2s'
+              }}>
+                <i className="fas fa-fire" style={{ color: finalKcal>0 ? '#f97316' : '#9ca3af', fontSize:18 }}></i>
+                <div style={{ display:'flex', alignItems:'baseline', gap:4 }}>
+                  <span style={{ fontSize:32, fontWeight:'800', lineHeight:1,
+                    color: finalKcal>0 ? '#10b981' : (darkMode?'#374151':'#d1d5db') }}>
+                    {finalKcal > 0 ? finalKcal : '—'}
+                  </span>
+                  <span style={{ fontSize:14, fontWeight:'700',
+                    color: finalKcal>0 ? '#10b981' : (darkMode?'#374151':'#d1d5db') }}>kcal</span>
+                </div>
+                <span style={{ fontSize:10, color:'#9ca3af', marginLeft:2 }}>
+                  {finalKcal>0
+                    ? 'P×4 + C×4 + G×9'
+                    : t('ingresa los macros','enter macros above')}
+                </span>
               </div>
-            </div>
+            </>
           )}
 
-          {/* ── Nombre de la comida ───────────────────────────────────────── */}
-          <div>
-            <label className="text-xs font-bold mb-1 block" style={{ color:'#6b7280' }}>
-              {t('Nombre de la comida','Meal name')} <span style={{ color:'#f87171' }}>*</span>
-            </label>
-            <input type="text" value={nombre}
-              onChange={function(e) { setNombre(e.target.value); setNombreManual(true); }}
-              placeholder={t('Ej: 2 huevos con tomate','E.g. 2 eggs with tomato')}
-              style={{ display:'block', width:'100%', padding:'10px 12px', borderRadius:12, border:'1px solid '+inputBorder,
-                backgroundColor:inputBg, color:inputColor, fontSize:14, outline:'none', boxSizing:'border-box' }} />
-          </div>
+          {/* ══ MODO BUSCAR ALIMENTOS ════════════════════════════════════════ */}
+          {modo === 'buscar' && (
+            <>
+              {/* ── Buscador ─────────────────────────────────────────────── */}
+              <div style={{ position:'relative' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 12px',
+                  borderRadius:12, border:'1px solid '+inputBorder, backgroundColor:searchBg }}>
+                  <i className={`fas fa-magnifying-glass text-sm flex-shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
+                  <input type="text" value={busqueda} autoFocus
+                    onChange={function(e) { setBusqueda(e.target.value); }}
+                    placeholder={t('Buscar alimento o receta...','Search food or recipe...')}
+                    style={{ background:'transparent', color:inputColor, caretColor:'#10b981',
+                      flex:1, fontSize:'14px', outline:'none', border:'none' }} />
+                  {busqueda && (
+                    <button onClick={function() { setBusqueda(''); setSugerencias([]); }}
+                      style={{ color:'#6b7280', cursor:'pointer', padding:0, background:'none', border:'none' }}>
+                      <i className="fas fa-times text-xs"></i>
+                    </button>
+                  )}
+                </div>
+                {sugerencias.length > 0 && (
+                  <div className={`absolute top-full left-0 right-0 mt-1 rounded-xl border shadow-xl z-20 overflow-hidden ${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+                    {sugerencias.map(function(item, idx) {
+                      return (
+                        <button key={idx} onClick={function() { agregarItem(item); }}
+                          className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors cursor-pointer border-b last:border-0 ${darkMode ? 'hover:bg-gray-700 border-gray-700' : 'hover:bg-green-50 border-gray-100'}`}>
+                          <i className={`fas ${item._tipo === 'alimento' ? 'fa-apple-whole' : 'fa-bowl-food'} text-xs flex-shrink-0 ${item._tipo === 'alimento' ? 'text-green-500' : 'text-amber-500'}`}></i>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold truncate" style={{ color:inputColor }}>{item.nombre}</div>
+                            {item.porcion && <div className="text-xs" style={{ color:'#9ca3af' }}>{item.porcion}</div>}
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <span className="text-xs font-bold" style={{ color:'#6b7280' }}>{item.kcal} kcal</span>
+                            <i className="fas fa-plus text-xs text-green-500"></i>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
 
-          {/* ── ¿Reemplaza comida del plan? ───────────────────────────────── */}
+              {/* ── Bandeja de ingredientes ───────────────────────────────── */}
+              {tieneIngredientes && (
+                <div className={`rounded-xl border overflow-hidden ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  {ingredientes.map(function(ing, idx) {
+                    var q = parseFloat(ing.qty) || 1;
+                    var subKcal = Math.round((ing.kcal || 0) * q);
+                    return (
+                      <div key={idx} className={`flex items-center gap-2 px-3 py-2 border-b last:border-0 ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-gray-50'}`}>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate" style={{ color:inputColor }}>{ing.nombre}</div>
+                        </div>
+                        <div className="flex items-center gap-0.5 flex-shrink-0">
+                          <button onClick={function() { cambiarQty(idx, -0.5); }}
+                            style={{ width:22, height:22, borderRadius:6, cursor:'pointer', fontSize:14, fontWeight:'bold', border:'none',
+                              backgroundColor: darkMode ? '#374151' : '#e5e7eb', color: darkMode ? '#d1d5db' : '#374151' }}>−</button>
+                          <span style={{ minWidth:28, textAlign:'center', fontSize:12, fontWeight:'bold', color:inputColor }}>{q}x</span>
+                          <button onClick={function() { cambiarQty(idx, +0.5); }}
+                            style={{ width:22, height:22, borderRadius:6, cursor:'pointer', fontSize:14, fontWeight:'bold', border:'none',
+                              backgroundColor: darkMode ? '#374151' : '#e5e7eb', color: darkMode ? '#d1d5db' : '#374151' }}>+</button>
+                        </div>
+                        <span style={{ fontSize:11, fontWeight:'bold', color:'#6b7280', minWidth:52, textAlign:'right', flexShrink:0 }}>{subKcal} kcal</span>
+                        <button onClick={function() { quitarIngrediente(idx); }}
+                          style={{ color: darkMode ? '#4b5563' : '#d1d5db', cursor:'pointer', border:'none', background:'none', padding:0, flexShrink:0 }}
+                          className="hover:text-red-500">
+                          <i className="fas fa-times text-xs"></i>
+                        </button>
+                      </div>
+                    );
+                  })}
+                  <div className={`flex items-center justify-between px-3 py-2 ${darkMode ? 'bg-gray-700/40' : 'bg-white'}`}>
+                    <span className="text-xs font-bold uppercase tracking-wider" style={{ color:'#6b7280' }}>Total</span>
+                    <div className="flex gap-2 text-xs font-bold">
+                      <span className="text-green-500">{totalesIngr.kcal} kcal</span>
+                      <span className="text-blue-400">{totalesIngr.proteinas}P</span>
+                      <span className="text-amber-400">{totalesIngr.carbohidratos}C</span>
+                      <span className="text-purple-400">{totalesIngr.grasas}G</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Macros manuales fallback (bandeja vacía) ─────────────── */}
+              {!tieneIngredientes && (
+                <div className={`rounded-xl p-3 border ${darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-100'}`}>
+                  <p className="text-xs mb-2.5" style={{ color:'#9ca3af' }}>
+                    {t('O ingresa los macros directamente:','Or enter macros directly:')}
+                  </p>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[
+                      { label:'kcal', color:inputColor, val:manualKcal, set:setManualKcal },
+                      { label:'Prot g', color:'#3b82f6', val:manualProt, set:setManualProt },
+                      { label:'Carbs g', color:'#f59e0b', val:manualCarb, set:setManualCarb },
+                      { label:'Grasas g', color:'#a855f7', val:manualGras, set:setManualGras }
+                    ].map(function(f, fi) {
+                      return (
+                        <div key={fi}>
+                          <label style={{ display:'block', fontSize:10, fontWeight:'700', color:f.color, marginBottom:3 }}>{f.label}</label>
+                          <input type="number" value={f.val} onChange={function(e) { f.set(e.target.value); }}
+                            placeholder="0" min="0" step="1"
+                            style={{ display:'block', width:'100%', padding:'6px 8px', borderRadius:8, border:'1px solid '+inputBorder,
+                              backgroundColor:inputBg, color:inputColor, fontSize:13, outline:'none', boxSizing:'border-box' }} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Nombre de la comida (modo buscar) ────────────────────── */}
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:'700', color:'#6b7280', marginBottom:5 }}>
+                  {t('Nombre de la comida','Meal name')} <span style={{ color:'#f87171' }}>*</span>
+                </label>
+                <input type="text" value={nombre}
+                  onChange={function(e) { setNombre(e.target.value); setNombreManual(true); }}
+                  placeholder={t('Ej: 2 huevos con tomate','E.g. 2 eggs with tomato')}
+                  style={{ display:'block', width:'100%', padding:'10px 12px', borderRadius:12,
+                    border:'1px solid '+inputBorder, backgroundColor:inputBg, color:inputColor,
+                    fontSize:14, outline:'none', boxSizing:'border-box' }} />
+              </div>
+            </>
+          )}
+
+          {/* ── ¿Reemplaza comida del plan? ─────────── (ambos modos) ────── */}
           {comidasPlan.length > 0 && (
             <div>
-              <label className="text-xs font-bold mb-1 flex items-center gap-1.5" style={{ color:'#6b7280' }}>
+              <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, fontWeight:'700', color:'#6b7280', marginBottom:5 }}>
                 <i className="fas fa-arrows-rotate text-amber-500"></i>
                 {t('¿Reemplaza una comida del plan?','Replaces a planned meal?')}
               </label>
               <select value={reemplaza} onChange={function(e) { setReemplaza(e.target.value); }}
-                style={{ display:'block', width:'100%', padding:'10px 12px', borderRadius:12, border:'1px solid '+inputBorder,
-                  backgroundColor:inputBg, color:inputColor, fontSize:14, outline:'none', boxSizing:'border-box', cursor:'pointer' }}>
+                style={{ display:'block', width:'100%', padding:'10px 12px', borderRadius:12,
+                  border:'1px solid '+inputBorder, backgroundColor:inputBg, color:inputColor,
+                  fontSize:14, outline:'none', boxSizing:'border-box', cursor:'pointer' }}>
                 <option value="">{t('No reemplaza ninguna','Does not replace any')}</option>
                 {comidasPlan.map(function(tipo) {
                   return <option key={tipo} value={tipo}>{nombresComida[tipo] || tipo}</option>;
                 })}
               </select>
               {reemplaza && (
-                <p className="text-xs mt-1" style={{ color:'#f59e0b' }}>
+                <p className="text-xs mt-1.5" style={{ color:'#f59e0b' }}>
                   <i className="fas fa-info-circle mr-1"></i>
-                  {t('Los macros de esa comida del plan serán reemplazados por estos.','This will replace that meal\'s macros in your daily totals.')}
+                  {t('Los macros de esa comida del plan serán reemplazados por estos.','This replaces that meal\'s macros in your daily totals.')}
                 </p>
               )}
             </div>
           )}
 
           {error && (
-            <div className="flex items-center gap-2 text-xs" style={{ color:'#f87171' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'#f87171' }}>
               <i className="fas fa-exclamation-circle"></i>
               <span>{error}</span>
             </div>
@@ -6983,7 +7087,8 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
               {t('Cancelar','Cancel')}
             </button>
             <button onClick={handleSubmit}
-              className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-green-500 text-white hover:bg-green-600 transition-colors cursor-pointer shadow-sm">
+              disabled={modo === 'manual' && !nombre.trim()}
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-green-500 text-white hover:bg-green-600 transition-colors cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
               <i className="fas fa-plus mr-1.5"></i>{t('Agregar','Add')}
             </button>
           </div>
