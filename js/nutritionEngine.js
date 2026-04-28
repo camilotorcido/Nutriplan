@@ -56,6 +56,49 @@ function obtenerDiaActual() {
   return diasJS[new Date().getDay()];
 }
 
+// ─── Día entrenamiento vs. descanso: multiplicador calórico ───
+var _DIAS_A_DOW = {
+  Lunes: 1, Martes: 2, 'Miércoles': 3, Jueves: 4,
+  Viernes: 5, 'Sábado': 6, Domingo: 0
+};
+function _multiplicadorDia(dia) {
+  var sch = (typeof window !== 'undefined' && window.NP_RoadmapData)
+    ? (window.NP_RoadmapData.ENTRENO_PROTOCOLO || {}).scheduleDefault
+    : null;
+  if (!sch) return 1.0;
+  var dow = _DIAS_A_DOW[dia];
+  return (sch[dow] && sch[dow] !== 'descanso') ? 1.1 : 0.9;
+}
+
+// ─── Preferencias de generación: filtro por tipo de cocina ───
+var _KEYWORDS_COCINA = {
+  mediterranea: ['mediterráneo','mediterránea','griega','española','italiana','pasta','oliva','garbanzos','hummus','tzatziki','paella','risotto','falafel'],
+  asiatica:     ['asiático','asiática','chino','japonés','tailandés','wok','soja','tofu','miso','sushi','ramen','thai','edamame','jengibre'],
+  latinoamerica:['latinoamericano','mexicano','peruano','chileno','colombiano','quinoa','ají','cilantro','tortilla','ceviche','tacos','frijoles'],
+  nordica:      ['nórdico','escandinavo','salmón ahumado','avena','centeno','remolacha'],
+};
+function _filtrarPorCocina(candidatas, preferencias) {
+  if (!preferencias || !preferencias.cocina || preferencias.cocina === 'cualquiera') return candidatas;
+  var kws = _KEYWORDS_COCINA[preferencias.cocina];
+  if (!kws || kws.length === 0) return candidatas;
+  var filtradas = candidatas.filter(function(r) {
+    var txt = ((r.nombre || '') + ' ' + (r.descripcion || '')).toLowerCase();
+    return kws.some(function(k) { return txt.includes(k); });
+  });
+  return filtradas.length >= 2 ? filtradas : candidatas; // fallback si quedan muy pocas
+}
+
+// ─── Ordenar candidatas por rating (desc) con aleatoriedad para iguales ───
+function _sortPorRating(candidatas) {
+  var ratings = (typeof cargarRatings === 'function') ? cargarRatings() : {};
+  return candidatas.slice().sort(function(a, b) {
+    var ra = ratings[a.id] || 0;
+    var rb = ratings[b.id] || 0;
+    if (rb !== ra) return rb - ra;
+    return Math.random() - 0.5; // aleatoriedad para ratings iguales
+  });
+}
+
 // ─── Cálculo BMR con ecuación Mifflin-St Jeor ───
 function calcularBMR(peso, altura, edad, genero) {
   const base = (10 * peso) + (6.25 * altura) - (5 * edad);
@@ -185,8 +228,98 @@ function _aplicarModoSobras(planSemana, caloriasObjetivo) {
   return planSemana;
 }
 
+// ─── Compliance proteína: resolver target diario en gramos ───
+// Jerarquía: proteinaFloor (LBM-based) > macrosGramos > porcentaje objetivo
+function _resolverProteinaTarget(perfil, caloriasObjetivo) {
+  if (perfil.proteinaFloor && perfil.proteinaFloor > 0) return perfil.proteinaFloor;
+  if (perfil.macrosGramos && perfil.macrosGramos.proteinas_g > 0) return perfil.macrosGramos.proteinas_g;
+  const pct = perfil.objetivo === 'volumen' ? 25 : 35; // 35% para pérdida/mantenimiento
+  return Math.round(caloriasObjetivo * pct / 100 / 4);
+}
+
+// ─── Compliance proteína: filtrar candidatas por densidad proteica mínima ───
+// minDensidad = proteinaTarget / caloriasObjetivo  (g proteína / kcal total del día)
+// Como cada comida se escala proporcionalmente a sus kcal, una receta con esa
+// densidad entregará su parte proporcional del target diario independiente del tamaño.
+//
+// Tier 1: recetas que CUMPLEN el umbral (strict).
+// Tier 2: si no hay ninguna que cumpla, tomar el top-50% por densidad (mín. 2).
+// Tier 3: fallback sin cambios (evita quedarse sin candidatas).
+function _filtrarPorProteinaMinima(candidatas, minDensidad) {
+  if (!minDensidad || minDensidad <= 0 || candidatas.length <= 1) return candidatas;
+  const strictPool = candidatas.filter(r =>
+    r.calorias_base > 0 && (r.proteinas_g / r.calorias_base) >= minDensidad
+  );
+  if (strictPool.length >= 1) return strictPool;
+  // Ninguna receta supera el umbral → top-50% por densidad como mejor opción posible
+  const sorted = candidatas.slice().sort((a, b) =>
+    (b.calorias_base > 0 ? b.proteinas_g / b.calorias_base : 0) -
+    (a.calorias_base > 0 ? a.proteinas_g / a.calorias_base : 0)
+  );
+  return sorted.slice(0, Math.max(2, Math.ceil(sorted.length * 0.5)));
+}
+
+// ─── Compliance proteína: pase de corrección post-generación por día ───
+// Si el día no alcanza el 95% del target, encuentra la comida de menor densidad
+// proteica y la reemplaza con la mejor alternativa disponible del pool.
+// Repite hasta MAX_SWAPS veces o hasta alcanzar la tolerancia.
+function _enforceProteinDia(comidasDia, caloriasObjetivo, porTipo, recetasUsadasGlobal, proteinaTarget) {
+  if (!proteinaTarget || proteinaTarget <= 0) return;
+  const TOLERANCIA = 0.95;
+  const MAX_SWAPS = 5;
+
+  const totalProteina = () => Object.entries(comidasDia).reduce((sum, [k, c]) =>
+    k.startsWith('_') || !c ? sum : sum + (c.proteinas_escaladas || 0), 0
+  );
+
+  let swaps = 0;
+  while (totalProteina() < proteinaTarget * TOLERANCIA && swaps < MAX_SWAPS) {
+    // Ordenar comidas del día de menor a mayor densidad proteica (ignorar sobras)
+    const meals = Object.entries(comidasDia)
+      .filter(([k, c]) => !k.startsWith('_') && c && !c.es_sobra)
+      .sort(([, a], [, b]) => {
+        const dA = a.calorias_escaladas > 0 ? (a.proteinas_escaladas || 0) / a.calorias_escaladas : 0;
+        const dB = b.calorias_escaladas > 0 ? (b.proteinas_escaladas || 0) / b.calorias_escaladas : 0;
+        return dA - dB; // peor densidad primero
+      });
+
+    let mejora = false;
+    for (const [tipoComida, comidaActual] of meals) {
+      const caloriasComida = Math.round(caloriasObjetivo * DISTRIBUCION_COMIDAS[tipoComida]);
+      const disponibles = porTipo[tipoComida] || [];
+      if (disponibles.length === 0) continue;
+
+      const densidadActual = comidaActual.calorias_escaladas > 0
+        ? comidaActual.proteinas_escaladas / comidaActual.calorias_escaladas : 0;
+
+      // Receta con mayor densidad proteica disponible (distinta a la actual)
+      const candidatasSwap = disponibles
+        .filter(r => r.id !== comidaActual.id)
+        .sort((a, b) =>
+          (b.calorias_base > 0 ? b.proteinas_g / b.calorias_base : 0) -
+          (a.calorias_base > 0 ? a.proteinas_g / a.calorias_base : 0)
+        );
+      if (candidatasSwap.length === 0) continue;
+
+      const mejor = candidatasSwap[0];
+      const densidadMejor = mejor.calorias_base > 0 ? mejor.proteinas_g / mejor.calorias_base : 0;
+
+      // Solo intercambiar si la mejora es real (≥10% más proteína por kcal)
+      if (densidadMejor > densidadActual * 1.10) {
+        recetasUsadasGlobal.delete(comidaActual.id);
+        recetasUsadasGlobal.add(mejor.id);
+        comidasDia[tipoComida] = escalarReceta(mejor, caloriasComida);
+        mejora = true;
+        swaps++;
+        break;
+      }
+    }
+    if (!mejora) break; // No hay más mejoras posibles
+  }
+}
+
 // ─── MEJORA 4: Generar plan semanal con historial de 14 días ───
-function generarPlanSemanal(perfil, caloriasObjetivo) {
+function generarPlanSemanal(perfil, caloriasObjetivo, preferencias) {
   const numSemanas = Math.min(4, Math.max(1, perfil.numSemanas || 1));
   
   // 1. Filtrar recetas según restricciones del perfil
@@ -208,6 +341,10 @@ function generarPlanSemanal(perfil, caloriasObjetivo) {
   let advertenciaRecetas = null;
   const recetasUsadasGlobal = new Set(); // Para evitar repeticiones entre semanas
 
+  // Compliance proteína: target diario y densidad mínima requerida por receta
+  const proteinaTarget = _resolverProteinaTarget(perfil, caloriasObjetivo);
+  const minDensidad = caloriasObjetivo > 0 ? proteinaTarget / caloriasObjetivo : 0;
+
   // 5. Generar plan para N semanas
   const planMulti = { _numSemanas: numSemanas };
 
@@ -218,9 +355,9 @@ function generarPlanSemanal(perfil, caloriasObjetivo) {
       planSemana[dia] = {};
       
       Object.keys(DISTRIBUCION_COMIDAS).forEach(tipoComida => {
-        const caloriasComida = Math.round(caloriasObjetivo * DISTRIBUCION_COMIDAS[tipoComida]);
+        const caloriasComida = Math.round(caloriasObjetivo * _multiplicadorDia(dia) * DISTRIBUCION_COMIDAS[tipoComida]);
         const recetasDisponibles = porTipo[tipoComida];
-        
+
         if (recetasDisponibles.length > 0) {
           // Preferir recetas no usadas en 14 días ni en todo el plan multi-semana
           let candidatas = recetasDisponibles.filter(r =>
@@ -240,29 +377,25 @@ function generarPlanSemanal(perfil, caloriasObjetivo) {
             }
           }
 
-          // Prioridad proteína: cuando hay objetivo científico (LBM-based), ordenar candidatas
-          // por densidad proteica (g/kcal) y restringir a la mitad superior.
-          // Mantiene variedad aleatoria dentro del pool de alto contenido proteico.
-          if (perfil.proteinaFloor && perfil.proteinaFloor > 0 && candidatas.length > 2) {
-            const sorted = candidatas.slice().sort((a, b) => {
-              const ratioA = a.calorias_base > 0 ? a.proteinas_g / a.calorias_base : 0;
-              const ratioB = b.calorias_base > 0 ? b.proteinas_g / b.calorias_base : 0;
-              return ratioB - ratioA;
-            });
-            // Tomar el 60% superior (al menos 2 recetas para mantener variedad)
-            const topN = Math.max(2, Math.ceil(sorted.length * 0.6));
-            candidatas = sorted.slice(0, topN);
-          }
+          // Compliance proteína: filtrar por densidad mínima (Tier 1 estricto → Tier 2 top-50%)
+          candidatas = _filtrarPorProteinaMinima(candidatas, minDensidad);
+          candidatas = _filtrarPorCocina(candidatas, preferencias);
+          candidatas = _sortPorRating(candidatas);
 
-          const idx = Math.floor(Math.random() * candidatas.length);
+          // Selección ponderada: recetas mejor valoradas tienen más peso
+          const idx = Math.floor(Math.random() * Math.max(1, Math.ceil(candidatas.length * 0.6)));
           const recetaSeleccionada = candidatas[idx];
           recetasUsadasGlobal.add(recetaSeleccionada.id);
-          
+
           planSemana[dia][tipoComida] = escalarReceta(recetaSeleccionada, caloriasComida);
         } else {
           planSemana[dia][tipoComida] = null;
         }
       });
+
+      // Compliance proteína: pase de corrección — si el día no alcanza el 95% del target,
+      // reemplaza la comida de menor densidad proteica con la mejor alternativa disponible.
+      _enforceProteinDia(planSemana[dia], caloriasObjetivo, porTipo, recetasUsadasGlobal, proteinaTarget);
     });
 
     // Fase 4 - Punto 16: modo sobras (cena día N → almuerzo día N+1)
@@ -311,11 +444,12 @@ function cambiarRecetaIndividual(planMulti, dia, tipoComida, perfil, caloriasObj
   const semanaActual = plan[semanaKey];
   if (!semanaActual) return plan;
 
-  const recetasFiltradas = filtrarRecetas(RECETAS_DB, perfil);
+  const vetadas = (typeof cargarRecetasVetadas === 'function') ? cargarRecetasVetadas() : new Set();
+  const recetasFiltradas = filtrarRecetas(RECETAS_DB, perfil).filter(r => !vetadas.has(r.id));
   const recetasDelTipo = obtenerRecetasPorTipo(recetasFiltradas, tipoComida);
-  
+
   if (recetasDelTipo.length === 0) return plan;
-  
+
   // Recopilar IDs de recetas ya en uso en TODAS las semanas
   const idsEnUso = new Set();
   for (let s = 1; s <= (plan._numSemanas || 1); s++) {
@@ -328,9 +462,9 @@ function cambiarRecetaIndividual(planMulti, dia, tipoComida, perfil, caloriasObj
       });
     });
   }
-  
+
   const recetasUsadas14 = obtenerRecetasUsadas14Dias();
-  
+
   let candidatas = recetasDelTipo.filter(r => !idsEnUso.has(r.id) && !recetasUsadas14.has(r.id));
   if (candidatas.length === 0) {
     candidatas = recetasDelTipo.filter(r => !idsEnUso.has(r.id));
@@ -342,19 +476,14 @@ function cambiarRecetaIndividual(planMulti, dia, tipoComida, perfil, caloriasObj
 
   if (candidatas.length === 0) return plan;
 
-  // Prioridad proteína: igual que en el generador principal
-  if (perfil.proteinaFloor && perfil.proteinaFloor > 0 && candidatas.length > 2) {
-    const sorted = candidatas.slice().sort((a, b) => {
-      const ratioA = a.calorias_base > 0 ? a.proteinas_g / a.calorias_base : 0;
-      const ratioB = b.calorias_base > 0 ? b.proteinas_g / b.calorias_base : 0;
-      return ratioB - ratioA;
-    });
-    const topN = Math.max(2, Math.ceil(sorted.length * 0.6));
-    candidatas = sorted.slice(0, topN);
-  }
+  // Compliance proteína: filtrar por densidad mínima al hacer swap individual
+  const minDensidadSwap = caloriasObjetivo > 0
+    ? _resolverProteinaTarget(perfil, caloriasObjetivo) / caloriasObjetivo : 0;
+  candidatas = _filtrarPorProteinaMinima(candidatas, minDensidadSwap);
+  candidatas = _sortPorRating(candidatas);
 
   const caloriasComida = Math.round(caloriasObjetivo * DISTRIBUCION_COMIDAS[tipoComida]);
-  const idx = Math.floor(Math.random() * candidatas.length);
+  const idx = Math.floor(Math.random() * Math.max(1, Math.ceil(candidatas.length * 0.6)));
   const nuevaReceta = escalarReceta(candidatas[idx], caloriasComida);
 
   // Actualizar plan multi-semana
@@ -1324,7 +1453,7 @@ function formatearCompraCorto(ing) {
 // ═══════════════════════════════════════════════════
 
 // Generar plan semanal con fallback online cuando la base local no alcanza
-async function generarPlanSemanalAsync(perfil, caloriasObjetivo, onProgreso) {
+async function generarPlanSemanalAsync(perfil, caloriasObjetivo, onProgreso, preferencias) {
   const numSemanas = Math.min(4, Math.max(1, perfil.numSemanas || 1));
   
   // 1. Filtrar recetas locales según restricciones
@@ -1385,26 +1514,30 @@ async function generarPlanSemanalAsync(perfil, caloriasObjetivo, onProgreso) {
   const recetasUsadasGlobal = new Set();
   const planMulti = { _numSemanas: numSemanas };
 
+  // Compliance proteína: target diario y densidad mínima requerida por receta
+  const proteinaTarget = _resolverProteinaTarget(perfil, caloriasObjetivo);
+  const minDensidad = caloriasObjetivo > 0 ? proteinaTarget / caloriasObjetivo : 0;
+
   for (let s = 1; s <= numSemanas; s++) {
     if (onProgreso && numSemanas > 1) onProgreso(`Generando semana ${s} de ${numSemanas}...`);
     const planSemana = {};
-    
+
     DIAS_SEMANA.forEach(dia => {
       planSemana[dia] = {};
-      
+
       Object.keys(DISTRIBUCION_COMIDAS).forEach(tipoComida => {
-        const caloriasComida = Math.round(caloriasObjetivo * DISTRIBUCION_COMIDAS[tipoComida]);
+        const caloriasComida = Math.round(caloriasObjetivo * _multiplicadorDia(dia) * DISTRIBUCION_COMIDAS[tipoComida]);
         const recetasDisponibles = porTipo[tipoComida];
-        
+
         if (recetasDisponibles.length > 0) {
-          let candidatas = recetasDisponibles.filter(r => 
+          let candidatas = recetasDisponibles.filter(r =>
             !recetasUsadas14.has(r.id) && !recetasUsadasGlobal.has(r.id)
           );
-          
+
           if (candidatas.length === 0) {
             candidatas = recetasDisponibles.filter(r => !recetasUsadasGlobal.has(r.id));
           }
-          
+
           if (candidatas.length === 0) {
             candidatas = recetasDisponibles;
             if (!advertenciaRecetas) {
@@ -1412,18 +1545,13 @@ async function generarPlanSemanalAsync(perfil, caloriasObjetivo, onProgreso) {
             }
           }
 
-          // Prioridad proteína: igual que en el generador síncrono
-          if (perfil.proteinaFloor && perfil.proteinaFloor > 0 && candidatas.length > 2) {
-            const sorted = candidatas.slice().sort((a, b) => {
-              const ratioA = a.calorias_base > 0 ? a.proteinas_g / a.calorias_base : 0;
-              const ratioB = b.calorias_base > 0 ? b.proteinas_g / b.calorias_base : 0;
-              return ratioB - ratioA;
-            });
-            const topN = Math.max(2, Math.ceil(sorted.length * 0.6));
-            candidatas = sorted.slice(0, topN);
-          }
+          // Compliance proteína: filtrar por densidad mínima (Tier 1 estricto → Tier 2 top-50%)
+          candidatas = _filtrarPorProteinaMinima(candidatas, minDensidad);
+          candidatas = _filtrarPorCocina(candidatas, preferencias);
+          candidatas = _sortPorRating(candidatas);
 
-          const idx = Math.floor(Math.random() * candidatas.length);
+          // Selección ponderada: recetas mejor valoradas tienen más peso
+          const idx = Math.floor(Math.random() * Math.max(1, Math.ceil(candidatas.length * 0.6)));
           const recetaSeleccionada = candidatas[idx];
           recetasUsadasGlobal.add(recetaSeleccionada.id);
 
@@ -1432,6 +1560,9 @@ async function generarPlanSemanalAsync(perfil, caloriasObjetivo, onProgreso) {
           planSemana[dia][tipoComida] = null;
         }
       });
+
+      // Compliance proteína: pase de corrección post-selección
+      _enforceProteinDia(planSemana[dia], caloriasObjetivo, porTipo, recetasUsadasGlobal, proteinaTarget);
     });
 
     // Fase 4 - Punto 16: modo sobras
@@ -1457,20 +1588,16 @@ async function cambiarRecetaIndividualAsync(planMulti, dia, tipoComida, perfil, 
   const semanaActual = plan[semanaKey];
   if (!semanaActual) return plan;
 
-  const esSoloLocal = tipoComida === 'snack_am' || tipoComida === 'snack_pm' || tipoComida === 'desayuno';
-  const recetasFiltradas = filtrarRecetas(RECETAS_DB, perfil);
+  const vetadasAsync = (typeof cargarRecetasVetadas === 'function') ? cargarRecetasVetadas() : new Set();
+  const recetasFiltradas = filtrarRecetas(RECETAS_DB, perfil).filter(r => !vetadasAsync.has(r.id));
   const recetasDelTipo = obtenerRecetasPorTipo(recetasFiltradas, tipoComida);
-  
-  let todasDelTipo;
-  if (esSoloLocal) {
-    todasDelTipo = recetasDelTipo;
-  } else {
-    const cacheOnline = typeof _cargarCacheOnline === 'function' ? _cargarCacheOnline() : [];
-    const onlineFiltradas = filtrarRecetas(cacheOnline, perfil)
-      .filter(r => r.tipo_comida === tipoComida);
-    todasDelTipo = [...recetasDelTipo, ...onlineFiltradas];
-  }
-  
+
+  // Combinar locales + cache online para todos los tipos de comida
+  const cacheOnline = typeof _cargarCacheOnline === 'function' ? _cargarCacheOnline() : [];
+  const onlineFiltradas = filtrarRecetas(cacheOnline, perfil)
+    .filter(r => r.tipo_comida === tipoComida && !vetadasAsync.has(r.id));
+  const todasDelTipo = [...recetasDelTipo, ...onlineFiltradas];
+
   // Recopilar IDs de recetas en uso en TODAS las semanas
   const idsEnUso = new Set();
   for (let s = 1; s <= (plan._numSemanas || 1); s++) {
@@ -1483,36 +1610,38 @@ async function cambiarRecetaIndividualAsync(planMulti, dia, tipoComida, perfil, 
       });
     });
   }
-  
+
   const recetasUsadas14 = obtenerRecetasUsadas14Dias();
-  
+
   let candidatas = todasDelTipo.filter(r => !idsEnUso.has(r.id) && !recetasUsadas14.has(r.id));
-  
+
   if (candidatas.length === 0) {
     candidatas = todasDelTipo.filter(r => !idsEnUso.has(r.id));
   }
-  
-  if (candidatas.length === 0 && !esSoloLocal && typeof buscarUnaRecetaOnline === 'function') {
+
+  // Fallback internet para cualquier tipo cuando no quedan opciones locales
+  if (candidatas.length === 0 && typeof buscarUnaRecetaOnline === 'function') {
     if (onProgreso) onProgreso("Buscando receta en internet...");
     try {
       const recetaOnline = await buscarUnaRecetaOnline(tipoComida, perfil, Array.from(idsEnUso));
-      if (recetaOnline) {
+      if (recetaOnline && !vetadasAsync.has(recetaOnline.id)) {
         candidatas = [recetaOnline];
       }
     } catch (e) {
       console.warn("Error buscando receta online para swap:", e);
     }
   }
-  
+
   if (candidatas.length === 0) {
     const recetaActual = semanaActual[dia]?.[tipoComida];
     candidatas = todasDelTipo.filter(r => !recetaActual || r.id !== recetaActual.id);
   }
   
   if (candidatas.length === 0) return plan;
-  
+  candidatas = _sortPorRating(candidatas);
+
   const caloriasComida = Math.round(caloriasObjetivo * DISTRIBUCION_COMIDAS[tipoComida]);
-  const idx = Math.floor(Math.random() * candidatas.length);
+  const idx = Math.floor(Math.random() * Math.max(1, Math.ceil(candidatas.length * 0.6)));
   const nuevaReceta = escalarReceta(candidatas[idx], caloriasComida);
   
   // Actualizar plan multi-semana

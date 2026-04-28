@@ -58,6 +58,7 @@ function cargarPerfil() {
 
 // ─── Guardar plan semanal ───
 function guardarPlanSemanal(plan) {
+  _idbPut(STORAGE_KEYS.PLAN_SEMANAL, plan); // backup async fire-and-forget
   return guardarDatos(STORAGE_KEYS.PLAN_SEMANAL, plan);
 }
 
@@ -149,6 +150,169 @@ function cargarDarkMode() {
 // ─── Fase 7.2: cleanup one-shot de claves obsoletas (despensa inteligente) ───
 try { ['nutriplan_fechas_compra', 'nutriplan_notif_ultima'].forEach(k => localStorage.removeItem(k)); } catch (e) {}
 
+// ─── Migración UTF-8: reparar strings con encoding Latin-1 roto (one-shot) ───
+// Ocurre cuando el archivo JS fue servido con Content-Type: text/plain (no UTF-8)
+// y los chars multibyte del nombre se guardaron como bytes Latin-1 individuales.
+// Ejemplo: 'proteína' → 'proteÃ­na' (Ã=0xC3, soft-hyphen=0xAD).
+// Algoritmo: si todos los char codes ≤ 255, tratarlos como bytes y decodificar
+// como UTF-8. Si el resultado no tiene chars de reemplazo (U+FFFD), es válido.
+(function() {
+  try {
+    if (localStorage.getItem('nutriplan_utf8_repair_v1')) return; // ya corrido
+
+    function _repararVal(v) {
+      if (typeof v === 'string') {
+        // Sólo actuar si hay chars en el rango Latin-1 extendido (0x80-0xFF)
+        if (!/[-ÿ]/.test(v)) return v;
+        try {
+          const bytes = new Uint8Array(v.length);
+          for (let i = 0; i < v.length; i++) {
+            const c = v.charCodeAt(i);
+            if (c > 255) return v; // char Unicode real → no es Latin-1 misread
+            bytes[i] = c;
+          }
+          const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+          return decoded.includes('�') ? v : decoded;
+        } catch { return v; }
+      }
+      if (Array.isArray(v)) return v.map(_repararVal);
+      if (v && typeof v === 'object') {
+        const r = {};
+        for (const k in v) r[k] = _repararVal(v[k]);
+        return r;
+      }
+      return v;
+    }
+
+    const CLAVES = [
+      'nutriplan_comidas_externas',
+      'nutriplan_adherencia',
+      'nutriplan_plan_semanal',
+      'nutriplan_perfil',
+      'nutriplan_historial_recetas',
+      'nutriplan_recetas_generadas'
+    ];
+
+    CLAVES.forEach(function(key) {
+      var raw = localStorage.getItem(key);
+      if (!raw || !/[-ÿ]/.test(raw)) return; // nada que reparar
+      try {
+        var fixed = _repararVal(JSON.parse(raw));
+        localStorage.setItem(key, JSON.stringify(fixed));
+      } catch (e) {}
+    });
+
+    localStorage.setItem('nutriplan_utf8_repair_v1', '1');
+  } catch (e) {}
+})();
+
+// ─── Recetas vetadas (no mostrar nunca más) ───
+var KEY_VETADAS = 'nutriplan_recetas_vetadas';
+function cargarRecetasVetadas() {
+  try { return new Set(JSON.parse(localStorage.getItem(KEY_VETADAS) || '[]')); }
+  catch (e) { return new Set(); }
+}
+function guardarRecetasVetadas(set) {
+  try { localStorage.setItem(KEY_VETADAS, JSON.stringify(Array.from(set))); } catch (e) {}
+}
+function vetoReceta(id) {
+  var s = cargarRecetasVetadas();
+  s.add(id);
+  guardarRecetasVetadas(s);
+}
+function quitarVetoReceta(id) {
+  var s = cargarRecetasVetadas();
+  s.delete(id);
+  guardarRecetasVetadas(s);
+}
+
+// ─── Historial de alternativas por slot (dropdown "volver a esta opción") ───
+var KEY_HISTORIAL_SLOTS = 'nutriplan_historial_slots';
+function cargarHistorialSlots() {
+  try { return JSON.parse(localStorage.getItem(KEY_HISTORIAL_SLOTS) || '{}'); }
+  catch (e) { return {}; }
+}
+function guardarHistorialSlots(hist) {
+  try { localStorage.setItem(KEY_HISTORIAL_SLOTS, JSON.stringify(hist)); } catch (e) {}
+}
+function pushHistorialSlot(dia, tipoComida, numSemana, receta) {
+  if (!receta || !receta.id) return;
+  var hist = cargarHistorialSlots();
+  var key = dia + '_' + tipoComida + '_' + (numSemana || 1);
+  var arr = hist[key] || [];
+  if (arr.some(function(r) { return r.id === receta.id; })) return; // no duplicar
+  arr.unshift(receta);
+  hist[key] = arr.slice(0, 8);
+  guardarHistorialSlots(hist);
+}
+
+// ─── IndexedDB: backup del plan semanal (fire-and-forget) ───
+var _IDB_NAME = 'nutriplan_idb';
+var _IDB_VER  = 1;
+var _idbDb    = null;
+
+function _idbOpen() {
+  return new Promise(function(resolve, reject) {
+    if (_idbDb) { resolve(_idbDb); return; }
+    var req = indexedDB.open(_IDB_NAME, _IDB_VER);
+    req.onupgradeneeded = function(e) {
+      var db = e.target.result;
+      if (!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
+    };
+    req.onsuccess = function(e) { _idbDb = e.target.result; resolve(_idbDb); };
+    req.onerror   = function(e) { reject(e.target.error); };
+  });
+}
+
+function _idbPut(key, value) {
+  _idbOpen().then(function(db) {
+    var tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(value, key);
+  }).catch(function() {}); // silencioso — localStorage es el primario
+}
+
+// ─── Recuperar plan desde IDB si localStorage está vacío ───
+function recuperarPlanDesdeIDB() {
+  return _idbOpen().then(function(db) {
+    return new Promise(function(resolve) {
+      var tx  = db.transaction('kv', 'readonly');
+      var req = tx.objectStore('kv').get(STORAGE_KEYS.PLAN_SEMANAL);
+      req.onsuccess = function(e) { resolve(e.target.result || null); };
+      req.onerror   = function()  { resolve(null); };
+    });
+  }).catch(function() { return null; });
+}
+
+// ─── Ratings de recetas (1–5 estrellas) ───
+var KEY_RATINGS = 'nutriplan_ratings';
+function cargarRatings() {
+  try { return JSON.parse(localStorage.getItem(KEY_RATINGS) || '{}'); }
+  catch (e) { return {}; }
+}
+function guardarRating(recetaId, estrellas) {
+  var r = cargarRatings();
+  r[recetaId] = Number(estrellas);
+  try { localStorage.setItem(KEY_RATINGS, JSON.stringify(r)); } catch (e) {}
+}
+
+// ─── Comprimir historial de adherencia (retener sólo 30 días) ───
+function trimirHistorialAdherencia() {
+  try {
+    var KEY_ADH = 'nutriplan_adherencia';
+    var raw = localStorage.getItem(KEY_ADH);
+    if (!raw) return;
+    var data = JSON.parse(raw);
+    var hace30 = new Date();
+    hace30.setDate(hace30.getDate() - 30);
+    var limite = hace30.toISOString().split('T')[0];
+    var trimmed = {};
+    Object.keys(data).forEach(function(fecha) {
+      if (fecha >= limite) trimmed[fecha] = data[fecha];
+    });
+    localStorage.setItem(KEY_ADH, JSON.stringify(trimmed));
+  } catch (e) {}
+}
+
 // ─── Limpiar todo ───
 function limpiarTodo() {
   Object.values(STORAGE_KEYS).forEach(clave => {
@@ -156,6 +320,9 @@ function limpiarTodo() {
       eliminarDatos(clave);
     }
   });
+  try { localStorage.removeItem(KEY_VETADAS); } catch(e) {}
+  try { localStorage.removeItem(KEY_HISTORIAL_SLOTS); } catch(e) {}
+  try { localStorage.removeItem(KEY_RATINGS); } catch(e) {}
 }
 
 // ─── Exponer funciones a window para que el bundle compilado siempre las encuentre ───
@@ -181,4 +348,15 @@ if (typeof window !== 'undefined') {
   window.guardarDarkMode = guardarDarkMode;
   window.cargarDarkMode = cargarDarkMode;
   window.limpiarTodo = limpiarTodo;
+  window.cargarRecetasVetadas = cargarRecetasVetadas;
+  window.guardarRecetasVetadas = guardarRecetasVetadas;
+  window.vetoReceta = vetoReceta;
+  window.quitarVetoReceta = quitarVetoReceta;
+  window.cargarHistorialSlots = cargarHistorialSlots;
+  window.guardarHistorialSlots = guardarHistorialSlots;
+  window.pushHistorialSlot = pushHistorialSlot;
+  window.recuperarPlanDesdeIDB = recuperarPlanDesdeIDB;
+  window.cargarRatings = cargarRatings;
+  window.guardarRating = guardarRating;
+  window.trimirHistorialAdherencia = trimirHistorialAdherencia;
 }

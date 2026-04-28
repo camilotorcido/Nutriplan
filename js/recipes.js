@@ -2523,5 +2523,1284 @@ const RECETAS_DB = [
       "Servir las quesadillas cortadas en triángulos. Acompañar con el guacamole y los cubos de tomate fresco al costado."
     ],
     instrucciones_thermomix: []
+  },
+
+  // ======================== DESAYUNOS ADICIONALES ========================
+  {
+    id: "d17",
+    nombre: "Tostadas con palta y huevo pochado",
+    tipo_comida: "desayuno",
+    calorias_base: 430,
+    proteinas_g: 20,
+    carbohidratos_g: 36,
+    grasas_g: 22,
+    es_sin_gluten: false,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "pan integral", nombre_normalizado: "pan_integral", nombre_display: "Pan integral", cantidad_base: 2, unidad: "rebanadas", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad (molde)" },
+      { nombre: "palta", nombre_normalizado: "palta", nombre_display: "Palta", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "huevos", nombre_normalizado: "huevo", nombre_display: "Huevos", cantidad_base: 2, unidad: "unidades", unidad_compra: "docenas", factor_conversion: 12, descripcion_compra: "docena" },
+      { nombre: "limón", nombre_normalizado: "limon", nombre_display: "Limón", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "sal y pimienta", nombre_normalizado: "sal", nombre_display: "Sal y pimienta", cantidad_base: 2, unidad: "g", unidad_compra: "paquetes", factor_conversion: 1000, descripcion_compra: "paquete de 1kg" },
+      { nombre: "hojuelas de ají rojo", nombre_normalizado: "aji", nombre_display: "Hojuelas de ají", cantidad_base: 1, unidad: "g", unidad_compra: "frascos", factor_conversion: 50, descripcion_compra: "frasco de 50g" }
+    ],
+    instrucciones: [
+      "Tostar las rebanadas de pan integral hasta que estén crujientes.",
+      "Aplastar la palta con un tenedor, agregar jugo de limón, sal y pimienta.",
+      "Hervir agua con un chorrito de vinagre. Crear un remolino y agregar los huevos de a uno. Cocinar 3 minutos.",
+      "Extender la palta sobre el pan tostado, colocar el huevo pochado encima y terminar con hojuelas de ají."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "d18",
+    nombre: "Yogur griego con granola y frutos rojos",
+    tipo_comida: "desayuno",
+    calorias_base: 380,
+    proteinas_g: 18,
+    carbohidratos_g: 48,
+    grasas_g: 10,
+    es_sin_gluten: false,
+    es_sin_lactosa: false,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "yogur griego natural", nombre_normalizado: "yogur_griego", nombre_display: "Yogur griego natural", cantidad_base: 200, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "pote 200g" },
+      { nombre: "granola", nombre_normalizado: "granola", nombre_display: "Granola", cantidad_base: 40, unidad: "g", unidad_compra: "paquetes", factor_conversion: 400, descripcion_compra: "paquete de 400g" },
+      { nombre: "mix de frutos rojos", nombre_normalizado: "frutos_rojos", nombre_display: "Mix frutos rojos", cantidad_base: 80, unidad: "g", unidad_compra: "paquetes", factor_conversion: 300, descripcion_compra: "bolsa de 300g" },
+      { nombre: "miel de abeja", nombre_normalizado: "miel", nombre_display: "Miel", cantidad_base: 10, unidad: "ml", unidad_compra: "frascos", factor_conversion: 500, descripcion_compra: "frasco de 500ml" }
+    ],
+    instrucciones: [
+      "Verter el yogur griego en un bowl.",
+      "Agregar los frutos rojos encima del yogur.",
+      "Espolvorear la granola y terminar con un hilo de miel."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "d19",
+    nombre: "Pancakes de avena con plátano",
+    tipo_comida: "desayuno",
+    calorias_base: 440,
+    proteinas_g: 18,
+    carbohidratos_g: 62,
+    grasas_g: 12,
+    es_sin_gluten: true,
+    es_sin_lactosa: false,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "avena en hojuelas", nombre_normalizado: "avena", nombre_display: "Avena en hojuelas", cantidad_base: 80, unidad: "g", unidad_compra: "paquetes", factor_conversion: 500, descripcion_compra: "paquete de 500g" },
+      { nombre: "plátano maduro", nombre_normalizado: "platano", nombre_display: "Plátano", cantidad_base: 1, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "huevos", nombre_normalizado: "huevo", nombre_display: "Huevos", cantidad_base: 2, unidad: "unidades", unidad_compra: "docenas", factor_conversion: 12, descripcion_compra: "docena" },
+      { nombre: "leche", nombre_normalizado: "leche", nombre_display: "Leche", cantidad_base: 60, unidad: "ml", unidad_compra: "litros", factor_conversion: 1000, descripcion_compra: "litro" },
+      { nombre: "canela en polvo", nombre_normalizado: "canela", nombre_display: "Canela", cantidad_base: 2, unidad: "g", unidad_compra: "frascos", factor_conversion: 50, descripcion_compra: "frasco de 50g" },
+      { nombre: "aceite de coco", nombre_normalizado: "aceite_coco", nombre_display: "Aceite de coco", cantidad_base: 5, unidad: "ml", unidad_compra: "frascos", factor_conversion: 500, descripcion_compra: "frasco de 500ml" }
+    ],
+    instrucciones: [
+      "Licuar la avena hasta obtener harina. Mezclar con el plátano aplastado, los huevos, la leche y la canela.",
+      "Calentar una sartén con aceite de coco a fuego medio. Verter porciones de mezcla y cocinar 2 min por lado.",
+      "Servir con rodajas de plátano y un hilo de miel opcional."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "d20",
+    nombre: "Avena overnight con chía y mango",
+    tipo_comida: "desayuno",
+    calorias_base: 390,
+    proteinas_g: 14,
+    carbohidratos_g: 58,
+    grasas_g: 10,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "avena en hojuelas", nombre_normalizado: "avena", nombre_display: "Avena en hojuelas", cantidad_base: 60, unidad: "g", unidad_compra: "paquetes", factor_conversion: 500, descripcion_compra: "paquete de 500g" },
+      { nombre: "semillas de chía", nombre_normalizado: "chia", nombre_display: "Semillas de chía", cantidad_base: 15, unidad: "g", unidad_compra: "paquetes", factor_conversion: 250, descripcion_compra: "paquete de 250g" },
+      { nombre: "leche de almendras", nombre_normalizado: "leche_almendras", nombre_display: "Leche de almendras", cantidad_base: 200, unidad: "ml", unidad_compra: "cajas", factor_conversion: 1000, descripcion_compra: "caja de 1L" },
+      { nombre: "mango fresco", nombre_normalizado: "mango", nombre_display: "Mango", cantidad_base: 100, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "miel de abeja", nombre_normalizado: "miel", nombre_display: "Miel", cantidad_base: 10, unidad: "ml", unidad_compra: "frascos", factor_conversion: 500, descripcion_compra: "frasco de 500ml" }
+    ],
+    instrucciones: [
+      "La noche anterior: mezclar avena, chía, leche de almendras y miel en un frasco con tapa. Refrigerar toda la noche.",
+      "Al servir, cortar el mango en cubos y colocarlo encima."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "d21",
+    nombre: "Omelett de vegetales y queso",
+    tipo_comida: "desayuno",
+    calorias_base: 350,
+    proteinas_g: 24,
+    carbohidratos_g: 8,
+    grasas_g: 24,
+    es_sin_gluten: true,
+    es_sin_lactosa: false,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "huevos", nombre_normalizado: "huevo", nombre_display: "Huevos", cantidad_base: 3, unidad: "unidades", unidad_compra: "docenas", factor_conversion: 12, descripcion_compra: "docena" },
+      { nombre: "espinaca fresca", nombre_normalizado: "espinaca", nombre_display: "Espinaca fresca", cantidad_base: 40, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "bolsa de 200g" },
+      { nombre: "tomate", nombre_normalizado: "tomate", nombre_display: "Tomate", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "kg", factor_conversion: 5, descripcion_compra: "~5 unidades por kg" },
+      { nombre: "queso gouda rallado", nombre_normalizado: "queso_gouda", nombre_display: "Queso gouda rallado", cantidad_base: 30, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "paquete de 200g" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 8, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" },
+      { nombre: "sal y pimienta", nombre_normalizado: "sal", nombre_display: "Sal y pimienta", cantidad_base: 2, unidad: "g", unidad_compra: "paquetes", factor_conversion: 1000, descripcion_compra: "paquete de 1kg" }
+    ],
+    instrucciones: [
+      "Batir los huevos con sal y pimienta. Picar el tomate y saltear la espinaca 1 min en la sartén con aceite.",
+      "Verter los huevos sobre los vegetales. Cocinar a fuego medio-bajo hasta que los bordes cuajen.",
+      "Agregar el queso, doblar a la mitad y cocinar 1 minuto más. Servir caliente."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "d22",
+    nombre: "Bowl proteico de ricotta con durazno",
+    tipo_comida: "desayuno",
+    calorias_base: 360,
+    proteinas_g: 22,
+    carbohidratos_g: 42,
+    grasas_g: 10,
+    es_sin_gluten: true,
+    es_sin_lactosa: false,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "queso ricotta", nombre_normalizado: "ricotta", nombre_display: "Queso ricotta", cantidad_base: 150, unidad: "g", unidad_compra: "paquetes", factor_conversion: 250, descripcion_compra: "paquete de 250g" },
+      { nombre: "durazno fresco", nombre_normalizado: "durazno", nombre_display: "Durazno", cantidad_base: 1, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "nueces", nombre_normalizado: "nueces", nombre_display: "Nueces", cantidad_base: 20, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "paquete de 200g" },
+      { nombre: "miel de abeja", nombre_normalizado: "miel", nombre_display: "Miel", cantidad_base: 15, unidad: "ml", unidad_compra: "frascos", factor_conversion: 500, descripcion_compra: "frasco de 500ml" },
+      { nombre: "canela en polvo", nombre_normalizado: "canela", nombre_display: "Canela", cantidad_base: 1, unidad: "g", unidad_compra: "frascos", factor_conversion: 50, descripcion_compra: "frasco de 50g" }
+    ],
+    instrucciones: [
+      "Poner la ricotta en un bowl. Cortar el durazno en gajos.",
+      "Colocar los gajos de durazno y las nueces picadas sobre la ricotta.",
+      "Rociar miel y espolvorear canela. Servir frío."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "d23",
+    nombre: "Wrap de desayuno con huevo y jamón",
+    tipo_comida: "desayuno",
+    calorias_base: 420,
+    proteinas_g: 26,
+    carbohidratos_g: 38,
+    grasas_g: 16,
+    es_sin_gluten: false,
+    es_sin_lactosa: false,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "tortilla de trigo integral", nombre_normalizado: "tortilla_integral", nombre_display: "Tortilla de trigo integral", cantidad_base: 1, unidad: "unidad", unidad_compra: "paquetes", factor_conversion: 8, descripcion_compra: "paquete de 8 unidades" },
+      { nombre: "huevos", nombre_normalizado: "huevo", nombre_display: "Huevos", cantidad_base: 2, unidad: "unidades", unidad_compra: "docenas", factor_conversion: 12, descripcion_compra: "docena" },
+      { nombre: "jamón de pavo", nombre_normalizado: "jamon_pavo", nombre_display: "Jamón de pavo", cantidad_base: 60, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "paquete de 200g" },
+      { nombre: "queso crema light", nombre_normalizado: "queso_crema", nombre_display: "Queso crema light", cantidad_base: 20, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "paquete de 200g" },
+      { nombre: "espinaca fresca", nombre_normalizado: "espinaca", nombre_display: "Espinaca", cantidad_base: 30, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "bolsa de 200g" }
+    ],
+    instrucciones: [
+      "Revolver los huevos en sartén antiadherente hasta que cuajen.",
+      "Calentar la tortilla 30 segundos en sartén seca. Untar queso crema.",
+      "Colocar el jamón, los huevos revueltos y la espinaca. Enrollar y servir."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "d24",
+    nombre: "Batido verde energizante",
+    tipo_comida: "desayuno",
+    calorias_base: 320,
+    proteinas_g: 12,
+    carbohidratos_g: 50,
+    grasas_g: 8,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "espinaca fresca", nombre_normalizado: "espinaca", nombre_display: "Espinaca", cantidad_base: 60, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "bolsa de 200g" },
+      { nombre: "plátano congelado", nombre_normalizado: "platano", nombre_display: "Plátano congelado", cantidad_base: 1, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "manzana verde", nombre_normalizado: "manzana", nombre_display: "Manzana verde", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "jengibre fresco", nombre_normalizado: "jengibre", nombre_display: "Jengibre", cantidad_base: 5, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad (trozo)" },
+      { nombre: "leche de coco light", nombre_normalizado: "leche_coco", nombre_display: "Leche de coco light", cantidad_base: 200, unidad: "ml", unidad_compra: "latas", factor_conversion: 400, descripcion_compra: "lata de 400ml" },
+      { nombre: "semillas de chía", nombre_normalizado: "chia", nombre_display: "Semillas de chía", cantidad_base: 10, unidad: "g", unidad_compra: "paquetes", factor_conversion: 250, descripcion_compra: "paquete de 250g" }
+    ],
+    instrucciones: [
+      "Licuar todos los ingredientes hasta obtener una mezcla homogénea.",
+      "Servir en vaso alto con hielo opcional. Consumir inmediatamente."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "d25",
+    nombre: "Tostadas nórdicas de salmón ahumado",
+    tipo_comida: "desayuno",
+    calorias_base: 410,
+    proteinas_g: 28,
+    carbohidratos_g: 32,
+    grasas_g: 18,
+    es_sin_gluten: false,
+    es_sin_lactosa: false,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "pan de centeno", nombre_normalizado: "pan_centeno", nombre_display: "Pan de centeno", cantidad_base: 2, unidad: "rebanadas", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad (500g)" },
+      { nombre: "salmón ahumado", nombre_normalizado: "salmon_ahumado", nombre_display: "Salmón ahumado", cantidad_base: 80, unidad: "g", unidad_compra: "paquetes", factor_conversion: 100, descripcion_compra: "paquete de 100g" },
+      { nombre: "queso crema light", nombre_normalizado: "queso_crema", nombre_display: "Queso crema light", cantidad_base: 40, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "paquete de 200g" },
+      { nombre: "pepino", nombre_normalizado: "pepino", nombre_display: "Pepino", cantidad_base: 0.25, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "alcaparras", nombre_normalizado: "alcaparras", nombre_display: "Alcaparras", cantidad_base: 10, unidad: "g", unidad_compra: "frascos", factor_conversion: 100, descripcion_compra: "frasco de 100g" },
+      { nombre: "eneldo fresco", nombre_normalizado: "eneldo", nombre_display: "Eneldo fresco", cantidad_base: 5, unidad: "g", unidad_compra: "manojos", factor_conversion: 1, descripcion_compra: "manojo" }
+    ],
+    instrucciones: [
+      "Tostar levemente el pan de centeno.",
+      "Untar el queso crema sobre las tostadas.",
+      "Colocar láminas de salmón ahumado, rodajas de pepino, alcaparras y eneldo."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "d26",
+    nombre: "Shakshuka (huevos en salsa de tomate)",
+    tipo_comida: "desayuno",
+    calorias_base: 370,
+    proteinas_g: 22,
+    carbohidratos_g: 28,
+    grasas_g: 18,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "huevos", nombre_normalizado: "huevo", nombre_display: "Huevos", cantidad_base: 3, unidad: "unidades", unidad_compra: "docenas", factor_conversion: 12, descripcion_compra: "docena" },
+      { nombre: "tomates en lata triturados", nombre_normalizado: "tomate_lata", nombre_display: "Tomates triturados", cantidad_base: 250, unidad: "g", unidad_compra: "latas", factor_conversion: 400, descripcion_compra: "lata de 400g" },
+      { nombre: "pimentón rojo", nombre_normalizado: "pimenton", nombre_display: "Pimentón rojo", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "cebolla", nombre_normalizado: "cebolla", nombre_display: "Cebolla", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "kg", factor_conversion: 5, descripcion_compra: "~5 unidades por kg" },
+      { nombre: "ajo", nombre_normalizado: "ajo", nombre_display: "Ajo", cantidad_base: 2, unidad: "dientes", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "cabeza" },
+      { nombre: "pimentón ahumado en polvo", nombre_normalizado: "paprika", nombre_display: "Pimentón ahumado", cantidad_base: 3, unidad: "g", unidad_compra: "frascos", factor_conversion: 50, descripcion_compra: "frasco de 50g" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 10, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" }
+    ],
+    instrucciones: [
+      "Sofreír cebolla, ajo y pimentón en aceite 5 min. Agregar el pimentón ahumado.",
+      "Añadir los tomates triturados. Cocinar 8 minutos a fuego medio hasta espesar.",
+      "Hacer hoyos en la salsa y romper un huevo en cada uno. Tapar y cocinar 5 min hasta que claras cuajen."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "d27",
+    nombre: "Pan integral con mantequilla de maní y banana",
+    tipo_comida: "desayuno",
+    calorias_base: 395,
+    proteinas_g: 14,
+    carbohidratos_g: 52,
+    grasas_g: 16,
+    es_sin_gluten: false,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "pan integral", nombre_normalizado: "pan_integral", nombre_display: "Pan integral", cantidad_base: 2, unidad: "rebanadas", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad (molde)" },
+      { nombre: "mantequilla de maní natural", nombre_normalizado: "mantequilla_mani", nombre_display: "Mantequilla de maní", cantidad_base: 30, unidad: "g", unidad_compra: "frascos", factor_conversion: 350, descripcion_compra: "frasco de 350g" },
+      { nombre: "plátano", nombre_normalizado: "platano", nombre_display: "Plátano", cantidad_base: 1, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "semillas de chía", nombre_normalizado: "chia", nombre_display: "Semillas de chía", cantidad_base: 8, unidad: "g", unidad_compra: "paquetes", factor_conversion: 250, descripcion_compra: "paquete de 250g" }
+    ],
+    instrucciones: [
+      "Tostar el pan. Untar la mantequilla de maní.",
+      "Cortar el plátano en rodajas y colocar sobre el pan.",
+      "Espolvorear chía y servir."
+    ],
+    instrucciones_thermomix: []
+  },
+
+  // ======================== ALMUERZOS ADICIONALES ========================
+  {
+    id: "a17",
+    nombre: "Bowl de pollo teriyaki con arroz jazmín",
+    tipo_comida: "almuerzo",
+    calorias_base: 580,
+    proteinas_g: 42,
+    carbohidratos_g: 68,
+    grasas_g: 10,
+    es_sin_gluten: false,
+    es_sin_lactosa: true,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "pechuga de pollo", nombre_normalizado: "pechuga_pollo", nombre_display: "Pechuga de pollo", cantidad_base: 180, unidad: "g", unidad_compra: "kg", factor_conversion: 1000, descripcion_compra: "kg" },
+      { nombre: "arroz jazmín", nombre_normalizado: "arroz_jazmin", nombre_display: "Arroz jazmín", cantidad_base: 80, unidad: "g", unidad_compra: "paquetes", factor_conversion: 1000, descripcion_compra: "paquete de 1kg" },
+      { nombre: "salsa teriyaki", nombre_normalizado: "salsa_teriyaki", nombre_display: "Salsa teriyaki", cantidad_base: 40, unidad: "ml", unidad_compra: "botellas", factor_conversion: 300, descripcion_compra: "botella de 300ml" },
+      { nombre: "brócoli", nombre_normalizado: "brocoli", nombre_display: "Brócoli", cantidad_base: 100, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "zanahoria", nombre_normalizado: "zanahoria", nombre_display: "Zanahoria", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "kg", factor_conversion: 8, descripcion_compra: "~8 unidades por kg" },
+      { nombre: "semillas de sésamo", nombre_normalizado: "sesamo", nombre_display: "Sésamo", cantidad_base: 8, unidad: "g", unidad_compra: "paquetes", factor_conversion: 100, descripcion_compra: "paquete de 100g" }
+    ],
+    instrucciones: [
+      "Cocinar el arroz según indicaciones del paquete.",
+      "Marinar el pollo en teriyaki 10 min. Cocinar en sartén caliente 5 min por lado.",
+      "Saltear el brócoli y zanahoria 4 min en la misma sartén.",
+      "Servir arroz en bowl, agregar pollo cortado en tiras y verduras. Rociar con salsa y sésamo."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "a18",
+    nombre: "Tacos de carne molida con guacamole",
+    tipo_comida: "almuerzo",
+    calorias_base: 560,
+    proteinas_g: 38,
+    carbohidratos_g: 52,
+    grasas_g: 20,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "carne molida magra", nombre_normalizado: "carne_molida", nombre_display: "Carne molida magra", cantidad_base: 180, unidad: "g", unidad_compra: "kg", factor_conversion: 1000, descripcion_compra: "kg" },
+      { nombre: "tortillas de maíz", nombre_normalizado: "tortilla_maiz", nombre_display: "Tortillas de maíz", cantidad_base: 3, unidad: "unidades", unidad_compra: "paquetes", factor_conversion: 12, descripcion_compra: "paquete de 12 unidades" },
+      { nombre: "palta", nombre_normalizado: "palta", nombre_display: "Palta", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "tomate", nombre_normalizado: "tomate", nombre_display: "Tomate", cantidad_base: 1, unidad: "unidad", unidad_compra: "kg", factor_conversion: 5, descripcion_compra: "~5 unidades por kg" },
+      { nombre: "cebolla morada", nombre_normalizado: "cebolla_morada", nombre_display: "Cebolla morada", cantidad_base: 0.25, unidad: "unidad", unidad_compra: "kg", factor_conversion: 5, descripcion_compra: "~5 unidades por kg" },
+      { nombre: "mix de especias tex-mex", nombre_normalizado: "especias_texmex", nombre_display: "Especias tex-mex", cantidad_base: 5, unidad: "g", unidad_compra: "sobres", factor_conversion: 30, descripcion_compra: "sobre de 30g" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 8, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" }
+    ],
+    instrucciones: [
+      "Dorar la carne molida con las especias tex-mex en sartén con aceite, 8 min.",
+      "Preparar guacamole aplastando la palta con limón, sal y la mitad del tomate picado.",
+      "Calentar las tortillas en comal seco. Armar los tacos con carne, guacamole y pico de gallo."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "a19",
+    nombre: "Pasta integral con atún y tomate cherry",
+    tipo_comida: "almuerzo",
+    calorias_base: 540,
+    proteinas_g: 36,
+    carbohidratos_g: 72,
+    grasas_g: 10,
+    es_sin_gluten: false,
+    es_sin_lactosa: true,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "pasta integral penne", nombre_normalizado: "pasta_integral", nombre_display: "Pasta integral", cantidad_base: 90, unidad: "g", unidad_compra: "paquetes", factor_conversion: 400, descripcion_compra: "paquete de 400g" },
+      { nombre: "atún en agua", nombre_normalizado: "atun_lata", nombre_display: "Atún en agua", cantidad_base: 150, unidad: "g", unidad_compra: "latas", factor_conversion: 160, descripcion_compra: "lata de 160g" },
+      { nombre: "tomates cherry", nombre_normalizado: "tomate_cherry", nombre_display: "Tomates cherry", cantidad_base: 120, unidad: "g", unidad_compra: "paquetes", factor_conversion: 250, descripcion_compra: "bolsa de 250g" },
+      { nombre: "ajo", nombre_normalizado: "ajo", nombre_display: "Ajo", cantidad_base: 2, unidad: "dientes", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "cabeza" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 15, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" },
+      { nombre: "albahaca fresca", nombre_normalizado: "albahaca", nombre_display: "Albahaca fresca", cantidad_base: 10, unidad: "g", unidad_compra: "manojos", factor_conversion: 1, descripcion_compra: "manojo" }
+    ],
+    instrucciones: [
+      "Cocinar la pasta en agua con sal al dente.",
+      "Saltear el ajo en aceite 1 min. Agregar los tomates cherry cortados a la mitad, cocinar 4 min.",
+      "Escurrir la pasta. Mezclar con la salsa, el atún escurrido y albahaca fresca."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "a20",
+    nombre: "Ensalada César con pollo a la plancha",
+    tipo_comida: "almuerzo",
+    calorias_base: 490,
+    proteinas_g: 44,
+    carbohidratos_g: 18,
+    grasas_g: 28,
+    es_sin_gluten: false,
+    es_sin_lactosa: false,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "pechuga de pollo", nombre_normalizado: "pechuga_pollo", nombre_display: "Pechuga de pollo", cantidad_base: 160, unidad: "g", unidad_compra: "kg", factor_conversion: 1000, descripcion_compra: "kg" },
+      { nombre: "lechuga romana", nombre_normalizado: "lechuga_romana", nombre_display: "Lechuga romana", cantidad_base: 150, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "queso parmesano rallado", nombre_normalizado: "parmesano", nombre_display: "Parmesano rallado", cantidad_base: 20, unidad: "g", unidad_compra: "paquetes", factor_conversion: 100, descripcion_compra: "paquete de 100g" },
+      { nombre: "crutones de pan", nombre_normalizado: "crutones", nombre_display: "Crutones", cantidad_base: 30, unidad: "g", unidad_compra: "paquetes", factor_conversion: 100, descripcion_compra: "paquete de 100g" },
+      { nombre: "aderezo césar light", nombre_normalizado: "aderezo_cesar", nombre_display: "Aderezo César light", cantidad_base: 30, unidad: "ml", unidad_compra: "botellas", factor_conversion: 250, descripcion_compra: "botella de 250ml" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 8, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" }
+    ],
+    instrucciones: [
+      "Sazonar la pechuga y cocinar en plancha caliente con aceite, 5 min por lado.",
+      "Cortar la lechuga en trozos, mezclar con aderezo césar.",
+      "Cortar el pollo en tiras. Servir sobre la ensalada con crutones y parmesano."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "a21",
+    nombre: "Burrito bowl con frijoles negros",
+    tipo_comida: "almuerzo",
+    calorias_base: 560,
+    proteinas_g: 32,
+    carbohidratos_g: 74,
+    grasas_g: 12,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "arroz integral", nombre_normalizado: "arroz_integral", nombre_display: "Arroz integral", cantidad_base: 80, unidad: "g", unidad_compra: "paquetes", factor_conversion: 1000, descripcion_compra: "paquete de 1kg" },
+      { nombre: "frijoles negros cocidos", nombre_normalizado: "frijoles_negros", nombre_display: "Frijoles negros", cantidad_base: 120, unidad: "g", unidad_compra: "latas", factor_conversion: 400, descripcion_compra: "lata de 400g" },
+      { nombre: "maíz dulce", nombre_normalizado: "maiz", nombre_display: "Maíz dulce", cantidad_base: 60, unidad: "g", unidad_compra: "latas", factor_conversion: 300, descripcion_compra: "lata de 300g" },
+      { nombre: "palta", nombre_normalizado: "palta", nombre_display: "Palta", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "tomate", nombre_normalizado: "tomate", nombre_display: "Tomate", cantidad_base: 1, unidad: "unidad", unidad_compra: "kg", factor_conversion: 5, descripcion_compra: "~5 unidades por kg" },
+      { nombre: "yogur griego natural", nombre_normalizado: "yogur_griego", nombre_display: "Yogur griego (sour cream)", cantidad_base: 40, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "pote 200g" },
+      { nombre: "jugo de limón", nombre_normalizado: "limon", nombre_display: "Limón", cantidad_base: 1, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" }
+    ],
+    instrucciones: [
+      "Cocinar el arroz integral. Calentar los frijoles con comino y sal.",
+      "Preparar pico de gallo con tomate, cebolla y limón.",
+      "Montar el bowl: arroz, frijoles, maíz, palta en rodajas, pico de gallo y yogur."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "a22",
+    nombre: "Sopa de lentejas con espinaca y limón",
+    tipo_comida: "almuerzo",
+    calorias_base: 440,
+    proteinas_g: 28,
+    carbohidratos_g: 60,
+    grasas_g: 8,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "lentejas rojas", nombre_normalizado: "lentejas_rojas", nombre_display: "Lentejas rojas", cantidad_base: 100, unidad: "g", unidad_compra: "paquetes", factor_conversion: 500, descripcion_compra: "paquete de 500g" },
+      { nombre: "espinaca fresca", nombre_normalizado: "espinaca", nombre_display: "Espinaca", cantidad_base: 60, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "bolsa de 200g" },
+      { nombre: "zanahoria", nombre_normalizado: "zanahoria", nombre_display: "Zanahoria", cantidad_base: 1, unidad: "unidad", unidad_compra: "kg", factor_conversion: 8, descripcion_compra: "~8 unidades por kg" },
+      { nombre: "cebolla", nombre_normalizado: "cebolla", nombre_display: "Cebolla", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "kg", factor_conversion: 5, descripcion_compra: "~5 unidades por kg" },
+      { nombre: "comino molido", nombre_normalizado: "comino", nombre_display: "Comino molido", cantidad_base: 3, unidad: "g", unidad_compra: "frascos", factor_conversion: 50, descripcion_compra: "frasco de 50g" },
+      { nombre: "limón", nombre_normalizado: "limon", nombre_display: "Limón", cantidad_base: 1, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 10, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" }
+    ],
+    instrucciones: [
+      "Sofreír cebolla y zanahoria en aceite 5 min. Agregar comino y lentejas.",
+      "Cubrir con 600ml de agua o caldo. Cocinar 20 min hasta que las lentejas estén tiernas.",
+      "Agregar espinaca los últimos 2 min. Terminar con jugo de limón."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "a23",
+    nombre: "Quinoa con pollo y verduras asadas",
+    tipo_comida: "almuerzo",
+    calorias_base: 520,
+    proteinas_g: 40,
+    carbohidratos_g: 56,
+    grasas_g: 12,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "quinoa", nombre_normalizado: "quinoa", nombre_display: "Quinoa", cantidad_base: 80, unidad: "g", unidad_compra: "paquetes", factor_conversion: 500, descripcion_compra: "paquete de 500g" },
+      { nombre: "pechuga de pollo", nombre_normalizado: "pechuga_pollo", nombre_display: "Pechuga de pollo", cantidad_base: 160, unidad: "g", unidad_compra: "kg", factor_conversion: 1000, descripcion_compra: "kg" },
+      { nombre: "pimentón rojo", nombre_normalizado: "pimenton", nombre_display: "Pimentón rojo", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "zucchini", nombre_normalizado: "zucchini", nombre_display: "Zucchini", cantidad_base: 100, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "cebolla morada", nombre_normalizado: "cebolla_morada", nombre_display: "Cebolla morada", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "kg", factor_conversion: 5, descripcion_compra: "~5 unidades por kg" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 15, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" }
+    ],
+    instrucciones: [
+      "Cocinar la quinoa con el doble de agua, 15 min a fuego bajo.",
+      "Cortar verduras en trozos grandes. Rociar con aceite, sal, orégano y hornear 20 min a 200°C.",
+      "Sellar el pollo en plancha y cortar en cubos. Mezclar todo y servir."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "a24",
+    nombre: "Shawarma de pollo con salsa de yogur",
+    tipo_comida: "almuerzo",
+    calorias_base: 530,
+    proteinas_g: 42,
+    carbohidratos_g: 48,
+    grasas_g: 16,
+    es_sin_gluten: false,
+    es_sin_lactosa: false,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "muslo de pollo deshuesado", nombre_normalizado: "muslo_pollo", nombre_display: "Muslo de pollo", cantidad_base: 200, unidad: "g", unidad_compra: "kg", factor_conversion: 1000, descripcion_compra: "kg" },
+      { nombre: "pan pita integral", nombre_normalizado: "pan_pita_integral", nombre_display: "Pan pita integral", cantidad_base: 1, unidad: "unidad", unidad_compra: "paquetes", factor_conversion: 6, descripcion_compra: "paquete de 6 unidades" },
+      { nombre: "yogur griego natural", nombre_normalizado: "yogur_griego", nombre_display: "Yogur griego", cantidad_base: 60, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "pote 200g" },
+      { nombre: "pepino", nombre_normalizado: "pepino", nombre_display: "Pepino", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "lechuga", nombre_normalizado: "lechuga", nombre_display: "Lechuga", cantidad_base: 40, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "mezcla de especias shawarma", nombre_normalizado: "especias_shawarma", nombre_display: "Especias shawarma", cantidad_base: 6, unidad: "g", unidad_compra: "frascos", factor_conversion: 50, descripcion_compra: "frasco de 50g" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 10, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" }
+    ],
+    instrucciones: [
+      "Marinar el pollo con las especias y aceite 20 min. Cocinar en plancha bien caliente 5 min por lado.",
+      "Mezclar yogur con pepino rallado y sal para hacer tzatziki.",
+      "Calentar el pan pita. Rellenar con pollo cortado, lechuga, pepino y salsa de yogur."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "a25",
+    nombre: "Poke bowl de salmón con arroz",
+    tipo_comida: "almuerzo",
+    calorias_base: 550,
+    proteinas_g: 38,
+    carbohidratos_g: 58,
+    grasas_g: 18,
+    es_sin_gluten: false,
+    es_sin_lactosa: true,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "salmón fresco", nombre_normalizado: "salmon", nombre_display: "Salmón fresco", cantidad_base: 150, unidad: "g", unidad_compra: "kg", factor_conversion: 1000, descripcion_compra: "kg" },
+      { nombre: "arroz para sushi", nombre_normalizado: "arroz_sushi", nombre_display: "Arroz para sushi", cantidad_base: 80, unidad: "g", unidad_compra: "paquetes", factor_conversion: 1000, descripcion_compra: "paquete de 1kg" },
+      { nombre: "palta", nombre_normalizado: "palta", nombre_display: "Palta", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "edamame cocido", nombre_normalizado: "edamame", nombre_display: "Edamame cocido", cantidad_base: 60, unidad: "g", unidad_compra: "paquetes", factor_conversion: 400, descripcion_compra: "bolsa de 400g" },
+      { nombre: "salsa soya light", nombre_normalizado: "soya", nombre_display: "Salsa soya light", cantidad_base: 20, unidad: "ml", unidad_compra: "botellas", factor_conversion: 250, descripcion_compra: "botella de 250ml" },
+      { nombre: "aceite de sésamo", nombre_normalizado: "aceite_sesamo", nombre_display: "Aceite de sésamo", cantidad_base: 5, unidad: "ml", unidad_compra: "botellas", factor_conversion: 250, descripcion_compra: "botella de 250ml" },
+      { nombre: "semillas de sésamo", nombre_normalizado: "sesamo", nombre_display: "Sésamo", cantidad_base: 5, unidad: "g", unidad_compra: "paquetes", factor_conversion: 100, descripcion_compra: "paquete de 100g" }
+    ],
+    instrucciones: [
+      "Cocinar el arroz y dejar enfriar. Aderezar con vinagre de arroz opcional.",
+      "Cortar el salmón en cubos de 2cm. Marinar con soya y aceite de sésamo 5 min.",
+      "Montar bowl: arroz, salmón marinado, palta en láminas, edamame y sésamo."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "a26",
+    nombre: "Wrap mediterráneo con pollo y hummus",
+    tipo_comida: "almuerzo",
+    calorias_base: 510,
+    proteinas_g: 38,
+    carbohidratos_g: 50,
+    grasas_g: 16,
+    es_sin_gluten: false,
+    es_sin_lactosa: true,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "tortilla de trigo integral", nombre_normalizado: "tortilla_integral", nombre_display: "Tortilla integral", cantidad_base: 1, unidad: "unidad", unidad_compra: "paquetes", factor_conversion: 8, descripcion_compra: "paquete de 8 unidades" },
+      { nombre: "pechuga de pollo", nombre_normalizado: "pechuga_pollo", nombre_display: "Pechuga de pollo", cantidad_base: 150, unidad: "g", unidad_compra: "kg", factor_conversion: 1000, descripcion_compra: "kg" },
+      { nombre: "hummus", nombre_normalizado: "hummus", nombre_display: "Hummus", cantidad_base: 60, unidad: "g", unidad_compra: "potes", factor_conversion: 200, descripcion_compra: "pote de 200g" },
+      { nombre: "tomates cherry", nombre_normalizado: "tomate_cherry", nombre_display: "Tomates cherry", cantidad_base: 80, unidad: "g", unidad_compra: "paquetes", factor_conversion: 250, descripcion_compra: "bolsa de 250g" },
+      { nombre: "pepino", nombre_normalizado: "pepino", nombre_display: "Pepino", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "aceitunas negras", nombre_normalizado: "aceitunas", nombre_display: "Aceitunas negras", cantidad_base: 20, unidad: "g", unidad_compra: "latas", factor_conversion: 200, descripcion_compra: "lata de 200g" }
+    ],
+    instrucciones: [
+      "Cocinar la pechuga a la plancha con orégano y limón. Cortar en tiras.",
+      "Calentar la tortilla. Untar hummus generosamente.",
+      "Rellenar con pollo, tomates cherry cortados, pepino, aceitunas y enrollar."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "a27",
+    nombre: "Bowl de garbanzos especiados con arroz",
+    tipo_comida: "almuerzo",
+    calorias_base: 490,
+    proteinas_g: 22,
+    carbohidratos_g: 72,
+    grasas_g: 12,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "garbanzos cocidos", nombre_normalizado: "garbanzos", nombre_display: "Garbanzos cocidos", cantidad_base: 150, unidad: "g", unidad_compra: "latas", factor_conversion: 400, descripcion_compra: "lata de 400g" },
+      { nombre: "arroz basmati", nombre_normalizado: "arroz_basmati", nombre_display: "Arroz basmati", cantidad_base: 80, unidad: "g", unidad_compra: "paquetes", factor_conversion: 1000, descripcion_compra: "paquete de 1kg" },
+      { nombre: "espinaca fresca", nombre_normalizado: "espinaca", nombre_display: "Espinaca", cantidad_base: 60, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "bolsa de 200g" },
+      { nombre: "cúrcuma molida", nombre_normalizado: "curcuma", nombre_display: "Cúrcuma", cantidad_base: 3, unidad: "g", unidad_compra: "frascos", factor_conversion: 50, descripcion_compra: "frasco de 50g" },
+      { nombre: "pimentón ahumado", nombre_normalizado: "paprika", nombre_display: "Pimentón ahumado", cantidad_base: 3, unidad: "g", unidad_compra: "frascos", factor_conversion: 50, descripcion_compra: "frasco de 50g" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 12, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" },
+      { nombre: "yogur griego natural", nombre_normalizado: "yogur_griego", nombre_display: "Yogur griego", cantidad_base: 60, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "pote 200g" }
+    ],
+    instrucciones: [
+      "Cocinar el arroz. Sofreír los garbanzos con aceite, cúrcuma y pimentón 5 min hasta dorar.",
+      "Saltear la espinaca en la misma sartén 2 min.",
+      "Servir arroz con garbanzos especiados, espinaca y una cucharada de yogur."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "a28",
+    nombre: "Salmón en papillote con verduras",
+    tipo_comida: "almuerzo",
+    calorias_base: 480,
+    proteinas_g: 44,
+    carbohidratos_g: 24,
+    grasas_g: 22,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "filete de salmón", nombre_normalizado: "salmon", nombre_display: "Filete de salmón", cantidad_base: 200, unidad: "g", unidad_compra: "kg", factor_conversion: 1000, descripcion_compra: "kg" },
+      { nombre: "zucchini", nombre_normalizado: "zucchini", nombre_display: "Zucchini", cantidad_base: 100, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "espárragos", nombre_normalizado: "esparragos", nombre_display: "Espárragos", cantidad_base: 80, unidad: "g", unidad_compra: "paquetes", factor_conversion: 250, descripcion_compra: "paquete de 250g" },
+      { nombre: "limón", nombre_normalizado: "limon", nombre_display: "Limón", cantidad_base: 1, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 12, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" },
+      { nombre: "eneldo seco", nombre_normalizado: "eneldo", nombre_display: "Eneldo seco", cantidad_base: 2, unidad: "g", unidad_compra: "frascos", factor_conversion: 20, descripcion_compra: "frasco de 20g" },
+      { nombre: "arroz integral", nombre_normalizado: "arroz_integral", nombre_display: "Arroz integral", cantidad_base: 60, unidad: "g", unidad_compra: "paquetes", factor_conversion: 1000, descripcion_compra: "paquete de 1kg" }
+    ],
+    instrucciones: [
+      "Cocinar el arroz integral. Precalentar horno a 200°C.",
+      "En papel aluminio, colocar el salmón con verduras, limón en rodajas, eneldo y aceite. Cerrar bien.",
+      "Hornear 18 min. Abrir el papillote en el plato y servir con arroz."
+    ],
+    instrucciones_thermomix: []
+  },
+
+  // ======================== CENAS ADICIONALES ========================
+  {
+    id: "c17",
+    nombre: "Merluza al vapor con espárragos",
+    tipo_comida: "cena",
+    calorias_base: 340,
+    proteinas_g: 38,
+    carbohidratos_g: 18,
+    grasas_g: 10,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "filete de merluza", nombre_normalizado: "merluza", nombre_display: "Filete de merluza", cantidad_base: 200, unidad: "g", unidad_compra: "kg", factor_conversion: 1000, descripcion_compra: "kg" },
+      { nombre: "espárragos", nombre_normalizado: "esparragos", nombre_display: "Espárragos", cantidad_base: 120, unidad: "g", unidad_compra: "paquetes", factor_conversion: 250, descripcion_compra: "paquete de 250g" },
+      { nombre: "papa", nombre_normalizado: "papa", nombre_display: "Papa", cantidad_base: 150, unidad: "g", unidad_compra: "kg", factor_conversion: 1000, descripcion_compra: "kg" },
+      { nombre: "limón", nombre_normalizado: "limon", nombre_display: "Limón", cantidad_base: 1, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 10, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" },
+      { nombre: "perejil fresco", nombre_normalizado: "perejil", nombre_display: "Perejil fresco", cantidad_base: 5, unidad: "g", unidad_compra: "manojos", factor_conversion: 1, descripcion_compra: "manojo" }
+    ],
+    instrucciones: [
+      "Cocinar las papas en agua con sal 15 min. Escurrir y machacar con aceite.",
+      "Vaporizar la merluza sobre agua hirviendo 8 min con rodajas de limón.",
+      "Saltear los espárragos en sartén seca 3 min. Servir el filete con papas y espárragos, perejil por encima."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "c18",
+    nombre: "Pollo al limón con brócoli al vapor",
+    tipo_comida: "cena",
+    calorias_base: 360,
+    proteinas_g: 42,
+    carbohidratos_g: 14,
+    grasas_g: 14,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "pechuga de pollo", nombre_normalizado: "pechuga_pollo", nombre_display: "Pechuga de pollo", cantidad_base: 180, unidad: "g", unidad_compra: "kg", factor_conversion: 1000, descripcion_compra: "kg" },
+      { nombre: "brócoli", nombre_normalizado: "brocoli", nombre_display: "Brócoli", cantidad_base: 200, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "limón", nombre_normalizado: "limon", nombre_display: "Limón", cantidad_base: 1, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "ajo", nombre_normalizado: "ajo", nombre_display: "Ajo", cantidad_base: 2, unidad: "dientes", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "cabeza" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 12, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" },
+      { nombre: "tomillo seco", nombre_normalizado: "tomillo", nombre_display: "Tomillo seco", cantidad_base: 2, unidad: "g", unidad_compra: "frascos", factor_conversion: 20, descripcion_compra: "frasco de 20g" }
+    ],
+    instrucciones: [
+      "Marinar la pechuga con jugo de limón, ajo rallado y tomillo 15 min.",
+      "Cocinar en sartén antiadherente con aceite 5 min por lado.",
+      "Vaporizar el brócoli 6 min hasta tierno-crujiente. Servir junto al pollo."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "c19",
+    nombre: "Crema de zapallo con semillas",
+    tipo_comida: "cena",
+    calorias_base: 290,
+    proteinas_g: 8,
+    carbohidratos_g: 42,
+    grasas_g: 10,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "zapallo", nombre_normalizado: "zapallo", nombre_display: "Zapallo", cantidad_base: 400, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad (mediana)" },
+      { nombre: "zanahoria", nombre_normalizado: "zanahoria", nombre_display: "Zanahoria", cantidad_base: 1, unidad: "unidad", unidad_compra: "kg", factor_conversion: 8, descripcion_compra: "~8 unidades por kg" },
+      { nombre: "cebolla", nombre_normalizado: "cebolla", nombre_display: "Cebolla", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "kg", factor_conversion: 5, descripcion_compra: "~5 unidades por kg" },
+      { nombre: "leche de coco light", nombre_normalizado: "leche_coco", nombre_display: "Leche de coco light", cantidad_base: 100, unidad: "ml", unidad_compra: "latas", factor_conversion: 400, descripcion_compra: "lata de 400ml" },
+      { nombre: "semillas de zapallo", nombre_normalizado: "semillas_zapallo", nombre_display: "Semillas de zapallo", cantidad_base: 15, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "paquete de 200g" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 10, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" }
+    ],
+    instrucciones: [
+      "Cocinar zapallo, zanahoria y cebolla en caldo vegetal hasta muy blandos, 20 min.",
+      "Licuar con la leche de coco hasta crema suave. Ajustar sal.",
+      "Servir caliente con semillas de zapallo tostadas por encima."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "c20",
+    nombre: "Garbanzos al curry con arroz basmati",
+    tipo_comida: "cena",
+    calorias_base: 430,
+    proteinas_g: 18,
+    carbohidratos_g: 68,
+    grasas_g: 10,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "garbanzos cocidos", nombre_normalizado: "garbanzos", nombre_display: "Garbanzos", cantidad_base: 150, unidad: "g", unidad_compra: "latas", factor_conversion: 400, descripcion_compra: "lata de 400g" },
+      { nombre: "arroz basmati", nombre_normalizado: "arroz_basmati", nombre_display: "Arroz basmati", cantidad_base: 70, unidad: "g", unidad_compra: "paquetes", factor_conversion: 1000, descripcion_compra: "paquete de 1kg" },
+      { nombre: "leche de coco light", nombre_normalizado: "leche_coco", nombre_display: "Leche de coco light", cantidad_base: 150, unidad: "ml", unidad_compra: "latas", factor_conversion: 400, descripcion_compra: "lata de 400ml" },
+      { nombre: "pasta de curry rojo", nombre_normalizado: "curry_rojo", nombre_display: "Pasta de curry rojo", cantidad_base: 15, unidad: "g", unidad_compra: "frascos", factor_conversion: 200, descripcion_compra: "frasco de 200g" },
+      { nombre: "tomates en lata triturados", nombre_normalizado: "tomate_lata", nombre_display: "Tomates triturados", cantidad_base: 150, unidad: "g", unidad_compra: "latas", factor_conversion: 400, descripcion_compra: "lata de 400g" },
+      { nombre: "espinaca fresca", nombre_normalizado: "espinaca", nombre_display: "Espinaca", cantidad_base: 60, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "bolsa de 200g" }
+    ],
+    instrucciones: [
+      "Sofreír la pasta de curry 1 min. Agregar garbanzos y tomates, cocinar 5 min.",
+      "Incorporar la leche de coco y espinaca. Cocinar 5 min más.",
+      "Servir sobre arroz basmati cocido."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "c21",
+    nombre: "Pechuga rellena con espinaca y queso",
+    tipo_comida: "cena",
+    calorias_base: 390,
+    proteinas_g: 46,
+    carbohidratos_g: 8,
+    grasas_g: 18,
+    es_sin_gluten: true,
+    es_sin_lactosa: false,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "pechuga de pollo", nombre_normalizado: "pechuga_pollo", nombre_display: "Pechuga de pollo", cantidad_base: 200, unidad: "g", unidad_compra: "kg", factor_conversion: 1000, descripcion_compra: "kg" },
+      { nombre: "espinaca fresca", nombre_normalizado: "espinaca", nombre_display: "Espinaca", cantidad_base: 60, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "bolsa de 200g" },
+      { nombre: "queso mozzarella", nombre_normalizado: "mozzarella", nombre_display: "Mozzarella", cantidad_base: 40, unidad: "g", unidad_compra: "paquetes", factor_conversion: 125, descripcion_compra: "paquete de 125g" },
+      { nombre: "ajo en polvo", nombre_normalizado: "ajo_polvo", nombre_display: "Ajo en polvo", cantidad_base: 2, unidad: "g", unidad_compra: "frascos", factor_conversion: 50, descripcion_compra: "frasco de 50g" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 10, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" },
+      { nombre: "tomates cherry", nombre_normalizado: "tomate_cherry", nombre_display: "Tomates cherry", cantidad_base: 80, unidad: "g", unidad_compra: "paquetes", factor_conversion: 250, descripcion_compra: "bolsa de 250g" }
+    ],
+    instrucciones: [
+      "Abrir la pechuga tipo libro. Saltear la espinaca 1 min y rellenar con espinaca y mozzarella.",
+      "Cerrar y asegurar con palillos. Sazonar con ajo en polvo, sal y pimienta.",
+      "Sellar en sartén con aceite 2 min por lado y hornear 18 min a 190°C. Servir con tomates cherry asados."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "c22",
+    nombre: "Tortilla española de vegetales",
+    tipo_comida: "cena",
+    calorias_base: 350,
+    proteinas_g: 22,
+    carbohidratos_g: 28,
+    grasas_g: 18,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "huevos", nombre_normalizado: "huevo", nombre_display: "Huevos", cantidad_base: 4, unidad: "unidades", unidad_compra: "docenas", factor_conversion: 12, descripcion_compra: "docena" },
+      { nombre: "papa", nombre_normalizado: "papa", nombre_display: "Papa", cantidad_base: 200, unidad: "g", unidad_compra: "kg", factor_conversion: 1000, descripcion_compra: "kg" },
+      { nombre: "cebolla", nombre_normalizado: "cebolla", nombre_display: "Cebolla", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "kg", factor_conversion: 5, descripcion_compra: "~5 unidades por kg" },
+      { nombre: "pimentón rojo", nombre_normalizado: "pimenton", nombre_display: "Pimentón rojo", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 15, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" }
+    ],
+    instrucciones: [
+      "Cocinar las papas en rodajas finas con cebolla y pimentón en aceite a fuego bajo 15 min, sin dorar.",
+      "Batir huevos con sal y mezclar con las verduras cocidas.",
+      "Verter en sartén caliente, cuajar a fuego bajo 5 min, dar vuelta con un plato y cocinar 3 min más."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "c23",
+    nombre: "Filete de pescado al wok con verduras",
+    tipo_comida: "cena",
+    calorias_base: 330,
+    proteinas_g: 36,
+    carbohidratos_g: 24,
+    grasas_g: 10,
+    es_sin_gluten: false,
+    es_sin_lactosa: true,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "filete de tilapia", nombre_normalizado: "tilapia", nombre_display: "Filete de tilapia", cantidad_base: 200, unidad: "g", unidad_compra: "kg", factor_conversion: 1000, descripcion_compra: "kg" },
+      { nombre: "brócoli", nombre_normalizado: "brocoli", nombre_display: "Brócoli", cantidad_base: 100, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "zanahoria", nombre_normalizado: "zanahoria", nombre_display: "Zanahoria", cantidad_base: 1, unidad: "unidad", unidad_compra: "kg", factor_conversion: 8, descripcion_compra: "~8 unidades por kg" },
+      { nombre: "pimentón amarillo", nombre_normalizado: "pimenton_amarillo", nombre_display: "Pimentón amarillo", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "salsa soya light", nombre_normalizado: "soya", nombre_display: "Salsa soya light", cantidad_base: 20, unidad: "ml", unidad_compra: "botellas", factor_conversion: 250, descripcion_compra: "botella de 250ml" },
+      { nombre: "aceite de sésamo", nombre_normalizado: "aceite_sesamo", nombre_display: "Aceite de sésamo", cantidad_base: 8, unidad: "ml", unidad_compra: "botellas", factor_conversion: 250, descripcion_compra: "botella de 250ml" },
+      { nombre: "jengibre fresco", nombre_normalizado: "jengibre", nombre_display: "Jengibre", cantidad_base: 5, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "trozo" }
+    ],
+    instrucciones: [
+      "Cortar el pescado en trozos. Saltear en wok muy caliente con aceite de sésamo 2 min por lado.",
+      "Retirar el pescado. Saltear las verduras cortadas 4 min con jengibre.",
+      "Regresar el pescado, agregar salsa soya y revolver 1 min. Servir solo o con arroz."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "c24",
+    nombre: "Bowl de espinaca con huevo poché y quinoa",
+    tipo_comida: "cena",
+    calorias_base: 380,
+    proteinas_g: 24,
+    carbohidratos_g: 38,
+    grasas_g: 14,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "quinoa", nombre_normalizado: "quinoa", nombre_display: "Quinoa", cantidad_base: 70, unidad: "g", unidad_compra: "paquetes", factor_conversion: 500, descripcion_compra: "paquete de 500g" },
+      { nombre: "espinaca fresca", nombre_normalizado: "espinaca", nombre_display: "Espinaca", cantidad_base: 100, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "bolsa de 200g" },
+      { nombre: "huevos", nombre_normalizado: "huevo", nombre_display: "Huevos", cantidad_base: 2, unidad: "unidades", unidad_compra: "docenas", factor_conversion: 12, descripcion_compra: "docena" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 10, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" },
+      { nombre: "ajo", nombre_normalizado: "ajo", nombre_display: "Ajo", cantidad_base: 1, unidad: "diente", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "cabeza" },
+      { nombre: "limón", nombre_normalizado: "limon", nombre_display: "Limón", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" }
+    ],
+    instrucciones: [
+      "Cocinar la quinoa 15 min. Saltear la espinaca con ajo y aceite 2 min.",
+      "Pochar los huevos en agua hirviendo con vinagre, 3 min.",
+      "Montar bowl: quinoa, espinaca salteada, huevo encima. Rociar limón y aceite."
+    ],
+    instrucciones_thermomix: []
+  },
+
+  // ======================== SNACKS AM ADICIONALES ========================
+  {
+    id: "sam17",
+    nombre: "Manzana con mantequilla de maní",
+    tipo_comida: "snack_am",
+    calorias_base: 220,
+    proteinas_g: 6,
+    carbohidratos_g: 28,
+    grasas_g: 10,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "manzana", nombre_normalizado: "manzana", nombre_display: "Manzana", cantidad_base: 1, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "mantequilla de maní natural", nombre_normalizado: "mantequilla_mani", nombre_display: "Mantequilla de maní", cantidad_base: 20, unidad: "g", unidad_compra: "frascos", factor_conversion: 350, descripcion_compra: "frasco de 350g" }
+    ],
+    instrucciones: [
+      "Cortar la manzana en gajos. Servir con la mantequilla de maní para dipear."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "sam18",
+    nombre: "Hummus con palitos de zanahoria y apio",
+    tipo_comida: "snack_am",
+    calorias_base: 180,
+    proteinas_g: 8,
+    carbohidratos_g: 22,
+    grasas_g: 7,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "hummus", nombre_normalizado: "hummus", nombre_display: "Hummus", cantidad_base: 80, unidad: "g", unidad_compra: "potes", factor_conversion: 200, descripcion_compra: "pote de 200g" },
+      { nombre: "zanahoria", nombre_normalizado: "zanahoria", nombre_display: "Zanahoria", cantidad_base: 1, unidad: "unidad", unidad_compra: "kg", factor_conversion: 8, descripcion_compra: "~8 unidades por kg" },
+      { nombre: "apio", nombre_normalizado: "apio", nombre_display: "Apio", cantidad_base: 2, unidad: "ramas", unidad_compra: "manojos", factor_conversion: 1, descripcion_compra: "manojo" }
+    ],
+    instrucciones: [
+      "Pelar y cortar la zanahoria en bastones. Cortar el apio en trozos.",
+      "Servir junto al hummus para dipear."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "sam19",
+    nombre: "Edamame al vapor con sal",
+    tipo_comida: "snack_am",
+    calorias_base: 190,
+    proteinas_g: 14,
+    carbohidratos_g: 14,
+    grasas_g: 7,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "edamame con vaina", nombre_normalizado: "edamame", nombre_display: "Edamame con vaina", cantidad_base: 150, unidad: "g", unidad_compra: "paquetes", factor_conversion: 400, descripcion_compra: "bolsa de 400g" },
+      { nombre: "sal marina", nombre_normalizado: "sal", nombre_display: "Sal marina", cantidad_base: 2, unidad: "g", unidad_compra: "paquetes", factor_conversion: 1000, descripcion_compra: "paquete de 1kg" }
+    ],
+    instrucciones: [
+      "Cocinar el edamame al vapor o en agua hirviendo 5 min.",
+      "Escurrir y espolvorear sal marina. Servir caliente."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "sam20",
+    nombre: "Rollito de pavo y queso crema",
+    tipo_comida: "snack_am",
+    calorias_base: 200,
+    proteinas_g: 18,
+    carbohidratos_g: 4,
+    grasas_g: 12,
+    es_sin_gluten: true,
+    es_sin_lactosa: false,
+    es_vegetariana: false,
+    ingredientes: [
+      { nombre: "jamón de pavo laminado", nombre_normalizado: "jamon_pavo", nombre_display: "Jamón de pavo", cantidad_base: 80, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "paquete de 200g" },
+      { nombre: "queso crema light", nombre_normalizado: "queso_crema", nombre_display: "Queso crema light", cantidad_base: 30, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "paquete de 200g" },
+      { nombre: "pepino", nombre_normalizado: "pepino", nombre_display: "Pepino", cantidad_base: 0.25, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" }
+    ],
+    instrucciones: [
+      "Untar queso crema sobre cada lámina de jamón.",
+      "Colocar un bastón de pepino y enrollar firmemente."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "sam21",
+    nombre: "Galletas de arroz con palta",
+    tipo_comida: "snack_am",
+    calorias_base: 210,
+    proteinas_g: 4,
+    carbohidratos_g: 26,
+    grasas_g: 10,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "galletas de arroz", nombre_normalizado: "galletas_arroz", nombre_display: "Galletas de arroz", cantidad_base: 3, unidad: "unidades", unidad_compra: "paquetes", factor_conversion: 15, descripcion_compra: "paquete de 15 unidades" },
+      { nombre: "palta", nombre_normalizado: "palta", nombre_display: "Palta", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "jugo de limón", nombre_normalizado: "limon", nombre_display: "Limón", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "sal y pimienta", nombre_normalizado: "sal", nombre_display: "Sal y pimienta", cantidad_base: 1, unidad: "g", unidad_compra: "paquetes", factor_conversion: 1000, descripcion_compra: "paquete de 1kg" }
+    ],
+    instrucciones: [
+      "Aplastas la palta con limón, sal y pimienta.",
+      "Untar sobre las galletas de arroz y servir inmediatamente."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "sam22",
+    nombre: "Yogur griego con nueces y miel",
+    tipo_comida: "snack_am",
+    calorias_base: 230,
+    proteinas_g: 14,
+    carbohidratos_g: 20,
+    grasas_g: 10,
+    es_sin_gluten: true,
+    es_sin_lactosa: false,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "yogur griego natural", nombre_normalizado: "yogur_griego", nombre_display: "Yogur griego", cantidad_base: 150, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "pote 200g" },
+      { nombre: "nueces", nombre_normalizado: "nueces", nombre_display: "Nueces", cantidad_base: 15, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "paquete de 200g" },
+      { nombre: "miel de abeja", nombre_normalizado: "miel", nombre_display: "Miel", cantidad_base: 10, unidad: "ml", unidad_compra: "frascos", factor_conversion: 500, descripcion_compra: "frasco de 500ml" }
+    ],
+    instrucciones: [
+      "Verter el yogur en un vaso o bowl. Agregar las nueces picadas y la miel."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "sam23",
+    nombre: "Mini bowl de cottage con pepino",
+    tipo_comida: "snack_am",
+    calorias_base: 170,
+    proteinas_g: 16,
+    carbohidratos_g: 10,
+    grasas_g: 6,
+    es_sin_gluten: true,
+    es_sin_lactosa: false,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "queso cottage", nombre_normalizado: "cottage", nombre_display: "Queso cottage", cantidad_base: 120, unidad: "g", unidad_compra: "paquetes", factor_conversion: 400, descripcion_compra: "paquete de 400g" },
+      { nombre: "pepino", nombre_normalizado: "pepino", nombre_display: "Pepino", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "sal y pimienta", nombre_normalizado: "sal", nombre_display: "Sal y pimienta", cantidad_base: 1, unidad: "g", unidad_compra: "paquetes", factor_conversion: 1000, descripcion_compra: "paquete de 1kg" },
+      { nombre: "eneldo seco", nombre_normalizado: "eneldo", nombre_display: "Eneldo seco", cantidad_base: 1, unidad: "g", unidad_compra: "frascos", factor_conversion: 20, descripcion_compra: "frasco de 20g" }
+    ],
+    instrucciones: [
+      "Cortar el pepino en rodajas o cubitos.",
+      "Mezclar con el cottage, sal, pimienta y eneldo. Servir frío."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "sam24",
+    nombre: "Chips de garbanzos al horno",
+    tipo_comida: "snack_am",
+    calorias_base: 200,
+    proteinas_g: 10,
+    carbohidratos_g: 26,
+    grasas_g: 6,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "garbanzos cocidos", nombre_normalizado: "garbanzos", nombre_display: "Garbanzos cocidos", cantidad_base: 150, unidad: "g", unidad_compra: "latas", factor_conversion: 400, descripcion_compra: "lata de 400g" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 10, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" },
+      { nombre: "pimentón ahumado", nombre_normalizado: "paprika", nombre_display: "Pimentón ahumado", cantidad_base: 3, unidad: "g", unidad_compra: "frascos", factor_conversion: 50, descripcion_compra: "frasco de 50g" },
+      { nombre: "sal", nombre_normalizado: "sal", nombre_display: "Sal", cantidad_base: 2, unidad: "g", unidad_compra: "paquetes", factor_conversion: 1000, descripcion_compra: "paquete de 1kg" }
+    ],
+    instrucciones: [
+      "Secar los garbanzos muy bien. Mezclar con aceite, pimentón y sal.",
+      "Extender en bandeja y hornear 30 min a 200°C, revolviendo a mitad de cocción, hasta crocantes."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "sam25",
+    nombre: "Tomatitos cherry con mozzarella y albahaca",
+    tipo_comida: "snack_am",
+    calorias_base: 180,
+    proteinas_g: 10,
+    carbohidratos_g: 6,
+    grasas_g: 12,
+    es_sin_gluten: true,
+    es_sin_lactosa: false,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "tomates cherry", nombre_normalizado: "tomate_cherry", nombre_display: "Tomates cherry", cantidad_base: 120, unidad: "g", unidad_compra: "paquetes", factor_conversion: 250, descripcion_compra: "bolsa de 250g" },
+      { nombre: "mozzarella fresca", nombre_normalizado: "mozzarella", nombre_display: "Mozzarella fresca", cantidad_base: 60, unidad: "g", unidad_compra: "paquetes", factor_conversion: 125, descripcion_compra: "paquete de 125g" },
+      { nombre: "albahaca fresca", nombre_normalizado: "albahaca", nombre_display: "Albahaca fresca", cantidad_base: 5, unidad: "g", unidad_compra: "manojos", factor_conversion: 1, descripcion_compra: "manojo" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 5, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" }
+    ],
+    instrucciones: [
+      "Cortar los tomatitos a la mitad y la mozzarella en trozos pequeños.",
+      "Mezclar con hojas de albahaca y un hilo de aceite de oliva. Servir frío."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "sam26",
+    nombre: "Requesón con piña y menta",
+    tipo_comida: "snack_am",
+    calorias_base: 175,
+    proteinas_g: 14,
+    carbohidratos_g: 22,
+    grasas_g: 3,
+    es_sin_gluten: true,
+    es_sin_lactosa: false,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "requesón o ricotta light", nombre_normalizado: "requeson", nombre_display: "Requesón", cantidad_base: 120, unidad: "g", unidad_compra: "paquetes", factor_conversion: 250, descripcion_compra: "paquete de 250g" },
+      { nombre: "piña fresca", nombre_normalizado: "pina", nombre_display: "Piña fresca", cantidad_base: 100, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad (entera)" },
+      { nombre: "menta fresca", nombre_normalizado: "menta", nombre_display: "Menta fresca", cantidad_base: 3, unidad: "g", unidad_compra: "manojos", factor_conversion: 1, descripcion_compra: "manojo" }
+    ],
+    instrucciones: [
+      "Cortar la piña en cubitos.",
+      "Servir el requesón en un bowl con la piña y hojas de menta encima."
+    ],
+    instrucciones_thermomix: []
+  },
+
+  // ======================== SNACKS PM ADICIONALES ========================
+  {
+    id: "spm17",
+    nombre: "Batido proteico de cacao y plátano",
+    tipo_comida: "snack_pm",
+    calorias_base: 250,
+    proteinas_g: 20,
+    carbohidratos_g: 30,
+    grasas_g: 5,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "proteína en polvo sabor chocolate", nombre_normalizado: "proteina_polvo", nombre_display: "Proteína en polvo chocolate", cantidad_base: 30, unidad: "g", unidad_compra: "bolsas", factor_conversion: 900, descripcion_compra: "bolsa de 900g" },
+      { nombre: "plátano congelado", nombre_normalizado: "platano", nombre_display: "Plátano congelado", cantidad_base: 1, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "leche de almendras", nombre_normalizado: "leche_almendras", nombre_display: "Leche de almendras", cantidad_base: 200, unidad: "ml", unidad_compra: "cajas", factor_conversion: 1000, descripcion_compra: "caja de 1L" },
+      { nombre: "cacao en polvo sin azúcar", nombre_normalizado: "cacao", nombre_display: "Cacao en polvo", cantidad_base: 5, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "paquete de 200g" }
+    ],
+    instrucciones: [
+      "Licuar todos los ingredientes hasta obtener consistencia cremosa.",
+      "Servir inmediatamente frío. Opcional: agregar cubos de hielo."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "spm18",
+    nombre: "Yogur griego con semillas y frutos del bosque",
+    tipo_comida: "snack_pm",
+    calorias_base: 220,
+    proteinas_g: 16,
+    carbohidratos_g: 22,
+    grasas_g: 7,
+    es_sin_gluten: true,
+    es_sin_lactosa: false,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "yogur griego natural", nombre_normalizado: "yogur_griego", nombre_display: "Yogur griego", cantidad_base: 150, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "pote 200g" },
+      { nombre: "mix de frutos rojos", nombre_normalizado: "frutos_rojos", nombre_display: "Mix frutos rojos", cantidad_base: 60, unidad: "g", unidad_compra: "paquetes", factor_conversion: 300, descripcion_compra: "bolsa de 300g" },
+      { nombre: "semillas de chía", nombre_normalizado: "chia", nombre_display: "Semillas de chía", cantidad_base: 10, unidad: "g", unidad_compra: "paquetes", factor_conversion: 250, descripcion_compra: "paquete de 250g" },
+      { nombre: "semillas de linaza", nombre_normalizado: "linaza", nombre_display: "Semillas de linaza", cantidad_base: 5, unidad: "g", unidad_compra: "paquetes", factor_conversion: 250, descripcion_compra: "paquete de 250g" }
+    ],
+    instrucciones: [
+      "Poner el yogur en un vaso. Agregar las semillas y los frutos rojos encima."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "spm19",
+    nombre: "Avena fría con canela y manzana",
+    tipo_comida: "snack_pm",
+    calorias_base: 240,
+    proteinas_g: 8,
+    carbohidratos_g: 42,
+    grasas_g: 4,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "avena en hojuelas", nombre_normalizado: "avena", nombre_display: "Avena en hojuelas", cantidad_base: 40, unidad: "g", unidad_compra: "paquetes", factor_conversion: 500, descripcion_compra: "paquete de 500g" },
+      { nombre: "leche de almendras", nombre_normalizado: "leche_almendras", nombre_display: "Leche de almendras", cantidad_base: 150, unidad: "ml", unidad_compra: "cajas", factor_conversion: 1000, descripcion_compra: "caja de 1L" },
+      { nombre: "manzana", nombre_normalizado: "manzana", nombre_display: "Manzana", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "canela en polvo", nombre_normalizado: "canela", nombre_display: "Canela", cantidad_base: 2, unidad: "g", unidad_compra: "frascos", factor_conversion: 50, descripcion_compra: "frasco de 50g" }
+    ],
+    instrucciones: [
+      "Mezclar avena con leche de almendras y canela. Refrigerar 20 min mínimo.",
+      "Al servir, agregar la manzana rallada o en cubitos por encima."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "spm20",
+    nombre: "Naranja con almendras tostadas",
+    tipo_comida: "snack_pm",
+    calorias_base: 200,
+    proteinas_g: 6,
+    carbohidratos_g: 24,
+    grasas_g: 10,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "naranja", nombre_normalizado: "naranja", nombre_display: "Naranja", cantidad_base: 1, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "almendras tostadas", nombre_normalizado: "almendras", nombre_display: "Almendras tostadas", cantidad_base: 25, unidad: "g", unidad_compra: "paquetes", factor_conversion: 200, descripcion_compra: "paquete de 200g" }
+    ],
+    instrucciones: [
+      "Pelar la naranja y separar en gajos.",
+      "Servir junto a las almendras. Sin preparación adicional."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "spm21",
+    nombre: "Mini ensalada caprese nocturna",
+    tipo_comida: "snack_pm",
+    calorias_base: 190,
+    proteinas_g: 12,
+    carbohidratos_g: 6,
+    grasas_g: 13,
+    es_sin_gluten: true,
+    es_sin_lactosa: false,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "tomate", nombre_normalizado: "tomate", nombre_display: "Tomate", cantidad_base: 1, unidad: "unidad", unidad_compra: "kg", factor_conversion: 5, descripcion_compra: "~5 unidades por kg" },
+      { nombre: "mozzarella fresca", nombre_normalizado: "mozzarella", nombre_display: "Mozzarella fresca", cantidad_base: 60, unidad: "g", unidad_compra: "paquetes", factor_conversion: 125, descripcion_compra: "paquete de 125g" },
+      { nombre: "albahaca fresca", nombre_normalizado: "albahaca", nombre_display: "Albahaca fresca", cantidad_base: 5, unidad: "g", unidad_compra: "manojos", factor_conversion: 1, descripcion_compra: "manojo" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 5, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" }
+    ],
+    instrucciones: [
+      "Cortar el tomate y la mozzarella en rodajas. Intercalar en el plato.",
+      "Colocar hojas de albahaca y rociar con aceite de oliva."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "spm22",
+    nombre: "Kéfir con fruta del bosque",
+    tipo_comida: "snack_pm",
+    calorias_base: 180,
+    proteinas_g: 8,
+    carbohidratos_g: 26,
+    grasas_g: 4,
+    es_sin_gluten: true,
+    es_sin_lactosa: false,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "kéfir natural", nombre_normalizado: "kefir", nombre_display: "Kéfir natural", cantidad_base: 200, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" },
+      { nombre: "mix de frutos rojos", nombre_normalizado: "frutos_rojos", nombre_display: "Mix frutos rojos", cantidad_base: 60, unidad: "g", unidad_compra: "paquetes", factor_conversion: 300, descripcion_compra: "bolsa de 300g" },
+      { nombre: "miel de abeja", nombre_normalizado: "miel", nombre_display: "Miel", cantidad_base: 8, unidad: "ml", unidad_compra: "frascos", factor_conversion: 500, descripcion_compra: "frasco de 500ml" }
+    ],
+    instrucciones: [
+      "Verter el kéfir en un vaso. Agregar los frutos rojos y la miel."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "spm23",
+    nombre: "Tostada de arroz con mantequilla de almendra",
+    tipo_comida: "snack_pm",
+    calorias_base: 195,
+    proteinas_g: 5,
+    carbohidratos_g: 24,
+    grasas_g: 9,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "galletas de arroz", nombre_normalizado: "galletas_arroz", nombre_display: "Galletas de arroz", cantidad_base: 3, unidad: "unidades", unidad_compra: "paquetes", factor_conversion: 15, descripcion_compra: "paquete de 15 unidades" },
+      { nombre: "mantequilla de almendra", nombre_normalizado: "mantequilla_almendra", nombre_display: "Mantequilla de almendra", cantidad_base: 20, unidad: "g", unidad_compra: "frascos", factor_conversion: 350, descripcion_compra: "frasco de 350g" }
+    ],
+    instrucciones: [
+      "Untar la mantequilla de almendra sobre las galletas de arroz y servir."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "spm24",
+    nombre: "Mango en cubos con tajín",
+    tipo_comida: "snack_pm",
+    calorias_base: 130,
+    proteinas_g: 2,
+    carbohidratos_g: 32,
+    grasas_g: 0,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "mango fresco", nombre_normalizado: "mango", nombre_display: "Mango", cantidad_base: 200, unidad: "g", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" },
+      { nombre: "tajín o chile limón en polvo", nombre_normalizado: "tajin", nombre_display: "Tajín", cantidad_base: 2, unidad: "g", unidad_compra: "frascos", factor_conversion: 100, descripcion_compra: "frasco de 100g" },
+      { nombre: "jugo de limón", nombre_normalizado: "limon", nombre_display: "Limón", cantidad_base: 0.5, unidad: "unidad", unidad_compra: "unidades", factor_conversion: 1, descripcion_compra: "unidad" }
+    ],
+    instrucciones: [
+      "Pelar y cortar el mango en cubos.",
+      "Espolvorear tajín y rociar con jugo de limón. Servir frío."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "spm25",
+    nombre: "Palitos de apio con hummus y semillas",
+    tipo_comida: "snack_pm",
+    calorias_base: 160,
+    proteinas_g: 7,
+    carbohidratos_g: 14,
+    grasas_g: 8,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "apio", nombre_normalizado: "apio", nombre_display: "Apio", cantidad_base: 3, unidad: "ramas", unidad_compra: "manojos", factor_conversion: 1, descripcion_compra: "manojo" },
+      { nombre: "hummus", nombre_normalizado: "hummus", nombre_display: "Hummus", cantidad_base: 60, unidad: "g", unidad_compra: "potes", factor_conversion: 200, descripcion_compra: "pote de 200g" },
+      { nombre: "semillas de sésamo", nombre_normalizado: "sesamo", nombre_display: "Sésamo", cantidad_base: 5, unidad: "g", unidad_compra: "paquetes", factor_conversion: 100, descripcion_compra: "paquete de 100g" }
+    ],
+    instrucciones: [
+      "Cortar el apio en palitos. Servir con hummus para dipear.",
+      "Espolvorear sésamo sobre el hummus."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "spm26",
+    nombre: "Batido de frambuesa y proteína",
+    tipo_comida: "snack_pm",
+    calorias_base: 230,
+    proteinas_g: 22,
+    carbohidratos_g: 24,
+    grasas_g: 4,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "frambuesas congeladas", nombre_normalizado: "frambuesas", nombre_display: "Frambuesas congeladas", cantidad_base: 100, unidad: "g", unidad_compra: "paquetes", factor_conversion: 400, descripcion_compra: "bolsa de 400g" },
+      { nombre: "proteína en polvo sabor vainilla", nombre_normalizado: "proteina_polvo", nombre_display: "Proteína en polvo vainilla", cantidad_base: 25, unidad: "g", unidad_compra: "bolsas", factor_conversion: 900, descripcion_compra: "bolsa de 900g" },
+      { nombre: "leche de almendras", nombre_normalizado: "leche_almendras", nombre_display: "Leche de almendras", cantidad_base: 200, unidad: "ml", unidad_compra: "cajas", factor_conversion: 1000, descripcion_compra: "caja de 1L" }
+    ],
+    instrucciones: [
+      "Licuar las frambuesas congeladas con la proteína y la leche de almendras.",
+      "Servir inmediatamente. Opcional: agregar cubos de hielo."
+    ],
+    instrucciones_thermomix: []
+  },
+  {
+    id: "spm27",
+    nombre: "Chips de camote al horno",
+    tipo_comida: "snack_pm",
+    calorias_base: 185,
+    proteinas_g: 3,
+    carbohidratos_g: 34,
+    grasas_g: 5,
+    es_sin_gluten: true,
+    es_sin_lactosa: true,
+    es_vegetariana: true,
+    ingredientes: [
+      { nombre: "camote", nombre_normalizado: "camote", nombre_display: "Camote (batata)", cantidad_base: 200, unidad: "g", unidad_compra: "kg", factor_conversion: 1000, descripcion_compra: "kg" },
+      { nombre: "aceite de oliva", nombre_normalizado: "aceite_oliva", nombre_display: "Aceite de oliva", cantidad_base: 8, unidad: "ml", unidad_compra: "botellas", factor_conversion: 500, descripcion_compra: "botella de 500ml" },
+      { nombre: "sal marina", nombre_normalizado: "sal", nombre_display: "Sal marina", cantidad_base: 2, unidad: "g", unidad_compra: "paquetes", factor_conversion: 1000, descripcion_compra: "paquete de 1kg" },
+      { nombre: "romero seco", nombre_normalizado: "romero", nombre_display: "Romero seco", cantidad_base: 1, unidad: "g", unidad_compra: "frascos", factor_conversion: 20, descripcion_compra: "frasco de 20g" }
+    ],
+    instrucciones: [
+      "Cortar el camote en rodajas muy finas (2mm). Mezclar con aceite, sal y romero.",
+      "Extender en bandeja y hornear 25 min a 180°C, dando vuelta a mitad de cocción."
+    ],
+    instrucciones_thermomix: []
   }
 ];

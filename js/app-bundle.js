@@ -1,4 +1,4 @@
-﻿/* ============================================
+/* ============================================
    Calibrate — App Bundle (todos los componentes React)
    Este archivo se procesa con Babel standalone
    MEJORAS: Dark mode, día actual, swap individual,
@@ -82,9 +82,28 @@ var AJUSTES_OBJETIVO_EN = {
 
 // ─── Helpers: Comidas Externas ─────────────────────────────────────────────
 var _EXT_KEY = 'nutriplan_comidas_externas';
+function _repararNombreUtf8(str) {
+  if (typeof str !== 'string' || !/[\x80-\xFF]/.test(str)) return str;
+  try {
+    var bytes = new Uint8Array(str.length);
+    for (var i = 0; i < str.length; i++) {
+      var c = str.charCodeAt(i);
+      if (c > 255) return str;
+      bytes[i] = c;
+    }
+    var decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+    return decoded.includes('�') ? str : decoded;
+  } catch(e) { return str; }
+}
 function _comidasExtFecha(fecha) {
-  try { var a = JSON.parse(localStorage.getItem(_EXT_KEY) || '{}'); return a[fecha] || []; }
-  catch(e) { return []; }
+  try {
+    var a = JSON.parse(localStorage.getItem(_EXT_KEY) || '{}');
+    var lista = a[fecha] || [];
+    // Reparar nombres con encoding Latin-1 roto (proteÃna → proteína)
+    return lista.map(function(c) {
+      return c && c.nombre ? Object.assign({}, c, { nombre: _repararNombreUtf8(c.nombre) }) : c;
+    });
+  } catch(e) { return []; }
 }
 function _guardarComidasExt(fecha, lista) {
   try {
@@ -3434,42 +3453,49 @@ function AdherenceWidget({ darkMode, forceUpdate }) {
   const color = stats.porcentaje >= 80 ? 'emerald' : stats.porcentaje >= 50 ? 'amber' : 'rose';
 
   return (
-    <div className={`mt-6 rounded-2xl p-4 border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-      <div className="flex items-center justify-between mb-3">
+    <div className={`mt-6 rounded-2xl border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
+      style={{ padding: '20px 20px 24px' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between" style={{ marginBottom: '16px' }}>
         <div className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-          <i className="fas fa-clipboard-check mr-1"></i>Adherencia 7 días
+          <i className="fas fa-clipboard-check mr-1.5"></i>Adherencia 7 días
         </div>
         <div className={`text-2xl font-bold font-display text-${color}-500`}>{stats.porcentaje}%</div>
       </div>
-      <div className="grid grid-cols-3 gap-2 mb-3 text-xs">
-        <div className={`px-2 py-1.5 rounded-lg text-center ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-          <div className="font-bold text-emerald-500">{stats.cumplidos}</div>
-          <div className="text-[11px] text-gray-400">cumplidas</div>
+      {/* Stats grid */}
+      <div className="grid grid-cols-3" style={{ gap: '10px', marginBottom: '20px' }}>
+        <div className={`rounded-xl text-center ${darkMode ? 'bg-gray-700/60' : 'bg-gray-50'}`}
+          style={{ padding: '12px 8px' }}>
+          <div className="font-bold text-emerald-500" style={{ fontSize: '18px', lineHeight: 1.2 }}>{stats.cumplidos}</div>
+          <div style={{ fontSize: '11px', marginTop: '4px' }} className="text-gray-400">cumplidas</div>
         </div>
-        <div className={`px-2 py-1.5 rounded-lg text-center ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-          <div className={`font-bold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{stats.kcal_cumplidas.toLocaleString('es-CL')}</div>
-          <div className="text-[11px] text-gray-400">kcal ✓</div>
+        <div className={`rounded-xl text-center ${darkMode ? 'bg-gray-700/60' : 'bg-gray-50'}`}
+          style={{ padding: '12px 8px' }}>
+          <div className={`font-bold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`} style={{ fontSize: '18px', lineHeight: 1.2 }}>{stats.kcal_cumplidas.toLocaleString('es-CL')}</div>
+          <div style={{ fontSize: '11px', marginTop: '4px' }} className="text-gray-400">kcal ✓</div>
         </div>
-        <div className={`px-2 py-1.5 rounded-lg text-center ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-          <div className="font-bold text-rose-500">{stats.kcal_perdidas.toLocaleString('es-CL')}</div>
-          <div className="text-[11px] text-gray-400">kcal perdidas</div>
+        <div className={`rounded-xl text-center ${darkMode ? 'bg-gray-700/60' : 'bg-gray-50'}`}
+          style={{ padding: '12px 8px' }}>
+          <div className="font-bold text-rose-500" style={{ fontSize: '18px', lineHeight: 1.2 }}>{stats.kcal_perdidas.toLocaleString('es-CL')}</div>
+          <div style={{ fontSize: '11px', marginTop: '4px' }} className="text-gray-400">kcal perdidas</div>
         </div>
       </div>
-      {/* A11/CH2: role="img" + aria-label en gráfico de barras div-based */}
-      {/* TY5: day labels 9px → 11px (mínimo legible en pantallas no-retina) */}
-      <div className="flex items-end justify-between gap-1 h-14"
+      {/* Bar chart */}
+      <div className="flex items-end justify-between" style={{ gap: '6px', height: '72px' }}
         role="img" aria-label={`Gráfico de adherencia 7 días: ${stats.porcentaje}% promedio`}>
         {historial.map((d, idx) => {
-          const altura = d.porcentaje != null ? Math.max(4, d.porcentaje * 0.5) : 0;
-          const colorBar = d.porcentaje == null ? 'bg-gray-300' : d.porcentaje >= 80 ? 'bg-emerald-500' : d.porcentaje >= 50 ? 'bg-amber-500' : 'bg-rose-400';
+          const altura = d.porcentaje != null ? Math.max(4, d.porcentaje * 0.56) : 0;
+          const bgBar = d.porcentaje == null
+            ? (darkMode ? '#374151' : '#e5e7eb')
+            : d.porcentaje >= 80 ? '#10b981' : d.porcentaje >= 50 ? '#f59e0b' : '#f87171';
           return (
-            <div key={idx} className="flex-1 flex flex-col items-center gap-1" aria-hidden="true">
-              <div className="w-full flex items-end h-10">
-                <div className={`w-full rounded-t ${colorBar} ${darkMode && d.porcentaje == null ? 'bg-gray-600' : ''}`}
-                  style={{height: `${altura}px`, minHeight: d.porcentaje != null ? '4px' : '2px'}}
+            <div key={idx} className="flex-1 flex flex-col items-center" style={{ gap: '6px' }} aria-hidden="true">
+              <div className="w-full flex items-end" style={{ height: '52px' }}>
+                <div className="w-full rounded-t"
+                  style={{ height: `${altura}px`, minHeight: d.porcentaje != null ? '4px' : '2px', background: bgBar, transition: 'height 0.3s ease' }}
                   title={d.porcentaje != null ? `${d.porcentaje}% (${d.cumplidos}/${d.total})` : 'Sin registro'}></div>
               </div>
-              <div className="text-[11px] text-gray-500">{d.dia_semana}</div>
+              <div style={{ fontSize: '11px' }} className="text-gray-500">{d.dia_semana}</div>
             </div>
           );
         })}
@@ -3732,10 +3758,208 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
   );
 }
 
+// ─── SlotAcciones: botones de acción por slot de comida ───
+// Extraído del IIFE para evitar violación de Hooks (useState en .map/IIFE)
+// Ventajas: click-outside real, sin flickering de imagen, sin glass effect
+function SlotAcciones({
+  comida, tipo, diaSeleccionado, semanaActiva, plan,
+  historialSlots, darkMode, swapping, yaComido,
+  onMarcarComido, onRestoreRecipe, onVetoRecipe, onRecipeClick, onSwap
+}) {
+  const [showHist, setShowHist] = React.useState(false);
+  const [showSobras, setShowSobras] = React.useState(false);
+  const containerRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!showHist && !showSobras) return;
+    function handleOutside(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setShowHist(false);
+        setShowSobras(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [showHist, showSobras]);
+
+  const slotKey = diaSeleccionado + '_' + tipo + '_' + semanaActiva;
+  const slotHist = (historialSlots && historialSlots[slotKey]) || [];
+  const isSwappingThis = swapping && swapping.dia === diaSeleccionado && swapping.tipoComida === tipo;
+  const sobras = obtenerSobrasDisponibles(plan, diaSeleccionado, semanaActiva);
+
+  const dropdownStyle = {
+    position: 'absolute', right: 0, top: '36px', zIndex: 50,
+    borderRadius: '12px', overflow: 'hidden',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+    backdropFilter: 'none',
+    WebkitBackdropFilter: 'none',
+    backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+    border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`
+  };
+
+  return (
+    <div ref={containerRef} className="flex items-center gap-1 ml-2 flex-shrink-0" style={{ position: 'relative' }}>
+      {/* Check de adherencia */}
+      {typeof window.adherencia !== 'undefined' && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onMarcarComido(!yaComido); }}
+          title={yaComido ? 'Marcado como comido' : 'Marcar como comido'}
+          style={{ width: 32, height: 32, minWidth: 32 }}
+          className={`flex items-center justify-center rounded-lg transition-all ${
+            yaComido
+              ? 'bg-emerald-500/20 text-emerald-500'
+              : darkMode ? 'text-gray-600 hover:text-emerald-400 hover:bg-gray-700' : 'text-gray-300 hover:text-emerald-500 hover:bg-emerald-50'
+          }`}>
+          <i className={`fas fa-check text-sm ${yaComido ? '' : 'opacity-60'}`}></i>
+        </button>
+      )}
+      {/* Dropdown historial de alternativas */}
+      {slotHist.length > 0 && (
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowHist(h => !h); setShowSobras(false); }}
+            aria-label="Ver alternativas anteriores"
+            style={{ width: 32, height: 32, minWidth: 32 }}
+            className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+              showHist
+                ? (darkMode ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600')
+                : (darkMode ? 'text-gray-500 hover:text-indigo-400 hover:bg-gray-700' : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50')
+            }`}>
+            <i className="fas fa-clock-rotate-left text-xs"></i>
+          </button>
+          {showHist && (
+            <div onClick={(e) => e.stopPropagation()}
+              style={{ ...dropdownStyle, minWidth: '200px', maxWidth: '260px' }}>
+              <div style={{ padding: '8px 12px 4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: darkMode ? '#6b7280' : '#9ca3af' }}>
+                Alternativas anteriores
+              </div>
+              {slotHist.map((r, idx) => (
+                <button key={r.id || idx}
+                  onClick={() => { onRestoreRecipe(r); setShowHist(false); }}
+                  style={{
+                    display: 'block', width: '100%', textAlign: 'left',
+                    padding: '8px 12px', border: 'none', backgroundColor: 'transparent',
+                    cursor: 'pointer', transition: 'background-color 0.12s',
+                    borderTop: idx > 0 ? `1px solid ${darkMode ? '#374151' : '#f3f4f6'}` : 'none'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = darkMode ? '#374151' : '#f9fafb'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: darkMode ? '#e5e7eb' : '#111827', lineHeight: 1.3, marginBottom: '2px' }}>{getNombreReceta(r)}</div>
+                  <div style={{ fontSize: '11px', color: darkMode ? '#6b7280' : '#9ca3af' }}>{r.calorias_escaladas || r.calorias_base} kcal · P {r.proteinas_escaladas || r.proteinas_g}g</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {/* ♻️ Sobras: comidas de los últimos 1-2 días */}
+      {sobras.length > 0 && (
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowSobras(s => !s); setShowHist(false); }}
+            aria-label="Usar sobra de días anteriores"
+            style={{ width: 32, height: 32, minWidth: 32 }}
+            className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+              showSobras
+                ? (darkMode ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-50 text-amber-600')
+                : (darkMode ? 'text-gray-500 hover:text-amber-400 hover:bg-gray-700' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50')
+            }`}>
+            <i className="fas fa-recycle text-xs"></i>
+          </button>
+          {showSobras && (
+            <div onClick={(e) => e.stopPropagation()}
+              style={{ ...dropdownStyle, minWidth: '220px', maxWidth: '290px' }}>
+              <div style={{ padding: '8px 12px 4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: darkMode ? '#6b7280' : '#9ca3af' }}>
+                Sobras disponibles
+              </div>
+              {sobras.map((s, idx) => (
+                <button key={s.dia + '_' + s.tipoComida}
+                  onClick={() => { onRestoreRecipe(s.receta); setShowSobras(false); }}
+                  style={{
+                    display: 'block', width: '100%', textAlign: 'left',
+                    padding: '8px 12px', border: 'none', backgroundColor: 'transparent',
+                    cursor: 'pointer', transition: 'background-color 0.12s',
+                    borderTop: `1px solid ${darkMode ? '#374151' : '#f3f4f6'}`
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = darkMode ? '#374151' : '#f9fafb'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                  <div style={{ fontSize: '10px', color: darkMode ? '#6b7280' : '#9ca3af', marginBottom: '2px' }}>
+                    {s.daysAgo === 1 ? 'Ayer' : 'Anteayer'} · {NOMBRES_COMIDAS[s.tipoComida] || s.tipoComida}
+                  </div>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: darkMode ? '#e5e7eb' : '#111827', lineHeight: 1.3, marginBottom: '2px' }}>
+                    {getNombreReceta(s.receta)}
+                  </div>
+                  <div style={{ fontSize: '11px', color: darkMode ? '#6b7280' : '#9ca3af' }}>
+                    {s.receta.calorias_escaladas || s.receta.calorias_base} kcal · P {Math.round(s.receta.proteinas_escaladas || s.receta.proteinas_g || 0)}g
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {/* Swap button */}
+      <button onClick={(e) => { setShowHist(false); setShowSobras(false); onSwap(e); }}
+        disabled={!!isSwappingThis}
+        aria-label={`Cambiar receta de ${NOMBRES_COMIDAS[tipo] || tipo}`}
+        style={{ width: 32, height: 32, minWidth: 32 }}
+        className={`flex items-center justify-center rounded-lg transition-all ${
+          isSwappingThis
+            ? 'text-green-500 cursor-wait'
+            : darkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-400 hover:text-green-600 hover:bg-white'
+        }`}>
+        <i className={`fas ${isSwappingThis ? 'fa-spinner fa-spin' : 'fa-shuffle'} text-sm`}></i>
+      </button>
+      {/* Veto button */}
+      <button
+        onClick={(e) => { e.stopPropagation(); if (window.confirm(`¿Vetar "${getNombreReceta(comida)}"? No volverá a aparecer en tu plan.`)) { onVetoRecipe(); } }}
+        aria-label={`Vetar receta ${getNombreReceta(comida)}`}
+        style={{ width: 32, height: 32, minWidth: 32 }}
+        className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+          darkMode ? 'text-gray-600 hover:text-red-400 hover:bg-gray-700' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'
+        }`}>
+        <i className="fas fa-ban text-xs"></i>
+      </button>
+      {/* Ver receta */}
+      <button onClick={() => onRecipeClick()} aria-label={`${t('Ver receta de','View recipe for')} ${getNombreReceta(comida) || NOMBRES_COMIDAS[tipo]}`}
+        className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer rounded">
+        <i className="fas fa-chevron-right text-sm"></i>
+      </button>
+    </div>
+  );
+}
+
+// ─── Helper: sobras de los últimos 1-2 días del plan ───
+// Devuelve [{ dia, daysAgo, tipoComida, receta }] priorizando almuerzo/cena
+function obtenerSobrasDisponibles(planMulti, diaHoy, semanaActiva) {
+  try {
+    var pn = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(planMulti) : planMulti;
+    var semana = pn['semana_' + (semanaActiva || 1)] || {};
+    var DIAS = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+    var idxHoy = DIAS.indexOf(diaHoy);
+    if (idxHoy < 0) return [];
+    var PRIO = ['almuerzo','cena','desayuno','snack_am','snack_pm'];
+    var result = [];
+    for (var back = 1; back <= 2; back++) {
+      var idxPrev = idxHoy - back;
+      if (idxPrev < 0) break; // no saltar a semana anterior
+      var diaPrev = DIAS[idxPrev];
+      var comidasDia = semana[diaPrev] || {};
+      PRIO.forEach(function(tipo) {
+        var comida = comidasDia[tipo];
+        if (comida && comida.id) {
+          result.push({ dia: diaPrev, daysAgo: back, tipoComida: tipo, receta: comida });
+        }
+      });
+    }
+    return result;
+  } catch(e) { return []; }
+}
+
 // =============================================
 // COMPONENTE: WeeklyPlan (MEJORAS 2 y 3)
 // =============================================
-function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, darkMode, swapping }) {
+function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, onRestoreRecipe, onVetoRecipe, onRegenDay, onCompartir, historialSlots, darkMode, swapping }) {
   // Multi-semana: normalizar plan
   const planNorm = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(plan) : plan;
   const numSemanas = planNorm._numSemanas || 1;
@@ -3760,6 +3984,20 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
   const [diaSeleccionado, setDiaSeleccionado] = React.useState(() => {
     return DIAS_SEMANA.includes(diaActual) ? diaActual : DIAS_SEMANA[0];
   });
+  // Comidas externas de hoy (para mostrar reemplazos en el día actual)
+  const fechaHoyIsoWP = new Date().toISOString().split('T')[0];
+  const semanaHoyIdx = React.useMemo(() => {
+    const keys = Object.keys(planNorm).filter(k => k.startsWith('semana_')).sort();
+    if (keys.length <= 1 || !planNorm._fechaCreacion) return 1;
+    const creadoMs = new Date(planNorm._fechaCreacion + 'T00:00:00').getTime();
+    const hoyMs = new Date().setHours(0, 0, 0, 0);
+    const diasTranscurridos = Math.max(0, Math.floor((hoyMs - creadoMs) / 86400000));
+    return Math.min(keys.length, Math.floor(diasTranscurridos / 7) + 1);
+  }, [planNorm]);
+  const comidasExtHoy = React.useMemo(() => {
+    if (typeof _comidasExtFecha !== 'function') return [];
+    return _comidasExtFecha(fechaHoyIsoWP);
+  }, [fechaHoyIsoWP, forceUpdate]);
   const comidasDia = semanaData[diaSeleccionado] || {};
   const resumen = calcularResumenDiario(comidasDia);
   const tiposComidaOrden = ["desayuno", "snack_am", "almuerzo", "snack_pm", "cena"];
@@ -3810,14 +4048,14 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
     <div className="animate-fadeIn">
       {/* Banner Fat Loss Mode */}
       {faseInfo && (
-        <div className={`mb-4 rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <div className={`mb-4 rounded-2xl overflow-hidden border min-w-0 w-full ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           {/* Barra de acento superior */}
-          <div className={`h-1.5 ${faseInfo.tipoFase === 'dietBreak' ? 'bg-gradient-to-r from-violet-500 to-purple-500' : 'bg-gradient-to-r from-amber-500 to-orange-500'}`} />
+          <div className={`h-2 ${faseInfo.tipoFase === 'dietBreak' ? 'bg-gradient-to-r from-violet-500 to-purple-500' : 'bg-gradient-to-r from-amber-500 to-orange-500'}`} />
 
-          <div className="px-5 pt-5 pb-5 space-y-4">
+          <div className="px-6 min-w-0" style={{ paddingTop: '24px', paddingBottom: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* ── Header: etiqueta + nombre de fase ── */}
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-3">
                 <i className={`fas ${faseInfo.tipoFase === 'dietBreak' ? 'fa-pause-circle text-violet-500' : 'fa-fire text-amber-500'} text-sm`}></i>
                 <span className={`text-[10px] font-bold tracking-widest uppercase ${faseInfo.tipoFase === 'dietBreak' ? (darkMode ? 'text-violet-400' : 'text-violet-600') : (darkMode ? 'text-amber-400' : 'text-amber-600')}`}>
                   {faseInfo.tipoFase === 'dietBreak' ? 'Diet Break' : 'Fat Loss Mode'}
@@ -3829,10 +4067,10 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                   <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>PROGRAMADO</span>
                 )}
               </div>
-              <h3 className={`text-xl font-bold leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              <h3 className={`text-2xl font-bold leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 {faseInfo.nombreFase}
               </h3>
-              <p className={`text-xs mt-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <p className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 Día {faseInfo.diaDentroDeFase} de fase · Mes {faseInfo.mesInicio}{faseInfo.mesFin !== faseInfo.mesInicio ? '–' + faseInfo.mesFin : ''}
                 {faseInfo.diasRestantesEnFase > 0 && ` · ${faseInfo.diasRestantesEnFase}d restantes`}
               </p>
@@ -3840,41 +4078,41 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
 
             {/* ── Métricas: calorías · pasos · días restantes ── */}
             <div className={`grid grid-cols-3 rounded-xl overflow-hidden ${darkMode ? 'bg-gray-700/60' : 'bg-amber-50'}`}>
-              <div className="text-center px-2 py-3">
-                <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Objetivo</div>
-                <div className={`text-2xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              <div className="text-center px-3" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
+                <div className={`text-[10px] font-bold uppercase tracking-wide mb-2 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Objetivo</div>
+                <div className={`text-3xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                   {faseInfo.calorias}
                 </div>
-                <div className={`text-[10px] mt-1 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>kcal/día</div>
+                <div className={`text-[10px] mt-2 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>kcal/día</div>
               </div>
-              <div className={`text-center px-2 py-3 border-x ${darkMode ? 'border-gray-600' : 'border-amber-200/60'}`}>
-                <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Pasos</div>
-                <div className={`text-2xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              <div className={`text-center px-3 border-x ${darkMode ? 'border-gray-600' : 'border-amber-200/60'}`} style={{ paddingTop: '20px', paddingBottom: '20px' }}>
+                <div className={`text-[10px] font-bold uppercase tracking-wide mb-2 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Pasos</div>
+                <div className={`text-3xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                   {Math.round(faseInfo.targetPasos / 1000)}k
                 </div>
-                <div className={`text-[10px] mt-1 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>diarios</div>
+                <div className={`text-[10px] mt-2 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>diarios</div>
               </div>
-              <div className="text-center px-2 py-3">
-                <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Restantes</div>
-                <div className={`text-2xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              <div className="text-center px-3" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
+                <div className={`text-[10px] font-bold uppercase tracking-wide mb-2 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>Restantes</div>
+                <div className={`text-3xl font-extrabold leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                   {faseInfo.diasRestantesEnFase}
                 </div>
-                <div className={`text-[10px] mt-1 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>días</div>
+                <div className={`text-[10px] mt-2 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>días</div>
               </div>
             </div>
 
             {/* ── Foco de la fase ── */}
             {faseInfo.foco && (
-              <div className="flex items-start gap-3">
-                <i className="fas fa-bullseye text-amber-500 mt-0.5 flex-shrink-0"></i>
-                <p className={`text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{faseInfo.foco}</p>
+              <div className="flex items-start gap-3 min-w-0">
+                <i className="fas fa-bullseye text-amber-500 mt-1 flex-shrink-0"></i>
+                <p className={`text-sm leading-relaxed min-w-0 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{faseInfo.foco}</p>
               </div>
             )}
 
             {/* ── Próximo hito ── */}
             {faseInfo.proximoHito && (
               <div className={`flex items-center justify-between gap-3 text-sm rounded-xl px-4 py-3 ${darkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-50 text-gray-500'}`}>
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
                   <i className={`fas fa-forward-fast flex-shrink-0 ${faseInfo.tipoFase === 'dietBreak' ? 'text-violet-400' : 'text-amber-500'}`}></i>
                   <span className="flex-shrink-0">Próximo:</span>
                   <span className={`font-semibold truncate ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{faseInfo.proximoHito.nombre}</span>
@@ -3970,7 +4208,15 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
       {/* Resumen diario */}
       <div className={`rounded-2xl shadow-sm border p-5 mb-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`font-semibold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>{diaSeleccionado}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className={`font-semibold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>{diaSeleccionado}</h3>
+            {onRegenDay && (
+              <button onClick={() => onRegenDay(diaSeleccionado, semanaActiva)} title="Regenerar 5 comidas de este día"
+                className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all cursor-pointer ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-gray-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-400 hover:text-gray-600'}`}>
+                <i className="fas fa-arrows-rotate text-xs"></i>
+              </button>
+            )}
+          </div>
           <div className="text-right">
             <div className={`text-2xl font-bold font-display ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.calorias}</div>
             <div className="text-xs text-gray-400">de {caloriasObj} kcal objetivo</div>
@@ -4035,6 +4281,47 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
             ? window.adherencia.estado(diaSeleccionado, tipo, semanaActiva) : null;
           const yaComido = estadoAdherencia?.comido === true;
           const yaMarcadoNo = estadoAdherencia?.comido === false;
+          // Mostrar comida externa si reemplaza este slot en el día de hoy
+          const esViendoHoy = diaSeleccionado === diaActual && semanaActiva === semanaHoyIdx;
+          const extReemplazo = esViendoHoy ? comidasExtHoy.find(function(c) { return c.reemplaza === tipo; }) : null;
+          if (extReemplazo) {
+            return (
+              <div key={tipo} className={`meal-card rounded-xl p-4 border relative ${darkMode ? 'bg-emerald-900/30 border-emerald-700' : 'bg-emerald-50 border-emerald-300'}`}>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`${colores.badge} px-2 py-0.5 rounded-lg text-xs font-medium`}>
+                        <i className={`fas ${iconosComida[tipo]} mr-1`}></i>{NOMBRES_COMIDAS[tipo]}
+                      </span>
+                      <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
+                        comido
+                      </span>
+                    </div>
+                    <h4 className={`font-semibold text-sm mt-2 ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{extReemplazo.nombre}</h4>
+                    <div className="flex flex-wrap gap-3 mt-2">
+                      <span className="text-xs text-gray-500"><i className="fas fa-fire text-orange-400 mr-1"></i>{extReemplazo.kcal} kcal</span>
+                      <span className="text-xs text-blue-500">P: {extReemplazo.proteinas_g}g</span>
+                      <span className="text-xs text-amber-600">C: {extReemplazo.carbohidratos_g}g</span>
+                      <span className="text-xs text-rose-500">G: {extReemplazo.grasas_g}g</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={function(e) {
+                      e.stopPropagation();
+                      var nuevas = comidasExtHoy.filter(function(x) { return x.id !== extReemplazo.id; });
+                      if (typeof _guardarComidasExt === 'function') _guardarComidasExt(fechaHoyIsoWP, nuevas);
+                      if (typeof _eliminarAdherenciaExt === 'function') _eliminarAdherenciaExt(diaActual, extReemplazo.id);
+                      setForceUpdate(function(x) { return x + 1; });
+                    }}
+                    title="Deshacer reemplazo"
+                    aria-label="Deshacer reemplazo"
+                    style={{ width: 32, height: 32, minWidth: 32, background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: darkMode ? '#4b5563' : '#9ca3af' }}>
+                    <i className="fas fa-rotate-left text-sm"></i>
+                  </button>
+                </div>
+              </div>
+            );
+          }
           return (
             <div key={tipo} className={`meal-card rounded-xl p-4 border relative ${
               yaComido ? (darkMode ? 'bg-emerald-900/30 border-emerald-700' : 'bg-emerald-50 border-emerald-300')
@@ -4092,47 +4379,29 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                  {/* Check de adherencia — integrado en la fila de acciones */}
-                  {typeof window.adherencia !== 'undefined' && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.adherencia.marcar(diaSeleccionado, tipo, !yaComido, {
-                          kcal_plan: comida.calorias_escaladas,
-                          proteinas_plan: comida.proteinas_escaladas,
-                          nombre: comida.nombre
-                        }, semanaActiva);
-                        setForceUpdate(x => x + 1);
-                      }}
-                      title={yaComido ? 'Marcado como comido' : 'Marcar como comido'}
-                      style={{ width: 32, height: 32, minWidth: 32 }}
-                      className={`flex items-center justify-center rounded-lg transition-all ${
-                        yaComido
-                          ? 'bg-emerald-500/20 text-emerald-500'
-                          : darkMode ? 'text-gray-600 hover:text-emerald-400 hover:bg-gray-700' : 'text-gray-300 hover:text-emerald-500 hover:bg-emerald-50'
-                      }`}>
-                      <i className={`fas fa-check text-sm ${yaComido ? '' : 'opacity-60'}`}></i>
-                    </button>
-                  )}
-                  {/* MEJORA 3: Swap button con loading */}
-                  {/* A3: aria-label en swap (reemplaza title) */}
-                  <button onClick={(e) => handleSwap(e, diaSeleccionado, tipo)}
-                    disabled={swapping && swapping.dia === diaSeleccionado && swapping.tipoComida === tipo}
-                    aria-label={`Cambiar receta de ${NOMBRES_COMIDAS[tipo] || tipo}`}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${
-                      swapping && swapping.dia === diaSeleccionado && swapping.tipoComida === tipo
-                        ? 'text-green-500 cursor-wait'
-                        : darkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-400 hover:text-green-600 hover:bg-white'
-                    }`}>
-                    <i className={`fas ${swapping && swapping.dia === diaSeleccionado && swapping.tipoComida === tipo ? 'fa-spinner fa-spin' : 'fa-shuffle'} text-sm`}></i>
-                  </button>
-                  {/* T5/A8: div→button para ser focusable por teclado */}
-                  <button onClick={() => onRecipeClick(comida)} aria-label={`${t('Ver receta de','View recipe for')} ${getNombreReceta(comida) || NOMBRES_COMIDAS[tipo]}`}
-                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors cursor-pointer rounded">
-                    <i className="fas fa-chevron-right text-sm"></i>
-                  </button>
-                </div>
+                <SlotAcciones
+                  comida={comida}
+                  tipo={tipo}
+                  diaSeleccionado={diaSeleccionado}
+                  semanaActiva={semanaActiva}
+                  plan={plan}
+                  historialSlots={historialSlots}
+                  darkMode={darkMode}
+                  swapping={swapping}
+                  yaComido={yaComido}
+                  onMarcarComido={(comido) => {
+                    window.adherencia.marcar(diaSeleccionado, tipo, comido, {
+                      kcal_plan: comida.calorias_escaladas,
+                      proteinas_plan: comida.proteinas_escaladas,
+                      nombre: comida.nombre
+                    }, semanaActiva);
+                    setForceUpdate(x => x + 1);
+                  }}
+                  onRestoreRecipe={(r) => onRestoreRecipe && onRestoreRecipe(diaSeleccionado, tipo, semanaActiva, r)}
+                  onVetoRecipe={() => onVetoRecipe && onVetoRecipe(diaSeleccionado, tipo, semanaActiva, comida.id)}
+                  onRecipeClick={() => onRecipeClick(comida)}
+                  onSwap={(e) => handleSwap(e, diaSeleccionado, tipo)}
+                />
               </div>
             </div>
           );
@@ -4186,6 +4455,14 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
             }`}>
             <i className="fas fa-shuffle"></i>Regenerar Plan
           </button>
+          {onCompartir && (
+            <button onClick={onCompartir}
+              className={`inline-flex items-center gap-2 px-6 py-3 border rounded-xl transition-all text-sm font-medium ${
+                darkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}>
+              <i className="fas fa-share-nodes" style={{ color: '#22C55E' }}></i>Compartir
+            </button>
+          )}
 
           {/* Fase 5.4: Export PDF — T9: React state en vez de mutación DOM */}
           {typeof window.exports !== 'undefined' && window.exports.planPDF && (
@@ -4507,6 +4784,155 @@ function reescalarInstruccionesPorFactor(instrucciones, factor) {
 }
 
 // =============================================
+// UTILIDAD: Streak de adherencia consecutiva
+// =============================================
+function calcularStreakAdherencia() {
+  try {
+    var data = JSON.parse(localStorage.getItem('nutriplan_adherencia') || '{}');
+    var streak = 0;
+    var d = new Date();
+    d.setDate(d.getDate() - 1); // empezar desde ayer
+    for (var i = 0; i < 90; i++) {
+      var key = d.toISOString().split('T')[0];
+      var dia = data[key] || {};
+      var total = 0, cumplidos = 0;
+      Object.values(dia).forEach(function(e) { total++; if (e.comido) cumplidos++; });
+      if (total === 0 || cumplidos / total < 0.8) break;
+      streak++;
+      d.setDate(d.getDate() - 1);
+    }
+    return streak;
+  } catch(e) { return 0; }
+}
+
+// =============================================
+// COMPONENTE: MacroDonut (SVG ring chart)
+// =============================================
+function MacroDonut({ consumed, metas, darkMode }) {
+  var prot = metas.proteinas > 0 ? Math.min(1, (consumed.proteinas || 0) / metas.proteinas) : 0;
+  var carb = metas.carbohidratos > 0 ? Math.min(1, (consumed.carbohidratos || 0) / metas.carbohidratos) : 0;
+  var gras = metas.grasas > 0 ? Math.min(1, (consumed.grasas || 0) / metas.grasas) : 0;
+  var kcalPct = metas.calorias > 0 ? Math.min(100, Math.round((consumed.calorias || 0) / metas.calorias * 100)) : 0;
+  var R = 44, CX = 56, CY = 56, gapDeg = 6;
+  var trackColor = darkMode ? '#374151' : '#E5E7EB';
+  function arcD(startDeg, fillFrac) {
+    var deg = (120 - gapDeg) * Math.max(0, Math.min(1, fillFrac));
+    var s = (startDeg - 90) * Math.PI / 180;
+    var e = s + deg * Math.PI / 180;
+    var x1 = CX + R * Math.cos(s), y1 = CY + R * Math.sin(s);
+    var x2 = CX + R * Math.cos(e), y2 = CY + R * Math.sin(e);
+    return deg < 0.5 ? null : `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${R} ${R} 0 ${deg > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+  }
+  function trackD(startDeg) {
+    var deg = 120 - gapDeg;
+    var s = (startDeg - 90) * Math.PI / 180;
+    var e = s + deg * Math.PI / 180;
+    var x1 = CX + R * Math.cos(s), y1 = CY + R * Math.sin(s);
+    var x2 = CX + R * Math.cos(e), y2 = CY + R * Math.sin(e);
+    return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${R} ${R} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+  }
+  var macros = [
+    { label: 'Prot',   val: consumed.proteinas || 0,      meta: metas.proteinas,      pct: Math.round(prot*100), color: '#3B82F6', start: 3   },
+    { label: 'Carb',   val: consumed.carbohidratos || 0,  meta: metas.carbohidratos,  pct: Math.round(carb*100), color: '#F59E0B', start: 123 },
+    { label: 'Grasas', val: consumed.grasas || 0,         meta: metas.grasas,         pct: Math.round(gras*100), color: '#EF4444', start: 243 },
+  ];
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', paddingTop: '8px', borderTop: `1px solid ${darkMode ? '#374151' : '#F9FAFB'}` }}>
+      <svg width="100" height="100" viewBox="0 0 112 112" style={{ flexShrink: 0 }}>
+        {macros.map(m => (
+          <path key={m.label + 't'} d={trackD(m.start)} fill="none" stroke={trackColor} strokeWidth="10" strokeLinecap="round"/>
+        ))}
+        {macros.map(m => {
+          var d = arcD(m.start, m.pct / 100);
+          return d ? <path key={m.label + 'f'} d={d} fill="none" stroke={m.color} strokeWidth="10" strokeLinecap="round"/> : null;
+        })}
+        <text x={CX} y={CY - 4} textAnchor="middle" fill={darkMode ? 'white' : '#111827'} fontSize="17" fontWeight="bold">{kcalPct}%</text>
+        <text x={CX} y={CY + 11} textAnchor="middle" fill={darkMode ? '#9CA3AF' : '#6B7280'} fontSize="9">kcal</text>
+      </svg>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {macros.map(function(m) {
+          return (
+            <div key={m.label}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: darkMode ? '#9CA3AF' : '#6B7280' }}>{m.label}</span>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: darkMode ? '#E5E7EB' : '#1F2937' }}>{m.val}/{m.meta}g</span>
+              </div>
+              <div style={{ width: '100%', height: '5px', borderRadius: '999px', overflow: 'hidden', backgroundColor: darkMode ? '#374151' : '#E5E7EB' }}>
+                <div style={{ width: Math.min(100, m.pct) + '%', height: '100%', borderRadius: '999px', backgroundColor: m.color, transition: 'width 0.5s' }}></div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// =============================================
+// COMPONENTE: ModalPreferenciasGeneracion
+// =============================================
+function ModalPreferenciasGeneracion({ onConfirm, onCancel, darkMode }) {
+  const [cocina, setCocina] = React.useState('cualquiera');
+  const [altaProteina, setAltaProteina] = React.useState(false);
+  const [rapido, setRapido] = React.useState(false);
+  const cocinas = [
+    { v: 'cualquiera', l: 'Cualquiera' }, { v: 'mediterranea', l: 'Mediterránea' },
+    { v: 'asiatica', l: 'Asiática' }, { v: 'latinoamerica', l: 'Latinoam.' }, { v: 'nordica', l: 'Nórdica' },
+  ];
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}
+      onClick={onCancel}>
+      <div className={`w-full max-w-xs rounded-2xl p-6 shadow-2xl animate-slideUp ${darkMode ? 'bg-gray-800' : 'bg-white'}`}
+        onClick={e => e.stopPropagation()}>
+        <h3 className={`text-base font-bold mb-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+          <i className="fas fa-sliders mr-2 text-green-500"></i>Preferencias del plan
+        </h3>
+        <p className={`text-xs mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Personaliza antes de regenerar</p>
+        <div className="mb-4">
+          <div className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tipo de cocina</div>
+          <div className="flex flex-wrap gap-1.5">
+            {cocinas.map(c => (
+              <button key={c.v} onClick={() => setCocina(c.v)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                  cocina === c.v ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}>{c.l}</button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-3 mb-5">
+          {[
+            { key: 'prot', val: altaProteina, set: setAltaProteina, icon: 'fa-dumbbell', iconColor: '#3B82F6', label: 'Priorizar alta proteína' },
+            { key: 'rap',  val: rapido,       set: setRapido,       icon: 'fa-bolt',     iconColor: '#F59E0B', label: 'Preparación rápida (<20 min)' },
+          ].map(function(item) {
+            return (
+              <div key={item.key} className="flex items-center justify-between">
+                <span className={`text-sm flex items-center gap-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                  <i className={`fas ${item.icon}`} style={{ color: item.iconColor }}></i>{item.label}
+                </span>
+                <button onClick={() => item.set(p => !p)} aria-label={item.label}
+                  className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 cursor-pointer ${item.val ? 'bg-green-500' : darkMode ? 'bg-gray-600' : 'bg-gray-300'}`}>
+                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${item.val ? 'translate-x-5' : 'translate-x-0.5'}`}></span>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex gap-2">
+          <button onClick={onCancel}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+            Cancelar
+          </button>
+          <button onClick={() => onConfirm({ cocina, altaProteina, rapido })}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 transition-all">
+            <i className="fas fa-shuffle mr-1.5"></i>Regenerar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================
 // COMPONENTE: RecipeModal
 // =============================================
 function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix = true }) {
@@ -4519,6 +4945,15 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
   // N18: accumulated macro deltas from applied substitutions
   const [macroAjustes, setMacroAjustes] = React.useState({ kcal: 0, proteinas: 0, carbohidratos: 0, grasas: 0 });
   const [ingsAjustados, setIngsAjustados] = React.useState({}); // { nombre_normalizado: sustId }
+  const [ratingActual, setRatingActual] = React.useState(() => {
+    var ratings = typeof cargarRatings === 'function' ? cargarRatings() : {};
+    return ratings[receta.id] || 0;
+  });
+  const handleSetRating = (stars) => {
+    var next = ratingActual === stars ? 0 : stars; // toggle para borrar
+    setRatingActual(next);
+    if (typeof guardarRating === 'function') guardarRating(receta.id, next);
+  };
 
   const factorEscala = receta.factor_escala || 1;
   const ingredientesEscalados = receta.ingredientes_escalados || [];
@@ -4639,6 +5074,18 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
               Cantidades e ingredientes escalados para <strong>{factor.toFixed(2)} porciones</strong> · kcal/macros siguen siendo tu porción individual
             </div>
           )}
+          {/* ⭐ Rating de receta */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginRight: '4px' }}>Valorar:</span>
+            {[1,2,3,4,5].map(s => (
+              <button key={s} onClick={() => handleSetRating(s)} aria-label={`${s} estrellas`}
+                style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'none', border: 'none', padding: 0, transition: 'transform 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.25)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                <i className="fas fa-star" style={{ fontSize: '17px', color: s <= ratingActual ? '#FDE047' : 'rgba(255,255,255,0.25)' }}></i>
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -6142,6 +6589,10 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
   const [manualCarb, setManualCarb]       = React.useState('');
   const [manualGras, setManualGras]       = React.useState('');
   const [error, setError]                 = React.useState('');
+  const [recurrentes, setRecurrentes]     = React.useState(function() {
+    try { return JSON.parse(localStorage.getItem('nutriplan_comidas_frecuentes') || '[]'); }
+    catch(e) { return []; }
+  });
 
   // Colores inline para inputs — más robusto que clases Tailwind en dark mode
   var inputColor   = darkMode ? '#f9fafb' : '#111827';
@@ -6237,6 +6688,30 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
     if (!nombreFinal) { setError(t('El nombre es obligatorio','Name is required')); return; }
     if (finalKcal <= 0) { setError(t('Agrega alimentos o ingresa las calorías','Add foods or enter calories')); return; }
     setError('');
+    // ── Guardar en comidas frecuentes ──────────────────────────────────────
+    try {
+      var nuevasFrec = recurrentes.slice();
+      var idxFrec = nuevasFrec.findIndex(function(x) { return x.nombre === nombreFinal; });
+      var hoyFrec = new Date().toISOString().split('T')[0];
+      if (idxFrec >= 0) {
+        nuevasFrec[idxFrec] = Object.assign({}, nuevasFrec[idxFrec], {
+          veces: (nuevasFrec[idxFrec].veces || 1) + 1, ultimaVez: hoyFrec,
+          kcal: Math.round(finalKcal), proteinas_g: Math.round(finalProt),
+          carbohidratos_g: Math.round(finalCarb), grasas_g: Math.round(finalGras)
+        });
+      } else {
+        nuevasFrec.push({ nombre: nombreFinal, kcal: Math.round(finalKcal),
+          proteinas_g: Math.round(finalProt), carbohidratos_g: Math.round(finalCarb),
+          grasas_g: Math.round(finalGras), veces: 1, ultimaVez: hoyFrec });
+      }
+      nuevasFrec.sort(function(a, b) {
+        if (b.veces !== a.veces) return b.veces - a.veces;
+        return (b.ultimaVez || '') > (a.ultimaVez || '') ? 1 : -1;
+      });
+      nuevasFrec = nuevasFrec.slice(0, 20);
+      localStorage.setItem('nutriplan_comidas_frecuentes', JSON.stringify(nuevasFrec));
+      setRecurrentes(nuevasFrec);
+    } catch(e) {}
     onAdd({
       id: 'ext_' + Date.now(),
       nombre: nombreFinal,
@@ -6275,6 +6750,37 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 
         {/* Scrollable body */}
         <div style={{ overflowY:'auto', flex:1 }} className="px-5 py-4 space-y-3">
+
+          {/* ── Comidas recientes ────────────────────────────────────────── */}
+          {recurrentes.length > 0 && (
+            <div>
+              <p style={{ fontSize:11, fontWeight:'700', color:'#9ca3af', marginBottom:6, display:'flex', alignItems:'center', gap:4 }}>
+                <i className="fas fa-clock-rotate-left"></i>{t('Recientes','Recent')}
+              </p>
+              <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:2, scrollbarWidth:'none', msOverflowStyle:'none' }}>
+                {recurrentes.slice(0, 12).map(function(r, ri) {
+                  return (
+                    <button key={ri} onClick={function() {
+                      setNombre(r.nombre); setNombreManual(true);
+                      setManualKcal(String(r.kcal));
+                      setManualProt(String(r.proteinas_g));
+                      setManualCarb(String(r.carbohidratos_g));
+                      setManualGras(String(r.grasas_g));
+                      setIngredientes([]);
+                    }}
+                      style={{ flexShrink:0, padding:'5px 10px', borderRadius:20, cursor:'pointer',
+                        border:'1px solid ' + (darkMode ? '#4b5563' : '#d1d5db'),
+                        backgroundColor: darkMode ? '#1f2937' : '#f9fafb',
+                        color: darkMode ? '#d1d5db' : '#374151',
+                        fontSize:12, fontWeight:'500', whiteSpace:'nowrap', lineHeight:'1.4' }}>
+                      {r.nombre.length > 20 ? r.nombre.slice(0, 20) + '…' : r.nombre}
+                      <span style={{ color:'#10b981', marginLeft:5, fontWeight:'700' }}>{r.kcal}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* ── Buscador ─────────────────────────────────────────────────── */}
           <div className="relative">
@@ -6449,7 +6955,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 // =============================================
 // COMPONENTE: HoyView — Dashboard diario (v20260428ai)
 // =============================================
-function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
+function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swapping }) {
   const hoy = new Date();
   const diasJS    = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
   const diasEN    = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -6475,6 +6981,16 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
     const diasTranscurridos = Math.max(0, Math.floor((hoyMs - creadoMs) / 86400000));
     const semanaIdx = Math.min(keys.length - 1, Math.floor(diasTranscurridos / 7));
     return planSemanal[keys[semanaIdx]];
+  }, [planSemanal]);
+
+  const numSemanaActual = React.useMemo(() => {
+    if (!planSemanal) return 1;
+    const keys = Object.keys(planSemanal).filter(k => k.startsWith('semana_')).sort();
+    if (keys.length <= 1 || !planSemanal._fechaCreacion) return 1;
+    const creadoMs = new Date(planSemanal._fechaCreacion + 'T00:00:00').getTime();
+    const hoyMs = new Date().setHours(0, 0, 0, 0);
+    const diasTranscurridos = Math.max(0, Math.floor((hoyMs - creadoMs) / 86400000));
+    return Math.min(keys.length, Math.floor(diasTranscurridos / 7) + 1);
   }, [planSemanal]);
 
   const comidasHoy = semanaData ? (semanaData[diaActual] || {}) : {};
@@ -6549,6 +7065,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
   }, { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0 });
   // Comidas del plan reemplazadas por una externa → se descuentan del resumen
   const tiposReemplazados = comidasExt.filter(function(c) { return c.reemplaza; }).map(function(c) { return c.reemplaza; });
+  const comidasExtAdicional = comidasExt.filter(function(c) { return !c.reemplaza; });
   var resumenBase = resumenHoy;
   if (tiposReemplazados.length > 0) {
     var comidasHoyEfectivas = {};
@@ -6656,6 +7173,31 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
             {perfil && (
               <p className="text-sm opacity-80 mt-1">{perfil.caloriasObjetivo} kcal · {perfil.numSemanas > 1 ? perfil.numSemanas + t(' semanas',' weeks') : t('1 semana','1 week')}</p>
             )}
+            {/* Streak + training/rest day badges */}
+            {(() => {
+              var streak = calcularStreakAdherencia();
+              var sch = window.NP_RoadmapData && window.NP_RoadmapData.ENTRENO_PROTOCOLO
+                ? window.NP_RoadmapData.ENTRENO_PROTOCOLO.scheduleDefault : null;
+              var dow = new Date().getDay();
+              var esEntreno = sch && sch[dow] && sch[dow] !== 'descanso';
+              if (streak < 2 && !sch) return null;
+              return (
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  {streak >= 2 && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}>
+                      🔥 {streak} {t('días','days')}
+                    </span>
+                  )}
+                  {sch && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}>
+                      {esEntreno
+                        ? <><i className="fas fa-dumbbell" style={{ marginRight: '3px' }}></i>{t('Entreno','Training')}</>
+                        : <><i className="fas fa-bed" style={{ marginRight: '3px' }}></i>{t('Descanso','Rest')}</>}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         );
       })()}
@@ -6765,33 +7307,12 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
                 </div>
               </div>
             </div>
-            {/* Macros */}
-            <div className={`grid grid-cols-3 gap-3 pt-1 border-t ${darkMode ? 'border-gray-700' : 'border-gray-50'}`}>
-              {[
-                { labelEs: 'Proteína', labelEn: 'Protein', val: consumidoHoy.proteinas, meta: metaProtDia, barColor: MACRO_COLORS.proteinas.solid },
-                { labelEs: 'Carbos',   labelEn: 'Carbs',   val: consumidoHoy.carbohidratos, meta: metaCarbDia, barColor: MACRO_COLORS.carbohidratos.solid },
-                { labelEs: 'Grasas',   labelEn: 'Fat',     val: consumidoHoy.grasas, meta: metaGrasDia, barColor: MACRO_COLORS.grasas.solid }
-              ].map(function(m) {
-                var pct = m.meta > 0 ? Math.min(100, Math.round((m.val / m.meta) * 100)) : 0;
-                return (
-                  <div key={m.labelEs}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      {t(m.labelEs, m.labelEn)}
-                    </div>
-                    <div className="flex items-baseline gap-0.5">
-                      <span className={`text-base font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{m.val}</span>
-                      <span className={`text-[10px] ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>/{m.meta}g</span>
-                    </div>
-                    <div className={`w-full h-1.5 rounded-full overflow-hidden mt-1.5 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                      <div className="h-full rounded-full transition-all duration-500"
-                        style={{ width: pct + '%', backgroundColor: m.barColor }}>
-                      </div>
-                    </div>
-                    <div className={`text-[10px] mt-0.5 font-semibold ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>{pct}%</div>
-                  </div>
-                );
-              })}
-            </div>
+            {/* Macros donut */}
+            <MacroDonut
+              consumed={consumidoHoy}
+              metas={{ proteinas: metaProtDia, carbohidratos: metaCarbDia, grasas: metaGrasDia, calorias: metaKcalDia }}
+              darkMode={darkMode}
+            />
           </div>
         </div>
       )}
@@ -6845,23 +7366,75 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
                   setRefresh(r => r + 1);
                 }
               };
+              // Slot reemplazado por comida externa → mostrar la comida externa en el slot
+              if (extReemplazo) {
+                return (
+                  <div key={tipo} className="px-5 py-2.5 flex items-center gap-3 animate-fadeUp">
+                    <i className={`fas ${iconosComida[tipo]} text-sm w-4 text-center text-green-500`}></i>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <div className={`text-[11px] font-bold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{nombresComida[tipo]}</div>
+                        <span style={{ fontSize: '10px', fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
+                          {t('comido','eaten')}
+                        </span>
+                      </div>
+                      <div className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{extReemplazo.nombre}</div>
+                      <div className="text-xs mt-0.5">
+                        <span className="text-blue-400 font-semibold">{extReemplazo.proteinas_g}g</span>{' '}{t('prot','prot')}
+                        {' · '}<span className="text-amber-400 font-semibold">{extReemplazo.carbohidratos_g}g</span>{' '}{t('carb','carb')}
+                        {' · '}<span className="text-rose-400 font-semibold">{extReemplazo.grasas_g}g</span>{' '}{t('grasas','fat')}
+                      </div>
+                    </div>
+                    <span className={`text-xs font-bold flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{extReemplazo.kcal} kcal</span>
+                    <button
+                      onClick={function() {
+                        var nuevas = comidasExt.filter(function(x) { return x.id !== extReemplazo.id; });
+                        setComidasExt(nuevas);
+                        _guardarComidasExt(fechaHoyIso, nuevas);
+                        _eliminarAdherenciaExt(diaActual, extReemplazo.id);
+                        setRefresh(function(r) { return r + 1; });
+                      }}
+                      aria-label={t('Deshacer reemplazo','Undo replacement')}
+                      title={t('Deshacer reemplazo','Undo replacement')}
+                      style={{
+                        flexShrink: 0, width: '2rem', height: '2rem',
+                        borderRadius: '0.5rem', border: 'none', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'transparent', transition: 'color 0.15s',
+                        color: darkMode ? '#4b5563' : '#9ca3af'
+                      }}>
+                      <i className="fas fa-rotate-left text-xs"></i>
+                    </button>
+                  </div>
+                );
+              }
+              // Slot del plan normal
               return (
-                <div key={tipo} className={`px-5 py-2.5 flex items-center gap-3 animate-fadeUp ${extReemplazo ? (darkMode ? 'opacity-50' : 'opacity-40') : ''}`}>
+                <div key={tipo} className="px-5 py-2.5 flex items-center gap-3 animate-fadeUp">
                   <i className={`fas ${iconosComida[tipo]} text-sm w-4 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <div className={`text-[11px] font-bold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{nombresComida[tipo]}</div>
-                      {extReemplazo && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600">
-                          {t('reemplazado','replaced')}
-                        </span>
-                      )}
-                    </div>
-                    <div className={`text-sm font-medium truncate ${(yaComido || extReemplazo) ? 'line-through opacity-60' : ''} ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{getNombreReceta(comida)}</div>
+                    <div className={`text-[11px] font-bold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{nombresComida[tipo]}</div>
+                    <div className={`text-sm font-medium truncate ${yaComido ? 'line-through opacity-60' : ''} ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{getNombreReceta(comida)}</div>
                   </div>
                   <span className={`text-xs font-bold flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{comida.calorias_escaladas || comida.calorias} kcal</span>
-                  {typeof window.adherencia !== 'undefined' && !extReemplazo && (
-                    /* A2: aria-label en botón adherencia */
+                  {onSwapRecipe && (
+                    <button
+                      onClick={(ev) => { ev.stopPropagation(); onSwapRecipe(diaActual, tipo, numSemanaActual); }}
+                      disabled={!!(swapping && swapping.dia === diaActual && swapping.tipoComida === tipo)}
+                      aria-label={t(`Cambiar ${nombresComida[tipo]}`, `Swap ${nombresComida[tipo]}`)}
+                      style={{
+                        flexShrink: 0, width: '2rem', height: '2rem',
+                        borderRadius: '0.5rem', border: 'none',
+                        cursor: (swapping && swapping.dia === diaActual && swapping.tipoComida === tipo) ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'color 0.15s', background: 'transparent',
+                        color: (swapping && swapping.dia === diaActual && swapping.tipoComida === tipo)
+                          ? '#f97316' : (darkMode ? '#4b5563' : '#9ca3af')
+                      }}>
+                      <i className={`fas ${(swapping && swapping.dia === diaActual && swapping.tipoComida === tipo) ? 'fa-spinner fa-spin' : 'fa-shuffle'} text-xs`}></i>
+                    </button>
+                  )}
+                  {typeof window.adherencia !== 'undefined' && (
                     <button onClick={toggleAdh}
                       aria-label={yaComido ? t(`Marcar ${nombresComida[tipo]} como no comido`,`Mark ${nombresComida[tipo]} as not eaten`) : t(`Marcar ${nombresComida[tipo]} como comido`,`Mark ${nombresComida[tipo]} as eaten`)}
                       className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
@@ -6869,11 +7442,6 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
                       }`}>
                       <i className={`fas ${yaComido ? 'fa-check' : 'fa-circle'} text-xs`}></i>
                     </button>
-                  )}
-                  {extReemplazo && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
-                      <i className="fas fa-check text-white text-xs"></i>
-                    </div>
                   )}
                 </div>
               );
@@ -6912,14 +7480,14 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate }) {
             </button>
           </div>
         </div>
-        {comidasExt.length === 0 ? (
+        {comidasExtAdicional.length === 0 ? (
           <button onClick={function() { setShowModalExt(true); }}
             className={`w-full px-5 py-4 text-center text-xs transition-colors cursor-pointer ${darkMode ? 'text-gray-500 hover:bg-gray-700/50' : 'text-gray-400 hover:bg-gray-50'}`}>
             <i className="fas fa-plus-circle mr-1.5"></i>{t('Registrar comida no planificada','Log an unplanned meal')}
           </button>
         ) : (
           <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
-            {comidasExt.map(function(c) {
+            {comidasExtAdicional.map(function(c) {
               return (
                 <div key={c.id} className="px-5 py-2.5 flex items-center gap-3">
                   <i className={`fas fa-utensils text-sm w-4 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
@@ -8683,83 +9251,23 @@ function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
   );
 }
 
-// ─── Mapa ejercicio → artículo Wikipedia para foto de referencia ───
-// Fuente: Wikipedia REST API /page/summary/{title} → thumbnail.source
-var WIKI_ARTICULOS = {
-  // Día A — Empuje
-  'press pecho cables':               'Bench_press',
-  'aperturas cable chest fly':        'Fly_(exercise)',
-  'press hombros cables bilateral':   'Shoulder_press',
-  'elevaciones laterales cable':      'Fly_(exercise)',
-  'tríceps pushdown cable':           'Pushdown_(exercise)',
-  'pike pushups':                     'Push-up',
-  'plancha frontal':                  'Plank_(exercise)',
-  'plancha lateral alternada':        'Side_plank',
-  // Jalón / espalda
-  'jalón al pecho':                   'Lat_pulldown',
-  'jalón agarre neutro':              'Lat_pulldown',
-  'remo cable sentado':               'Bent-over_row',
-  'remo con mancuerna':               'Bent-over_row',
-  'dominadas':                        'Pull-up_(exercise)',
-  'face pull':                        'Fly_(exercise)',
-  // Bíceps
-  'curl bíceps cable':                'Biceps_curl',
-  'curl martillo':                    'Hammer_curl',
-  // Piernas
-  'sentadilla goblet':                'Squat_(exercise)',
-  'sentadilla':                       'Squat_(exercise)',
-  'zancada':                          'Lunge_(exercise)',
-  'hip thrust':                       'Hip_thrust',
-  'peso muerto rumano':               'Romanian_deadlift',
-  'curl femoral':                     'Leg_curl',
-  'extensión cuádriceps':             'Leg_extension',
-  'elevación de talones':             'Calf_raise',
-  'step up':                          'Step_up_(exercise)',
-  // Pecho
-  'press de banca':                   'Bench_press',
-  'fondos':                           'Dip_(exercise)',
-  // Core
-  'crunch':                           'Crunch_(exercise)',
-};
-
-function wikiArticleForEjercicio(nombre) {
-  return WIKI_ARTICULOS[nombre.toLowerCase().trim()] || null;
-}
-
-// ─── EjercicioCard: tarjeta individual con foto de referencia vía Wikipedia ───
+// ─── EjercicioCard: tarjeta individual de ejercicio ───
 function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, bajó, onToggle, onSetPeso, onSetReps }) {
-  const [mostrarFotos, setMostrarFotos] = React.useState(false);
-  const [fotoEstado, setFotoEstado] = React.useState('idle'); // idle | loading | ok | vacio | error
-  const [fotos, setFotos] = React.useState([]);
-
   const eqId = getEquipoId(e.equipo);
-  const eqNoDisp = eqId !== 'peso_corporal' && !equiposDisp.includes(eqId);
+  const esPesoCorporal = eqId === 'peso_corporal';
+  const eqNoDisp = !esPesoCorporal && !equiposDisp.includes(eqId);
+
+  // Estado local para el input de texto del peso (permite escribir "12.5" sin interrupciones)
+  const pesoInicial = e.peso != null ? e.peso : (previo ? previo.peso : 0);
+  const [pesoStr, setPesoStr] = React.useState(() => String(pesoInicial));
+  // Sincronizar cuando el padre cambia e.peso (ej: botones +/-)
+  React.useEffect(() => {
+    const v = e.peso != null ? e.peso : 0;
+    setPesoStr(String(v));
+  }, [e.peso]);
   const eqInfo = eqNoDisp && window.NP_RoadmapData && window.NP_RoadmapData.EQUIPOS_DISPONIBLES
     ? window.NP_RoadmapData.EQUIPOS_DISPONIBLES.find(eq => eq.id === eqId)
     : null;
-
-  function fetchFotos() {
-    if (fotoEstado !== 'idle') return;
-    setFotoEstado('loading');
-    // Wikipedia REST API: free, CORS-open, sin API key, foto real del ejercicio
-    const articulo = wikiArticleForEjercicio(e.nombre);
-    if (!articulo) { setFotoEstado('vacio'); return; }
-    fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(articulo))
-      .then(r => r.json())
-      .then(data => {
-        const img = data.thumbnail && data.thumbnail.source;
-        if (!img) { setFotoEstado('vacio'); return; }
-        setFotos([img]);
-        setFotoEstado('ok');
-      })
-      .catch(() => setFotoEstado('error'));
-  }
-
-  function toggleFotos() {
-    const siguiente = !mostrarFotos;
-    setMostrarFotos(siguiente);
-    if (siguiente && fotoEstado === 'idle') fetchFotos();
-  }
 
   return (
     <div className={`rounded-xl p-4 transition-colors ${
@@ -8779,15 +9287,6 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
                 <span>ver video</span>
               </a>
             )}
-            <button onClick={toggleFotos}
-              className={`flex items-center gap-1 text-xs font-medium transition-colors cursor-pointer ${
-                mostrarFotos
-                  ? darkMode ? 'text-amber-400' : 'text-amber-600'
-                  : darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
-              }`}>
-              <i className={`fas ${mostrarFotos ? 'fa-images' : 'fa-camera'}`}></i>
-              <span>fotos</span>
-            </button>
           </div>
           {protEj && protEj.descripcion && (
             <div className={`text-xs mt-1 leading-snug ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{protEj.descripcion}</div>
@@ -8810,55 +9309,52 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
         </button>
       </div>
 
-      {/* Panel de foto de referencia (Wikipedia) */}
-      {mostrarFotos && (
-        <div className={`mt-3 rounded-xl overflow-hidden ${darkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
-          {fotoEstado === 'loading' && (
-            <div className="flex items-center justify-center gap-2 py-6 text-xs text-gray-400">
-              <div className="w-4 h-4 border-2 border-gray-300 border-t-amber-500 rounded-full animate-spin"></div>
-              <span>Cargando foto...</span>
-            </div>
-          )}
-          {fotoEstado === 'ok' && (
-            <div className="relative">
-              <img src={fotos[0]} alt={e.nombre}
-                className="w-full object-cover object-top"
-                style={{ maxHeight: '220px' }} />
-              <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-3 py-1.5 bg-black/40">
-                <span className="text-[11px] text-white font-medium">{e.nombre}</span>
-                <span className="text-[9px] text-white/50">Wikipedia</span>
-              </div>
-            </div>
-          )}
-          {fotoEstado === 'vacio' && (
-            <div className="text-center py-5 text-xs text-gray-400">
-              <i className="fas fa-image mr-1 opacity-40"></i>
-              Sin foto disponible para este ejercicio
-            </div>
-          )}
-          {fotoEstado === 'error' && (
-            <div className="text-center py-5 text-xs text-gray-400">
-              <i className="fas fa-circle-exclamation mr-1 opacity-40"></i>
-              No se pudo cargar — verifica tu conexión
-            </div>
-          )}
-        </div>
-      )}
-
       <div className="flex gap-2 mt-3">
-        {/* Stepper de peso: [−] valor [+] */}
-        <div className={`flex items-center flex-shrink-0 rounded-lg border overflow-hidden ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
-          <button onClick={() => onSetPeso(i, Math.max(0, (Number(e.peso) || 0) - 2.5))}
-            className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>−</button>
-          <div className={`flex items-center justify-center gap-1 px-3 h-9 min-w-[4.5rem] border-x ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
-            <span className={`text-sm font-bold tabular-nums ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-              {e.peso != null ? e.peso : (previo ? previo.peso : '0')}
-            </span>
-            <span className={`text-xs font-medium ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>kg</span>
+        {/* Stepper de peso — oculto en ejercicios de peso corporal */}
+        {!esPesoCorporal && (
+          <div className={`flex items-center flex-shrink-0 rounded-lg border overflow-hidden ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+            <button onClick={() => {
+              const cur = parseFloat(pesoStr) || 0;
+              const next = Math.max(0, Math.round((cur - 2.5) * 10) / 10);
+              onSetPeso(i, next);
+              setPesoStr(String(next));
+            }} className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>−</button>
+
+            <div className={`flex items-center justify-center gap-1 px-2 h-9 border-x ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={pesoStr}
+                onChange={ev => setPesoStr(ev.target.value)}
+                onBlur={() => {
+                  const val = Math.max(0, parseFloat(pesoStr) || 0);
+                  onSetPeso(i, val);
+                  setPesoStr(String(val));
+                }}
+                style={{
+                  width: '2.8rem',
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  textAlign: 'center',
+                  fontSize: '0.875rem',
+                  fontWeight: 'bold',
+                  fontVariantNumeric: 'tabular-nums',
+                  color: darkMode ? '#f9fafb' : '#1f2937'
+                }}
+              />
+              <span className={`text-xs font-medium flex-shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>kg</span>
+            </div>
+
+            <button onClick={() => {
+              const cur = parseFloat(pesoStr) || 0;
+              const next = Math.round((cur + 2.5) * 10) / 10;
+              onSetPeso(i, next);
+              setPesoStr(String(next));
+            }} className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>+</button>
           </div>
-          <button onClick={() => onSetPeso(i, (Number(e.peso) || 0) + 2.5)}
-            className={`w-9 h-9 flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>+</button>
-        </div>
+        )}
+
         <input type="text" value={e.repsReales || ''}
           onChange={ev => onSetReps(i, ev.target.value)}
           className={`flex-1 px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200'}`}
@@ -9035,13 +9531,13 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             {[2,3,4,5,6].map(n => (
               <button key={n}
                 onClick={() => { localStorage.setItem('nutriplan_dias_semana', String(n)); setDiasSemana(n); }}
-                className={`w-10 h-10 rounded text-xs font-bold transition-all border ${
-                  diasSemana === n
-                    ? 'bg-orange-500 text-white border-orange-500'
-                    : darkMode
-                      ? 'bg-transparent text-gray-500 border-gray-600 hover:border-gray-400 hover:text-gray-300'
-                      : 'bg-transparent text-gray-400 border-gray-300 hover:border-gray-500 hover:text-gray-600'
-                }`}>
+                className="w-10 h-10 rounded text-xs font-bold cursor-pointer"
+                style={diasSemana === n
+                  ? { background: '#f97316', color: '#ffffff', border: '1px solid #f97316' }
+                  : darkMode
+                    ? { background: 'transparent', color: '#6b7280', border: '1px solid #4b5563' }
+                    : { background: 'transparent', color: '#4b5563', border: '1px solid #d1d5db' }
+                }>
                 {n}
               </button>
             ))}
@@ -9056,15 +9552,23 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             const esSugerido = !esDescanso && sugerido === t.k;
             return (
               <button key={t.k} onClick={() => setTipoDia(t.k)}
-                className={`py-2.5 rounded-lg font-semibold flex flex-col items-center gap-0.5 transition-all ${
-                  activo
-                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md'
+                className="rounded-lg font-semibold flex flex-col items-center cursor-pointer"
+                style={{
+                  padding: '10px 0',
+                  gap: '2px',
+                  ...(activo
+                    ? { background: 'linear-gradient(to right, #f97316, #ef4444)', color: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.15)' }
                     : esSugerido
-                      ? darkMode ? 'bg-orange-900/30 text-orange-300 border border-orange-700' : 'bg-orange-50 text-orange-600 border border-orange-200'
-                      : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
-                }`}>
+                      ? darkMode
+                        ? { background: 'rgba(234,88,12,0.15)', color: '#fb923c', border: '1px solid rgba(194,65,12,0.4)' }
+                        : { background: '#fff7ed', color: '#ea580c', border: '1px solid #fed7aa' }
+                      : darkMode
+                        ? { background: '#374151', color: '#d1d5db' }
+                        : { background: '#f9fafb', color: '#4b5563', border: '1px solid #e5e7eb' }
+                  )
+                }}>
                 <span className="text-sm">Día {t.short || t.k}</span>
-                <span className="text-[11px] opacity-80">{t.corto}</span>
+                <span style={{ fontSize: '11px', opacity: 0.8 }}>{t.corto}</span>
               </button>
             );
           })}
@@ -9461,6 +9965,16 @@ function App() {
   const [cargando, setCargando] = React.useState(false);
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
+  const [historialSlots, setHistorialSlots] = React.useState(() =>
+    typeof cargarHistorialSlots === 'function' ? cargarHistorialSlots() : {}
+  );
+  const [vetadas, setVetadas] = React.useState(() =>
+    typeof cargarRecetasVetadas === 'function' ? cargarRecetasVetadas() : new Set()
+  );
+
+  // ─── Preferencias de generación + modal ───
+  const [showPrefModal, setShowPrefModal] = React.useState(false);
+  const [preferenciasGen, setPreferenciasGen] = React.useState({ cocina: 'cualquiera', altaProteina: false, rapido: false });
 
   // ─── v20260428ai: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
@@ -9528,6 +10042,11 @@ function App() {
     document.documentElement.classList.toggle('dark', darkMode);
     document.body.className = darkMode ? 'bg-gray-900 font-sans antialiased' : 'bg-gray-50 font-sans antialiased';
   }, [darkMode]);
+
+  // Comprimir historial de adherencia (feature #14) — one-shot on mount
+  React.useEffect(() => {
+    if (typeof trimirHistorialAdherencia === 'function') trimirHistorialAdherencia();
+  }, []);
 
   const toggleDarkMode = () => {
     setDarkMode(prev => {
@@ -9714,33 +10233,92 @@ function App() {
     }
   };
 
-  const handleRegenerar = async () => {
-    if (!window.confirm('¿Regenerar el plan completo? Se reemplazarán todas las recetas de la semana, incluyendo los cambios manuales que hayas hecho.')) return;
-    if (perfil) {
-      setCargando(true);
-      setMensajeCarga("Regenerando plan con recetas frescas...");
-      try {
-        // Fase 6.2: asegurar recipes-extra cargado (por si el usuario recargó la app)
-        if (window.lazyRecipes && !window.lazyRecipes.estaCargado()) {
-          await window.lazyRecipes.cargar();
-        }
-        const nuevoPlan = await generarPlanSemanalAsync(perfil, perfil.caloriasObjetivo, (msg) => setMensajeCarga(msg));
-        setPlanSemanal(nuevoPlan);
-        guardarPlanSemanal(nuevoPlan);
-        if (nuevoPlan._buscoOnline && nuevoPlan._recetasOnlineUsadas > 0) {
-          mostrarToast(`¡Plan regenerado con ${nuevoPlan._recetasOnlineUsadas} recetas de internet!`);
-        } else {
-          mostrarToast("¡Plan regenerado con nuevas recetas!");
-        }
-      } catch (e) {
-        console.error("Error regenerando plan:", e);
-        const nuevoPlan = generarPlanSemanal(perfil, perfil.caloriasObjetivo);
-        setPlanSemanal(nuevoPlan);
-        guardarPlanSemanal(nuevoPlan);
-        mostrarToast("Plan regenerado (modo offline)", "info");
-      } finally {
-        setCargando(false);
-        window.scrollTo(0, 0);
+  const handleRegenerar = () => {
+    setShowPrefModal(true); // abre modal de preferencias antes de regenerar
+  };
+
+  const handleRegenerarConPreferencias = async (prefs) => {
+    setShowPrefModal(false);
+    setPreferenciasGen(prefs);
+    if (!perfil) return;
+    setCargando(true);
+    setMensajeCarga("Regenerando plan con recetas frescas...");
+    try {
+      // Fase 6.2: asegurar recipes-extra cargado
+      if (window.lazyRecipes && !window.lazyRecipes.estaCargado()) {
+        await window.lazyRecipes.cargar();
+      }
+      const nuevoPlan = await generarPlanSemanalAsync(perfil, perfil.caloriasObjetivo, (msg) => setMensajeCarga(msg), prefs);
+      setPlanSemanal(nuevoPlan);
+      guardarPlanSemanal(nuevoPlan);
+      if (nuevoPlan._buscoOnline && nuevoPlan._recetasOnlineUsadas > 0) {
+        mostrarToast(`¡Plan regenerado con ${nuevoPlan._recetasOnlineUsadas} recetas de internet!`);
+      } else {
+        mostrarToast("¡Plan regenerado con nuevas recetas!");
+      }
+    } catch (e) {
+      console.error("Error regenerando plan:", e);
+      const nuevoPlan = generarPlanSemanal(perfil, perfil.caloriasObjetivo, prefs);
+      setPlanSemanal(nuevoPlan);
+      guardarPlanSemanal(nuevoPlan);
+      mostrarToast("Plan regenerado (modo offline)", "info");
+    } finally {
+      setCargando(false);
+      window.scrollTo(0, 0);
+    }
+  };
+
+  const handleRegenDay = async (dia, numSemana) => {
+    numSemana = numSemana || 1;
+    if (!perfil || !planSemanal) return;
+    const tipos = ['desayuno', 'snack_am', 'almuerzo', 'snack_pm', 'cena'];
+    setCargando(true);
+    setMensajeCarga(`Regenerando ${dia}...`);
+    try {
+      let nuevoPlan = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(planSemanal) : { ...planSemanal };
+      for (const tipo of tipos) {
+        nuevoPlan = await cambiarRecetaIndividualAsync(nuevoPlan, dia, tipo, perfil, perfil.caloriasObjetivo, null, numSemana);
+      }
+      setPlanSemanal(nuevoPlan);
+      guardarPlanSemanal(nuevoPlan);
+      mostrarToast(`${dia} regenerado con 5 recetas nuevas 🔄`);
+    } catch(e) {
+      console.error("Error regenerando día:", e);
+      mostrarToast('Error al regenerar el día', 'error');
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const handleCompartirPlan = async () => {
+    if (!planSemanal || !perfil) return;
+    const plan = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(planSemanal) : planSemanal;
+    const sem = plan.semana_1 || {};
+    const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+    const TIPOS_ICO = { desayuno: '🌅', snack_am: '🍎', almuerzo: '🍽️', snack_pm: '🍪', cena: '🌙' };
+    const lineas = ['📋 Mi plan semanal - Calibrate', ''];
+    DIAS.forEach(dia => {
+      if (!sem[dia]) return;
+      lineas.push(`📅 ${dia}`);
+      Object.entries(TIPOS_ICO).forEach(([tipo, icon]) => {
+        const r = sem[dia][tipo];
+        if (r) lineas.push(`  ${icon} ${r.nombre || r.id}`);
+      });
+      lineas.push('');
+    });
+    lineas.push(`Generado con Calibrate · ${perfil.caloriasObjetivo} kcal/día`);
+    const texto = lineas.join('\n');
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Mi plan semanal - Calibrate', text: texto });
+      } else {
+        await navigator.clipboard.writeText(texto);
+        mostrarToast('Plan copiado al portapapeles 📋');
+      }
+    } catch(e) {
+      if (e && e.name !== 'AbortError') {
+        try { await navigator.clipboard.writeText(texto); mostrarToast('Plan copiado al portapapeles 📋'); }
+        catch(e2) { mostrarToast('No se pudo compartir el plan', 'error'); }
       }
     }
   };
@@ -9749,6 +10327,14 @@ function App() {
   const handleSwapRecipe = async (dia, tipoComida, numSemana) => {
     numSemana = numSemana || 1;
     if (perfil && planSemanal) {
+      // Guardar receta actual en historial del slot ANTES del swap
+      const semKeyPrev = 'semana_' + numSemana;
+      const recetaAnterior = planSemanal[semKeyPrev]?.[dia]?.[tipoComida];
+      if (recetaAnterior && recetaAnterior.id && typeof pushHistorialSlot === 'function') {
+        pushHistorialSlot(dia, tipoComida, numSemana, recetaAnterior);
+        setHistorialSlots(typeof cargarHistorialSlots === 'function' ? cargarHistorialSlots() : {});
+      }
+
       setSwapping({ dia, tipoComida });
       try {
         const nuevoPlan = await cambiarRecetaIndividualAsync(
@@ -9775,6 +10361,36 @@ function App() {
         setSwapping(null);
       }
     }
+  };
+
+  // Restaurar una receta anterior desde el historial del slot
+  const handleRestoreRecipe = (dia, tipoComida, numSemana, receta) => {
+    numSemana = numSemana || 1;
+    if (!planSemanal || !receta) return;
+    const semKey = 'semana_' + numSemana;
+    const planNorm = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(planSemanal) : planSemanal;
+    const semana = planNorm[semKey];
+    if (!semana) return;
+    // Guardar la receta actual en historial antes de restaurar
+    const actual = semana[dia]?.[tipoComida];
+    if (actual && actual.id && typeof pushHistorialSlot === 'function') {
+      pushHistorialSlot(dia, tipoComida, numSemana, actual);
+    }
+    const nuevoPlan = { ...planNorm };
+    nuevoPlan[semKey] = { ...semana, [dia]: { ...semana[dia], [tipoComida]: receta } };
+    setPlanSemanal(nuevoPlan);
+    guardarPlanSemanal(nuevoPlan);
+    setHistorialSlots(typeof cargarHistorialSlots === 'function' ? cargarHistorialSlots() : {});
+    mostrarToast('Receta restaurada', 'success');
+  };
+
+  // Vetar receta actual y hacer swap automático
+  const handleVetoRecipe = async (dia, tipoComida, numSemana, recetaId) => {
+    numSemana = numSemana || 1;
+    if (typeof vetoReceta === 'function') vetoReceta(recetaId);
+    setVetadas(typeof cargarRecetasVetadas === 'function' ? cargarRecetasVetadas() : new Set());
+    mostrarToast('Receta vetada — no volverá a aparecer', 'info');
+    await handleSwapRecipe(dia, tipoComida, numSemana);
   };
 
   const handleEditarPerfil = () => { setPantalla("perfil"); window.scrollTo(0, 0); };
@@ -9949,13 +10565,18 @@ function App() {
 
       <main key={pantalla} className="max-w-3xl mx-auto px-4 py-6 animate-fadeIn">
         {pantalla === "hoy" && (
-          <HoyView perfil={perfil} darkMode={darkMode} planSemanal={planSemanal} onNavigate={navegarA} />
+          <HoyView perfil={perfil} darkMode={darkMode} planSemanal={planSemanal} onNavigate={navegarA} onSwapRecipe={handleSwapRecipe} swapping={swapping} onVetoRecipe={handleVetoRecipe} />
         )}
         {pantalla === "plan" && (planSemanal ? (
           <WeeklyPlan plan={planSemanal} perfil={perfil}
             onRecipeClick={(receta) => setRecetaSeleccionada(receta)}
             onRegenerate={handleRegenerar}
             onSwapRecipe={handleSwapRecipe}
+            onRestoreRecipe={handleRestoreRecipe}
+            onVetoRecipe={handleVetoRecipe}
+            onRegenDay={handleRegenDay}
+            onCompartir={handleCompartirPlan}
+            historialSlots={historialSlots}
             darkMode={darkMode}
             swapping={swapping} />
         ) : (
@@ -10034,6 +10655,14 @@ function App() {
         <p>Calibrate · El método, no la motivación.</p>
         <p className="mt-1">calibrate.cl</p>
       </footer>
+
+      {showPrefModal && (
+        <ModalPreferenciasGeneracion
+          darkMode={darkMode}
+          onConfirm={handleRegenerarConPreferencias}
+          onCancel={() => setShowPrefModal(false)}
+        />
+      )}
 
       {recetaSeleccionada && <RecipeModal receta={recetaSeleccionada} onClose={() => setRecetaSeleccionada(null)} darkMode={darkMode} factorComensales={factorComensales} usaThermomix={perfil?.usaThermomix !== false} />}
 
