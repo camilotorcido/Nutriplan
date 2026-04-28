@@ -3760,7 +3760,11 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
 
 // ─── SlotAcciones: botones de acción por slot de comida ───
 // Extraído del IIFE para evitar violación de Hooks (useState en .map/IIFE)
-// Ventajas: click-outside real, sin flickering de imagen, sin glass effect
+// FIX: ReactDOM.createPortal → dropdown renderizado en document.body, FUERA del
+// árbol DOM del card. Elimina definitivamente:
+//   - Efecto vidrio/glass: el portal no hereda bg-color/30 ni transforms del card padre
+//   - Flickering de imagen: apertura/cierre del dropdown NO modifica el DOM del card
+//   - Posición errónea: position:fixed en document.body no tiene stacking context que lo intercepte
 function SlotAcciones({
   comida, tipo, diaSeleccionado, semanaActiva, plan,
   historialSlots, darkMode, swapping, yaComido,
@@ -3768,19 +3772,30 @@ function SlotAcciones({
 }) {
   const [showHist, setShowHist] = React.useState(false);
   const [showSobras, setShowSobras] = React.useState(false);
+  const [dropdownPos, setDropdownPos] = React.useState({ top: 0, left: 0 });
   const containerRef = React.useRef(null);
+  const histDropRef = React.useRef(null);
+  const sobrasDropRef = React.useRef(null);
 
   React.useEffect(() => {
     if (!showHist && !showSobras) return;
+    // Click-outside: revisar containerRef Y los refs de los portals (están en document.body)
     function handleOutside(e) {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+      const inContainer = containerRef.current && containerRef.current.contains(e.target);
+      const inHist = histDropRef.current && histDropRef.current.contains(e.target);
+      const inSobras = sobrasDropRef.current && sobrasDropRef.current.contains(e.target);
+      if (!inContainer && !inHist && !inSobras) {
         setShowHist(false);
         setShowSobras(false);
       }
     }
+    // Scroll: cerrar para que el dropdown fixed no quede flotando desalineado
+    function handleScroll() { setShowHist(false); setShowSobras(false); }
     document.addEventListener('mousedown', handleOutside);
+    window.addEventListener('scroll', handleScroll, true);
     return () => {
       document.removeEventListener('mousedown', handleOutside);
+      window.removeEventListener('scroll', handleScroll, true);
     };
   }, [showHist, showSobras]);
 
@@ -3789,18 +3804,29 @@ function SlotAcciones({
   const isSwappingThis = swapping && swapping.dia === diaSeleccionado && swapping.tipoComida === tipo;
   const sobras = obtenerSobrasDisponibles(plan, diaSeleccionado, semanaActiva);
 
-  // position: absolute dentro de su position:relative padre → sin problemas de stacking context
-  // right:0 alinea el borde derecho del dropdown con el botón trigger
-  const dropdownStyle = {
-    position: 'absolute', right: 0, top: '36px', zIndex: 50,
+  // Estilo base del portal dropdown: position:fixed a nivel de body
+  // getBoundingClientRect() devuelve coordenadas de viewport → coinciden exactamente con fixed
+  const portalDropStyle = {
+    position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, zIndex: 9999,
     borderRadius: '12px', overflow: 'hidden',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
     backgroundColor: darkMode ? '#1f2937' : '#ffffff',
     border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`
   };
 
+  // Calcular posición desde el botón trigger (e.currentTarget ya en viewport coords)
+  function calcPos(e, W) {
+    const r = e.currentTarget.getBoundingClientRect();
+    const left = Math.max(8, Math.min(r.right - W, window.innerWidth - W - 8));
+    return { top: r.bottom + 4, left };
+  }
+
+  const itemSolid = darkMode ? '#1f2937' : '#ffffff';
+  const itemHover = darkMode ? '#374151' : '#f9fafb';
+  const itemDivider = darkMode ? '#374151' : '#f3f4f6';
+
   return (
-    <div ref={containerRef} className="flex items-center gap-1 ml-2 flex-shrink-0" style={{ position: 'relative' }}>
+    <div ref={containerRef} className="flex items-center gap-1 ml-2 flex-shrink-0">
       {/* Check de adherencia */}
       {typeof window.adherencia !== 'undefined' && (
         <button
@@ -3815,12 +3841,14 @@ function SlotAcciones({
           <i className={`fas fa-check text-sm ${yaComido ? '' : 'opacity-60'}`}></i>
         </button>
       )}
-      {/* Dropdown historial de alternativas */}
+
+      {/* ─── Historial de alternativas (Portal) ─── */}
       {slotHist.length > 0 && (
-        <div style={{ position: 'relative' }}>
+        <>
           <button
             onClick={(e) => {
               e.stopPropagation();
+              if (!showHist) setDropdownPos(calcPos(e, 260));
               setShowHist(h => !h); setShowSobras(false);
             }}
             aria-label="Ver alternativas anteriores"
@@ -3832,9 +3860,9 @@ function SlotAcciones({
             }`}>
             <i className="fas fa-clock-rotate-left text-xs"></i>
           </button>
-          {showHist && (
-            <div onClick={(e) => e.stopPropagation()}
-              style={{ ...dropdownStyle, minWidth: '200px', maxWidth: '260px' }}>
+          {showHist && ReactDOM.createPortal(
+            <div ref={histDropRef} onClick={(e) => e.stopPropagation()}
+              style={{ ...portalDropStyle, minWidth: '200px', maxWidth: '260px' }}>
               <div style={{ padding: '8px 12px 4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: darkMode ? '#6b7280' : '#9ca3af' }}>
                 Alternativas anteriores
               </div>
@@ -3843,26 +3871,29 @@ function SlotAcciones({
                   onClick={() => { onRestoreRecipe(r); setShowHist(false); }}
                   style={{
                     display: 'block', width: '100%', textAlign: 'left',
-                    padding: '8px 12px', border: 'none', backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+                    padding: '8px 12px', border: 'none', backgroundColor: itemSolid,
                     cursor: 'pointer', transition: 'background-color 0.12s',
-                    borderTop: idx > 0 ? `1px solid ${darkMode ? '#374151' : '#f3f4f6'}` : 'none'
+                    borderTop: idx > 0 ? `1px solid ${itemDivider}` : 'none'
                   }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = darkMode ? '#374151' : '#f9fafb'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = darkMode ? '#1f2937' : '#ffffff'}>
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = itemHover}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = itemSolid}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: darkMode ? '#e5e7eb' : '#111827', lineHeight: 1.3, marginBottom: '2px' }}>{getNombreReceta(r)}</div>
                   <div style={{ fontSize: '11px', color: darkMode ? '#6b7280' : '#9ca3af' }}>{r.calorias_escaladas || r.calorias_base} kcal · P {r.proteinas_escaladas || r.proteinas_g}g</div>
                 </button>
               ))}
-            </div>
+            </div>,
+            document.body
           )}
-        </div>
+        </>
       )}
-      {/* ♻️ Sobras: comidas de los últimos 1-2 días */}
+
+      {/* ─── Sobras (Portal) ─── */}
       {sobras.length > 0 && (
-        <div style={{ position: 'relative' }}>
+        <>
           <button
             onClick={(e) => {
               e.stopPropagation();
+              if (!showSobras) setDropdownPos(calcPos(e, 290));
               setShowSobras(s => !s); setShowHist(false);
             }}
             aria-label="Usar sobra de días anteriores"
@@ -3874,9 +3905,9 @@ function SlotAcciones({
             }`}>
             <i className="fas fa-recycle text-xs"></i>
           </button>
-          {showSobras && (
-            <div onClick={(e) => e.stopPropagation()}
-              style={{ ...dropdownStyle, minWidth: '220px', maxWidth: '290px' }}>
+          {showSobras && ReactDOM.createPortal(
+            <div ref={sobrasDropRef} onClick={(e) => e.stopPropagation()}
+              style={{ ...portalDropStyle, minWidth: '220px', maxWidth: '290px' }}>
               <div style={{ padding: '8px 12px 4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: darkMode ? '#6b7280' : '#9ca3af' }}>
                 Sobras disponibles
               </div>
@@ -3885,12 +3916,12 @@ function SlotAcciones({
                   onClick={() => { onRestoreRecipe(s.receta); setShowSobras(false); }}
                   style={{
                     display: 'block', width: '100%', textAlign: 'left',
-                    padding: '8px 12px', border: 'none', backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+                    padding: '8px 12px', border: 'none', backgroundColor: itemSolid,
                     cursor: 'pointer', transition: 'background-color 0.12s',
-                    borderTop: `1px solid ${darkMode ? '#374151' : '#f3f4f6'}`
+                    borderTop: `1px solid ${itemDivider}`
                   }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = darkMode ? '#374151' : '#f9fafb'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = darkMode ? '#1f2937' : '#ffffff'}>
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = itemHover}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = itemSolid}>
                   <div style={{ fontSize: '10px', color: darkMode ? '#6b7280' : '#9ca3af', marginBottom: '2px' }}>
                     {s.daysAgo === 1 ? 'Ayer' : 'Anteayer'} · {NOMBRES_COMIDAS[s.tipoComida] || s.tipoComida}
                   </div>
@@ -3902,10 +3933,12 @@ function SlotAcciones({
                   </div>
                 </button>
               ))}
-            </div>
+            </div>,
+            document.body
           )}
-        </div>
+        </>
       )}
+
       {/* Swap button */}
       <button onClick={(e) => { setShowHist(false); setShowSobras(false); onSwap(e); }}
         disabled={!!isSwappingThis}

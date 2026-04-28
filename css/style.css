@@ -331,7 +331,9 @@ html.dark select option {
 }
 
 /* ─── Smooth image load in modal ─── */
-.meal-card img, .modal-overlay img {
+/* FIX: eliminada transición en .meal-card img → causaba flickering cuando el dropdown
+   (position:absolute inside card) abría/cerraba y React re-montaba el img element */
+.modal-overlay img {
     transition: opacity 0.3s ease;
 }
 
