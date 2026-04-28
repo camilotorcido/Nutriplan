@@ -668,3 +668,45 @@ html.dark .skeleton {
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE / iOS PWA — Safe Area, Notch & Input Fixes
+   Requires viewport-fit=cover in the <meta name="viewport"> tag.
+   ══════════════════════════════════════════════════════════════ */
+
+/* 1. Safe area top — con status-bar-style=default el status bar está
+      sobre el web view por lo que env(safe-area-inset-top) = 0 en la
+      mayoría de los casos. Se agrega como precaución para dispositivos
+      con Dynamic Island / notch sin status bar separada. */
+body {
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* 2. Sticky headers — deben pegar justo debajo del status bar / notch,
+      no detrás de él. top: env() reemplaza el top: 0 del utilitario Tailwind. */
+.sticky.top-0 {
+    top: env(safe-area-inset-top, 0px) !important;
+}
+
+/* 3. Toast — flota sobre el home indicator (≈ 34 px en iPhone X+).
+      Sin esta regla, bottom-6 (24 px) puede quedar debajo del indicador. */
+.toast {
+    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* 4. iOS auto-zoom prevention.
+      Safari hace zoom automático cuando el input enfocado tiene font-size < 16 px.
+      En modo standalone (PWA) esto es particularmente molesto.
+      El cambio visual es mínimo (14 px → 16 px), pero elimina el zoom. */
+input:not([type="range"]),
+select,
+textarea {
+    font-size: 16px;
+}
+
+/* 5. Smooth momentum scroll — iOS 13+ lo incluye por defecto, pero
+      se fuerza en contenedores con overflow explícito por si acaso. */
+.overflow-y-auto,
+.overflow-y-scroll {
+    -webkit-overflow-scrolling: touch;
+}
