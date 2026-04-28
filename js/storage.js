@@ -58,6 +58,7 @@ function cargarPerfil() {
 
 // ─── Guardar plan semanal ───
 function guardarPlanSemanal(plan) {
+  _idbPut(STORAGE_KEYS.PLAN_SEMANAL, plan); // backup async fire-and-forget
   return guardarDatos(STORAGE_KEYS.PLAN_SEMANAL, plan);
 }
 
@@ -245,6 +246,73 @@ function pushHistorialSlot(dia, tipoComida, numSemana, receta) {
   guardarHistorialSlots(hist);
 }
 
+// ─── IndexedDB: backup del plan semanal (fire-and-forget) ───
+var _IDB_NAME = 'nutriplan_idb';
+var _IDB_VER  = 1;
+var _idbDb    = null;
+
+function _idbOpen() {
+  return new Promise(function(resolve, reject) {
+    if (_idbDb) { resolve(_idbDb); return; }
+    var req = indexedDB.open(_IDB_NAME, _IDB_VER);
+    req.onupgradeneeded = function(e) {
+      var db = e.target.result;
+      if (!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
+    };
+    req.onsuccess = function(e) { _idbDb = e.target.result; resolve(_idbDb); };
+    req.onerror   = function(e) { reject(e.target.error); };
+  });
+}
+
+function _idbPut(key, value) {
+  _idbOpen().then(function(db) {
+    var tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(value, key);
+  }).catch(function() {}); // silencioso — localStorage es el primario
+}
+
+// ─── Recuperar plan desde IDB si localStorage está vacío ───
+function recuperarPlanDesdeIDB() {
+  return _idbOpen().then(function(db) {
+    return new Promise(function(resolve) {
+      var tx  = db.transaction('kv', 'readonly');
+      var req = tx.objectStore('kv').get(STORAGE_KEYS.PLAN_SEMANAL);
+      req.onsuccess = function(e) { resolve(e.target.result || null); };
+      req.onerror   = function()  { resolve(null); };
+    });
+  }).catch(function() { return null; });
+}
+
+// ─── Ratings de recetas (1–5 estrellas) ───
+var KEY_RATINGS = 'nutriplan_ratings';
+function cargarRatings() {
+  try { return JSON.parse(localStorage.getItem(KEY_RATINGS) || '{}'); }
+  catch (e) { return {}; }
+}
+function guardarRating(recetaId, estrellas) {
+  var r = cargarRatings();
+  r[recetaId] = Number(estrellas);
+  try { localStorage.setItem(KEY_RATINGS, JSON.stringify(r)); } catch (e) {}
+}
+
+// ─── Comprimir historial de adherencia (retener sólo 30 días) ───
+function trimirHistorialAdherencia() {
+  try {
+    var KEY_ADH = 'nutriplan_adherencia';
+    var raw = localStorage.getItem(KEY_ADH);
+    if (!raw) return;
+    var data = JSON.parse(raw);
+    var hace30 = new Date();
+    hace30.setDate(hace30.getDate() - 30);
+    var limite = hace30.toISOString().split('T')[0];
+    var trimmed = {};
+    Object.keys(data).forEach(function(fecha) {
+      if (fecha >= limite) trimmed[fecha] = data[fecha];
+    });
+    localStorage.setItem(KEY_ADH, JSON.stringify(trimmed));
+  } catch (e) {}
+}
+
 // ─── Limpiar todo ───
 function limpiarTodo() {
   Object.values(STORAGE_KEYS).forEach(clave => {
@@ -254,6 +322,7 @@ function limpiarTodo() {
   });
   try { localStorage.removeItem(KEY_VETADAS); } catch(e) {}
   try { localStorage.removeItem(KEY_HISTORIAL_SLOTS); } catch(e) {}
+  try { localStorage.removeItem(KEY_RATINGS); } catch(e) {}
 }
 
 // ─── Exponer funciones a window para que el bundle compilado siempre las encuentre ───
@@ -286,4 +355,8 @@ if (typeof window !== 'undefined') {
   window.cargarHistorialSlots = cargarHistorialSlots;
   window.guardarHistorialSlots = guardarHistorialSlots;
   window.pushHistorialSlot = pushHistorialSlot;
+  window.recuperarPlanDesdeIDB = recuperarPlanDesdeIDB;
+  window.cargarRatings = cargarRatings;
+  window.guardarRating = guardarRating;
+  window.trimirHistorialAdherencia = trimirHistorialAdherencia;
 }

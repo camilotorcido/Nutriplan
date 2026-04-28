@@ -3761,7 +3761,7 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
 // =============================================
 // COMPONENTE: WeeklyPlan (MEJORAS 2 y 3)
 // =============================================
-function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, onRestoreRecipe, onVetoRecipe, historialSlots, darkMode, swapping }) {
+function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, onRestoreRecipe, onVetoRecipe, onRegenDay, onCompartir, historialSlots, darkMode, swapping }) {
   // Multi-semana: normalizar plan
   const planNorm = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(plan) : plan;
   const numSemanas = planNorm._numSemanas || 1;
@@ -4010,7 +4010,15 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
       {/* Resumen diario */}
       <div className={`rounded-2xl shadow-sm border p-5 mb-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`font-semibold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>{diaSeleccionado}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className={`font-semibold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>{diaSeleccionado}</h3>
+            {onRegenDay && (
+              <button onClick={() => onRegenDay(diaSeleccionado, semanaActiva)} title="Regenerar 5 comidas de este día"
+                className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all cursor-pointer ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-gray-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-400 hover:text-gray-600'}`}>
+                <i className="fas fa-arrows-rotate text-xs"></i>
+              </button>
+            )}
+          </div>
           <div className="text-right">
             <div className={`text-2xl font-bold font-display ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.calorias}</div>
             <div className="text-xs text-gray-400">de {caloriasObj} kcal objetivo</div>
@@ -4332,6 +4340,14 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
             }`}>
             <i className="fas fa-shuffle"></i>Regenerar Plan
           </button>
+          {onCompartir && (
+            <button onClick={onCompartir}
+              className={`inline-flex items-center gap-2 px-6 py-3 border rounded-xl transition-all text-sm font-medium ${
+                darkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}>
+              <i className="fas fa-share-nodes" style={{ color: '#22C55E' }}></i>Compartir
+            </button>
+          )}
 
           {/* Fase 5.4: Export PDF — T9: React state en vez de mutación DOM */}
           {typeof window.exports !== 'undefined' && window.exports.planPDF && (
@@ -4653,6 +4669,155 @@ function reescalarInstruccionesPorFactor(instrucciones, factor) {
 }
 
 // =============================================
+// UTILIDAD: Streak de adherencia consecutiva
+// =============================================
+function calcularStreakAdherencia() {
+  try {
+    var data = JSON.parse(localStorage.getItem('nutriplan_adherencia') || '{}');
+    var streak = 0;
+    var d = new Date();
+    d.setDate(d.getDate() - 1); // empezar desde ayer
+    for (var i = 0; i < 90; i++) {
+      var key = d.toISOString().split('T')[0];
+      var dia = data[key] || {};
+      var total = 0, cumplidos = 0;
+      Object.values(dia).forEach(function(e) { total++; if (e.comido) cumplidos++; });
+      if (total === 0 || cumplidos / total < 0.8) break;
+      streak++;
+      d.setDate(d.getDate() - 1);
+    }
+    return streak;
+  } catch(e) { return 0; }
+}
+
+// =============================================
+// COMPONENTE: MacroDonut (SVG ring chart)
+// =============================================
+function MacroDonut({ consumed, metas, darkMode }) {
+  var prot = metas.proteinas > 0 ? Math.min(1, (consumed.proteinas || 0) / metas.proteinas) : 0;
+  var carb = metas.carbohidratos > 0 ? Math.min(1, (consumed.carbohidratos || 0) / metas.carbohidratos) : 0;
+  var gras = metas.grasas > 0 ? Math.min(1, (consumed.grasas || 0) / metas.grasas) : 0;
+  var kcalPct = metas.calorias > 0 ? Math.min(100, Math.round((consumed.calorias || 0) / metas.calorias * 100)) : 0;
+  var R = 44, CX = 56, CY = 56, gapDeg = 6;
+  var trackColor = darkMode ? '#374151' : '#E5E7EB';
+  function arcD(startDeg, fillFrac) {
+    var deg = (120 - gapDeg) * Math.max(0, Math.min(1, fillFrac));
+    var s = (startDeg - 90) * Math.PI / 180;
+    var e = s + deg * Math.PI / 180;
+    var x1 = CX + R * Math.cos(s), y1 = CY + R * Math.sin(s);
+    var x2 = CX + R * Math.cos(e), y2 = CY + R * Math.sin(e);
+    return deg < 0.5 ? null : `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${R} ${R} 0 ${deg > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+  }
+  function trackD(startDeg) {
+    var deg = 120 - gapDeg;
+    var s = (startDeg - 90) * Math.PI / 180;
+    var e = s + deg * Math.PI / 180;
+    var x1 = CX + R * Math.cos(s), y1 = CY + R * Math.sin(s);
+    var x2 = CX + R * Math.cos(e), y2 = CY + R * Math.sin(e);
+    return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${R} ${R} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+  }
+  var macros = [
+    { label: 'Prot',   val: consumed.proteinas || 0,      meta: metas.proteinas,      pct: Math.round(prot*100), color: '#3B82F6', start: 3   },
+    { label: 'Carb',   val: consumed.carbohidratos || 0,  meta: metas.carbohidratos,  pct: Math.round(carb*100), color: '#F59E0B', start: 123 },
+    { label: 'Grasas', val: consumed.grasas || 0,         meta: metas.grasas,         pct: Math.round(gras*100), color: '#EF4444', start: 243 },
+  ];
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', paddingTop: '8px', borderTop: `1px solid ${darkMode ? '#374151' : '#F9FAFB'}` }}>
+      <svg width="100" height="100" viewBox="0 0 112 112" style={{ flexShrink: 0 }}>
+        {macros.map(m => (
+          <path key={m.label + 't'} d={trackD(m.start)} fill="none" stroke={trackColor} strokeWidth="10" strokeLinecap="round"/>
+        ))}
+        {macros.map(m => {
+          var d = arcD(m.start, m.pct / 100);
+          return d ? <path key={m.label + 'f'} d={d} fill="none" stroke={m.color} strokeWidth="10" strokeLinecap="round"/> : null;
+        })}
+        <text x={CX} y={CY - 4} textAnchor="middle" fill={darkMode ? 'white' : '#111827'} fontSize="17" fontWeight="bold">{kcalPct}%</text>
+        <text x={CX} y={CY + 11} textAnchor="middle" fill={darkMode ? '#9CA3AF' : '#6B7280'} fontSize="9">kcal</text>
+      </svg>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {macros.map(function(m) {
+          return (
+            <div key={m.label}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: darkMode ? '#9CA3AF' : '#6B7280' }}>{m.label}</span>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: darkMode ? '#E5E7EB' : '#1F2937' }}>{m.val}/{m.meta}g</span>
+              </div>
+              <div style={{ width: '100%', height: '5px', borderRadius: '999px', overflow: 'hidden', backgroundColor: darkMode ? '#374151' : '#E5E7EB' }}>
+                <div style={{ width: Math.min(100, m.pct) + '%', height: '100%', borderRadius: '999px', backgroundColor: m.color, transition: 'width 0.5s' }}></div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// =============================================
+// COMPONENTE: ModalPreferenciasGeneracion
+// =============================================
+function ModalPreferenciasGeneracion({ onConfirm, onCancel, darkMode }) {
+  const [cocina, setCocina] = React.useState('cualquiera');
+  const [altaProteina, setAltaProteina] = React.useState(false);
+  const [rapido, setRapido] = React.useState(false);
+  const cocinas = [
+    { v: 'cualquiera', l: 'Cualquiera' }, { v: 'mediterranea', l: 'Mediterránea' },
+    { v: 'asiatica', l: 'Asiática' }, { v: 'latinoamerica', l: 'Latinoam.' }, { v: 'nordica', l: 'Nórdica' },
+  ];
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}
+      onClick={onCancel}>
+      <div className={`w-full max-w-xs rounded-2xl p-6 shadow-2xl animate-slideUp ${darkMode ? 'bg-gray-800' : 'bg-white'}`}
+        onClick={e => e.stopPropagation()}>
+        <h3 className={`text-base font-bold mb-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+          <i className="fas fa-sliders mr-2 text-green-500"></i>Preferencias del plan
+        </h3>
+        <p className={`text-xs mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Personaliza antes de regenerar</p>
+        <div className="mb-4">
+          <div className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tipo de cocina</div>
+          <div className="flex flex-wrap gap-1.5">
+            {cocinas.map(c => (
+              <button key={c.v} onClick={() => setCocina(c.v)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                  cocina === c.v ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}>{c.l}</button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-3 mb-5">
+          {[
+            { key: 'prot', val: altaProteina, set: setAltaProteina, icon: 'fa-dumbbell', iconColor: '#3B82F6', label: 'Priorizar alta proteína' },
+            { key: 'rap',  val: rapido,       set: setRapido,       icon: 'fa-bolt',     iconColor: '#F59E0B', label: 'Preparación rápida (<20 min)' },
+          ].map(function(item) {
+            return (
+              <div key={item.key} className="flex items-center justify-between">
+                <span className={`text-sm flex items-center gap-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                  <i className={`fas ${item.icon}`} style={{ color: item.iconColor }}></i>{item.label}
+                </span>
+                <button onClick={() => item.set(p => !p)} aria-label={item.label}
+                  className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 cursor-pointer ${item.val ? 'bg-green-500' : darkMode ? 'bg-gray-600' : 'bg-gray-300'}`}>
+                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${item.val ? 'translate-x-5' : 'translate-x-0.5'}`}></span>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex gap-2">
+          <button onClick={onCancel}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+            Cancelar
+          </button>
+          <button onClick={() => onConfirm({ cocina, altaProteina, rapido })}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 transition-all">
+            <i className="fas fa-shuffle mr-1.5"></i>Regenerar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================
 // COMPONENTE: RecipeModal
 // =============================================
 function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix = true }) {
@@ -4665,6 +4830,15 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
   // N18: accumulated macro deltas from applied substitutions
   const [macroAjustes, setMacroAjustes] = React.useState({ kcal: 0, proteinas: 0, carbohidratos: 0, grasas: 0 });
   const [ingsAjustados, setIngsAjustados] = React.useState({}); // { nombre_normalizado: sustId }
+  const [ratingActual, setRatingActual] = React.useState(() => {
+    var ratings = typeof cargarRatings === 'function' ? cargarRatings() : {};
+    return ratings[receta.id] || 0;
+  });
+  const handleSetRating = (stars) => {
+    var next = ratingActual === stars ? 0 : stars; // toggle para borrar
+    setRatingActual(next);
+    if (typeof guardarRating === 'function') guardarRating(receta.id, next);
+  };
 
   const factorEscala = receta.factor_escala || 1;
   const ingredientesEscalados = receta.ingredientes_escalados || [];
@@ -4785,6 +4959,18 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
               Cantidades e ingredientes escalados para <strong>{factor.toFixed(2)} porciones</strong> · kcal/macros siguen siendo tu porción individual
             </div>
           )}
+          {/* ⭐ Rating de receta */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginRight: '4px' }}>Valorar:</span>
+            {[1,2,3,4,5].map(s => (
+              <button key={s} onClick={() => handleSetRating(s)} aria-label={`${s} estrellas`}
+                style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'none', border: 'none', padding: 0, transition: 'transform 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.25)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                <i className="fas fa-star" style={{ fontSize: '17px', color: s <= ratingActual ? '#FDE047' : 'rgba(255,255,255,0.25)' }}></i>
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -6872,6 +7058,31 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             {perfil && (
               <p className="text-sm opacity-80 mt-1">{perfil.caloriasObjetivo} kcal · {perfil.numSemanas > 1 ? perfil.numSemanas + t(' semanas',' weeks') : t('1 semana','1 week')}</p>
             )}
+            {/* Streak + training/rest day badges */}
+            {(() => {
+              var streak = calcularStreakAdherencia();
+              var sch = window.NP_RoadmapData && window.NP_RoadmapData.ENTRENO_PROTOCOLO
+                ? window.NP_RoadmapData.ENTRENO_PROTOCOLO.scheduleDefault : null;
+              var dow = new Date().getDay();
+              var esEntreno = sch && sch[dow] && sch[dow] !== 'descanso';
+              if (streak < 2 && !sch) return null;
+              return (
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  {streak >= 2 && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}>
+                      🔥 {streak} {t('días','days')}
+                    </span>
+                  )}
+                  {sch && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}>
+                      {esEntreno
+                        ? <><i className="fas fa-dumbbell" style={{ marginRight: '3px' }}></i>{t('Entreno','Training')}</>
+                        : <><i className="fas fa-bed" style={{ marginRight: '3px' }}></i>{t('Descanso','Rest')}</>}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         );
       })()}
@@ -6981,33 +7192,12 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                 </div>
               </div>
             </div>
-            {/* Macros */}
-            <div className={`grid grid-cols-3 gap-3 pt-1 border-t ${darkMode ? 'border-gray-700' : 'border-gray-50'}`}>
-              {[
-                { labelEs: 'Proteína', labelEn: 'Protein', val: consumidoHoy.proteinas, meta: metaProtDia, barColor: MACRO_COLORS.proteinas.solid },
-                { labelEs: 'Carbos',   labelEn: 'Carbs',   val: consumidoHoy.carbohidratos, meta: metaCarbDia, barColor: MACRO_COLORS.carbohidratos.solid },
-                { labelEs: 'Grasas',   labelEn: 'Fat',     val: consumidoHoy.grasas, meta: metaGrasDia, barColor: MACRO_COLORS.grasas.solid }
-              ].map(function(m) {
-                var pct = m.meta > 0 ? Math.min(100, Math.round((m.val / m.meta) * 100)) : 0;
-                return (
-                  <div key={m.labelEs}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      {t(m.labelEs, m.labelEn)}
-                    </div>
-                    <div className="flex items-baseline gap-0.5">
-                      <span className={`text-base font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{m.val}</span>
-                      <span className={`text-[10px] ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>/{m.meta}g</span>
-                    </div>
-                    <div className={`w-full h-1.5 rounded-full overflow-hidden mt-1.5 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                      <div className="h-full rounded-full transition-all duration-500"
-                        style={{ width: pct + '%', backgroundColor: m.barColor }}>
-                      </div>
-                    </div>
-                    <div className={`text-[10px] mt-0.5 font-semibold ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>{pct}%</div>
-                  </div>
-                );
-              })}
-            </div>
+            {/* Macros donut */}
+            <MacroDonut
+              consumed={consumidoHoy}
+              metas={{ proteinas: metaProtDia, carbohidratos: metaCarbDia, grasas: metaGrasDia, calorias: metaKcalDia }}
+              darkMode={darkMode}
+            />
           </div>
         </div>
       )}
@@ -9667,6 +9857,10 @@ function App() {
     typeof cargarRecetasVetadas === 'function' ? cargarRecetasVetadas() : new Set()
   );
 
+  // ─── Preferencias de generación + modal ───
+  const [showPrefModal, setShowPrefModal] = React.useState(false);
+  const [preferenciasGen, setPreferenciasGen] = React.useState({ cocina: 'cualquiera', altaProteina: false, rapido: false });
+
   // ─── v20260428ai: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
   // Sync to global so t() works inside any component during render
@@ -9733,6 +9927,11 @@ function App() {
     document.documentElement.classList.toggle('dark', darkMode);
     document.body.className = darkMode ? 'bg-gray-900 font-sans antialiased' : 'bg-gray-50 font-sans antialiased';
   }, [darkMode]);
+
+  // Comprimir historial de adherencia (feature #14) — one-shot on mount
+  React.useEffect(() => {
+    if (typeof trimirHistorialAdherencia === 'function') trimirHistorialAdherencia();
+  }, []);
 
   const toggleDarkMode = () => {
     setDarkMode(prev => {
@@ -9919,33 +10118,92 @@ function App() {
     }
   };
 
-  const handleRegenerar = async () => {
-    if (!window.confirm('¿Regenerar el plan completo? Se reemplazarán todas las recetas de la semana, incluyendo los cambios manuales que hayas hecho.')) return;
-    if (perfil) {
-      setCargando(true);
-      setMensajeCarga("Regenerando plan con recetas frescas...");
-      try {
-        // Fase 6.2: asegurar recipes-extra cargado (por si el usuario recargó la app)
-        if (window.lazyRecipes && !window.lazyRecipes.estaCargado()) {
-          await window.lazyRecipes.cargar();
-        }
-        const nuevoPlan = await generarPlanSemanalAsync(perfil, perfil.caloriasObjetivo, (msg) => setMensajeCarga(msg));
-        setPlanSemanal(nuevoPlan);
-        guardarPlanSemanal(nuevoPlan);
-        if (nuevoPlan._buscoOnline && nuevoPlan._recetasOnlineUsadas > 0) {
-          mostrarToast(`¡Plan regenerado con ${nuevoPlan._recetasOnlineUsadas} recetas de internet!`);
-        } else {
-          mostrarToast("¡Plan regenerado con nuevas recetas!");
-        }
-      } catch (e) {
-        console.error("Error regenerando plan:", e);
-        const nuevoPlan = generarPlanSemanal(perfil, perfil.caloriasObjetivo);
-        setPlanSemanal(nuevoPlan);
-        guardarPlanSemanal(nuevoPlan);
-        mostrarToast("Plan regenerado (modo offline)", "info");
-      } finally {
-        setCargando(false);
-        window.scrollTo(0, 0);
+  const handleRegenerar = () => {
+    setShowPrefModal(true); // abre modal de preferencias antes de regenerar
+  };
+
+  const handleRegenerarConPreferencias = async (prefs) => {
+    setShowPrefModal(false);
+    setPreferenciasGen(prefs);
+    if (!perfil) return;
+    setCargando(true);
+    setMensajeCarga("Regenerando plan con recetas frescas...");
+    try {
+      // Fase 6.2: asegurar recipes-extra cargado
+      if (window.lazyRecipes && !window.lazyRecipes.estaCargado()) {
+        await window.lazyRecipes.cargar();
+      }
+      const nuevoPlan = await generarPlanSemanalAsync(perfil, perfil.caloriasObjetivo, (msg) => setMensajeCarga(msg), prefs);
+      setPlanSemanal(nuevoPlan);
+      guardarPlanSemanal(nuevoPlan);
+      if (nuevoPlan._buscoOnline && nuevoPlan._recetasOnlineUsadas > 0) {
+        mostrarToast(`¡Plan regenerado con ${nuevoPlan._recetasOnlineUsadas} recetas de internet!`);
+      } else {
+        mostrarToast("¡Plan regenerado con nuevas recetas!");
+      }
+    } catch (e) {
+      console.error("Error regenerando plan:", e);
+      const nuevoPlan = generarPlanSemanal(perfil, perfil.caloriasObjetivo, prefs);
+      setPlanSemanal(nuevoPlan);
+      guardarPlanSemanal(nuevoPlan);
+      mostrarToast("Plan regenerado (modo offline)", "info");
+    } finally {
+      setCargando(false);
+      window.scrollTo(0, 0);
+    }
+  };
+
+  const handleRegenDay = async (dia, numSemana) => {
+    numSemana = numSemana || 1;
+    if (!perfil || !planSemanal) return;
+    const tipos = ['desayuno', 'snack_am', 'almuerzo', 'snack_pm', 'cena'];
+    setCargando(true);
+    setMensajeCarga(`Regenerando ${dia}...`);
+    try {
+      let nuevoPlan = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(planSemanal) : { ...planSemanal };
+      for (const tipo of tipos) {
+        nuevoPlan = await cambiarRecetaIndividualAsync(nuevoPlan, dia, tipo, perfil, perfil.caloriasObjetivo, null, numSemana);
+      }
+      setPlanSemanal(nuevoPlan);
+      guardarPlanSemanal(nuevoPlan);
+      mostrarToast(`${dia} regenerado con 5 recetas nuevas 🔄`);
+    } catch(e) {
+      console.error("Error regenerando día:", e);
+      mostrarToast('Error al regenerar el día', 'error');
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const handleCompartirPlan = async () => {
+    if (!planSemanal || !perfil) return;
+    const plan = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(planSemanal) : planSemanal;
+    const sem = plan.semana_1 || {};
+    const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+    const TIPOS_ICO = { desayuno: '🌅', snack_am: '🍎', almuerzo: '🍽️', snack_pm: '🍪', cena: '🌙' };
+    const lineas = ['📋 Mi plan semanal - Calibrate', ''];
+    DIAS.forEach(dia => {
+      if (!sem[dia]) return;
+      lineas.push(`📅 ${dia}`);
+      Object.entries(TIPOS_ICO).forEach(([tipo, icon]) => {
+        const r = sem[dia][tipo];
+        if (r) lineas.push(`  ${icon} ${r.nombre || r.id}`);
+      });
+      lineas.push('');
+    });
+    lineas.push(`Generado con Calibrate · ${perfil.caloriasObjetivo} kcal/día`);
+    const texto = lineas.join('\n');
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Mi plan semanal - Calibrate', text: texto });
+      } else {
+        await navigator.clipboard.writeText(texto);
+        mostrarToast('Plan copiado al portapapeles 📋');
+      }
+    } catch(e) {
+      if (e && e.name !== 'AbortError') {
+        try { await navigator.clipboard.writeText(texto); mostrarToast('Plan copiado al portapapeles 📋'); }
+        catch(e2) { mostrarToast('No se pudo compartir el plan', 'error'); }
       }
     }
   };
@@ -10201,6 +10459,8 @@ function App() {
             onSwapRecipe={handleSwapRecipe}
             onRestoreRecipe={handleRestoreRecipe}
             onVetoRecipe={handleVetoRecipe}
+            onRegenDay={handleRegenDay}
+            onCompartir={handleCompartirPlan}
             historialSlots={historialSlots}
             darkMode={darkMode}
             swapping={swapping} />
@@ -10280,6 +10540,14 @@ function App() {
         <p>Calibrate · El método, no la motivación.</p>
         <p className="mt-1">calibrate.cl</p>
       </footer>
+
+      {showPrefModal && (
+        <ModalPreferenciasGeneracion
+          darkMode={darkMode}
+          onConfirm={handleRegenerarConPreferencias}
+          onCancel={() => setShowPrefModal(false)}
+        />
+      )}
 
       {recetaSeleccionada && <RecipeModal receta={recetaSeleccionada} onClose={() => setRecetaSeleccionada(null)} darkMode={darkMode} factorComensales={factorComensales} usaThermomix={perfil?.usaThermomix !== false} />}
 
