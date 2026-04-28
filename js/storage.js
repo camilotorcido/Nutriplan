@@ -205,6 +205,46 @@ try { ['nutriplan_fechas_compra', 'nutriplan_notif_ultima'].forEach(k => localSt
   } catch (e) {}
 })();
 
+// ─── Recetas vetadas (no mostrar nunca más) ───
+var KEY_VETADAS = 'nutriplan_recetas_vetadas';
+function cargarRecetasVetadas() {
+  try { return new Set(JSON.parse(localStorage.getItem(KEY_VETADAS) || '[]')); }
+  catch (e) { return new Set(); }
+}
+function guardarRecetasVetadas(set) {
+  try { localStorage.setItem(KEY_VETADAS, JSON.stringify(Array.from(set))); } catch (e) {}
+}
+function vetoReceta(id) {
+  var s = cargarRecetasVetadas();
+  s.add(id);
+  guardarRecetasVetadas(s);
+}
+function quitarVetoReceta(id) {
+  var s = cargarRecetasVetadas();
+  s.delete(id);
+  guardarRecetasVetadas(s);
+}
+
+// ─── Historial de alternativas por slot (dropdown "volver a esta opción") ───
+var KEY_HISTORIAL_SLOTS = 'nutriplan_historial_slots';
+function cargarHistorialSlots() {
+  try { return JSON.parse(localStorage.getItem(KEY_HISTORIAL_SLOTS) || '{}'); }
+  catch (e) { return {}; }
+}
+function guardarHistorialSlots(hist) {
+  try { localStorage.setItem(KEY_HISTORIAL_SLOTS, JSON.stringify(hist)); } catch (e) {}
+}
+function pushHistorialSlot(dia, tipoComida, numSemana, receta) {
+  if (!receta || !receta.id) return;
+  var hist = cargarHistorialSlots();
+  var key = dia + '_' + tipoComida + '_' + (numSemana || 1);
+  var arr = hist[key] || [];
+  if (arr.some(function(r) { return r.id === receta.id; })) return; // no duplicar
+  arr.unshift(receta);
+  hist[key] = arr.slice(0, 8);
+  guardarHistorialSlots(hist);
+}
+
 // ─── Limpiar todo ───
 function limpiarTodo() {
   Object.values(STORAGE_KEYS).forEach(clave => {
@@ -212,6 +252,8 @@ function limpiarTodo() {
       eliminarDatos(clave);
     }
   });
+  try { localStorage.removeItem(KEY_VETADAS); } catch(e) {}
+  try { localStorage.removeItem(KEY_HISTORIAL_SLOTS); } catch(e) {}
 }
 
 // ─── Exponer funciones a window para que el bundle compilado siempre las encuentre ───
@@ -237,4 +279,11 @@ if (typeof window !== 'undefined') {
   window.guardarDarkMode = guardarDarkMode;
   window.cargarDarkMode = cargarDarkMode;
   window.limpiarTodo = limpiarTodo;
+  window.cargarRecetasVetadas = cargarRecetasVetadas;
+  window.guardarRecetasVetadas = guardarRecetasVetadas;
+  window.vetoReceta = vetoReceta;
+  window.quitarVetoReceta = quitarVetoReceta;
+  window.cargarHistorialSlots = cargarHistorialSlots;
+  window.guardarHistorialSlots = guardarHistorialSlots;
+  window.pushHistorialSlot = pushHistorialSlot;
 }

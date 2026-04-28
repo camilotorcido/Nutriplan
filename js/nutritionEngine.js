@@ -398,11 +398,12 @@ function cambiarRecetaIndividual(planMulti, dia, tipoComida, perfil, caloriasObj
   const semanaActual = plan[semanaKey];
   if (!semanaActual) return plan;
 
-  const recetasFiltradas = filtrarRecetas(RECETAS_DB, perfil);
+  const vetadas = (typeof cargarRecetasVetadas === 'function') ? cargarRecetasVetadas() : new Set();
+  const recetasFiltradas = filtrarRecetas(RECETAS_DB, perfil).filter(r => !vetadas.has(r.id));
   const recetasDelTipo = obtenerRecetasPorTipo(recetasFiltradas, tipoComida);
-  
+
   if (recetasDelTipo.length === 0) return plan;
-  
+
   // Recopilar IDs de recetas ya en uso en TODAS las semanas
   const idsEnUso = new Set();
   for (let s = 1; s <= (plan._numSemanas || 1); s++) {
@@ -415,9 +416,9 @@ function cambiarRecetaIndividual(planMulti, dia, tipoComida, perfil, caloriasObj
       });
     });
   }
-  
+
   const recetasUsadas14 = obtenerRecetasUsadas14Dias();
-  
+
   let candidatas = recetasDelTipo.filter(r => !idsEnUso.has(r.id) && !recetasUsadas14.has(r.id));
   if (candidatas.length === 0) {
     candidatas = recetasDelTipo.filter(r => !idsEnUso.has(r.id));
@@ -1537,20 +1538,16 @@ async function cambiarRecetaIndividualAsync(planMulti, dia, tipoComida, perfil, 
   const semanaActual = plan[semanaKey];
   if (!semanaActual) return plan;
 
-  const esSoloLocal = tipoComida === 'snack_am' || tipoComida === 'snack_pm' || tipoComida === 'desayuno';
-  const recetasFiltradas = filtrarRecetas(RECETAS_DB, perfil);
+  const vetadasAsync = (typeof cargarRecetasVetadas === 'function') ? cargarRecetasVetadas() : new Set();
+  const recetasFiltradas = filtrarRecetas(RECETAS_DB, perfil).filter(r => !vetadasAsync.has(r.id));
   const recetasDelTipo = obtenerRecetasPorTipo(recetasFiltradas, tipoComida);
-  
-  let todasDelTipo;
-  if (esSoloLocal) {
-    todasDelTipo = recetasDelTipo;
-  } else {
-    const cacheOnline = typeof _cargarCacheOnline === 'function' ? _cargarCacheOnline() : [];
-    const onlineFiltradas = filtrarRecetas(cacheOnline, perfil)
-      .filter(r => r.tipo_comida === tipoComida);
-    todasDelTipo = [...recetasDelTipo, ...onlineFiltradas];
-  }
-  
+
+  // Combinar locales + cache online para todos los tipos de comida
+  const cacheOnline = typeof _cargarCacheOnline === 'function' ? _cargarCacheOnline() : [];
+  const onlineFiltradas = filtrarRecetas(cacheOnline, perfil)
+    .filter(r => r.tipo_comida === tipoComida && !vetadasAsync.has(r.id));
+  const todasDelTipo = [...recetasDelTipo, ...onlineFiltradas];
+
   // Recopilar IDs de recetas en uso en TODAS las semanas
   const idsEnUso = new Set();
   for (let s = 1; s <= (plan._numSemanas || 1); s++) {
@@ -1563,27 +1560,28 @@ async function cambiarRecetaIndividualAsync(planMulti, dia, tipoComida, perfil, 
       });
     });
   }
-  
+
   const recetasUsadas14 = obtenerRecetasUsadas14Dias();
-  
+
   let candidatas = todasDelTipo.filter(r => !idsEnUso.has(r.id) && !recetasUsadas14.has(r.id));
-  
+
   if (candidatas.length === 0) {
     candidatas = todasDelTipo.filter(r => !idsEnUso.has(r.id));
   }
-  
-  if (candidatas.length === 0 && !esSoloLocal && typeof buscarUnaRecetaOnline === 'function') {
+
+  // Fallback internet para cualquier tipo cuando no quedan opciones locales
+  if (candidatas.length === 0 && typeof buscarUnaRecetaOnline === 'function') {
     if (onProgreso) onProgreso("Buscando receta en internet...");
     try {
       const recetaOnline = await buscarUnaRecetaOnline(tipoComida, perfil, Array.from(idsEnUso));
-      if (recetaOnline) {
+      if (recetaOnline && !vetadasAsync.has(recetaOnline.id)) {
         candidatas = [recetaOnline];
       }
     } catch (e) {
       console.warn("Error buscando receta online para swap:", e);
     }
   }
-  
+
   if (candidatas.length === 0) {
     const recetaActual = semanaActual[dia]?.[tipoComida];
     candidatas = todasDelTipo.filter(r => !recetaActual || r.id !== recetaActual.id);

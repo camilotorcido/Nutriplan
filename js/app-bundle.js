@@ -3761,7 +3761,7 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
 // =============================================
 // COMPONENTE: WeeklyPlan (MEJORAS 2 y 3)
 // =============================================
-function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, darkMode, swapping }) {
+function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, onRestoreRecipe, onVetoRecipe, historialSlots, darkMode, swapping }) {
   // Multi-semana: normalizar plan
   const planNorm = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(plan) : plan;
   const numSemanas = planNorm._numSemanas || 1;
@@ -4173,47 +4173,112 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, d
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                  {/* Check de adherencia — integrado en la fila de acciones */}
-                  {typeof window.adherencia !== 'undefined' && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.adherencia.marcar(diaSeleccionado, tipo, !yaComido, {
-                          kcal_plan: comida.calorias_escaladas,
-                          proteinas_plan: comida.proteinas_escaladas,
-                          nombre: comida.nombre
-                        }, semanaActiva);
-                        setForceUpdate(x => x + 1);
-                      }}
-                      title={yaComido ? 'Marcado como comido' : 'Marcar como comido'}
-                      style={{ width: 32, height: 32, minWidth: 32 }}
-                      className={`flex items-center justify-center rounded-lg transition-all ${
-                        yaComido
-                          ? 'bg-emerald-500/20 text-emerald-500'
-                          : darkMode ? 'text-gray-600 hover:text-emerald-400 hover:bg-gray-700' : 'text-gray-300 hover:text-emerald-500 hover:bg-emerald-50'
-                      }`}>
-                      <i className={`fas fa-check text-sm ${yaComido ? '' : 'opacity-60'}`}></i>
-                    </button>
-                  )}
-                  {/* MEJORA 3: Swap button con loading */}
-                  {/* A3: aria-label en swap (reemplaza title) */}
-                  <button onClick={(e) => handleSwap(e, diaSeleccionado, tipo)}
-                    disabled={swapping && swapping.dia === diaSeleccionado && swapping.tipoComida === tipo}
-                    aria-label={`Cambiar receta de ${NOMBRES_COMIDAS[tipo] || tipo}`}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${
-                      swapping && swapping.dia === diaSeleccionado && swapping.tipoComida === tipo
-                        ? 'text-green-500 cursor-wait'
-                        : darkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-400 hover:text-green-600 hover:bg-white'
-                    }`}>
-                    <i className={`fas ${swapping && swapping.dia === diaSeleccionado && swapping.tipoComida === tipo ? 'fa-spinner fa-spin' : 'fa-shuffle'} text-sm`}></i>
-                  </button>
-                  {/* T5/A8: div→button para ser focusable por teclado */}
-                  <button onClick={() => onRecipeClick(comida)} aria-label={`${t('Ver receta de','View recipe for')} ${getNombreReceta(comida) || NOMBRES_COMIDAS[tipo]}`}
-                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors cursor-pointer rounded">
-                    <i className="fas fa-chevron-right text-sm"></i>
-                  </button>
-                </div>
+                {(() => {
+                  const slotKey = diaSeleccionado + '_' + tipo + '_' + semanaActiva;
+                  const slotHist = (historialSlots && historialSlots[slotKey]) || [];
+                  const [showHist, setShowHist] = React.useState(false);
+                  const isSwappingThis = swapping && swapping.dia === diaSeleccionado && swapping.tipoComida === tipo;
+                  return (
+                    <div className="flex items-center gap-1 ml-2 flex-shrink-0" style={{ position: 'relative' }}>
+                      {/* Check de adherencia */}
+                      {typeof window.adherencia !== 'undefined' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.adherencia.marcar(diaSeleccionado, tipo, !yaComido, {
+                              kcal_plan: comida.calorias_escaladas,
+                              proteinas_plan: comida.proteinas_escaladas,
+                              nombre: comida.nombre
+                            }, semanaActiva);
+                            setForceUpdate(x => x + 1);
+                          }}
+                          title={yaComido ? 'Marcado como comido' : 'Marcar como comido'}
+                          style={{ width: 32, height: 32, minWidth: 32 }}
+                          className={`flex items-center justify-center rounded-lg transition-all ${
+                            yaComido
+                              ? 'bg-emerald-500/20 text-emerald-500'
+                              : darkMode ? 'text-gray-600 hover:text-emerald-400 hover:bg-gray-700' : 'text-gray-300 hover:text-emerald-500 hover:bg-emerald-50'
+                          }`}>
+                          <i className={`fas fa-check text-sm ${yaComido ? '' : 'opacity-60'}`}></i>
+                        </button>
+                      )}
+                      {/* Dropdown historial de alternativas */}
+                      {slotHist.length > 0 && (
+                        <div style={{ position: 'relative' }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setShowHist(!showHist); }}
+                            aria-label="Ver alternativas anteriores"
+                            style={{ width: 32, height: 32, minWidth: 32 }}
+                            className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+                              showHist
+                                ? (darkMode ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600')
+                                : (darkMode ? 'text-gray-500 hover:text-indigo-400 hover:bg-gray-700' : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50')
+                            }`}>
+                            <i className="fas fa-clock-rotate-left text-xs"></i>
+                          </button>
+                          {showHist && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                position: 'absolute', right: 0, top: '36px', zIndex: 50,
+                                minWidth: '200px', maxWidth: '260px',
+                                borderRadius: '12px', overflow: 'hidden',
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+                                background: darkMode ? '#1f2937' : '#ffffff',
+                                border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`
+                              }}>
+                              <div style={{ padding: '8px 12px 4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: darkMode ? '#6b7280' : '#9ca3af' }}>
+                                Alternativas anteriores
+                              </div>
+                              {slotHist.map((r, idx) => (
+                                <button key={r.id || idx}
+                                  onClick={() => { onRestoreRecipe && onRestoreRecipe(diaSeleccionado, tipo, semanaActiva, r); setShowHist(false); }}
+                                  style={{
+                                    display: 'block', width: '100%', textAlign: 'left',
+                                    padding: '8px 12px', border: 'none', background: 'transparent',
+                                    cursor: 'pointer', transition: 'background 0.12s',
+                                    borderTop: idx > 0 ? `1px solid ${darkMode ? '#374151' : '#f3f4f6'}` : 'none'
+                                  }}
+                                  onMouseEnter={e => e.currentTarget.style.background = darkMode ? '#374151' : '#f9fafb'}
+                                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                  <div style={{ fontSize: '12px', fontWeight: 600, color: darkMode ? '#e5e7eb' : '#111827', lineHeight: 1.3, marginBottom: '2px' }}>{getNombreReceta(r)}</div>
+                                  <div style={{ fontSize: '11px', color: darkMode ? '#6b7280' : '#9ca3af' }}>{r.calorias_escaladas || r.calorias_base} kcal · P {r.proteinas_escaladas || r.proteinas_g}g</div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {/* Swap button */}
+                      <button onClick={(e) => { handleSwap(e, diaSeleccionado, tipo); setShowHist(false); }}
+                        disabled={!!isSwappingThis}
+                        aria-label={`Cambiar receta de ${NOMBRES_COMIDAS[tipo] || tipo}`}
+                        style={{ width: 32, height: 32, minWidth: 32 }}
+                        className={`flex items-center justify-center rounded-lg transition-all ${
+                          isSwappingThis
+                            ? 'text-green-500 cursor-wait'
+                            : darkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-400 hover:text-green-600 hover:bg-white'
+                        }`}>
+                        <i className={`fas ${isSwappingThis ? 'fa-spinner fa-spin' : 'fa-shuffle'} text-sm`}></i>
+                      </button>
+                      {/* Veto button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); if (window.confirm(`¿Vetar "${getNombreReceta(comida)}"? No volverá a aparecer en tu plan.`)) { onVetoRecipe && onVetoRecipe(diaSeleccionado, tipo, semanaActiva, comida.id); } }}
+                        aria-label={`Vetar receta ${getNombreReceta(comida)}`}
+                        style={{ width: 32, height: 32, minWidth: 32 }}
+                        className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+                          darkMode ? 'text-gray-600 hover:text-red-400 hover:bg-gray-700' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'
+                        }`}>
+                        <i className="fas fa-ban text-xs"></i>
+                      </button>
+                      {/* Ver receta */}
+                      <button onClick={() => onRecipeClick(comida)} aria-label={`${t('Ver receta de','View recipe for')} ${getNombreReceta(comida) || NOMBRES_COMIDAS[tipo]}`}
+                        className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer rounded">
+                        <i className="fas fa-chevron-right text-sm"></i>
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           );
@@ -9595,6 +9660,12 @@ function App() {
   const [cargando, setCargando] = React.useState(false);
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
+  const [historialSlots, setHistorialSlots] = React.useState(() =>
+    typeof cargarHistorialSlots === 'function' ? cargarHistorialSlots() : {}
+  );
+  const [vetadas, setVetadas] = React.useState(() =>
+    typeof cargarRecetasVetadas === 'function' ? cargarRecetasVetadas() : new Set()
+  );
 
   // ─── v20260428ai: Language state ───
   const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
@@ -9883,6 +9954,14 @@ function App() {
   const handleSwapRecipe = async (dia, tipoComida, numSemana) => {
     numSemana = numSemana || 1;
     if (perfil && planSemanal) {
+      // Guardar receta actual en historial del slot ANTES del swap
+      const semKeyPrev = 'semana_' + numSemana;
+      const recetaAnterior = planSemanal[semKeyPrev]?.[dia]?.[tipoComida];
+      if (recetaAnterior && recetaAnterior.id && typeof pushHistorialSlot === 'function') {
+        pushHistorialSlot(dia, tipoComida, numSemana, recetaAnterior);
+        setHistorialSlots(typeof cargarHistorialSlots === 'function' ? cargarHistorialSlots() : {});
+      }
+
       setSwapping({ dia, tipoComida });
       try {
         const nuevoPlan = await cambiarRecetaIndividualAsync(
@@ -9909,6 +9988,36 @@ function App() {
         setSwapping(null);
       }
     }
+  };
+
+  // Restaurar una receta anterior desde el historial del slot
+  const handleRestoreRecipe = (dia, tipoComida, numSemana, receta) => {
+    numSemana = numSemana || 1;
+    if (!planSemanal || !receta) return;
+    const semKey = 'semana_' + numSemana;
+    const planNorm = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(planSemanal) : planSemanal;
+    const semana = planNorm[semKey];
+    if (!semana) return;
+    // Guardar la receta actual en historial antes de restaurar
+    const actual = semana[dia]?.[tipoComida];
+    if (actual && actual.id && typeof pushHistorialSlot === 'function') {
+      pushHistorialSlot(dia, tipoComida, numSemana, actual);
+    }
+    const nuevoPlan = { ...planNorm };
+    nuevoPlan[semKey] = { ...semana, [dia]: { ...semana[dia], [tipoComida]: receta } };
+    setPlanSemanal(nuevoPlan);
+    guardarPlanSemanal(nuevoPlan);
+    setHistorialSlots(typeof cargarHistorialSlots === 'function' ? cargarHistorialSlots() : {});
+    mostrarToast('Receta restaurada', 'success');
+  };
+
+  // Vetar receta actual y hacer swap automático
+  const handleVetoRecipe = async (dia, tipoComida, numSemana, recetaId) => {
+    numSemana = numSemana || 1;
+    if (typeof vetoReceta === 'function') vetoReceta(recetaId);
+    setVetadas(typeof cargarRecetasVetadas === 'function' ? cargarRecetasVetadas() : new Set());
+    mostrarToast('Receta vetada — no volverá a aparecer', 'info');
+    await handleSwapRecipe(dia, tipoComida, numSemana);
   };
 
   const handleEditarPerfil = () => { setPantalla("perfil"); window.scrollTo(0, 0); };
@@ -10083,13 +10192,16 @@ function App() {
 
       <main key={pantalla} className="max-w-3xl mx-auto px-4 py-6 animate-fadeIn">
         {pantalla === "hoy" && (
-          <HoyView perfil={perfil} darkMode={darkMode} planSemanal={planSemanal} onNavigate={navegarA} onSwapRecipe={handleSwapRecipe} swapping={swapping} />
+          <HoyView perfil={perfil} darkMode={darkMode} planSemanal={planSemanal} onNavigate={navegarA} onSwapRecipe={handleSwapRecipe} swapping={swapping} onVetoRecipe={handleVetoRecipe} />
         )}
         {pantalla === "plan" && (planSemanal ? (
           <WeeklyPlan plan={planSemanal} perfil={perfil}
             onRecipeClick={(receta) => setRecetaSeleccionada(receta)}
             onRegenerate={handleRegenerar}
             onSwapRecipe={handleSwapRecipe}
+            onRestoreRecipe={handleRestoreRecipe}
+            onVetoRecipe={handleVetoRecipe}
+            historialSlots={historialSlots}
             darkMode={darkMode}
             swapping={swapping} />
         ) : (
