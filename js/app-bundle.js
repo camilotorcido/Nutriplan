@@ -3758,6 +3758,177 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
   );
 }
 
+// ─── SlotAcciones: botones de acción por slot de comida ───
+// Extraído del IIFE para evitar violación de Hooks (useState en .map/IIFE)
+// Ventajas: click-outside real, sin flickering de imagen, sin glass effect
+function SlotAcciones({
+  comida, tipo, diaSeleccionado, semanaActiva, plan,
+  historialSlots, darkMode, swapping, yaComido,
+  onMarcarComido, onRestoreRecipe, onVetoRecipe, onRecipeClick, onSwap
+}) {
+  const [showHist, setShowHist] = React.useState(false);
+  const [showSobras, setShowSobras] = React.useState(false);
+  const containerRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!showHist && !showSobras) return;
+    function handleOutside(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setShowHist(false);
+        setShowSobras(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [showHist, showSobras]);
+
+  const slotKey = diaSeleccionado + '_' + tipo + '_' + semanaActiva;
+  const slotHist = (historialSlots && historialSlots[slotKey]) || [];
+  const isSwappingThis = swapping && swapping.dia === diaSeleccionado && swapping.tipoComida === tipo;
+  const sobras = obtenerSobrasDisponibles(plan, diaSeleccionado, semanaActiva);
+
+  const dropdownStyle = {
+    position: 'absolute', right: 0, top: '36px', zIndex: 50,
+    borderRadius: '12px', overflow: 'hidden',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+    backdropFilter: 'none',
+    WebkitBackdropFilter: 'none',
+    backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+    border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`
+  };
+
+  return (
+    <div ref={containerRef} className="flex items-center gap-1 ml-2 flex-shrink-0" style={{ position: 'relative' }}>
+      {/* Check de adherencia */}
+      {typeof window.adherencia !== 'undefined' && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onMarcarComido(!yaComido); }}
+          title={yaComido ? 'Marcado como comido' : 'Marcar como comido'}
+          style={{ width: 32, height: 32, minWidth: 32 }}
+          className={`flex items-center justify-center rounded-lg transition-all ${
+            yaComido
+              ? 'bg-emerald-500/20 text-emerald-500'
+              : darkMode ? 'text-gray-600 hover:text-emerald-400 hover:bg-gray-700' : 'text-gray-300 hover:text-emerald-500 hover:bg-emerald-50'
+          }`}>
+          <i className={`fas fa-check text-sm ${yaComido ? '' : 'opacity-60'}`}></i>
+        </button>
+      )}
+      {/* Dropdown historial de alternativas */}
+      {slotHist.length > 0 && (
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowHist(h => !h); setShowSobras(false); }}
+            aria-label="Ver alternativas anteriores"
+            style={{ width: 32, height: 32, minWidth: 32 }}
+            className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+              showHist
+                ? (darkMode ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600')
+                : (darkMode ? 'text-gray-500 hover:text-indigo-400 hover:bg-gray-700' : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50')
+            }`}>
+            <i className="fas fa-clock-rotate-left text-xs"></i>
+          </button>
+          {showHist && (
+            <div onClick={(e) => e.stopPropagation()}
+              style={{ ...dropdownStyle, minWidth: '200px', maxWidth: '260px' }}>
+              <div style={{ padding: '8px 12px 4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: darkMode ? '#6b7280' : '#9ca3af' }}>
+                Alternativas anteriores
+              </div>
+              {slotHist.map((r, idx) => (
+                <button key={r.id || idx}
+                  onClick={() => { onRestoreRecipe(r); setShowHist(false); }}
+                  style={{
+                    display: 'block', width: '100%', textAlign: 'left',
+                    padding: '8px 12px', border: 'none', backgroundColor: 'transparent',
+                    cursor: 'pointer', transition: 'background-color 0.12s',
+                    borderTop: idx > 0 ? `1px solid ${darkMode ? '#374151' : '#f3f4f6'}` : 'none'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = darkMode ? '#374151' : '#f9fafb'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: darkMode ? '#e5e7eb' : '#111827', lineHeight: 1.3, marginBottom: '2px' }}>{getNombreReceta(r)}</div>
+                  <div style={{ fontSize: '11px', color: darkMode ? '#6b7280' : '#9ca3af' }}>{r.calorias_escaladas || r.calorias_base} kcal · P {r.proteinas_escaladas || r.proteinas_g}g</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {/* ♻️ Sobras: comidas de los últimos 1-2 días */}
+      {sobras.length > 0 && (
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowSobras(s => !s); setShowHist(false); }}
+            aria-label="Usar sobra de días anteriores"
+            style={{ width: 32, height: 32, minWidth: 32 }}
+            className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+              showSobras
+                ? (darkMode ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-50 text-amber-600')
+                : (darkMode ? 'text-gray-500 hover:text-amber-400 hover:bg-gray-700' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50')
+            }`}>
+            <i className="fas fa-recycle text-xs"></i>
+          </button>
+          {showSobras && (
+            <div onClick={(e) => e.stopPropagation()}
+              style={{ ...dropdownStyle, minWidth: '220px', maxWidth: '290px' }}>
+              <div style={{ padding: '8px 12px 4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: darkMode ? '#6b7280' : '#9ca3af' }}>
+                Sobras disponibles
+              </div>
+              {sobras.map((s, idx) => (
+                <button key={s.dia + '_' + s.tipoComida}
+                  onClick={() => { onRestoreRecipe(s.receta); setShowSobras(false); }}
+                  style={{
+                    display: 'block', width: '100%', textAlign: 'left',
+                    padding: '8px 12px', border: 'none', backgroundColor: 'transparent',
+                    cursor: 'pointer', transition: 'background-color 0.12s',
+                    borderTop: `1px solid ${darkMode ? '#374151' : '#f3f4f6'}`
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = darkMode ? '#374151' : '#f9fafb'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                  <div style={{ fontSize: '10px', color: darkMode ? '#6b7280' : '#9ca3af', marginBottom: '2px' }}>
+                    {s.daysAgo === 1 ? 'Ayer' : 'Anteayer'} · {NOMBRES_COMIDAS[s.tipoComida] || s.tipoComida}
+                  </div>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: darkMode ? '#e5e7eb' : '#111827', lineHeight: 1.3, marginBottom: '2px' }}>
+                    {getNombreReceta(s.receta)}
+                  </div>
+                  <div style={{ fontSize: '11px', color: darkMode ? '#6b7280' : '#9ca3af' }}>
+                    {s.receta.calorias_escaladas || s.receta.calorias_base} kcal · P {Math.round(s.receta.proteinas_escaladas || s.receta.proteinas_g || 0)}g
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {/* Swap button */}
+      <button onClick={(e) => { setShowHist(false); setShowSobras(false); onSwap(e); }}
+        disabled={!!isSwappingThis}
+        aria-label={`Cambiar receta de ${NOMBRES_COMIDAS[tipo] || tipo}`}
+        style={{ width: 32, height: 32, minWidth: 32 }}
+        className={`flex items-center justify-center rounded-lg transition-all ${
+          isSwappingThis
+            ? 'text-green-500 cursor-wait'
+            : darkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-400 hover:text-green-600 hover:bg-white'
+        }`}>
+        <i className={`fas ${isSwappingThis ? 'fa-spinner fa-spin' : 'fa-shuffle'} text-sm`}></i>
+      </button>
+      {/* Veto button */}
+      <button
+        onClick={(e) => { e.stopPropagation(); if (window.confirm(`¿Vetar "${getNombreReceta(comida)}"? No volverá a aparecer en tu plan.`)) { onVetoRecipe(); } }}
+        aria-label={`Vetar receta ${getNombreReceta(comida)}`}
+        style={{ width: 32, height: 32, minWidth: 32 }}
+        className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+          darkMode ? 'text-gray-600 hover:text-red-400 hover:bg-gray-700' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'
+        }`}>
+        <i className="fas fa-ban text-xs"></i>
+      </button>
+      {/* Ver receta */}
+      <button onClick={() => onRecipeClick()} aria-label={`${t('Ver receta de','View recipe for')} ${getNombreReceta(comida) || NOMBRES_COMIDAS[tipo]}`}
+        className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer rounded">
+        <i className="fas fa-chevron-right text-sm"></i>
+      </button>
+    </div>
+  );
+}
+
 // ─── Helper: sobras de los últimos 1-2 días del plan ───
 // Devuelve [{ dia, daysAgo, tipoComida, receta }] priorizando almuerzo/cena
 function obtenerSobrasDisponibles(planMulti, diaHoy, semanaActiva) {
@@ -4208,168 +4379,29 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                     </div>
                   )}
                 </div>
-                {(() => {
-                  const slotKey = diaSeleccionado + '_' + tipo + '_' + semanaActiva;
-                  const slotHist = (historialSlots && historialSlots[slotKey]) || [];
-                  const [showHist, setShowHist] = React.useState(false);
-                  const isSwappingThis = swapping && swapping.dia === diaSeleccionado && swapping.tipoComida === tipo;
-                  const sobras = obtenerSobrasDisponibles(plan, diaSeleccionado, semanaActiva);
-                  const [showSobras, setShowSobras] = React.useState(false);
-                  return (
-                    <div className="flex items-center gap-1 ml-2 flex-shrink-0" style={{ position: 'relative' }}>
-                      {/* Check de adherencia */}
-                      {typeof window.adherencia !== 'undefined' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.adherencia.marcar(diaSeleccionado, tipo, !yaComido, {
-                              kcal_plan: comida.calorias_escaladas,
-                              proteinas_plan: comida.proteinas_escaladas,
-                              nombre: comida.nombre
-                            }, semanaActiva);
-                            setForceUpdate(x => x + 1);
-                          }}
-                          title={yaComido ? 'Marcado como comido' : 'Marcar como comido'}
-                          style={{ width: 32, height: 32, minWidth: 32 }}
-                          className={`flex items-center justify-center rounded-lg transition-all ${
-                            yaComido
-                              ? 'bg-emerald-500/20 text-emerald-500'
-                              : darkMode ? 'text-gray-600 hover:text-emerald-400 hover:bg-gray-700' : 'text-gray-300 hover:text-emerald-500 hover:bg-emerald-50'
-                          }`}>
-                          <i className={`fas fa-check text-sm ${yaComido ? '' : 'opacity-60'}`}></i>
-                        </button>
-                      )}
-                      {/* Dropdown historial de alternativas */}
-                      {slotHist.length > 0 && (
-                        <div style={{ position: 'relative' }}>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setShowHist(!showHist); setShowSobras(false); }}
-                            aria-label="Ver alternativas anteriores"
-                            style={{ width: 32, height: 32, minWidth: 32 }}
-                            className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
-                              showHist
-                                ? (darkMode ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600')
-                                : (darkMode ? 'text-gray-500 hover:text-indigo-400 hover:bg-gray-700' : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50')
-                            }`}>
-                            <i className="fas fa-clock-rotate-left text-xs"></i>
-                          </button>
-                          {showHist && (
-                            <div
-                              onClick={(e) => e.stopPropagation()}
-                              style={{
-                                position: 'absolute', right: 0, top: '36px', zIndex: 50,
-                                minWidth: '200px', maxWidth: '260px',
-                                borderRadius: '12px', overflow: 'hidden',
-                                boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
-                                background: darkMode ? '#1f2937' : '#ffffff',
-                                border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`
-                              }}>
-                              <div style={{ padding: '8px 12px 4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: darkMode ? '#6b7280' : '#9ca3af' }}>
-                                Alternativas anteriores
-                              </div>
-                              {slotHist.map((r, idx) => (
-                                <button key={r.id || idx}
-                                  onClick={() => { onRestoreRecipe && onRestoreRecipe(diaSeleccionado, tipo, semanaActiva, r); setShowHist(false); }}
-                                  style={{
-                                    display: 'block', width: '100%', textAlign: 'left',
-                                    padding: '8px 12px', border: 'none', background: 'transparent',
-                                    cursor: 'pointer', transition: 'background 0.12s',
-                                    borderTop: idx > 0 ? `1px solid ${darkMode ? '#374151' : '#f3f4f6'}` : 'none'
-                                  }}
-                                  onMouseEnter={e => e.currentTarget.style.background = darkMode ? '#374151' : '#f9fafb'}
-                                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                                  <div style={{ fontSize: '12px', fontWeight: 600, color: darkMode ? '#e5e7eb' : '#111827', lineHeight: 1.3, marginBottom: '2px' }}>{getNombreReceta(r)}</div>
-                                  <div style={{ fontSize: '11px', color: darkMode ? '#6b7280' : '#9ca3af' }}>{r.calorias_escaladas || r.calorias_base} kcal · P {r.proteinas_escaladas || r.proteinas_g}g</div>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {/* ♻️ Sobras: comidas de los últimos 1-2 días */}
-                      {sobras.length > 0 && (
-                        <div style={{ position: 'relative' }}>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setShowSobras(!showSobras); setShowHist(false); }}
-                            aria-label="Usar sobra de días anteriores"
-                            style={{ width: 32, height: 32, minWidth: 32 }}
-                            className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
-                              showSobras
-                                ? (darkMode ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-50 text-amber-600')
-                                : (darkMode ? 'text-gray-500 hover:text-amber-400 hover:bg-gray-700' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50')
-                            }`}>
-                            <i className="fas fa-recycle text-xs"></i>
-                          </button>
-                          {showSobras && (
-                            <div
-                              onClick={(e) => e.stopPropagation()}
-                              style={{
-                                position: 'absolute', right: 0, top: '36px', zIndex: 50,
-                                minWidth: '220px', maxWidth: '290px',
-                                borderRadius: '12px', overflow: 'hidden',
-                                boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
-                                background: darkMode ? '#1f2937' : '#ffffff',
-                                border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`
-                              }}>
-                              <div style={{ padding: '8px 12px 4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: darkMode ? '#6b7280' : '#9ca3af' }}>
-                                Sobras disponibles
-                              </div>
-                              {sobras.map((s, idx) => (
-                                <button key={s.dia + '_' + s.tipoComida}
-                                  onClick={() => { onRestoreRecipe && onRestoreRecipe(diaSeleccionado, tipo, semanaActiva, s.receta); setShowSobras(false); }}
-                                  style={{
-                                    display: 'block', width: '100%', textAlign: 'left',
-                                    padding: '8px 12px', border: 'none', background: 'transparent',
-                                    cursor: 'pointer', transition: 'background 0.12s',
-                                    borderTop: `1px solid ${darkMode ? '#374151' : '#f3f4f6'}`
-                                  }}
-                                  onMouseEnter={e => e.currentTarget.style.background = darkMode ? '#374151' : '#f9fafb'}
-                                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                                  <div style={{ fontSize: '10px', color: darkMode ? '#6b7280' : '#9ca3af', marginBottom: '2px' }}>
-                                    {s.daysAgo === 1 ? 'Ayer' : 'Anteayer'} · {NOMBRES_COMIDAS[s.tipoComida] || s.tipoComida}
-                                  </div>
-                                  <div style={{ fontSize: '12px', fontWeight: 600, color: darkMode ? '#e5e7eb' : '#111827', lineHeight: 1.3, marginBottom: '2px' }}>
-                                    {getNombreReceta(s.receta)}
-                                  </div>
-                                  <div style={{ fontSize: '11px', color: darkMode ? '#6b7280' : '#9ca3af' }}>
-                                    {s.receta.calorias_escaladas || s.receta.calorias_base} kcal · P {Math.round(s.receta.proteinas_escaladas || s.receta.proteinas_g || 0)}g
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {/* Swap button */}
-                      <button onClick={(e) => { handleSwap(e, diaSeleccionado, tipo); setShowHist(false); setShowSobras(false); }}
-                        disabled={!!isSwappingThis}
-                        aria-label={`Cambiar receta de ${NOMBRES_COMIDAS[tipo] || tipo}`}
-                        style={{ width: 32, height: 32, minWidth: 32 }}
-                        className={`flex items-center justify-center rounded-lg transition-all ${
-                          isSwappingThis
-                            ? 'text-green-500 cursor-wait'
-                            : darkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-400 hover:text-green-600 hover:bg-white'
-                        }`}>
-                        <i className={`fas ${isSwappingThis ? 'fa-spinner fa-spin' : 'fa-shuffle'} text-sm`}></i>
-                      </button>
-                      {/* Veto button */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); if (window.confirm(`¿Vetar "${getNombreReceta(comida)}"? No volverá a aparecer en tu plan.`)) { onVetoRecipe && onVetoRecipe(diaSeleccionado, tipo, semanaActiva, comida.id); } }}
-                        aria-label={`Vetar receta ${getNombreReceta(comida)}`}
-                        style={{ width: 32, height: 32, minWidth: 32 }}
-                        className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
-                          darkMode ? 'text-gray-600 hover:text-red-400 hover:bg-gray-700' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'
-                        }`}>
-                        <i className="fas fa-ban text-xs"></i>
-                      </button>
-                      {/* Ver receta */}
-                      <button onClick={() => onRecipeClick(comida)} aria-label={`${t('Ver receta de','View recipe for')} ${getNombreReceta(comida) || NOMBRES_COMIDAS[tipo]}`}
-                        className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer rounded">
-                        <i className="fas fa-chevron-right text-sm"></i>
-                      </button>
-                    </div>
-                  );
-                })()}
+                <SlotAcciones
+                  comida={comida}
+                  tipo={tipo}
+                  diaSeleccionado={diaSeleccionado}
+                  semanaActiva={semanaActiva}
+                  plan={plan}
+                  historialSlots={historialSlots}
+                  darkMode={darkMode}
+                  swapping={swapping}
+                  yaComido={yaComido}
+                  onMarcarComido={(comido) => {
+                    window.adherencia.marcar(diaSeleccionado, tipo, comido, {
+                      kcal_plan: comida.calorias_escaladas,
+                      proteinas_plan: comida.proteinas_escaladas,
+                      nombre: comida.nombre
+                    }, semanaActiva);
+                    setForceUpdate(x => x + 1);
+                  }}
+                  onRestoreRecipe={(r) => onRestoreRecipe && onRestoreRecipe(diaSeleccionado, tipo, semanaActiva, r)}
+                  onVetoRecipe={() => onVetoRecipe && onVetoRecipe(diaSeleccionado, tipo, semanaActiva, comida.id)}
+                  onRecipeClick={() => onRecipeClick(comida)}
+                  onSwap={(e) => handleSwap(e, diaSeleccionado, tipo)}
+                />
               </div>
             </div>
           );
