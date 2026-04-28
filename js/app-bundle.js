@@ -6223,6 +6223,10 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
   const [manualCarb, setManualCarb]       = React.useState('');
   const [manualGras, setManualGras]       = React.useState('');
   const [error, setError]                 = React.useState('');
+  const [recurrentes, setRecurrentes]     = React.useState(function() {
+    try { return JSON.parse(localStorage.getItem('nutriplan_comidas_frecuentes') || '[]'); }
+    catch(e) { return []; }
+  });
 
   // Colores inline para inputs — más robusto que clases Tailwind en dark mode
   var inputColor   = darkMode ? '#f9fafb' : '#111827';
@@ -6318,6 +6322,30 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
     if (!nombreFinal) { setError(t('El nombre es obligatorio','Name is required')); return; }
     if (finalKcal <= 0) { setError(t('Agrega alimentos o ingresa las calorías','Add foods or enter calories')); return; }
     setError('');
+    // ── Guardar en comidas frecuentes ──────────────────────────────────────
+    try {
+      var nuevasFrec = recurrentes.slice();
+      var idxFrec = nuevasFrec.findIndex(function(x) { return x.nombre === nombreFinal; });
+      var hoyFrec = new Date().toISOString().split('T')[0];
+      if (idxFrec >= 0) {
+        nuevasFrec[idxFrec] = Object.assign({}, nuevasFrec[idxFrec], {
+          veces: (nuevasFrec[idxFrec].veces || 1) + 1, ultimaVez: hoyFrec,
+          kcal: Math.round(finalKcal), proteinas_g: Math.round(finalProt),
+          carbohidratos_g: Math.round(finalCarb), grasas_g: Math.round(finalGras)
+        });
+      } else {
+        nuevasFrec.push({ nombre: nombreFinal, kcal: Math.round(finalKcal),
+          proteinas_g: Math.round(finalProt), carbohidratos_g: Math.round(finalCarb),
+          grasas_g: Math.round(finalGras), veces: 1, ultimaVez: hoyFrec });
+      }
+      nuevasFrec.sort(function(a, b) {
+        if (b.veces !== a.veces) return b.veces - a.veces;
+        return (b.ultimaVez || '') > (a.ultimaVez || '') ? 1 : -1;
+      });
+      nuevasFrec = nuevasFrec.slice(0, 20);
+      localStorage.setItem('nutriplan_comidas_frecuentes', JSON.stringify(nuevasFrec));
+      setRecurrentes(nuevasFrec);
+    } catch(e) {}
     onAdd({
       id: 'ext_' + Date.now(),
       nombre: nombreFinal,
@@ -6356,6 +6384,37 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 
         {/* Scrollable body */}
         <div style={{ overflowY:'auto', flex:1 }} className="px-5 py-4 space-y-3">
+
+          {/* ── Comidas recientes ────────────────────────────────────────── */}
+          {recurrentes.length > 0 && (
+            <div>
+              <p style={{ fontSize:11, fontWeight:'700', color:'#9ca3af', marginBottom:6, display:'flex', alignItems:'center', gap:4 }}>
+                <i className="fas fa-clock-rotate-left"></i>{t('Recientes','Recent')}
+              </p>
+              <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:2, scrollbarWidth:'none', msOverflowStyle:'none' }}>
+                {recurrentes.slice(0, 12).map(function(r, ri) {
+                  return (
+                    <button key={ri} onClick={function() {
+                      setNombre(r.nombre); setNombreManual(true);
+                      setManualKcal(String(r.kcal));
+                      setManualProt(String(r.proteinas_g));
+                      setManualCarb(String(r.carbohidratos_g));
+                      setManualGras(String(r.grasas_g));
+                      setIngredientes([]);
+                    }}
+                      style={{ flexShrink:0, padding:'5px 10px', borderRadius:20, cursor:'pointer',
+                        border:'1px solid ' + (darkMode ? '#4b5563' : '#d1d5db'),
+                        backgroundColor: darkMode ? '#1f2937' : '#f9fafb',
+                        color: darkMode ? '#d1d5db' : '#374151',
+                        fontSize:12, fontWeight:'500', whiteSpace:'nowrap', lineHeight:'1.4' }}>
+                      {r.nombre.length > 20 ? r.nombre.slice(0, 20) + '…' : r.nombre}
+                      <span style={{ color:'#10b981', marginLeft:5, fontWeight:'700' }}>{r.kcal}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* ── Buscador ─────────────────────────────────────────────────── */}
           <div className="relative">

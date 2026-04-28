@@ -1,4 +1,4 @@
-/* ============================================
+﻿/* ============================================
    Calibrate — Service Worker
    Estrategia:
    - Cache-first para JS/CSS/iconos (assets versionados con ?v=)
@@ -6,7 +6,7 @@
    - Network-first para peticiones externas (TheMealDB, etc.)
    ============================================ */
 
-const VERSION = 'calibrate-v20260428bg';
+const VERSION = 'calibrate-v20260428bh';
 const CACHE_STATIC = 'calibrate-static-' + VERSION;
 const CACHE_RUNTIME = 'calibrate-runtime-' + VERSION;
 
