@@ -3768,12 +3768,7 @@ function SlotAcciones({
 }) {
   const [showHist, setShowHist] = React.useState(false);
   const [showSobras, setShowSobras] = React.useState(false);
-  // position: fixed requiere coordenadas absolutas del viewport para escapar
-  // el stacking context del card (bg-color/30 translúcido) que causaba glass effect
-  const [dropdownPos, setDropdownPos] = React.useState({ top: 0, left: 0 });
   const containerRef = React.useRef(null);
-  const histBtnRef = React.useRef(null);
-  const sobrasBtnRef = React.useRef(null);
 
   React.useEffect(() => {
     if (!showHist && !showSobras) return;
@@ -3783,13 +3778,9 @@ function SlotAcciones({
         setShowSobras(false);
       }
     }
-    // Cerrar también al hacer scroll para que el dropdown fixed no flote desalineado
-    function handleScroll() { setShowHist(false); setShowSobras(false); }
     document.addEventListener('mousedown', handleOutside);
-    window.addEventListener('scroll', handleScroll, true);
     return () => {
       document.removeEventListener('mousedown', handleOutside);
-      window.removeEventListener('scroll', handleScroll, true);
     };
   }, [showHist, showSobras]);
 
@@ -3798,11 +3789,10 @@ function SlotAcciones({
   const isSwappingThis = swapping && swapping.dia === diaSeleccionado && swapping.tipoComida === tipo;
   const sobras = obtenerSobrasDisponibles(plan, diaSeleccionado, semanaActiva);
 
-  // position: fixed → renderiza fuera del card, sin heredar glass/blur del padre
-  // Usamos `left` (no `right`) para posicionamiento predecible:
-  // left = btn.right - dropdown_width → alinea borde derecho del dropdown con el botón
+  // position: absolute dentro de su position:relative padre → sin problemas de stacking context
+  // right:0 alinea el borde derecho del dropdown con el botón trigger
   const dropdownStyle = {
-    position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, zIndex: 9999,
+    position: 'absolute', right: 0, top: '36px', zIndex: 50,
     borderRadius: '12px', overflow: 'hidden',
     boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
     backgroundColor: darkMode ? '#1f2937' : '#ffffff',
@@ -3829,15 +3819,8 @@ function SlotAcciones({
       {slotHist.length > 0 && (
         <div style={{ position: 'relative' }}>
           <button
-            ref={histBtnRef}
             onClick={(e) => {
               e.stopPropagation();
-              if (!showHist && histBtnRef.current) {
-                const r = histBtnRef.current.getBoundingClientRect();
-                const W = 260; // maxWidth del dropdown de historial
-                const left = Math.max(8, Math.min(r.right - W, window.innerWidth - W - 8));
-                setDropdownPos({ top: r.bottom + 4, left });
-              }
               setShowHist(h => !h); setShowSobras(false);
             }}
             aria-label="Ver alternativas anteriores"
@@ -3860,12 +3843,12 @@ function SlotAcciones({
                   onClick={() => { onRestoreRecipe(r); setShowHist(false); }}
                   style={{
                     display: 'block', width: '100%', textAlign: 'left',
-                    padding: '8px 12px', border: 'none', backgroundColor: 'transparent',
+                    padding: '8px 12px', border: 'none', backgroundColor: darkMode ? '#1f2937' : '#ffffff',
                     cursor: 'pointer', transition: 'background-color 0.12s',
                     borderTop: idx > 0 ? `1px solid ${darkMode ? '#374151' : '#f3f4f6'}` : 'none'
                   }}
                   onMouseEnter={e => e.currentTarget.style.backgroundColor = darkMode ? '#374151' : '#f9fafb'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = darkMode ? '#1f2937' : '#ffffff'}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: darkMode ? '#e5e7eb' : '#111827', lineHeight: 1.3, marginBottom: '2px' }}>{getNombreReceta(r)}</div>
                   <div style={{ fontSize: '11px', color: darkMode ? '#6b7280' : '#9ca3af' }}>{r.calorias_escaladas || r.calorias_base} kcal · P {r.proteinas_escaladas || r.proteinas_g}g</div>
                 </button>
@@ -3878,15 +3861,8 @@ function SlotAcciones({
       {sobras.length > 0 && (
         <div style={{ position: 'relative' }}>
           <button
-            ref={sobrasBtnRef}
             onClick={(e) => {
               e.stopPropagation();
-              if (!showSobras && sobrasBtnRef.current) {
-                const r = sobrasBtnRef.current.getBoundingClientRect();
-                const W = 290; // maxWidth del dropdown de sobras
-                const left = Math.max(8, Math.min(r.right - W, window.innerWidth - W - 8));
-                setDropdownPos({ top: r.bottom + 4, left });
-              }
               setShowSobras(s => !s); setShowHist(false);
             }}
             aria-label="Usar sobra de días anteriores"
@@ -3909,12 +3885,12 @@ function SlotAcciones({
                   onClick={() => { onRestoreRecipe(s.receta); setShowSobras(false); }}
                   style={{
                     display: 'block', width: '100%', textAlign: 'left',
-                    padding: '8px 12px', border: 'none', backgroundColor: 'transparent',
+                    padding: '8px 12px', border: 'none', backgroundColor: darkMode ? '#1f2937' : '#ffffff',
                     cursor: 'pointer', transition: 'background-color 0.12s',
                     borderTop: `1px solid ${darkMode ? '#374151' : '#f3f4f6'}`
                   }}
                   onMouseEnter={e => e.currentTarget.style.backgroundColor = darkMode ? '#374151' : '#f9fafb'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = darkMode ? '#1f2937' : '#ffffff'}>
                   <div style={{ fontSize: '10px', color: darkMode ? '#6b7280' : '#9ca3af', marginBottom: '2px' }}>
                     {s.daysAgo === 1 ? 'Ayer' : 'Anteayer'} · {NOMBRES_COMIDAS[s.tipoComida] || s.tipoComida}
                   </div>
