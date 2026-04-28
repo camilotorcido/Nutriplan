@@ -122,7 +122,9 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 
 /* ─── Cards ─── */
 .meal-card {
-    transition: all 0.2s ease;
+    /* FIX: 'all' causaba flickering en re-renders (animaba bg-color en cada update).
+       Solo transicionamos transform y box-shadow para el hover lift. */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     cursor: pointer;
 }
 .meal-card:hover {

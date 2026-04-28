@@ -1,18 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Calibrate</title>
-    <meta name="description" content="Calibrate — fat loss con método. Meal planning automático, roadmap por fases y tracking integral con base científica explícita.">
+    <meta name="description" content="Calibrate â€” fat loss con mÃ©todo. Meal planning automÃ¡tico, roadmap por fases y tracking integral con base cientÃ­fica explÃ­cita.">
     <!-- Cache control: prevent stale files -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <!-- Tailwind CSS pre-compilado (38 KB, vs 300 KB del CDN JIT).
          Contiene solo las ~655 clases que realmente usa el proyecto. -->
-    <link rel="stylesheet" href="css/tailwind-compiled.css?v=20260428bo">
-    <!-- Tipografía: Inter (body/UI) + JetBrains Mono (métricas/datos) -->
+    <link rel="stylesheet" href="css/tailwind-compiled.css?v=20260428bp">
+    <!-- TipografÃ­a: Inter (body/UI) + JetBrains Mono (mÃ©tricas/datos) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <!-- PWA -->
@@ -24,7 +24,7 @@
     <meta name="apple-mobile-web-app-title" content="Calibrate">
     <link rel="apple-touch-icon" href="icons/icon.svg">
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
-    <link rel="stylesheet" href="css/style.css?v=20260428bo">
+    <link rel="stylesheet" href="css/style.css?v=20260428bp">
     <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.6/babel.min.js"></script>
@@ -58,50 +58,50 @@
             <p>Cargando Calibrate...</p>
         </div>
     </div>
-    <!-- Firebase SDK (compat mode — funciona como script tag normal, sin bundler) -->
+    <!-- Firebase SDK (compat mode â€” funciona como script tag normal, sin bundler) -->
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-    <!-- Auth + core modules (cargados antes que cualquier otro módulo) -->
-    <!-- Version timestamp for cache-busting: 20260428bo -->
-    <script src="js/firebase-config.js?v=20260428bo"></script>
-    <script src="js/auth.js?v=20260428bo"></script>
-    <script src="js/cloud-storage.js?v=20260428bo"></script>
-    <script src="js/precios-clp.js?v=20260428bo"></script>
-    <script src="js/recipes.js?v=20260428bo"></script>
+    <!-- Auth + core modules (cargados antes que cualquier otro mÃ³dulo) -->
+    <!-- Version timestamp for cache-busting: 20260428bp -->
+    <script src="js/firebase-config.js?v=20260428bp"></script>
+    <script src="js/auth.js?v=20260428bp"></script>
+    <script src="js/cloud-storage.js?v=20260428bp"></script>
+    <script src="js/precios-clp.js?v=20260428bp"></script>
+    <script src="js/recipes.js?v=20260428bp"></script>
     <!-- Fase 6.2: recipes-extra y upgrades se cargan lazy al primer uso (ahorro ~224 KB en first paint) -->
-    <script src="js/nutritionEngine.js?v=20260428bo"></script>
-    <script src="js/storage.js?v=20260428bo"></script>
-    <!-- Calibrate — Fat Loss roadmap engine -->
-    <script src="js/roadmap-data.js?v=20260428bo"></script>
-    <script src="js/roadmap-generator.js?v=20260428bo"></script>
-    <script src="js/protein-complement.js?v=20260428bo"></script>
-    <script src="js/fat-loss-integration.js?v=20260428bo"></script>
-    <script src="js/body-comp.js?v=20260428bo"></script>
-    <script src="js/steps.js?v=20260428bo"></script>
-    <script src="js/entrenamiento.js?v=20260428bo"></script>
-    <script src="js/plateau-detector.js?v=20260428bo"></script>
-    <script src="js/alcohol-calc.js?v=20260428bo"></script>
-    <script src="js/recipeAPI.js?v=20260428bo"></script>
-    <script src="js/recipes-thermomix-upgrade.js?v=20260428bo"></script>
-    <script src="js/recipe-translations.js?v=20260428bo"></script>
-    <script src="js/foods-db.js?v=20260428bo"></script>
-    <script src="js/lazy-recipes-loader.js?v=20260428bo"></script>
-    <script src="js/equivalencias-ingredientes.js?v=20260428bo"></script>
-    <script src="js/adherencia.js?v=20260428bo"></script>
-    <script src="js/busqueda-inversa.js?v=20260428bo"></script>
-    <script src="js/generador-recetas.js?v=20260428bo"></script>
-    <script src="js/batch-cooking.js?v=20260428bo"></script>
-    <script src="js/perfiles.js?v=20260428bo"></script>
-    <script src="js/exports.js?v=20260428bo"></script>
-    <script src="js/recetas-guardadas-loader.js?v=20260428bo"></script>
+    <script src="js/nutritionEngine.js?v=20260428bp"></script>
+    <script src="js/storage.js?v=20260428bp"></script>
+    <!-- Calibrate â€” Fat Loss roadmap engine -->
+    <script src="js/roadmap-data.js?v=20260428bp"></script>
+    <script src="js/roadmap-generator.js?v=20260428bp"></script>
+    <script src="js/protein-complement.js?v=20260428bp"></script>
+    <script src="js/fat-loss-integration.js?v=20260428bp"></script>
+    <script src="js/body-comp.js?v=20260428bp"></script>
+    <script src="js/steps.js?v=20260428bp"></script>
+    <script src="js/entrenamiento.js?v=20260428bp"></script>
+    <script src="js/plateau-detector.js?v=20260428bp"></script>
+    <script src="js/alcohol-calc.js?v=20260428bp"></script>
+    <script src="js/recipeAPI.js?v=20260428bp"></script>
+    <script src="js/recipes-thermomix-upgrade.js?v=20260428bp"></script>
+    <script src="js/recipe-translations.js?v=20260428bp"></script>
+    <script src="js/foods-db.js?v=20260428bp"></script>
+    <script src="js/lazy-recipes-loader.js?v=20260428bp"></script>
+    <script src="js/equivalencias-ingredientes.js?v=20260428bp"></script>
+    <script src="js/adherencia.js?v=20260428bp"></script>
+    <script src="js/busqueda-inversa.js?v=20260428bp"></script>
+    <script src="js/generador-recetas.js?v=20260428bp"></script>
+    <script src="js/batch-cooking.js?v=20260428bp"></script>
+    <script src="js/perfiles.js?v=20260428bp"></script>
+    <script src="js/exports.js?v=20260428bp"></script>
+    <script src="js/recetas-guardadas-loader.js?v=20260428bp"></script>
     <script>
     (function() {
-        var APP_VERSION = '20260428bo';
+        var APP_VERSION = '20260428bp';
         var CACHE_DB = 'calibrate_bundle_cache';
         var CACHE_STORE = 'compiled';
 
-        // ─── IndexedDB helpers (Fase 4.3: caché de bundle compilado) ───
+        // â”€â”€â”€ IndexedDB helpers (Fase 4.3: cachÃ© de bundle compilado) â”€â”€â”€
         function openDB() {
             return new Promise(function(resolve, reject) {
                 var req = indexedDB.open(CACHE_DB, 1);
@@ -154,14 +154,14 @@
 
         function compileAndRun() {
             var t0 = performance.now();
-            // 1) Intentar usar caché compilado
+            // 1) Intentar usar cachÃ© compilado
             getCompiledFromCache(APP_VERSION).then(function(cached) {
                 if (cached) {
-                    console.log('[Bundle Cache] HIT v=' + APP_VERSION + ' · ' + Math.round(performance.now() - t0) + 'ms');
+                    console.log('[Bundle Cache] HIT v=' + APP_VERSION + ' Â· ' + Math.round(performance.now() - t0) + 'ms');
                     runCompiledCode(cached);
                     return;
                 }
-                console.log('[Bundle Cache] MISS v=' + APP_VERSION + ' · compilando...');
+                console.log('[Bundle Cache] MISS v=' + APP_VERSION + ' Â· compilando...');
                 // 2) Fetch + compile + cache
                 fetch('js/app-bundle.js?v=' + APP_VERSION)
                     .then(function(res) { 
@@ -183,16 +183,16 @@
                             runCompiledCode(compiled);
                         } catch(e) {
                             console.error('Babel compilation error:', e);
-                            showError('Error al compilar la aplicación: ' + e.message);
+                            showError('Error al compilar la aplicaciÃ³n: ' + e.message);
                         }
                     })
                     .catch(function(e) {
                         console.error('Failed to load app:', e);
-                        // Auto-recovery: si el bundle da 404, el SW está sirviendo basura.
+                        // Auto-recovery: si el bundle da 404, el SW estÃ¡ sirviendo basura.
                         // Desregistrarlo y recargar una vez.
                         if (String(e.message).indexOf('404') !== -1 && !sessionStorage.getItem('sw_cleanup_done')) {
                             sessionStorage.setItem('sw_cleanup_done', '1');
-                            console.warn('[Auto-recovery] 404 detectado, limpiando SW y cachés...');
+                            console.warn('[Auto-recovery] 404 detectado, limpiando SW y cachÃ©s...');
                             Promise.all([
                                 navigator.serviceWorker ? navigator.serviceWorker.getRegistrations().then(function(rs) { return Promise.all(rs.map(function(r) { return r.unregister(); })); }) : Promise.resolve(),
                                 'caches' in window ? caches.keys().then(function(ks) { return Promise.all(ks.map(function(k) { return caches.delete(k); })); }) : Promise.resolve(),
@@ -202,7 +202,7 @@
                             });
                             return;
                         }
-                        showError('Error al cargar la aplicación: ' + e.message + ' (recarga la página)');
+                        showError('Error al cargar la aplicaciÃ³n: ' + e.message + ' (recarga la pÃ¡gina)');
                     });
             });
         }
@@ -211,8 +211,8 @@
             var loader = document.getElementById('app-loader');
             if (loader) {
                 loader.innerHTML = '<div style="text-align:center;padding:20px;">'
-                    + '<p style="color:#ef4444;font-weight:600;margin-bottom:8px;">⚠️ ' + msg + '</p>'
-                    + '<p style="font-size:14px;">Intenta recargar la página</p>'
+                    + '<p style="color:#ef4444;font-weight:600;margin-bottom:8px;">âš ï¸ ' + msg + '</p>'
+                    + '<p style="font-size:14px;">Intenta recargar la pÃ¡gina</p>'
                     + '<button onclick="location.reload(true)" style="margin-top:12px;padding:8px 24px;background:#22c55e;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;">Recargar</button>'
                     + '</div>';
             }
@@ -244,7 +244,7 @@
             navigator.serviceWorker.register('./sw.js')
                 .then(function(reg) {
                     console.log('[PWA] Service Worker registrado:', reg.scope);
-                    // Forzar chequeo de actualización en cada carga
+                    // Forzar chequeo de actualizaciÃ³n en cada carga
                     reg.update();
                     // Auto-activar SW nuevo y recargar una sola vez
                     var refreshing = false;
@@ -259,25 +259,25 @@
                         if (!nw) return;
                         nw.addEventListener('statechange', function() {
                             if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('[PWA] Nueva versión lista, activando...');
+                                console.log('[PWA] Nueva versiÃ³n lista, activando...');
                                 nw.postMessage({ type: 'SKIP_WAITING' });
                             }
                         });
                     });
                 })
                 .catch(function(err) {
-                    console.warn('[PWA] Registro falló:', err);
+                    console.warn('[PWA] Registro fallÃ³:', err);
                 });
         });
     }
     </script>
 
-    <!-- Fase PTR: Pull-to-Refresh → fuerza chequeo de Service Worker -->
+    <!-- Fase PTR: Pull-to-Refresh â†’ fuerza chequeo de Service Worker -->
     <script>
     (function() {
       if (!('ontouchstart' in window) || !('serviceWorker' in navigator)) return;
 
-      /* ── Indicador visual (burbuja ámbar) ── */
+      /* â”€â”€ Indicador visual (burbuja Ã¡mbar) â”€â”€ */
       var ind = document.createElement('div');
       ind.style.cssText = [
         'position:fixed', 'top:0', 'left:50%', 'z-index:99999',
@@ -332,11 +332,11 @@
           if (!reg) { setTimeout(function() { snapOut(); setTimeout(function() { setIcon('spin'); }, 350); }, 900); return; }
           reg.update().then(function() {
             if (reg.waiting) {
-              /* SW nuevo listo → activarlo (controllerchange recarga la página) */
+              /* SW nuevo listo â†’ activarlo (controllerchange recarga la pÃ¡gina) */
               reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-              /* No ocultamos el indicador — la recarga lo elimina */
+              /* No ocultamos el indicador â€” la recarga lo elimina */
             } else {
-              /* Sin actualización disponible → checkmark 1s */
+              /* Sin actualizaciÃ³n disponible â†’ checkmark 1s */
               setIcon('check');
               setTimeout(function() {
                 snapOut();
@@ -381,3 +381,4 @@
     </script>
 </body>
 </html>
+

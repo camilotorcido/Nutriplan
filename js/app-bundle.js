@@ -3768,7 +3768,12 @@ function SlotAcciones({
 }) {
   const [showHist, setShowHist] = React.useState(false);
   const [showSobras, setShowSobras] = React.useState(false);
+  // position: fixed requiere coordenadas absolutas del viewport para escapar
+  // el stacking context del card (bg-color/30 translúcido) que causaba glass effect
+  const [dropdownPos, setDropdownPos] = React.useState({ top: 0, right: 0 });
   const containerRef = React.useRef(null);
+  const histBtnRef = React.useRef(null);
+  const sobrasBtnRef = React.useRef(null);
 
   React.useEffect(() => {
     if (!showHist && !showSobras) return;
@@ -3778,8 +3783,14 @@ function SlotAcciones({
         setShowSobras(false);
       }
     }
+    // Cerrar también al hacer scroll para que el dropdown fixed no flote desalineado
+    function handleScroll() { setShowHist(false); setShowSobras(false); }
     document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, [showHist, showSobras]);
 
   const slotKey = diaSeleccionado + '_' + tipo + '_' + semanaActiva;
@@ -3787,12 +3798,11 @@ function SlotAcciones({
   const isSwappingThis = swapping && swapping.dia === diaSeleccionado && swapping.tipoComida === tipo;
   const sobras = obtenerSobrasDisponibles(plan, diaSeleccionado, semanaActiva);
 
+  // position: fixed → renderiza fuera del card, sin heredar glass/blur del padre
   const dropdownStyle = {
-    position: 'absolute', right: 0, top: '36px', zIndex: 50,
+    position: 'fixed', top: dropdownPos.top, right: dropdownPos.right, zIndex: 9999,
     borderRadius: '12px', overflow: 'hidden',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
-    backdropFilter: 'none',
-    WebkitBackdropFilter: 'none',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
     backgroundColor: darkMode ? '#1f2937' : '#ffffff',
     border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`
   };
@@ -3817,7 +3827,15 @@ function SlotAcciones({
       {slotHist.length > 0 && (
         <div style={{ position: 'relative' }}>
           <button
-            onClick={(e) => { e.stopPropagation(); setShowHist(h => !h); setShowSobras(false); }}
+            ref={histBtnRef}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!showHist && histBtnRef.current) {
+                const r = histBtnRef.current.getBoundingClientRect();
+                setDropdownPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+              }
+              setShowHist(h => !h); setShowSobras(false);
+            }}
             aria-label="Ver alternativas anteriores"
             style={{ width: 32, height: 32, minWidth: 32 }}
             className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
@@ -3856,7 +3874,15 @@ function SlotAcciones({
       {sobras.length > 0 && (
         <div style={{ position: 'relative' }}>
           <button
-            onClick={(e) => { e.stopPropagation(); setShowSobras(s => !s); setShowHist(false); }}
+            ref={sobrasBtnRef}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!showSobras && sobrasBtnRef.current) {
+                const r = sobrasBtnRef.current.getBoundingClientRect();
+                setDropdownPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+              }
+              setShowSobras(s => !s); setShowHist(false);
+            }}
             aria-label="Usar sobra de días anteriores"
             style={{ width: 32, height: 32, minWidth: 32 }}
             className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${

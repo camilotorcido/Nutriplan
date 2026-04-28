@@ -1,16 +1,16 @@
-/* ============================================
-   Calibrate — Service Worker
+﻿/* ============================================
+   Calibrate â€” Service Worker
    Estrategia:
    - Cache-first para JS/CSS/iconos (assets versionados con ?v=)
    - Stale-while-revalidate para index.html
    - Network-first para peticiones externas (TheMealDB, etc.)
    ============================================ */
 
-const VERSION = 'calibrate-v20260428bo';
+const VERSION = 'calibrate-v20260428bp';
 const CACHE_STATIC = 'calibrate-static-' + VERSION;
 const CACHE_RUNTIME = 'calibrate-runtime-' + VERSION;
 
-// Assets mínimos para el shell (Fase 6.2: recipes-extra y upgrades son lazy)
+// Assets mÃ­nimos para el shell (Fase 6.2: recipes-extra y upgrades son lazy)
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -48,14 +48,14 @@ const PRECACHE_URLS = [
   './js/app-bundle.js'
 ];
 
-// ─── Install: pre-cachear shell ───
-// FIX: skipWaiting() se llama SIEMPRE, aunque falle algún asset del precache.
+// â”€â”€â”€ Install: pre-cachear shell â”€â”€â”€
+// FIX: skipWaiting() se llama SIEMPRE, aunque falle algÃºn asset del precache.
 // Un fallo parcial no debe bloquear al nuevo SW indefinidamente.
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_STATIC)
       .then((cache) => {
-        // addAll con fallback individual: si un asset falla, los demás siguen
+        // addAll con fallback individual: si un asset falla, los demÃ¡s siguen
         return Promise.allSettled(
           PRECACHE_URLS.map((u) =>
             cache.add(new Request(u, { cache: 'reload' })).catch((e) => {
@@ -64,11 +64,11 @@ self.addEventListener('install', (event) => {
           )
         );
       })
-      .then(() => self.skipWaiting()) // ← siempre se activa
+      .then(() => self.skipWaiting()) // â† siempre se activa
   );
 });
 
-// ─── Activate: limpiar cachés viejos ───
+// â”€â”€â”€ Activate: limpiar cachÃ©s viejos â”€â”€â”€
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
@@ -79,7 +79,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// ─── Fetch: enrutar según tipo de recurso ───
+// â”€â”€â”€ Fetch: enrutar segÃºn tipo de recurso â”€â”€â”€
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -87,7 +87,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   const esMismoOrigen = url.origin === self.location.origin;
 
-  // 1) API externa (TheMealDB, etc.): network-first con fallback a caché
+  // 1) API externa (TheMealDB, etc.): network-first con fallback a cachÃ©
   if (!esMismoOrigen) {
     event.respondWith(
       fetch(req)
@@ -101,7 +101,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2) Navegación HTML: stale-while-revalidate sobre index.html
+  // 2) NavegaciÃ³n HTML: stale-while-revalidate sobre index.html
   if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {
     event.respondWith(
       caches.match('./index.html').then((cached) => {
@@ -117,13 +117,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3) Assets estáticos mismo origen
+  // 3) Assets estÃ¡ticos mismo origen
   // Estrategia: cache-first para hit exacto; network-first para miss.
-  // FIX: eliminado el fallback ignoreSearch que devolvía versiones antiguas
+  // FIX: eliminado el fallback ignoreSearch que devolvÃ­a versiones antiguas
   // cuando cambiaba el ?v= de versionado. Ahora el miss va directo a red.
   event.respondWith(
     caches.match(req).then((cached) => {
-      // Hit exacto: servir del caché + revalidar en background
+      // Hit exacto: servir del cachÃ© + revalidar en background
       if (cached && cached.ok) {
         fetch(req).then((resp) => {
           if (resp && resp.ok && resp.status !== 404) {
@@ -141,7 +141,7 @@ self.addEventListener('fetch', (event) => {
         }
         return resp;
       }).catch(() => {
-        // Sin red: último recurso — buscar sin query string (solo offline)
+        // Sin red: Ãºltimo recurso â€” buscar sin query string (solo offline)
         return caches.match(req, { ignoreSearch: true })
           .then((fb) => fb || new Response('', { status: 503, statusText: 'Offline' }));
       });
@@ -149,12 +149,12 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// ─── Mensaje para forzar actualización ───
+// â”€â”€â”€ Mensaje para forzar actualizaciÃ³n â”€â”€â”€
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-// ─── Fase 5.3: click en notificación → abrir/enfocar la app ───
+// â”€â”€â”€ Fase 5.3: click en notificaciÃ³n â†’ abrir/enfocar la app â”€â”€â”€
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl = (event.notification.data && event.notification.data.url) || './';
@@ -167,3 +167,4 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
