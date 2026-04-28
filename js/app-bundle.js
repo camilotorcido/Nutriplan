@@ -3758,6 +3758,33 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
   );
 }
 
+// ─── Helper: sobras de los últimos 1-2 días del plan ───
+// Devuelve [{ dia, daysAgo, tipoComida, receta }] priorizando almuerzo/cena
+function obtenerSobrasDisponibles(planMulti, diaHoy, semanaActiva) {
+  try {
+    var pn = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(planMulti) : planMulti;
+    var semana = pn['semana_' + (semanaActiva || 1)] || {};
+    var DIAS = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+    var idxHoy = DIAS.indexOf(diaHoy);
+    if (idxHoy < 0) return [];
+    var PRIO = ['almuerzo','cena','desayuno','snack_am','snack_pm'];
+    var result = [];
+    for (var back = 1; back <= 2; back++) {
+      var idxPrev = idxHoy - back;
+      if (idxPrev < 0) break; // no saltar a semana anterior
+      var diaPrev = DIAS[idxPrev];
+      var comidasDia = semana[diaPrev] || {};
+      PRIO.forEach(function(tipo) {
+        var comida = comidasDia[tipo];
+        if (comida && comida.id) {
+          result.push({ dia: diaPrev, daysAgo: back, tipoComida: tipo, receta: comida });
+        }
+      });
+    }
+    return result;
+  } catch(e) { return []; }
+}
+
 // =============================================
 // COMPONENTE: WeeklyPlan (MEJORAS 2 y 3)
 // =============================================
@@ -4186,6 +4213,8 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                   const slotHist = (historialSlots && historialSlots[slotKey]) || [];
                   const [showHist, setShowHist] = React.useState(false);
                   const isSwappingThis = swapping && swapping.dia === diaSeleccionado && swapping.tipoComida === tipo;
+                  const sobras = obtenerSobrasDisponibles(plan, diaSeleccionado, semanaActiva);
+                  const [showSobras, setShowSobras] = React.useState(false);
                   return (
                     <div className="flex items-center gap-1 ml-2 flex-shrink-0" style={{ position: 'relative' }}>
                       {/* Check de adherencia */}
@@ -4214,7 +4243,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                       {slotHist.length > 0 && (
                         <div style={{ position: 'relative' }}>
                           <button
-                            onClick={(e) => { e.stopPropagation(); setShowHist(!showHist); }}
+                            onClick={(e) => { e.stopPropagation(); setShowHist(!showHist); setShowSobras(false); }}
                             aria-label="Ver alternativas anteriores"
                             style={{ width: 32, height: 32, minWidth: 32 }}
                             className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
@@ -4257,8 +4286,62 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                           )}
                         </div>
                       )}
+                      {/* ♻️ Sobras: comidas de los últimos 1-2 días */}
+                      {sobras.length > 0 && (
+                        <div style={{ position: 'relative' }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setShowSobras(!showSobras); setShowHist(false); }}
+                            aria-label="Usar sobra de días anteriores"
+                            style={{ width: 32, height: 32, minWidth: 32 }}
+                            className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+                              showSobras
+                                ? (darkMode ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-50 text-amber-600')
+                                : (darkMode ? 'text-gray-500 hover:text-amber-400 hover:bg-gray-700' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50')
+                            }`}>
+                            <i className="fas fa-recycle text-xs"></i>
+                          </button>
+                          {showSobras && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                position: 'absolute', right: 0, top: '36px', zIndex: 50,
+                                minWidth: '220px', maxWidth: '290px',
+                                borderRadius: '12px', overflow: 'hidden',
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+                                background: darkMode ? '#1f2937' : '#ffffff',
+                                border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`
+                              }}>
+                              <div style={{ padding: '8px 12px 4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: darkMode ? '#6b7280' : '#9ca3af' }}>
+                                Sobras disponibles
+                              </div>
+                              {sobras.map((s, idx) => (
+                                <button key={s.dia + '_' + s.tipoComida}
+                                  onClick={() => { onRestoreRecipe && onRestoreRecipe(diaSeleccionado, tipo, semanaActiva, s.receta); setShowSobras(false); }}
+                                  style={{
+                                    display: 'block', width: '100%', textAlign: 'left',
+                                    padding: '8px 12px', border: 'none', background: 'transparent',
+                                    cursor: 'pointer', transition: 'background 0.12s',
+                                    borderTop: `1px solid ${darkMode ? '#374151' : '#f3f4f6'}`
+                                  }}
+                                  onMouseEnter={e => e.currentTarget.style.background = darkMode ? '#374151' : '#f9fafb'}
+                                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                  <div style={{ fontSize: '10px', color: darkMode ? '#6b7280' : '#9ca3af', marginBottom: '2px' }}>
+                                    {s.daysAgo === 1 ? 'Ayer' : 'Anteayer'} · {NOMBRES_COMIDAS[s.tipoComida] || s.tipoComida}
+                                  </div>
+                                  <div style={{ fontSize: '12px', fontWeight: 600, color: darkMode ? '#e5e7eb' : '#111827', lineHeight: 1.3, marginBottom: '2px' }}>
+                                    {getNombreReceta(s.receta)}
+                                  </div>
+                                  <div style={{ fontSize: '11px', color: darkMode ? '#6b7280' : '#9ca3af' }}>
+                                    {s.receta.calorias_escaladas || s.receta.calorias_base} kcal · P {Math.round(s.receta.proteinas_escaladas || s.receta.proteinas_g || 0)}g
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                       {/* Swap button */}
-                      <button onClick={(e) => { handleSwap(e, diaSeleccionado, tipo); setShowHist(false); }}
+                      <button onClick={(e) => { handleSwap(e, diaSeleccionado, tipo); setShowHist(false); setShowSobras(false); }}
                         disabled={!!isSwappingThis}
                         aria-label={`Cambiar receta de ${NOMBRES_COMIDAS[tipo] || tipo}`}
                         style={{ width: 32, height: 32, minWidth: 32 }}
