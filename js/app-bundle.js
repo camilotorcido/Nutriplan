@@ -112,6 +112,24 @@ function _guardarComidasExt(fecha, lista) {
     localStorage.setItem(_EXT_KEY, JSON.stringify(a));
   } catch(e) {}
 }
+// Convierte nombre de día + semana activa → ISO date usando _fechaCreacion del plan.
+// Fallback: semana calendario actual (lunes=0 … domingo=6).
+function diaToIso(diaNombre, semanaActiva, planNorm) {
+  var DIAS = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+  var idx = DIAS.indexOf(diaNombre);
+  if (idx < 0) return new Date().toISOString().split('T')[0];
+  if (planNorm && planNorm._fechaCreacion) {
+    var inicio = new Date(planNorm._fechaCreacion + 'T00:00:00');
+    inicio.setDate(inicio.getDate() + ((semanaActiva || 1) - 1) * 7 + idx);
+    return inicio.toISOString().split('T')[0];
+  }
+  // Sin _fechaCreacion: semana calendario actual
+  var hoy = new Date();
+  var idxHoy = (hoy.getDay() + 6) % 7; // 0=lun
+  var fecha = new Date(hoy);
+  fecha.setDate(hoy.getDate() + (idx - idxHoy));
+  return fecha.toISOString().split('T')[0];
+}
 function _agregarAdherenciaExt(diaActual, comida) {
   if (typeof window.adherencia === 'undefined') return;
   window.adherencia.marcar(diaActual, 'ext_' + comida.id, true, {
@@ -4025,7 +4043,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
   const [diaSeleccionado, setDiaSeleccionado] = React.useState(() => {
     return DIAS_SEMANA.includes(diaActual) ? diaActual : DIAS_SEMANA[0];
   });
-  // Comidas externas de hoy (para mostrar reemplazos en el día actual)
+  // ISO date del día seleccionado → clave de almacenamiento de comidas externas
   const fechaHoyIsoWP = new Date().toISOString().split('T')[0];
   const semanaHoyIdx = React.useMemo(() => {
     const keys = Object.keys(planNorm).filter(k => k.startsWith('semana_')).sort();
@@ -4035,10 +4053,14 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
     const diasTranscurridos = Math.max(0, Math.floor((hoyMs - creadoMs) / 86400000));
     return Math.min(keys.length, Math.floor(diasTranscurridos / 7) + 1);
   }, [planNorm]);
-  const comidasExtHoy = React.useMemo(() => {
+  // fechaDiaIso: fecha real del día seleccionado en la semana activa
+  const fechaDiaIso = React.useMemo(() => diaToIso(diaSeleccionado, semanaActiva, planNorm), [diaSeleccionado, semanaActiva, planNorm]);
+  // Comidas externas del día seleccionado (no solo hoy)
+  const comidasExtDia = React.useMemo(() => {
     if (typeof _comidasExtFecha !== 'function') return [];
-    return _comidasExtFecha(fechaHoyIsoWP);
-  }, [fechaHoyIsoWP, forceUpdate]);
+    return _comidasExtFecha(fechaDiaIso);
+  }, [fechaDiaIso, forceUpdate]);
+  const [showModalExtPlan, setShowModalExtPlan] = React.useState(false);
   const comidasDia = semanaData[diaSeleccionado] || {};
   const resumen = calcularResumenDiario(comidasDia);
   const tiposComidaOrden = ["desayuno", "snack_am", "almuerzo", "snack_pm", "cena"];
@@ -4257,6 +4279,10 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                 <i className="fas fa-arrows-rotate text-xs"></i>
               </button>
             )}
+            <button onClick={() => setShowModalExtPlan(true)} title="Agregar comida externa"
+              className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all cursor-pointer ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-emerald-400 hover:text-emerald-300' : 'bg-gray-100 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600'}`}>
+              <i className="fas fa-plus text-xs"></i>
+            </button>
           </div>
           <div className="text-right">
             <div className={`text-2xl font-bold font-display ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.calorias}</div>
@@ -4323,8 +4349,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
           const yaComido = estadoAdherencia?.comido === true;
           const yaMarcadoNo = estadoAdherencia?.comido === false;
           // Mostrar comida externa si reemplaza este slot en el día de hoy
-          const esViendoHoy = diaSeleccionado === diaActual && semanaActiva === semanaHoyIdx;
-          const extReemplazo = esViendoHoy ? comidasExtHoy.find(function(c) { return c.reemplaza === tipo; }) : null;
+          const extReemplazo = comidasExtDia.find(function(c) { return c.reemplaza === tipo; });
           if (extReemplazo) {
             return (
               <div key={tipo} className={`meal-card rounded-xl p-4 border relative ${darkMode ? 'bg-emerald-900/30 border-emerald-700' : 'bg-emerald-50 border-emerald-300'}`}>
@@ -4349,9 +4374,9 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                   <button
                     onClick={function(e) {
                       e.stopPropagation();
-                      var nuevas = comidasExtHoy.filter(function(x) { return x.id !== extReemplazo.id; });
-                      if (typeof _guardarComidasExt === 'function') _guardarComidasExt(fechaHoyIsoWP, nuevas);
-                      if (typeof _eliminarAdherenciaExt === 'function') _eliminarAdherenciaExt(diaActual, extReemplazo.id);
+                      var nuevas = comidasExtDia.filter(function(x) { return x.id !== extReemplazo.id; });
+                      if (typeof _guardarComidasExt === 'function') _guardarComidasExt(fechaDiaIso, nuevas);
+                      if (typeof _eliminarAdherenciaExt === 'function') _eliminarAdherenciaExt(diaSeleccionado, extReemplazo.id);
                       setForceUpdate(function(x) { return x + 1; });
                     }}
                     title="Deshacer reemplazo"
@@ -4448,6 +4473,45 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
           );
         })}
       </div>
+
+      {/* Comidas externas adicionales del día (no reemplazan slot) */}
+      {comidasExtDia.filter(function(c) { return !c.reemplaza; }).length > 0 && (
+        <div className={`rounded-2xl p-4 border mt-4 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+          <div className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <i className="fas fa-utensils mr-1.5 text-emerald-500"></i>Comidas adicionales
+          </div>
+          <div className="space-y-2">
+            {comidasExtDia.filter(function(c) { return !c.reemplaza; }).map(function(c) {
+              return (
+                <div key={c.id} className={`flex items-center justify-between gap-3 px-3 py-2 rounded-xl ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-medium truncate ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{c.nombre}</div>
+                    <div className="flex flex-wrap gap-2 mt-0.5">
+                      <span className="text-xs text-gray-500"><i className="fas fa-fire text-orange-400 mr-1"></i>{c.kcal} kcal</span>
+                      <span className="text-xs text-blue-500">P: {c.proteinas_g}g</span>
+                      <span className="text-xs text-amber-600">C: {c.carbohidratos_g}g</span>
+                      <span className="text-xs text-rose-500">G: {c.grasas_g}g</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={function(e) {
+                      e.stopPropagation();
+                      var nuevas = comidasExtDia.filter(function(x) { return x.id !== c.id; });
+                      if (typeof _guardarComidasExt === 'function') _guardarComidasExt(fechaDiaIso, nuevas);
+                      if (typeof _eliminarAdherenciaExt === 'function') _eliminarAdherenciaExt(diaSeleccionado, c.id);
+                      setForceUpdate(function(x) { return x + 1; });
+                    }}
+                    title="Eliminar"
+                    aria-label="Eliminar comida externa"
+                    style={{ width: 28, height: 28, minWidth: 28, background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: darkMode ? '#6b7280' : '#9ca3af' }}>
+                    <i className="fas fa-trash-can text-xs"></i>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* N13: BatchCookingPanel removido de aquí — aparece únicamente en CocinarTab > Preparar para evitar estado duplicado */}
 
@@ -4602,6 +4666,32 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
           <i className="fas fa-info-circle mr-1"></i>El calendario exporta desde el próximo lunes. Abre el .ics con Google Calendar, Apple Calendar u Outlook.
         </p>
       </div>
+
+      {/* Modal comida externa — vista Plan */}
+      {showModalExtPlan && (
+        <ModalComidaExterna
+          darkMode={darkMode}
+          diaActual={diaSeleccionado}
+          comidasHoy={comidasDia}
+          nombresComida={NOMBRES_COMIDAS}
+          onAdd={function(comida) {
+            var todas = (typeof _comidasExtFecha === 'function') ? _comidasExtFecha(fechaDiaIso) : [];
+            var nuevas = todas.concat([comida]);
+            if (typeof _guardarComidasExt === 'function') _guardarComidasExt(fechaDiaIso, nuevas);
+            if (typeof _agregarAdherenciaExt === 'function') _agregarAdherenciaExt(diaSeleccionado, comida);
+            if (comida.reemplaza && typeof window.adherencia !== 'undefined') {
+              var planReemplazada = comidasDia[comida.reemplaza];
+              window.adherencia.marcar(diaSeleccionado, comida.reemplaza, true, {
+                kcal_plan: planReemplazada ? (planReemplazada.calorias_escaladas || planReemplazada.calorias || 0) : 0,
+                proteinas_plan: planReemplazada ? (planReemplazada.proteinas_escaladas || planReemplazada.proteinas || 0) : 0
+              }, semanaActiva);
+            }
+            setShowModalExtPlan(false);
+            setForceUpdate(function(x) { return x + 1; });
+          }}
+          onClose={function() { setShowModalExtPlan(false); }}
+        />
+      )}
     </div>
   );
 }
