@@ -10405,7 +10405,10 @@ function ChatPanel({ darkMode }) {
       onClick: function() { setOpen(function(o) { return !o; }); },
       title: 'Asistente IA',
       style: {
-        position:'fixed', bottom:24, right:24, zIndex:1000,
+        position:'fixed',
+        bottom:'calc(24px + env(safe-area-inset-bottom, 0px))',
+        right:'calc(16px + env(safe-area-inset-right, 0px))',
+        zIndex:1000,
         width:52, height:52, borderRadius:'50%', border:'none',
         background:'linear-gradient(135deg,#10b981,#059669)',
         color:'#fff', fontSize:22, cursor:'pointer',
@@ -10418,9 +10421,12 @@ function ChatPanel({ darkMode }) {
     /* ── Panel ── */
     open && React.createElement('div', {
       style: {
-        position:'fixed', bottom:88, right:24, zIndex:999,
+        position:'fixed',
+        bottom:'calc(88px + env(safe-area-inset-bottom, 0px))',
+        right:'calc(16px + env(safe-area-inset-right, 0px))',
+        zIndex:999,
         width: Math.min(380, window.innerWidth - 32),
-        height: Math.min(520, window.innerHeight - 130),
+        height: Math.min(520, window.innerHeight - 150),
         borderRadius:20, background:bgPanel,
         border:'1px solid '+borderColor,
         boxShadow:'0 20px 60px rgba(0,0,0,0.25)',
