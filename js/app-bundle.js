@@ -10206,9 +10206,10 @@ function ChatPanel({ darkMode }) {
   });
   const bottomRef = React.useRef(null);
   const inputRef  = React.useRef(null);
-  const [listening, setListening]       = React.useState(false);
+  const [recording, setRecording]       = React.useState(false);
   const [speakEnabled, setSpeakEnabled] = React.useState(true);
-  const recognitionRef = React.useRef(null);
+  const mediaRecorderRef = React.useRef(null);
+  const audioChunksRef   = React.useRef([]);
 
   // ── Serializar contexto desde localStorage ──────────────────────────────
   function buildContexto() {
@@ -10282,27 +10283,55 @@ function ChatPanel({ darkMode }) {
     window.speechSynthesis.speak(utt);
   }
 
-  // ── Micrófono (STT) ─────────────────────────────────────────────────────
-  function toggleListening() {
-    if (listening) {
-      if (recognitionRef.current) recognitionRef.current.stop();
-      setListening(false);
+  // ── Grabar audio → Groq Whisper → texto ─────────────────────────────────
+  async function toggleRecording() {
+    if (recording) {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      setRecording(false);
       return;
     }
-    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { setError('Tu browser no soporta micrófono (usa Chrome o Edge)'); return; }
-    var rec = new SR();
-    rec.lang = 'es-CL'; rec.continuous = false; rec.interimResults = false;
-    rec.onresult = function(e) {
-      var texto = e.results[0][0].transcript;
-      setListening(false);
-      sendMessage(texto);
-    };
-    rec.onerror = function(e) { setError('Micrófono: ' + e.error); setListening(false); };
-    rec.onend   = function()  { setListening(false); };
-    recognitionRef.current = rec;
-    rec.start();
-    setListening(true);
+    try {
+      var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      var mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus' : 'audio/webm';
+      var recorder = new MediaRecorder(stream, { mimeType: mimeType });
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = function(e) {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = function() {
+        stream.getTracks().forEach(function(t) { t.stop(); });
+        var blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        var reader = new FileReader();
+        reader.onloadend = async function() {
+          var base64 = reader.result.split(',')[1];
+          setLoading(true);
+          try {
+            var fn = firebase.functions().httpsCallable('calibrateTranscribe');
+            var result = await fn({ audio: base64, mimeType: 'audio/webm' });
+            if (result.data && result.data.text) {
+              sendMessage(result.data.text);
+            } else {
+              setLoading(false);
+            }
+          } catch(e) {
+            setError('Transcripción: ' + (e.message || String(e)));
+            setLoading(false);
+          }
+        };
+        reader.readAsDataURL(blob);
+      };
+
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setRecording(true);
+    } catch(e) {
+      setError('Micrófono: ' + (e.message || 'Permiso denegado'));
+    }
   }
 
   // ── Enviar mensaje ──────────────────────────────────────────────────────
@@ -10489,17 +10518,17 @@ function ChatPanel({ darkMode }) {
           }
         }),
         React.createElement('button', {
-          onClick: toggleListening,
+          onClick: toggleRecording,
           disabled: loading,
-          title: listening ? 'Detener' : 'Hablar',
+          title: recording ? 'Soltar para enviar' : 'Hablar',
           style:{
             width:38, height:38, borderRadius:12, border:'none', flexShrink:0,
-            background: listening ? 'linear-gradient(135deg,#ef4444,#dc2626)' : (darkMode ? '#374151' : '#e5e7eb'),
-            color: listening ? '#fff' : colorMuted,
+            background: recording ? 'linear-gradient(135deg,#ef4444,#dc2626)' : (darkMode ? '#374151' : '#e5e7eb'),
+            color: recording ? '#fff' : colorMuted,
             cursor: loading ? 'not-allowed' : 'pointer',
             display:'flex', alignItems:'center', justifyContent:'center'
           }
-        }, React.createElement('i', { className: listening ? 'fas fa-stop' : 'fas fa-microphone', style:{ fontSize:14 } })),
+        }, React.createElement('i', { className: recording ? 'fas fa-stop' : 'fas fa-microphone', style:{ fontSize:14 } })),
         React.createElement('button', {
           onClick: sendMessage,
           disabled: loading || !input.trim(),

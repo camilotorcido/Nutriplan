@@ -9,6 +9,7 @@ const { defineSecret }       = require('firebase-functions/params');
 const https                  = require('https');
 
 const ANTHROPIC_KEY = defineSecret('ANTHROPIC_API_KEY');
+const GROQ_KEY      = defineSecret('GROQ_API_KEY');
 
 // ── Herramientas ────────────────────────────────────────────────────────────
 const TOOLS = [
@@ -184,6 +185,54 @@ exports.calibrateChat = onCall(
     } catch (err) {
       if (err instanceof HttpsError) throw err;
       console.error('[calibrateChat] ERROR:', err.message);
+      throw new HttpsError('internal', err.message || String(err));
+    }
+  }
+);
+
+// ── Cloud Function: transcripción de voz via Groq Whisper ───────────────────
+exports.calibrateTranscribe = onCall(
+  {
+    secrets:  [GROQ_KEY],
+    region:   'us-central1',
+    cors:     ['https://camilotorcido.github.io', 'http://localhost:5000', 'http://localhost:3000'],
+    invoker:  'public'
+  },
+  async (request) => {
+    try {
+      if (!request.data || !request.data.audio) {
+        throw new HttpsError('invalid-argument', 'audio requerido');
+      }
+      const { audio, mimeType = 'audio/webm' } = request.data;
+      const apiKey = GROQ_KEY.value();
+      if (!apiKey) throw new HttpsError('internal', 'GROQ_API_KEY no configurada');
+
+      const buffer = Buffer.from(audio, 'base64');
+
+      // FormData nativo de Node 20 — no requiere paquetes extra
+      const form = new FormData();
+      form.append('file', new Blob([buffer], { type: mimeType }), 'audio.webm');
+      form.append('model', 'whisper-large-v3-turbo');
+      form.append('language', 'es');
+      form.append('response_format', 'json');
+
+      const resp = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+        body: form
+      });
+
+      const data = await resp.json();
+      console.log('[calibrateTranscribe] status:', resp.status, '| text:', (data.text || '').slice(0, 80));
+
+      if (!resp.ok) {
+        throw new HttpsError('internal', data?.error?.message || `Groq ${resp.status}`);
+      }
+      return { text: data.text || '' };
+
+    } catch (err) {
+      if (err instanceof HttpsError) throw err;
+      console.error('[calibrateTranscribe] ERROR:', err.message);
       throw new HttpsError('internal', err.message || String(err));
     }
   }
