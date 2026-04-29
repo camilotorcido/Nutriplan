@@ -10262,6 +10262,26 @@ function ChatPanel({ darkMode }) {
         .slice(0, 5).map(function(f) { return { nombre:f.nombre, porcion:f.porcion, kcal:f.kcal, proteinas:f.proteinas, carbohidratos:f.carbohidratos, grasas:f.grasas }; });
       return { resultados: res };
     }
+    if (name === 'eliminar_comida') {
+      var hoy = new Date().toISOString().split('T')[0];
+      var extMap = {};
+      try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
+      var lista = extMap[hoy] || [];
+      var antes = lista.length;
+      if (input_.id) {
+        lista = lista.filter(function(c) { return c.id !== input_.id; });
+      } else if (input_.nombre) {
+        var nombreBuscar = (input_.nombre || '').toLowerCase();
+        var idx = lista.findLastIndex
+          ? lista.findLastIndex(function(c) { return c.nombre.toLowerCase().includes(nombreBuscar); })
+          : (function() { for (var i = lista.length - 1; i >= 0; i--) { if (lista[i].nombre.toLowerCase().includes(nombreBuscar)) return i; } return -1; })();
+        if (idx >= 0) lista.splice(idx, 1);
+      }
+      extMap[hoy] = lista;
+      localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
+      window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
+      return { ok: true, eliminadas: antes - lista.length };
+    }
     if (name === 'get_resumen_dia') {
       var ctx = buildContexto();
       return { consumido: ctx.macrosConsumidos, objetivo: ctx.macrosObjetivo,

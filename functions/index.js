@@ -15,7 +15,7 @@ const GROQ_KEY      = defineSecret('GROQ_API_KEY');
 const TOOLS = [
   {
     name: 'registrar_comida',
-    description: 'Registra una comida externa en el log del día. Úsala cuando el usuario diga que comió algo.',
+    description: 'Registra una comida que el usuario YA comió. SOLO úsala cuando el usuario use tiempo pasado ("comí", "me comí", "almorcé", "tomé"). NUNCA la uses para comidas futuras, planificación, cambios de menú ni sugerencias.',
     input_schema: {
       type: 'object',
       properties: {
@@ -44,6 +44,17 @@ const TOOLS = [
     name: 'get_resumen_dia',
     description: 'Devuelve el resumen de macros consumidos vs objetivo del día actual.',
     input_schema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'eliminar_comida',
+    description: 'Elimina una comida registrada por error del log de hoy. Úsala cuando el usuario diga que una comida fue registrada por error, que no la comió, o que quiere desmarcarla.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        id:     { type: 'string', description: 'ID de la comida a eliminar (si se conoce)' },
+        nombre: { type: 'string', description: 'Nombre de la comida a eliminar (si no se conoce el ID)' }
+      }
+    }
   }
 ];
 
@@ -121,11 +132,15 @@ MACROS CONSUMIDOS HASTA AHORA:
 
 INSTRUCCIONES:
 - Habla en español chileno, de forma cercana pero profesional.
-- Cuando el usuario mencione que comió algo, llama a registrar_comida con los macros estimados.
-- Si no sabes los macros exactos, estímalos razonablemente y dilo.
 - Sé breve: máximo 3–4 oraciones por respuesta salvo que te pidan más detalle.
 - No inventes datos del usuario que no estén en el contexto.
-- Si el usuario pregunta por el plan del día, lee los datos de contexto.`;
+- Si el usuario pregunta por el plan del día, lee los datos de contexto.
+
+USO DE HERRAMIENTAS — REGLAS ESTRICTAS:
+- registrar_comida: SOLO cuando el usuario use tiempo PASADO ("comí", "me comí", "almorcé", "tomé", "me tomé"). NUNCA para comidas futuras, planes, sugerencias ni cambios de menú.
+- eliminar_comida: cuando el usuario diga que una comida fue registrada por error, que no la comió, o pida desmarcarla.
+- Si el usuario pide cambiar, sugerir o planificar comidas futuras, responde con texto solamente — NO llames a registrar_comida.
+- Si no sabes los macros exactos al registrar, estímalos razonablemente y dilo.`;
 }
 
 // ── Cloud Function ──────────────────────────────────────────────────────────
