@@ -10206,6 +10206,9 @@ function ChatPanel({ darkMode }) {
   });
   const bottomRef = React.useRef(null);
   const inputRef  = React.useRef(null);
+  const [listening, setListening]       = React.useState(false);
+  const [speakEnabled, setSpeakEnabled] = React.useState(true);
+  const recognitionRef = React.useRef(null);
 
   // ── Serializar contexto desde localStorage ──────────────────────────────
   function buildContexto() {
@@ -10270,9 +10273,41 @@ function ChatPanel({ darkMode }) {
     return { error: 'tool desconocida: ' + name };
   }
 
+  // ── Hablar (TTS) ────────────────────────────────────────────────────────
+  function hablar(texto) {
+    if (!speakEnabled) return;
+    window.speechSynthesis.cancel();
+    var utt = new SpeechSynthesisUtterance(texto);
+    utt.lang = 'es-CL'; utt.rate = 1.1; utt.pitch = 1.0;
+    window.speechSynthesis.speak(utt);
+  }
+
+  // ── Micrófono (STT) ─────────────────────────────────────────────────────
+  function toggleListening() {
+    if (listening) {
+      if (recognitionRef.current) recognitionRef.current.stop();
+      setListening(false);
+      return;
+    }
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { setError('Tu browser no soporta micrófono (usa Chrome o Edge)'); return; }
+    var rec = new SR();
+    rec.lang = 'es-CL'; rec.continuous = false; rec.interimResults = false;
+    rec.onresult = function(e) {
+      var texto = e.results[0][0].transcript;
+      setListening(false);
+      sendMessage(texto);
+    };
+    rec.onerror = function(e) { setError('Micrófono: ' + e.error); setListening(false); };
+    rec.onend   = function()  { setListening(false); };
+    recognitionRef.current = rec;
+    rec.start();
+    setListening(true);
+  }
+
   // ── Enviar mensaje ──────────────────────────────────────────────────────
-  async function sendMessage() {
-    var texto = input.trim();
+  async function sendMessage(textoOverride) {
+    var texto = typeof textoOverride === 'string' ? textoOverride.trim() : input.trim();
     if (!texto || loading) return;
     if (typeof firebase === 'undefined' || !firebase.functions) {
       setError('Firebase Functions no disponible. Intenta recargar la app.');
@@ -10313,6 +10348,7 @@ function ChatPanel({ darkMode }) {
         var textoRespuesta = textBlocks.map(function(b) { return b.text; }).join('\n').trim();
         if (textoRespuesta) {
           displayMsgs = displayMsgs.concat([{ role:'assistant', content: textoRespuesta }]);
+          hablar(textoRespuesta);
         }
         break;
       }
@@ -10391,7 +10427,12 @@ function ChatPanel({ darkMode }) {
           onClick: function() { setMessages([]); localStorage.removeItem('calibrate_chat_history'); },
           title:'Borrar conversación',
           style:{ background:'transparent', border:'none', cursor:'pointer', color:colorMuted, fontSize:13, padding:'4px 6px', borderRadius:6 }
-        }, React.createElement('i', { className:'fas fa-trash-can' }))
+        }, React.createElement('i', { className:'fas fa-trash-can' })),
+        React.createElement('button', {
+          onClick: function() { setSpeakEnabled(function(v) { if (v) window.speechSynthesis.cancel(); return !v; }); },
+          title: speakEnabled ? 'Silenciar voz' : 'Activar voz',
+          style:{ background:'transparent', border:'none', cursor:'pointer', color: speakEnabled ? '#10b981' : colorMuted, fontSize:13, padding:'4px 6px', borderRadius:6 }
+        }, React.createElement('i', { className: speakEnabled ? 'fas fa-volume-high' : 'fas fa-volume-xmark' }))
       ),
 
       /* Mensajes */
@@ -10447,6 +10488,18 @@ function ChatPanel({ darkMode }) {
             color: colorText, outline:'none'
           }
         }),
+        React.createElement('button', {
+          onClick: toggleListening,
+          disabled: loading,
+          title: listening ? 'Detener' : 'Hablar',
+          style:{
+            width:38, height:38, borderRadius:12, border:'none', flexShrink:0,
+            background: listening ? 'linear-gradient(135deg,#ef4444,#dc2626)' : (darkMode ? '#374151' : '#e5e7eb'),
+            color: listening ? '#fff' : colorMuted,
+            cursor: loading ? 'not-allowed' : 'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center'
+          }
+        }, React.createElement('i', { className: listening ? 'fas fa-stop' : 'fas fa-microphone', style:{ fontSize:14 } })),
         React.createElement('button', {
           onClick: sendMessage,
           disabled: loading || !input.trim(),
