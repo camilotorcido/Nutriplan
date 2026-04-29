@@ -218,7 +218,7 @@ function LoginScreen({ darkMode, onToggleDark }) {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 brand-icon-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <i className="fas fa-bullseye text-white text-2xl"></i>
+            <i className="fas fa-seedling text-white text-2xl"></i>
           </div>
           <h1 className={`text-2xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-800'}`}>Calibrate</h1>
           <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{subtitles[mode]}</p>
@@ -727,7 +727,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           <div className={`w-full max-w-sm rounded-2xl shadow-xl p-8 animate-scaleIn ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'}`}>
             <div className="text-center mb-8">
               <div className="w-16 h-16 brand-icon-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <i className="fas fa-bullseye text-white text-2xl"></i>
+                <i className="fas fa-seedling text-white text-2xl"></i>
               </div>
               <h1 className={`text-2xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-800'}`}>Calibrate</h1>
             </div>
@@ -1207,7 +1207,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 brand-icon-bg rounded-xl flex items-center justify-center">
-                <i className="fas fa-bullseye text-white text-base"></i>
+                <i className="fas fa-seedling text-white text-base"></i>
               </div>
               <div>
                 <div className={`font-bold text-base ${darkMode ? 'text-white' : 'text-gray-800'}`}>Calibrate</div>
@@ -2042,7 +2042,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </button>
           </div>
           <div className="inline-flex items-center justify-center w-16 h-16 brand-icon-bg rounded-2xl mb-4">
-            <i className="fas fa-bullseye text-white text-2xl"></i>
+            <i className="fas fa-seedling text-white text-2xl"></i>
           </div>
           <h1 className={`text-3xl font-bold tracking-tight mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Calibrate</h1>
           <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{tienePlan ? 'Edita tu perfil' : 'Para calcular tu plan necesito tus datos.'}</p>
@@ -7230,7 +7230,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
-// COMPONENTE: HoyView — Dashboard diario (v20260428ai)
+// COMPONENTE: HoyView — Dashboard diario (v20260429ux)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swapping }) {
   const hoy = new Date();
@@ -7321,6 +7321,19 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
   const [comidasExt, setComidasExt] = React.useState(function() { return _comidasExtFecha(fechaHoyIso); });
   const [showModalExt, setShowModalExt] = React.useState(false);
   const [showScanner, setShowScanner] = React.useState(false);
+
+  // Coach card: último tip proactivo del agente
+  const [coachTip, setCoachTip] = React.useState(function() {
+    try { return localStorage.getItem('nutriplan_last_coach_tip') || null; } catch(e) { return null; }
+  });
+  const [coachDismissed, setCoachDismissed] = React.useState(false);
+  React.useEffect(function() {
+    function onCoachTip() {
+      try { setCoachTip(localStorage.getItem('nutriplan_last_coach_tip') || null); setCoachDismissed(false); } catch(e) {}
+    }
+    window.addEventListener('calibrate_coach_tip', onCoachTip);
+    return function() { window.removeEventListener('calibrate_coach_tip', onCoachTip); };
+  }, []);
 
   const necesitaPeso = React.useMemo(() => {
     if (!tieneEntrenamiento || !window.NP_BodyComp || !window.NP_BodyComp.cargar) return false;
@@ -7457,12 +7470,12 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                 ? window.NP_RoadmapData.ENTRENO_PROTOCOLO.scheduleDefault : null;
               var dow = new Date().getDay();
               var esEntreno = sch && sch[dow] && sch[dow] !== 'descanso';
-              if (streak < 2 && !sch) return null;
+              if (streak < 1 && !sch) return null;
               return (
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  {streak >= 2 && (
+                  {streak >= 1 && (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}>
-                      🔥 {streak} {t('días','days')}
+                      🔥 {streak} {streak === 1 ? t('día','day') : t('días','days')}
                     </span>
                   )}
                   {sch && (
@@ -7474,6 +7487,18 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                   )}
                 </div>
               );
+            })()}
+            {/* Mensaje motivacional según progreso del día */}
+            {metaKcalDia > 0 && (() => {
+              var _pct = consumidoHoy.calorias > 0 ? Math.round((consumidoHoy.calorias / metaKcalDia) * 100) : 0;
+              var _msg = _pct >= 100
+                ? t('🎉 ¡Meta de hoy cumplida! Excelente día.','🎉 Daily goal reached! Outstanding.')
+                : _pct >= 70 ? t('¡Casi listo! Un poco más y llegas al objetivo.','Almost there! Just a little more.')
+                : _pct >= 30 ? t('¡Vas muy bien! Continúa con el plan.','Great progress! Keep going.')
+                : _pct > 0  ? t('¡Buen comienzo! Registra tu próxima comida.','Good start! Log your next meal.')
+                : null;
+              if (!_msg) return null;
+              return <p style={{ fontSize: '12px', opacity: 0.85, marginTop: '6px', fontWeight: 500 }}>{_msg}</p>;
             })()}
           </div>
         );
@@ -7542,6 +7567,39 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         );
       })()}
 
+      {/* ── Coach card (último tip proactivo del agente) ────────────────── */}
+      {coachTip && !coachDismissed && (
+        <div className={`rounded-2xl ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}
+          style={{ borderLeft: '4px solid #22c55e', animation: 'fadeIn 0.3s ease both' }}>
+          <div className="px-5 py-4">
+            <div className="flex items-start gap-3">
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                <i className="fas fa-seedling text-white" style={{ fontSize: 14 }}></i>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#16a34a' }}>
+                  {t('Tu coach dice…','Your coach says…')}
+                </p>
+                <p className={`text-sm leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{coachTip}</p>
+                <div className="flex items-center gap-3 mt-2">
+                  <button
+                    onClick={function() { setCoachDismissed(true); }}
+                    className={`text-xs font-medium transition-colors cursor-pointer ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}>
+                    {t('Descartar','Dismiss')}
+                  </button>
+                  <span className={`text-xs ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}>·</span>
+                  <button
+                    onClick={function() { window.dispatchEvent(new CustomEvent('calibrate_open_chat')); }}
+                    className="text-xs font-semibold text-green-500 hover:text-green-400 transition-colors cursor-pointer">
+                    {t('Abrir chat →','Open chat →')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Progreso del día ─────────────────────────────────────────────── */}
       {metaKcalDia > 0 && (
         <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
@@ -7590,6 +7648,27 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               metas={{ proteinas: metaProtDia, carbohidratos: metaCarbDia, grasas: metaGrasDia, calorias: metaKcalDia }}
               darkMode={darkMode}
             />
+            {/* Celebración al alcanzar el 100% */}
+            {consumidoHoy.calorias >= metaKcalDia && metaKcalDia > 0 && (
+              <div style={{
+                borderRadius: '12px',
+                padding: '10px 14px',
+                background: 'linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(16,185,129,0.12) 100%)',
+                border: '1px solid rgba(34,197,94,0.3)',
+                display: 'flex', alignItems: 'center', gap: '10px',
+                animation: 'celebrationPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275)'
+              }}>
+                <span style={{ fontSize: '22px', lineHeight: 1 }}>🎉</span>
+                <div>
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: '#16a34a', margin: 0 }}>
+                    {t('¡Meta diaria cumplida!','Daily goal achieved!')}
+                  </p>
+                  <p style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0' }}>
+                    {t('Completaste tus calorías de hoy. ¡Sigue así!','You hit your calorie goal today. Keep it up!')}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -7726,15 +7805,56 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           </div>
         </div>
       ) : (
-        <div className={`rounded-2xl ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100'}`}>
-          <EmptyState
-            icon="fa-calendar-plus"
-            title={t('Sin plan semanal','No weekly plan yet')}
-            desc={t('Genera tu plan para ver las comidas de hoy y registrar tu progreso.','Generate your plan to see today\'s meals and track your progress.')}
-            cta={<><i className="fas fa-plus mr-1.5"></i>{t('Crear mi plan','Create my plan')}</>}
-            onCta={() => onNavigate('plan')}
-            darkMode={darkMode}
-          />
+        /* ── Guía visual 3 pasos cuando no hay plan ── */
+        <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+          <div className="px-5 pt-5 pb-5">
+            <p className={`text-xs font-bold uppercase tracking-wider mb-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <i className="fas fa-map mr-1.5"></i>{t('Primeros pasos','Getting started')}
+            </p>
+            {/* Paso 1 — Completado */}
+            <div className="flex items-center gap-3 mb-4">
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <i className="fas fa-check text-white" style={{ fontSize: 11 }}></i>
+              </div>
+              <div className="flex-1">
+                <p className={`text-sm font-semibold line-through ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  {t('Crea tu perfil','Create your profile')}
+                </p>
+              </div>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${darkMode ? 'bg-green-900/40 text-green-400' : 'bg-green-50 text-green-600'}`}>
+                {t('Listo','Done')}
+              </span>
+            </div>
+            {/* Paso 2 — Actual */}
+            <div className="flex items-start gap-3 mb-4" style={{ paddingLeft: 1 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#22c55e,#10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 0 0 4px rgba(34,197,94,0.2)', animation: 'pulse-soft 1.8s infinite' }}>
+                <span style={{ color: '#fff', fontSize: 12, fontWeight: 800 }}>2</span>
+              </div>
+              <div className="flex-1">
+                <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                  {t('Genera tu plan semanal','Generate your weekly plan')}
+                </p>
+                <p className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {t('Tu menú personalizado, listo en segundos.','Your personalized menu, ready in seconds.')}
+                </p>
+              </div>
+            </div>
+            {/* Paso 3 — Futuro */}
+            <div className="flex items-center gap-3 mb-5" style={{ opacity: 0.4 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid', borderColor: darkMode ? '#4b5563' : '#d1d5db', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ color: darkMode ? '#6b7280' : '#9ca3af', fontSize: 12, fontWeight: 700 }}>3</span>
+              </div>
+              <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                {t('Registra y mejora cada día','Track and improve daily')}
+              </p>
+            </div>
+            <button
+              onClick={() => onNavigate('plan')}
+              className="w-full py-3 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90 cursor-pointer"
+              style={{ background: 'linear-gradient(135deg,#22c55e,#10b981)' }}>
+              <i className="fas fa-plus mr-2"></i>{t('Crear mi plan ahora','Create my plan now')}
+            </button>
+          </div>
         </div>
       )}
 
@@ -10390,6 +10510,11 @@ function ChatPanel({ darkMode }) {
         localStorage.setItem('nutriplan_chat_history', JSON.stringify(nuevo.slice(-20)));
         return nuevo;
       });
+      // Persistir el último tip del coach para la coach card en HoyView
+      try {
+        localStorage.setItem('nutriplan_last_coach_tip', texto);
+        window.dispatchEvent(new CustomEvent('calibrate_coach_tip'));
+      } catch(e) {}
       setBadge(true);
       setOpen(true);   // abrir el panel para que el usuario vea la sugerencia
     } catch(e) {
@@ -10760,6 +10885,13 @@ function ChatPanel({ darkMode }) {
     }
     window.addEventListener('calibrate_meal_logged', onMealLogged);
     return function() { window.removeEventListener('calibrate_meal_logged', onMealLogged); };
+  }, []);
+
+  // ── Apertura externa del chat (desde coach card en HoyView) ─────────────
+  React.useEffect(function() {
+    function onOpenChat() { setOpen(true); setBadge(false); }
+    window.addEventListener('calibrate_open_chat', onOpenChat);
+    return function() { window.removeEventListener('calibrate_open_chat', onOpenChat); };
   }, []);
 
   var borderColor = darkMode ? '#374151' : '#e5e7eb';
@@ -11476,7 +11608,7 @@ function App() {
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 brand-icon-bg rounded-lg flex items-center justify-center">
-              <i className="fas fa-bullseye text-white text-sm"></i>
+              <i className="fas fa-seedling text-white text-sm"></i>
             </div>
             <span className={`font-bold text-lg tracking-tight ${darkMode ? 'text-white' : 'text-gray-800'}`}>Calibrate</span>
             {perfil && <span className="text-xs text-gray-400 hidden sm:inline">{perfil.caloriasObjetivo} kcal/día{perfil.numSemanas > 1 ? ` · ${perfil.numSemanas} sem` : ''}</span>}
@@ -11530,7 +11662,7 @@ function App() {
                 { id: "fitness", label: "Fitness",                  short: "Fitness",           icon: "fa-dumbbell" }
               ] : []),
               { id: "cocinar",  label: t("Recetas","Recipes"),       short: t("Recetas","Recipes"), icon: "fa-utensils" },
-              { id: "tienda",   label: t("Tienda","Store"),          short: t("Tienda","Store"),  icon: "fa-bag-shopping" }
+              { id: "tienda",   label: t("Compras","Shopping"),      short: t("Compras","Shopping"),  icon: "fa-cart-shopping" }
             ].map(tab => (
               <button key={tab.id} onClick={() => navegarA(tab.id)}
                 className={`nav-pill flex-shrink-0 sm:flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
