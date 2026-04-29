@@ -55,6 +55,61 @@ const TOOLS = [
         nombre: { type: 'string', description: 'Nombre de la comida a eliminar (si no se conoce el ID)' }
       }
     }
+  },
+  {
+    name: 'get_plan_semana',
+    description: 'Devuelve el plan de comidas de la semana completa (desayuno, almuerzo, once, cena, colación por día). Úsala cuando el usuario pregunte qué tiene planificado, qué come esta semana, etc.',
+    input_schema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'get_lista_compras',
+    description: 'Devuelve los ingredientes necesarios para el plan semanal, indicando cuáles están en la despensa y cuáles faltan comprar. Úsala cuando el usuario pregunte qué necesita comprar.',
+    input_schema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'marcar_comprado',
+    description: 'Marca un ingrediente de la lista de compras como ya comprado. Úsala cuando el usuario diga que ya compró un ingrediente.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        nombre: { type: 'string', description: 'Nombre del ingrediente a marcar como comprado (búsqueda parcial)' }
+      },
+      required: ['nombre']
+    }
+  },
+  {
+    name: 'marcar_en_despensa',
+    description: 'Marca un ingrediente como disponible en la despensa (ya lo tiene en casa). Úsala cuando el usuario diga que ya tiene ese ingrediente.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        nombre: { type: 'string', description: 'Nombre del ingrediente (búsqueda parcial)' }
+      },
+      required: ['nombre']
+    }
+  },
+  {
+    name: 'quitar_de_despensa',
+    description: 'Quita un ingrediente de la despensa, marcándolo como faltante (aparecerá en la lista de compras). Úsala cuando el usuario diga que se le acabó o que necesita comprar ese ingrediente.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        nombre: { type: 'string', description: 'Nombre del ingrediente (búsqueda parcial)' }
+      },
+      required: ['nombre']
+    }
+  },
+  {
+    name: 'marcar_comida_plan',
+    description: 'Marca una comida del plan semanal como cumplida (ya la comió, siguió el plan). Úsala cuando el usuario confirme que comió exactamente lo que tenía planificado para ese slot del plan.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        dia:  { type: 'string', description: 'Día de la semana: Lunes | Martes | Miércoles | Jueves | Viernes | Sábado | Domingo' },
+        tipo: { type: 'string', description: 'Slot del plan: desayuno | almuerzo | once | cena | colacion' }
+      },
+      required: ['dia', 'tipo']
+    }
   }
 ];
 
@@ -137,10 +192,19 @@ INSTRUCCIONES:
 - Si el usuario pregunta por el plan del día, lee los datos de contexto.
 
 USO DE HERRAMIENTAS — REGLAS ESTRICTAS:
-- registrar_comida: SOLO cuando el usuario use tiempo PASADO ("comí", "me comí", "almorcé", "tomé", "me tomé"). NUNCA para comidas futuras, planes, sugerencias ni cambios de menú.
-- eliminar_comida: cuando el usuario diga que una comida fue registrada por error, que no la comió, o pida desmarcarla.
+- registrar_comida: SOLO cuando el usuario use tiempo PASADO ("comí", "me comí", "almorcé", "tomé"). NUNCA para comidas futuras ni sugerencias.
+- eliminar_comida: cuando una comida fue registrada por error, no la comió, o quiere desmarcarla.
+- marcar_comida_plan: cuando el usuario confirme que siguió el plan y comió lo planificado (usa tiempo pasado y menciona el slot del plan).
+- get_plan_semana: cuando pregunte qué tiene planificado, qué come esta semana o cualquier día específico.
+- get_lista_compras: cuando pregunte qué necesita comprar, qué le falta, o qué hay en la lista.
+- marcar_comprado: cuando diga que ya compró un ingrediente específico.
+- marcar_en_despensa: cuando diga que ya tiene un ingrediente en casa.
+- quitar_de_despensa: cuando diga que se le acabó algo o que necesita comprar un ingrediente que tenía.
+- get_resumen_dia: cuando pregunte cómo va el día, cuántas calorías lleva, etc.
+- buscar_alimento: cuando pregunte los macros de un alimento específico.
 - Si el usuario pide cambiar, sugerir o planificar comidas futuras, responde con texto solamente — NO llames a registrar_comida.
-- Si no sabes los macros exactos al registrar, estímalos razonablemente y dilo.`;
+- Si no sabes los macros exactos al registrar, estímalos razonablemente y dilo.
+- Puedes encadenar múltiples tool calls en un mismo turno si la solicitud lo requiere.`;
 }
 
 // ── Cloud Function ──────────────────────────────────────────────────────────

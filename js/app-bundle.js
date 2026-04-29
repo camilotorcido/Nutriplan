@@ -10290,6 +10290,123 @@ function ChatPanel({ darkMode }) {
           carbohidratos: ctx.macrosObjetivo.carbohidratos - ctx.macrosConsumidos.carbohidratos,
           grasas: ctx.macrosObjetivo.grasas - ctx.macrosConsumidos.grasas } };
     }
+
+    // ── Herramientas de plan semanal ─────────────────────────────────────────
+    if (name === 'get_plan_semana') {
+      var plan = typeof cargarPlanSemanal === 'function' ? cargarPlanSemanal() : null;
+      if (!plan) return { error: 'Sin plan semanal activo. Dile al usuario que genere su plan primero.' };
+      var dias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+      var tipos = ['desayuno','almuerzo','once','cena','colacion'];
+      var sem1 = plan.semana_1 || plan;
+      var resultado = {};
+      dias.forEach(function(dia) {
+        var comidasDia = sem1[dia];
+        if (!comidasDia || dia.startsWith('_')) return;
+        resultado[dia] = {};
+        tipos.forEach(function(tipo) {
+          var comida = comidasDia[tipo];
+          if (comida && comida.nombre) {
+            resultado[dia][tipo] = {
+              nombre: comida.nombre,
+              kcal: comida.calorias_escaladas || comida.calorias || 0,
+              proteinas: comida.proteinas_escaladas || comida.proteinas || 0
+            };
+          }
+        });
+      });
+      return { plan_semana: resultado };
+    }
+
+    // ── Herramientas de lista de compras ────────────────────────────────────
+    if (name === 'get_lista_compras') {
+      var plan = typeof cargarPlanSemanal === 'function' ? cargarPlanSemanal() : null;
+      if (!plan) return { error: 'Sin plan semanal activo.' };
+      var ings = (typeof consolidarIngredientesFiltrado === 'function')
+        ? consolidarIngredientesFiltrado(plan, false) : [];
+      var despensaData = (typeof cargarDespensa === 'function') ? (cargarDespensa() || {}) : {};
+      var compradosData = {};
+      try { compradosData = JSON.parse(localStorage.getItem('nutriplan_comprados') || '{}'); } catch(e) {}
+      var faltantes = ings.filter(function(i) { return !despensaData[i.id]; });
+      return {
+        total_ingredientes: ings.length,
+        por_comprar: faltantes.length,
+        lista: faltantes.map(function(i) {
+          return { nombre: i.nombre, cantidad: i.descripcion_compra, ya_comprado: !!compradosData[i.id] };
+        }),
+        en_despensa: ings.filter(function(i) { return despensaData[i.id]; }).map(function(i) { return i.nombre; })
+      };
+    }
+
+    if (name === 'marcar_comprado') {
+      var plan = typeof cargarPlanSemanal === 'function' ? cargarPlanSemanal() : null;
+      if (!plan) return { ok: false, error: 'Sin plan semanal activo.' };
+      var ings = (typeof consolidarIngredientesFiltrado === 'function')
+        ? consolidarIngredientesFiltrado(plan, false) : [];
+      var q = (input_.nombre || '').toLowerCase();
+      var ing = ings.find(function(i) { return i.nombre.toLowerCase().includes(q); });
+      if (!ing) return { ok: false, error: 'Ingrediente no encontrado: ' + input_.nombre };
+      var comprados = {};
+      try { comprados = JSON.parse(localStorage.getItem('nutriplan_comprados') || '{}'); } catch(e) {}
+      comprados[ing.id] = true;
+      localStorage.setItem('nutriplan_comprados', JSON.stringify(comprados));
+      window.dispatchEvent(new CustomEvent('calibrate_compra_updated'));
+      return { ok: true, marcado: ing.nombre };
+    }
+
+    if (name === 'marcar_en_despensa') {
+      var plan = typeof cargarPlanSemanal === 'function' ? cargarPlanSemanal() : null;
+      if (!plan) return { ok: false, error: 'Sin plan semanal activo.' };
+      var ings = (typeof consolidarIngredientesFiltrado === 'function')
+        ? consolidarIngredientesFiltrado(plan, false) : [];
+      var q = (input_.nombre || '').toLowerCase();
+      var ing = ings.find(function(i) { return i.nombre.toLowerCase().includes(q); });
+      if (!ing) return { ok: false, error: 'Ingrediente no encontrado: ' + input_.nombre };
+      var despensa = (typeof cargarDespensa === 'function') ? (cargarDespensa() || {}) : {};
+      despensa[ing.id] = true;
+      if (typeof guardarDespensa === 'function') guardarDespensa(despensa);
+      window.dispatchEvent(new CustomEvent('calibrate_despensa_updated'));
+      return { ok: true, marcado: ing.nombre };
+    }
+
+    if (name === 'quitar_de_despensa') {
+      var plan = typeof cargarPlanSemanal === 'function' ? cargarPlanSemanal() : null;
+      if (!plan) return { ok: false, error: 'Sin plan semanal activo.' };
+      var ings = (typeof consolidarIngredientesFiltrado === 'function')
+        ? consolidarIngredientesFiltrado(plan, false) : [];
+      var q = (input_.nombre || '').toLowerCase();
+      var ing = ings.find(function(i) { return i.nombre.toLowerCase().includes(q); });
+      if (!ing) return { ok: false, error: 'Ingrediente no encontrado: ' + input_.nombre };
+      var despensa = (typeof cargarDespensa === 'function') ? (cargarDespensa() || {}) : {};
+      despensa[ing.id] = false;
+      if (typeof guardarDespensa === 'function') guardarDespensa(despensa);
+      window.dispatchEvent(new CustomEvent('calibrate_despensa_updated'));
+      return { ok: true, quitado: ing.nombre };
+    }
+
+    // ── Adherencia al plan ─────────────────────────────────────────────────
+    if (name === 'marcar_comida_plan') {
+      var dia = input_.dia;
+      var tipo = input_.tipo;
+      if (!dia || !tipo) return { ok: false, error: 'Falta dia o tipo.' };
+      var plan = typeof cargarPlanSemanal === 'function' ? cargarPlanSemanal() : null;
+      if (!plan) return { ok: false, error: 'Sin plan semanal activo.' };
+      var sem1 = plan.semana_1 || plan;
+      var comidasDia = sem1[dia];
+      if (!comidasDia) return { ok: false, error: 'Día no encontrado: ' + dia };
+      var comida = comidasDia[tipo];
+      if (!comida) return { ok: false, error: 'Slot no encontrado: ' + tipo + ' del ' + dia };
+      if (typeof window.adherencia !== 'undefined' && typeof window.adherencia.marcar === 'function') {
+        window.adherencia.marcar(dia, tipo, true, {
+          kcal_plan: comida.calorias_escaladas || comida.calorias || 0,
+          proteinas_plan: comida.proteinas_escaladas || comida.proteinas || 0,
+          nombre: comida.nombre
+        }, 1);
+        window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
+        return { ok: true, marcado: comida.nombre + ' (' + dia + ' · ' + tipo + ')' };
+      }
+      return { ok: false, error: 'Sistema de adherencia no disponible.' };
+    }
+
     return { error: 'tool desconocida: ' + name };
   }
 
