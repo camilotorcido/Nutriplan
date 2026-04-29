@@ -1,16 +1,16 @@
 /* ============================================
    Calibrate — Cloud Function: proxy Claude API
-   Endpoint: /calibrateChat (HTTPS callable)
+   Endpoint: /calibrateChat  (Gen 2 HTTPS callable)
+   invoker: allAuthenticatedUsers (Firebase Auth tokens son válidos)
    ============================================ */
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret }       = require('firebase-functions/params');
-const Anthropic              = require('@anthropic-ai/sdk');
+const https                  = require('https');
 
-// La API key vive en Secret Manager — nunca en el código
 const ANTHROPIC_KEY = defineSecret('ANTHROPIC_API_KEY');
 
-// ── Herramientas que el agente puede ejecutar en el front ──────────────────
+// ── Herramientas ────────────────────────────────────────────────────────────
 const TOOLS = [
   {
     name: 'registrar_comida',
@@ -46,15 +46,50 @@ const TOOLS = [
   }
 ];
 
-// ── System prompt ──────────────────────────────────────────────────────────
-function buildSystemPrompt(contexto) {
-  const perfil = contexto?.perfil || {};
-  const macros = contexto?.macrosObjetivo || {};
-  const plan   = contexto?.planHoy || {};
-  const consumido = contexto?.macrosConsumidos || {};
+// ── Llamada directa a Anthropic ─────────────────────────────────────────────
+function callAnthropic(apiKey, body) {
+  return new Promise((resolve, reject) => {
+    const payload = JSON.stringify(body);
+    const options = {
+      hostname: 'api.anthropic.com',
+      path:     '/v1/messages',
+      method:   'POST',
+      headers: {
+        'Content-Type':      'application/json',
+        'Content-Length':    Buffer.byteLength(payload),
+        'x-api-key':         apiKey,
+        'anthropic-version': '2023-06-01'
+      }
+    };
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(parsed);
+          } else {
+            reject(new Error(`Anthropic ${res.statusCode}: ${parsed?.error?.message || data}`));
+          }
+        } catch (e) {
+          reject(new Error(`Parse error: ${data.slice(0, 200)}`));
+        }
+      });
+    });
+    req.on('error', e => reject(new Error(`Network: ${e.message}`)));
+    req.setTimeout(55000, () => { req.destroy(); reject(new Error('Timeout 55s')); });
+    req.write(payload);
+    req.end();
+  });
+}
 
-  const nombreUsuario = perfil.nombre || 'Usuario';
-  const objetivo = perfil.objetivo || 'mantenimiento';
+// ── System prompt ───────────────────────────────────────────────────────────
+function buildSystemPrompt(contexto) {
+  const perfil    = contexto?.perfil || {};
+  const macros    = contexto?.macrosObjetivo || {};
+  const plan      = contexto?.planHoy || {};
+  const consumido = contexto?.macrosConsumidos || {};
 
   const planTexto = Object.entries(plan).length > 0
     ? Object.entries(plan)
@@ -65,8 +100,8 @@ function buildSystemPrompt(contexto) {
 
   return `Eres el asistente nutricional de Calibrate, una app de nutrición personalizada para chilenos.
 
-USUARIO: ${nombreUsuario}
-OBJETIVO: ${objetivo}
+USUARIO: ${perfil.nombre || 'Usuario'}
+OBJETIVO: ${perfil.objetivo || 'mantenimiento'}
 
 PLAN DE HOY:
 ${planTexto}
@@ -92,49 +127,64 @@ INSTRUCCIONES:
 - Si el usuario pregunta por el plan del día, lee los datos de contexto.`;
 }
 
-// ── Cloud Function ─────────────────────────────────────────────────────────
+// ── Cloud Function ──────────────────────────────────────────────────────────
 exports.calibrateChat = onCall(
-  { secrets: [ANTHROPIC_KEY], region: 'us-central1', cors: true, invoker: 'public' },
+  {
+    secrets:  [ANTHROPIC_KEY],
+    region:   'us-central1',
+    cors:     ['https://camilotorcido.github.io', 'http://localhost:5000', 'http://localhost:3000'],
+    invoker:  'public'
+  },
   async (request) => {
-    // Validación básica
-    if (!request.data || !Array.isArray(request.data.messages)) {
-      throw new HttpsError('invalid-argument', 'messages[] requerido');
+    try {
+      if (!request.data || !Array.isArray(request.data.messages)) {
+        throw new HttpsError('invalid-argument', 'messages[] requerido');
+      }
+
+      const { messages, contexto } = request.data;
+
+      const mensajesLimpios = messages
+        .filter(m => m.role === 'user' || m.role === 'assistant')
+        .slice(-30)
+        .map(m => ({
+          role: m.role,
+          content: Array.isArray(m.content)
+            ? m.content
+            : String(m.content).slice(0, 4000)
+        }));
+
+      if (mensajesLimpios.length === 0) {
+        throw new HttpsError('invalid-argument', 'Sin mensajes válidos');
+      }
+
+      const apiKey = ANTHROPIC_KEY.value();
+      if (!apiKey) {
+        throw new HttpsError('internal', 'ANTHROPIC_API_KEY no configurada');
+      }
+
+      console.log('[calibrateChat] key:', apiKey.slice(0, 10), '| msgs:', mensajesLimpios.length);
+
+      const response = await callAnthropic(apiKey, {
+        model:      'claude-haiku-4-5',
+        max_tokens: 1024,
+        system:     buildSystemPrompt(contexto),
+        tools:      TOOLS,
+        messages:   mensajesLimpios
+      });
+
+      console.log('[calibrateChat] OK stop_reason:', response.stop_reason);
+
+      return {
+        id:          response.id,
+        stop_reason: response.stop_reason,
+        content:     response.content,
+        usage:       response.usage
+      };
+
+    } catch (err) {
+      if (err instanceof HttpsError) throw err;
+      console.error('[calibrateChat] ERROR:', err.message);
+      throw new HttpsError('internal', err.message || String(err));
     }
-
-    const { messages, contexto } = request.data;
-
-    // Sanitizar mensajes (solo roles válidos, sin campos extra)
-    // content puede ser string (texto normal) o array (tool_use / tool_result blocks)
-    const mensajesLimpios = messages
-      .filter(m => m.role === 'user' || m.role === 'assistant')
-      .slice(-30) // máx 30 para incluir rondas de tool_use
-      .map(m => ({
-        role: m.role,
-        content: Array.isArray(m.content)
-          ? m.content   // bloques tool_use / tool_result — pasarlos tal cual
-          : String(m.content).slice(0, 4000)
-      }));
-
-    if (mensajesLimpios.length === 0) {
-      throw new HttpsError('invalid-argument', 'Sin mensajes válidos');
-    }
-
-    const anthropic = new Anthropic({ apiKey: ANTHROPIC_KEY.value() });
-
-    const response = await anthropic.messages.create({
-      model:      'claude-opus-4-5',
-      max_tokens: 1024,
-      system:     buildSystemPrompt(contexto),
-      tools:      TOOLS,
-      messages:   mensajesLimpios
-    });
-
-    // Devolver todo el response al front para que maneje tool_use
-    return {
-      id:           response.id,
-      stop_reason:  response.stop_reason,
-      content:      response.content,   // array de blocks (text | tool_use)
-      usage:        response.usage
-    };
   }
 );
