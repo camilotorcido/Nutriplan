@@ -10,8 +10,7 @@ Write-Host ('Version: ' + $version) -ForegroundColor Cyan
 
 $html = Get-Content "index.html" -Raw -Encoding utf8
 $html = [regex]::Replace($html, "APP_VERSION\s*=\s*'[^']*'", ("APP_VERSION = '" + $version + "'"))
-$html = [regex]::Replace($html, '\?v=[a-f0-9]{8}', ('?v=' + $version))
-$html = [regex]::Replace($html, '\?v=\d{8}[a-z]{2}', ('?v=' + $version))
+$html = [regex]::Replace($html, '\?v=[\da-z]+', ('?v=' + $version))
 [System.IO.File]::WriteAllText(($PSScriptRoot + '\index.html'), $html, [System.Text.UTF8Encoding]::new($false))
 Write-Host 'index.html actualizado' -ForegroundColor Green
 
