@@ -30,6 +30,14 @@
   let _proxyActive   = false;
   let _orig          = null;   // métodos originales de Storage.prototype
   const _pending     = {};     // { key: timeoutId } para debounce
+  let _listeners     = [];     // funciones de unsubscribe de onSnapshot
+
+  /* ── Claves sincronizadas en tiempo real entre dispositivos ── */
+  const REALTIME_KEYS = [
+    'nutriplan_comprados',
+    'nutriplan_despensa',
+    'nutriplan_despensa_manual'
+  ];
 
   /* ────────────────────────────────────────────
      Scoping: transforma la clave para aislar
@@ -155,6 +163,60 @@
   }
 
   /* ────────────────────────────────────────────
+     Sync en tiempo real: escuchar cambios de
+     otros dispositivos vía onSnapshot.
+
+     Estrategia anti-loop:
+       Cuando Device A escribe → el proxy ya
+       escribió el valor en localStorage ANTES
+       de que Firestore lo confirme. Cuando el
+       snapshot llega de vuelta a Device A,
+       currentVal === val → se ignora.
+       En Device B, currentVal es el valor viejo
+       → se aplica y se notifica a React.
+  ──────────────────────────────────────────── */
+  function _startRealtimeSync(userId) {
+    if (typeof firebase === 'undefined') return;
+    _stopRealtimeSync(); // limpiar listeners anteriores si los hay
+
+    _listeners = REALTIME_KEYS.map(function (key) {
+      return firebase.firestore()
+        .collection('users').doc(userId)
+        .collection('data').doc(key)
+        .onSnapshot(function (doc) {
+          if (!doc.exists || !_orig) return;
+          const val = doc.data().v;
+          if (val === undefined || val === null) return;
+
+          // Si ya tenemos este valor exacto → es nuestro propio write reflejado, ignorar
+          const scopedKey = key + '__' + userId;
+          const currentVal = _orig.get.call(localStorage, scopedKey);
+          if (currentVal === val) return;
+
+          // Cambio remoto (otro dispositivo): escribir directo a localStorage
+          // sin pasar por el proxy → evita re-encolar sync a Firestore
+          _orig.set.call(localStorage, scopedKey, val);
+
+          // Notificar a los componentes React para que lean el nuevo valor
+          window.dispatchEvent(
+            new CustomEvent('calibrate_cloud_sync', { detail: { key: key } })
+          );
+
+          console.log('[CloudStorage] Sync remoto recibido:', key);
+        }, function (err) {
+          console.warn('[CloudStorage] onSnapshot error en', key, ':', err.message);
+        });
+    });
+
+    console.log('[CloudStorage] Real-time sync activo (' + REALTIME_KEYS.length + ' claves)');
+  }
+
+  function _stopRealtimeSync() {
+    _listeners.forEach(function (unsub) { try { unsub(); } catch (e) {} });
+    _listeners = [];
+  }
+
+  /* ────────────────────────────────────────────
      Borrar todos los datos del usuario en
      Firestore (usado al "Reiniciar NutriPlan")
   ──────────────────────────────────────────── */
@@ -182,10 +244,12 @@
     async onLogin(userId) {
       _installProxy(userId);
       await _hydrateFromCloud(userId);
+      _startRealtimeSync(userId);  // ← escucha cambios de otros dispositivos
     },
 
     /** Llamar cuando el usuario cierra sesión. */
     onLogout() {
+      _stopRealtimeSync();          // ← detener listeners antes de limpiar proxy
       // Cancelar syncs pendientes
       Object.keys(_pending).forEach(function (k) {
         clearTimeout(_pending[k]);

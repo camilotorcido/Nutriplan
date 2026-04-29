@@ -5488,6 +5488,24 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
   React.useEffect(() => { guardarDespensa(despensa); }, [despensa]);
   React.useEffect(() => { localStorage.setItem('nutriplan_despensa_manual', JSON.stringify(ingredientesManual)); }, [ingredientesManual]);
 
+  // ── Sync en tiempo real: refrescar estado cuando otro dispositivo cambia datos ──
+  React.useEffect(() => {
+    function onCloudSync(e) {
+      const k = e.detail && e.detail.key;
+      if (k === 'nutriplan_despensa') setDespensa(cargarDespensa() || {});
+      if (k === 'nutriplan_despensa_manual') {
+        try { setIngredientesManual(JSON.parse(localStorage.getItem('nutriplan_despensa_manual') || '[]')); } catch(_) {}
+      }
+    }
+    function onDespensaUpd() { setDespensa(cargarDespensa() || {}); }
+    window.addEventListener('calibrate_cloud_sync', onCloudSync);
+    window.addEventListener('calibrate_despensa_updated', onDespensaUpd);
+    return () => {
+      window.removeEventListener('calibrate_cloud_sync', onCloudSync);
+      window.removeEventListener('calibrate_despensa_updated', onDespensaUpd);
+    };
+  }, []);
+
   const agregarIngredienteManual = () => {
     const nombre = nuevoIngrediente.trim();
     if (!nombre) return;
@@ -5869,6 +5887,29 @@ function ShoppingList({ plan, darkMode }) {
   const ingredientesFaltantes = ingredientesConsolidados.filter(ing => !despensa[ing.id]);
 
   React.useEffect(() => { localStorage.setItem('nutriplan_comprados', JSON.stringify(comprados)); }, [comprados]);
+
+  // ── Sync en tiempo real: refrescar estado cuando otro dispositivo cambia datos ──
+  React.useEffect(() => {
+    function onCloudSync(e) {
+      const k = e.detail && e.detail.key;
+      if (k === 'nutriplan_comprados') {
+        try { setComprados(JSON.parse(localStorage.getItem('nutriplan_comprados') || '{}')); } catch(_) {}
+      }
+      if (k === 'nutriplan_despensa') setDespensa(cargarDespensa() || {});
+    }
+    function onCompraUpd() {
+      try { setComprados(JSON.parse(localStorage.getItem('nutriplan_comprados') || '{}')); } catch(_) {}
+    }
+    function onDespensaUpd() { setDespensa(cargarDespensa() || {}); }
+    window.addEventListener('calibrate_cloud_sync', onCloudSync);
+    window.addEventListener('calibrate_compra_updated', onCompraUpd);
+    window.addEventListener('calibrate_despensa_updated', onDespensaUpd);
+    return () => {
+      window.removeEventListener('calibrate_cloud_sync', onCloudSync);
+      window.removeEventListener('calibrate_compra_updated', onCompraUpd);
+      window.removeEventListener('calibrate_despensa_updated', onDespensaUpd);
+    };
+  }, []);
 
   const toggleComprado = (e, id) => {
     e.stopPropagation();
