@@ -1,0 +1,19 @@
+1)PowerShell (ventana 1):
+
+cd "D:\Claude\03 - Projects\Nutriplan"
+npx serve .
+
+2)Browser: http://localhost:3000
+
+3)Claude Desktop: pide cambios específicos. Ejemplo:
+
+CopyAgrega un botón "Exportar PDF" en el componente ShoppingList de js/app-bundle.js, 
+justo antes del botón "Copiar lista". Que llame a window.exportarPDF().
+
+4)Ctrl+Shift+R en browser para ver cambios.
+
+5)Cuando termines:
+
+Copygit add .
+git commit -m "Add PDF export button to shopping list"
+git push

@@ -6,8 +6,15 @@
    - Network-first para peticiones externas (TheMealDB, etc.)
    ============================================ */
 
-const VERSION = 'calibrate-v20260428ce';
-const CACHE_STATIC = 'calibrate-static-' + VERSION;
+// Versión leída desde la URL de registro (sw.js?v=xxx)
+// → sw.js nunca necesita editarse para bumpar versión
+const VERSION = (function () {
+  try {
+    var v = new URL(self.location.href).searchParams.get('v');
+    return v ? ('calibrate-v' + v) : 'calibrate-v-dev';
+  } catch (e) { return 'calibrate-v-dev'; }
+})();
+const CACHE_STATIC  = 'calibrate-static-'  + VERSION;
 const CACHE_RUNTIME = 'calibrate-runtime-' + VERSION;
 
 // Assets mÃ­nimos para el shell (Fase 6.2: recipes-extra y upgrades son lazy)
