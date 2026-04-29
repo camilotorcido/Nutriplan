@@ -36,7 +36,8 @@
   const REALTIME_KEYS = [
     'nutriplan_comprados',
     'nutriplan_despensa',
-    'nutriplan_despensa_manual'
+    'nutriplan_despensa_manual',
+    'nutriplan_chat_history'
   ];
 
   /* ────────────────────────────────────────────

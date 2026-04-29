@@ -10242,8 +10242,21 @@ function ChatPanel({ darkMode }) {
   const [loading, setLoading] = React.useState(false);
   const [error, setError]     = React.useState('');
   const [messages, setMessages] = React.useState(function() {
-    try { return JSON.parse(localStorage.getItem('calibrate_chat_history') || '[]'); }
-    catch(e) { return []; }
+    try {
+      // Migración one-time: mover datos de clave antigua (no scoped) a la nueva (scoped por usuario)
+      var oldKey = 'calibrate_chat_history';
+      var newKey = 'nutriplan_chat_history';
+      var raw = localStorage.getItem(newKey);
+      if (!raw) {
+        var legacy = localStorage.getItem(oldKey);
+        if (legacy) {
+          localStorage.setItem(newKey, legacy);
+          localStorage.removeItem(oldKey);
+          raw = legacy;
+        }
+      }
+      return JSON.parse(raw || '[]');
+    } catch(e) { return []; }
   });
   const bottomRef = React.useRef(null);
   const inputRef  = React.useRef(null);
@@ -10374,7 +10387,7 @@ function ChatPanel({ darkMode }) {
       var proactiveMsg = { role: 'assistant', content: texto, isProactive: true, _trigger: triggerMsg };
       setMessages(function(prev) {
         var nuevo = prev.concat([proactiveMsg]);
-        localStorage.setItem('calibrate_chat_history', JSON.stringify(nuevo.slice(-20)));
+        localStorage.setItem('nutriplan_chat_history', JSON.stringify(nuevo.slice(-20)));
         return nuevo;
       });
       setBadge(true);
@@ -10706,7 +10719,7 @@ function ChatPanel({ darkMode }) {
     }
 
     setMessages(displayMsgs);
-    localStorage.setItem('calibrate_chat_history', JSON.stringify(displayMsgs.slice(-20)));
+    localStorage.setItem('nutriplan_chat_history', JSON.stringify(displayMsgs.slice(-20)));
   }
 
   // ── Auto-scroll ─────────────────────────────────────────────────────────
@@ -10718,6 +10731,26 @@ function ChatPanel({ darkMode }) {
   React.useEffect(function() {
     if (open && inputRef.current) setTimeout(function() { inputRef.current && inputRef.current.focus(); }, 100);
   }, [open]);
+
+  // ── Sync del historial de chat entre dispositivos ────────────────────────
+  React.useEffect(function() {
+    function onChatSync(e) {
+      if (e.detail && e.detail.key !== 'nutriplan_chat_history') return;
+      // No interrumpir si hay una respuesta en curso
+      if (proactiveRunningRef.current) return;
+      try {
+        var remoto = JSON.parse(localStorage.getItem('nutriplan_chat_history') || '[]');
+        if (!Array.isArray(remoto) || remoto.length === 0) return;
+        setMessages(function(prev) {
+          // Solo aplicar si el remoto tiene más mensajes o es diferente
+          if (JSON.stringify(prev) === JSON.stringify(remoto)) return prev;
+          return remoto;
+        });
+      } catch(_) {}
+    }
+    window.addEventListener('calibrate_cloud_sync', onChatSync);
+    return function() { window.removeEventListener('calibrate_cloud_sync', onChatSync); };
+  }, []);
 
   // ── Análisis proactivo tras registrar comida ─────────────────────────────
   React.useEffect(function() {
@@ -10798,7 +10831,7 @@ function ChatPanel({ darkMode }) {
           React.createElement('div', { style:{ fontSize:11, color:'#10b981' } }, '● En línea')
         ),
         React.createElement('button', {
-          onClick: function() { setMessages([]); localStorage.removeItem('calibrate_chat_history'); },
+          onClick: function() { setMessages([]); localStorage.removeItem('nutriplan_chat_history'); },
           title:'Borrar conversación',
           style:{ background:'transparent', border:'none', cursor:'pointer', color:colorMuted, fontSize:13, padding:'4px 6px', borderRadius:6 }
         }, React.createElement('i', { className:'fas fa-trash-can' }))
