@@ -10207,7 +10207,6 @@ function ChatPanel({ darkMode }) {
   const bottomRef = React.useRef(null);
   const inputRef  = React.useRef(null);
   const [recording, setRecording]       = React.useState(false);
-  const [speakEnabled, setSpeakEnabled] = React.useState(true);
   const mediaRecorderRef = React.useRef(null);
   const audioChunksRef   = React.useRef([]);
 
@@ -10272,15 +10271,6 @@ function ChatPanel({ darkMode }) {
           grasas: ctx.macrosObjetivo.grasas - ctx.macrosConsumidos.grasas } };
     }
     return { error: 'tool desconocida: ' + name };
-  }
-
-  // ── Hablar (TTS) ────────────────────────────────────────────────────────
-  function hablar(texto) {
-    if (!speakEnabled) return;
-    window.speechSynthesis.cancel();
-    var utt = new SpeechSynthesisUtterance(texto);
-    utt.lang = 'es-CL'; utt.rate = 1.1; utt.pitch = 1.0;
-    window.speechSynthesis.speak(utt);
   }
 
   // ── Grabar audio → Groq Whisper → texto ─────────────────────────────────
@@ -10377,7 +10367,6 @@ function ChatPanel({ darkMode }) {
         var textoRespuesta = textBlocks.map(function(b) { return b.text; }).join('\n').trim();
         if (textoRespuesta) {
           displayMsgs = displayMsgs.concat([{ role:'assistant', content: textoRespuesta }]);
-          hablar(textoRespuesta);
         }
         break;
       }
@@ -10456,12 +10445,7 @@ function ChatPanel({ darkMode }) {
           onClick: function() { setMessages([]); localStorage.removeItem('calibrate_chat_history'); },
           title:'Borrar conversación',
           style:{ background:'transparent', border:'none', cursor:'pointer', color:colorMuted, fontSize:13, padding:'4px 6px', borderRadius:6 }
-        }, React.createElement('i', { className:'fas fa-trash-can' })),
-        React.createElement('button', {
-          onClick: function() { setSpeakEnabled(function(v) { if (v) window.speechSynthesis.cancel(); return !v; }); },
-          title: speakEnabled ? 'Silenciar voz' : 'Activar voz',
-          style:{ background:'transparent', border:'none', cursor:'pointer', color: speakEnabled ? '#10b981' : colorMuted, fontSize:13, padding:'4px 6px', borderRadius:6 }
-        }, React.createElement('i', { className: speakEnabled ? 'fas fa-volume-high' : 'fas fa-volume-xmark' }))
+        }, React.createElement('i', { className:'fas fa-trash-can' }))
       ),
 
       /* Mensajes */
