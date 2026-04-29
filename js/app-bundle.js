@@ -10541,7 +10541,13 @@ function App() {
   const [planSemanal, setPlanSemanal] = React.useState(null);
   const [recetaSeleccionada, setRecetaSeleccionada] = React.useState(null);
   const [toast, setToast] = React.useState(null);
-  const [darkMode, setDarkMode] = React.useState(() => cargarDarkMode());
+  const [darkMode, setDarkMode] = React.useState(function() {
+    try {
+      // 'calibrate_dark_mode' no empieza con 'nutriplan_' → el proxy de cloud-storage no lo toca
+      // → se lee antes de que Firebase autentique, sin problema de scoping por userId
+      return localStorage.getItem('calibrate_dark_mode') === 'true';
+    } catch(e) { return false; }
+  });
   const [cargando, setCargando] = React.useState(false);
   const [mensajeCarga, setMensajeCarga] = React.useState("");
   const [swapping, setSwapping] = React.useState(null); // {dia, tipoComida} mientras busca
@@ -10631,7 +10637,7 @@ function App() {
   const toggleDarkMode = () => {
     setDarkMode(prev => {
       const next = !prev;
-      guardarDarkMode(next);
+      try { localStorage.setItem('calibrate_dark_mode', String(next)); } catch(e) {}
       return next;
     });
   };
