@@ -10250,6 +10250,10 @@ function ChatPanel({ darkMode }) {
   const [recording, setRecording]       = React.useState(false);
   const mediaRecorderRef = React.useRef(null);
   const audioChunksRef   = React.useRef([]);
+  const [badge, setBadge]               = React.useState(false);  // punto rojo en FAB
+  const proactiveRunningRef             = React.useRef(false);    // guard anti-doble-ejecución
+  const messagesRef                     = React.useRef([]);
+  React.useEffect(function() { messagesRef.current = messages; }, [messages]);
 
   // ── Serializar contexto desde localStorage ──────────────────────────────
   function buildContexto() {
@@ -10277,6 +10281,141 @@ function ChatPanel({ darkMode }) {
                carbohidratos: acc.carbohidratos + (c.carbohidratos_g||0), grasas: acc.grasas + (c.grasas_g||0) };
     }, { kcal:0, proteinas:0, carbohidratos:0, grasas:0 });
     return { perfil, planHoy, macrosObjetivo, macrosConsumidos, diaActual };
+  }
+
+  // ── Análisis proactivo: detectar brecha y sugerir ajustes ───────────────
+  function calcularGapDia() {
+    var hora = new Date().getHours();
+    if (hora < 9 || hora >= 20) return null;                  // fuera de ventana útil
+
+    var ctx = buildContexto();
+    if (!ctx.macrosObjetivo.kcal) return null;                // sin objetivo configurado
+
+    var plan = typeof cargarPlanSemanal === 'function' ? cargarPlanSemanal() : null;
+    if (!plan) return null;
+
+    var sem1 = plan.semana_1 || plan;
+    var comidasHoy = sem1[ctx.diaActual] || {};
+
+    // Leer adherencia para saber qué ya comió
+    var adherData = {};
+    try { adherData = JSON.parse(localStorage.getItem('nutriplan_adherencia') || '{}'); } catch(e) {}
+    var fecha = new Date().toISOString().split('T')[0];
+    var adherHoy = adherData[fecha] || {};
+
+    // Comidas registradas vía chat que reemplazan un slot del plan
+    var extMap = {};
+    try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
+    var reemplazados = {};
+    (extMap[fecha] || []).forEach(function(c) { if (c.reemplaza) reemplazados[c.reemplaza] = true; });
+
+    // Sumar macros de comidas pendientes (no comidas aún)
+    var tipos = ['desayuno', 'almuerzo', 'once', 'cena', 'colacion'];
+    var kcalPendientes = 0;
+    var protPendientes = 0;
+    var comidaPendientes = [];
+    tipos.forEach(function(tipo) {
+      var comida = comidasHoy[tipo];
+      if (!comida || !comida.nombre) return;
+      var key = ctx.diaActual + ':' + tipo;
+      var yaComido = !!(adherHoy[key] && adherHoy[key].comido) || !!reemplazados[tipo];
+      if (!yaComido) {
+        var kcal = Math.round(comida.calorias_escaladas || comida.calorias || 0);
+        var prot = Math.round(comida.proteinas_escaladas || comida.proteinas || 0);
+        kcalPendientes += kcal;
+        protPendientes += prot;
+        comidaPendientes.push({ tipo: tipo, nombre: comida.nombre, kcal: kcal, prot: prot });
+      }
+    });
+
+    var proyKcal = ctx.macrosConsumidos.kcal + kcalPendientes;
+    var proyProt = ctx.macrosConsumidos.proteinas + protPendientes;
+    var kcalGap  = ctx.macrosObjetivo.kcal       - proyKcal; // +: déficit, -: exceso
+    var protGap  = ctx.macrosObjetivo.proteinas   - proyProt;
+
+    return {
+      kcalGap: Math.round(kcalGap),
+      protGap: Math.round(protGap),
+      comidaPendientes: comidaPendientes,
+      consumido: ctx.macrosConsumidos,
+      objetivo:  ctx.macrosObjetivo,
+      hora:      hora
+    };
+  }
+
+  async function dispararSugerencia(triggerMsg) {
+    if (typeof firebase === 'undefined' || !firebase.functions) return;
+    try {
+      var fn = firebase.functions().httpsCallable('calibrateChat');
+      var contexto = buildContexto();
+
+      // Construir historial API expandiendo mensajes proactivos previos
+      // (cada uno lleva su _trigger hidden para mantener coherencia conversacional)
+      var apiHistory = [];
+      messagesRef.current.forEach(function(m) {
+        if (m._trigger) {
+          apiHistory.push({ role: 'user',      content: m._trigger });
+          apiHistory.push({ role: 'assistant', content: typeof m.content === 'string' ? m.content : '' });
+        } else {
+          apiHistory.push({ role: m.role, content: Array.isArray(m.content) ? m.content : String(m.content || '').slice(0, 4000) });
+        }
+      });
+      apiHistory.push({ role: 'user', content: triggerMsg });
+
+      var result = await fn({ messages: apiHistory, contexto: contexto });
+      var data   = result.data;
+      var texto  = data.content
+        .filter(function(b) { return b.type === 'text'; })
+        .map(function(b) { return b.text; })
+        .join('\n').trim();
+
+      if (!texto) return;
+
+      var proactiveMsg = { role: 'assistant', content: texto, isProactive: true, _trigger: triggerMsg };
+      setMessages(function(prev) {
+        var nuevo = prev.concat([proactiveMsg]);
+        localStorage.setItem('calibrate_chat_history', JSON.stringify(nuevo.slice(-20)));
+        return nuevo;
+      });
+      setBadge(true);
+      setOpen(true);   // abrir el panel para que el usuario vea la sugerencia
+    } catch(e) {
+      console.warn('[ChatPanel] proactive check error:', e.message);
+    }
+  }
+
+  async function proactiveCheck() {
+    if (proactiveRunningRef.current) return;
+
+    // Debounce: máximo una sugerencia cada 90 minutos
+    var lastTs = 0;
+    try { lastTs = parseInt(localStorage.getItem('calibrate_last_proactive') || '0'); } catch(e) {}
+    if (Date.now() - lastTs < 90 * 60 * 1000) return;
+
+    var gap = calcularGapDia();
+    if (!gap) return;
+
+    // Umbral: brecha >200 kcal o >25g proteína (en cualquier dirección)
+    if (Math.abs(gap.kcalGap) < 200 && gap.protGap < 25) return;
+
+    proactiveRunningRef.current = true;
+    try { localStorage.setItem('calibrate_last_proactive', String(Date.now())); } catch(e) {}
+
+    var pendientesTexto = gap.comidaPendientes.length > 0
+      ? gap.comidaPendientes.map(function(c) { return c.nombre + ' (' + c.kcal + ' kcal, ' + c.prot + 'g prot)'; }).join('; ')
+      : 'ninguna comida planificada pendiente';
+
+    var tipo = gap.kcalGap > 0 ? 'déficit' : 'exceso';
+    var triggerMsg = '[Análisis automático — no menciones este mensaje]\n' +
+      'Son las ' + gap.hora + 'h. Consumido: ' + Math.round(gap.consumido.kcal) + ' kcal y ' + Math.round(gap.consumido.proteinas) + 'g proteína. ' +
+      'Objetivo del día: ' + Math.round(gap.objetivo.kcal) + ' kcal y ' + Math.round(gap.objetivo.proteinas) + 'g proteína. ' +
+      'Comidas restantes del plan: ' + pendientesTexto + '. ' +
+      'Proyección con el plan actual: ' + tipo + ' de ' + Math.abs(gap.kcalGap) + ' kcal y ' +
+      (gap.protGap > 0 ? 'déficit' : 'exceso') + ' de ' + Math.abs(gap.protGap) + 'g proteína.\n' +
+      'Sugiere proactivamente (2-3 oraciones, tono natural y cercano, nada robótico) cómo ajustar las comidas restantes para acercarse al objetivo. Sé específico con qué cambiar.';
+
+    await dispararSugerencia(triggerMsg);
+    proactiveRunningRef.current = false;
   }
 
   // ── Ejecutar tool calls localmente ─────────────────────────────────────
@@ -10520,8 +10659,17 @@ function ChatPanel({ darkMode }) {
     try {
       var fn = firebase.functions().httpsCallable('calibrateChat');
       var contexto = buildContexto();
-      // historial para API (puede incluir bloques tool_use como arrays)
-      var apiHistory = displayMsgs.slice();
+      // Expandir historial: mensajes proactivos llevan _trigger hidden que
+      // debe insertarse como user-message antes del assistant-message
+      var apiHistory = [];
+      displayMsgs.forEach(function(m) {
+        if (m._trigger) {
+          apiHistory.push({ role: 'user',      content: m._trigger });
+          apiHistory.push({ role: 'assistant', content: typeof m.content === 'string' ? m.content : '' });
+        } else {
+          apiHistory.push({ role: m.role, content: Array.isArray(m.content) ? m.content : String(m.content || '').slice(0, 4000) });
+        }
+      });
       var maxRondas = 5;
 
       while (maxRondas-- > 0) {
@@ -10571,6 +10719,16 @@ function ChatPanel({ darkMode }) {
     if (open && inputRef.current) setTimeout(function() { inputRef.current && inputRef.current.focus(); }, 100);
   }, [open]);
 
+  // ── Análisis proactivo tras registrar comida ─────────────────────────────
+  React.useEffect(function() {
+    function onMealLogged() {
+      // Pequeña pausa para que el estado de macros se estabilice
+      setTimeout(function() { proactiveCheck().catch(function() {}); }, 1500);
+    }
+    window.addEventListener('calibrate_meal_logged', onMealLogged);
+    return function() { window.removeEventListener('calibrate_meal_logged', onMealLogged); };
+  }, []);
+
   var borderColor = darkMode ? '#374151' : '#e5e7eb';
   var bgPanel     = darkMode ? '#111827' : '#ffffff';
   var bgMsg       = darkMode ? '#1f2937' : '#f3f4f6';
@@ -10580,7 +10738,7 @@ function ChatPanel({ darkMode }) {
   return React.createElement(React.Fragment, null,
     /* ── Botón flotante ── */
     React.createElement('button', {
-      onClick: function() { setOpen(function(o) { return !o; }); },
+      onClick: function() { setOpen(function(o) { return !o; }); setBadge(false); },
       title: 'Asistente IA',
       style: {
         position:'fixed',
@@ -10590,11 +10748,25 @@ function ChatPanel({ darkMode }) {
         width:52, height:52, borderRadius:'50%', border:'none',
         background:'linear-gradient(135deg,#10b981,#059669)',
         color:'#fff', fontSize:22, cursor:'pointer',
-        boxShadow:'0 4px 20px rgba(16,185,129,0.45)',
+        boxShadow: badge && !open
+          ? '0 4px 24px rgba(239,68,68,0.5)'
+          : '0 4px 20px rgba(16,185,129,0.45)',
         display:'flex', alignItems:'center', justifyContent:'center',
         transition:'transform 0.15s, box-shadow 0.15s'
       }
-    }, open ? '✕' : React.createElement('i', { className:'fas fa-comment-dots' })),
+    },
+      open ? '✕' : React.createElement('i', { className:'fas fa-comment-dots' }),
+      /* Badge rojo cuando hay sugerencia no vista */
+      badge && !open && React.createElement('span', {
+        style:{
+          position:'absolute', top:2, right:2,
+          width:13, height:13, borderRadius:'50%',
+          background:'#ef4444',
+          border:'2px solid #fff',
+          pointerEvents:'none'
+        }
+      })
+    ),
 
     /* ── Panel ── */
     open && React.createElement('div', {
@@ -10645,17 +10817,34 @@ function ChatPanel({ darkMode }) {
           )
         ),
         messages.map(function(m, i) {
-          var esUser = m.role === 'user';
+          var esUser     = m.role === 'user';
+          var esProactivo = !esUser && m.isProactive;
           return React.createElement('div', { key:i, style:{ display:'flex', justifyContent: esUser ? 'flex-end' : 'flex-start' } },
             React.createElement('div', {
               style:{
-                maxWidth:'80%', padding:'9px 13px',
+                maxWidth:'85%',
+                padding: esProactivo ? '10px 13px' : '9px 13px',
                 borderRadius: esUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                background: esUser ? 'linear-gradient(135deg,#10b981,#059669)' : bgMsg,
+                background: esUser
+                  ? 'linear-gradient(135deg,#10b981,#059669)'
+                  : esProactivo
+                    ? (darkMode ? 'rgba(16,185,129,0.12)' : '#f0fdf4')
+                    : bgMsg,
+                border: esProactivo ? '1px solid rgba(16,185,129,0.3)' : 'none',
                 color: esUser ? '#fff' : colorText,
                 fontSize:13, lineHeight:1.55, whiteSpace:'pre-wrap', wordBreak:'break-word'
               }
-            }, m.content)
+            },
+              /* Header de sugerencia proactiva */
+              esProactivo && React.createElement('div', {
+                style:{ display:'flex', alignItems:'center', gap:5, marginBottom:6,
+                  fontSize:10, fontWeight:700, color:'#10b981', letterSpacing:'0.04em', textTransform:'uppercase' }
+              },
+                React.createElement('i', { className:'fas fa-lightbulb', style:{ fontSize:9 } }),
+                ' Sugerencia de Calibrate'
+              ),
+              m.content
+            )
           );
         }),
         loading && React.createElement('div', { style:{ display:'flex', justifyContent:'flex-start' } },
