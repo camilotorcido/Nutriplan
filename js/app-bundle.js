@@ -6846,7 +6846,12 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
     try { return JSON.parse(localStorage.getItem('nutriplan_comidas_frecuentes') || '[]'); }
     catch(e) { return []; }
   });
-  const [modo, setModo] = React.useState('buscar'); // 'buscar' | 'manual'
+  const [modo, setModo] = React.useState('buscar'); // 'buscar' | 'manual' | 'foto'
+  const [fotoAnalizando, setFotoAnalizando] = React.useState(false);
+  const [fotoPreview,    setFotoPreview]    = React.useState(null);   // data URL thumbnail
+  const [fotoConfianza,  setFotoConfianza]  = React.useState(null);   // 'alta'|'media'|'baja'
+  const [fotoPorcion,    setFotoPorcion]    = React.useState('');
+  const photoInputRef = React.useRef(null);
 
   // Colores inline para inputs — más robusto que clases Tailwind en dark mode
   var inputColor   = darkMode ? '#f9fafb' : '#111827';
@@ -6941,6 +6946,60 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
     setIngredientes(function(prev) { return prev.filter(function(_, i) { return i !== idx; }); });
   }
 
+  // ── Compresión de imagen via Canvas ────────────────────────────────────────
+  function comprimirImagen(file, maxPx, calidad) {
+    return new Promise(function(resolve, reject) {
+      var img = new Image();
+      var url = URL.createObjectURL(file);
+      img.onload = function() {
+        URL.revokeObjectURL(url);
+        var canvas = document.createElement('canvas');
+        var w = img.width, h = img.height;
+        if (w > maxPx || h > maxPx) {
+          if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+          else { w = Math.round(w * maxPx / h); h = maxPx; }
+        }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', calidad).split(',')[1]);
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  // ── Análisis de foto via calibrateAnalyzeFood ───────────────────────────────
+  async function analizarFoto(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    setFotoAnalizando(true);
+    setFotoConfianza(null);
+    setFotoPorcion('');
+    setError('');
+    setFotoPreview(URL.createObjectURL(file));
+    try {
+      var base64 = await comprimirImagen(file, 1024, 0.82);
+      if (typeof firebase === 'undefined' || !firebase.functions) throw new Error('Firebase no disponible');
+      var fn = firebase.functions().httpsCallable('calibrateAnalyzeFood');
+      var result = await fn({ image: base64, mimeType: 'image/jpeg' });
+      var data = result.data;
+      setNombre(data.nombre || '');
+      setNombreManual(true);
+      setManualProt(String(Math.round(data.proteinas_g || 0)));
+      setManualCarb(String(Math.round(data.carbohidratos_g || 0)));
+      setManualGras(String(Math.round(data.grasas_g || 0)));
+      setManualKcal('');
+      setIngredientes([]);
+      setFotoConfianza(data.confianza || null);
+      setFotoPorcion(data.porcion || '');
+      setModo('manual');
+    } catch(err) {
+      setError(t('No se pudo analizar la foto: ','Could not analyze the photo: ') + (err.message || String(err)));
+      setModo('manual');
+    } finally {
+      setFotoAnalizando(false);
+    }
+  }
+
   function handleSubmit(pendiente) {
     var nombreFinal = nombre.trim();
     if (!nombreFinal) { setError(t('El nombre es obligatorio','Name is required')); return; }
@@ -7017,17 +7076,18 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
           {/* ── Tab switcher ─────────────────────────────────────────────── */}
           <div style={{ display:'flex', borderRadius:12, border:'1px solid '+inputBorder, overflow:'hidden', flexShrink:0 }}>
             {[
-              { key:'buscar', icon:'fa-magnifying-glass', label: t('Buscar alimentos','Search foods') },
-              { key:'manual', icon:'fa-pen-to-square', label: t('Entrada rápida','Quick entry') }
+              { key:'buscar', icon:'fa-magnifying-glass', label: t('Buscar','Search') },
+              { key:'manual', icon:'fa-pen-to-square',    label: t('Manual','Manual') },
+              { key:'foto',   icon:'fa-camera',           label: t('Foto','Photo') }
             ].map(function(tab) {
               var active = modo === tab.key;
               return (
                 <button key={tab.key} onClick={function() { setModo(tab.key); }}
                   style={{ flex:1, padding:'9px 4px', border:'none', cursor:'pointer',
-                    backgroundColor: active ? '#10b981' : (darkMode ? '#111827' : '#f9fafb'),
+                    backgroundColor: active ? (tab.key === 'foto' ? '#8b5cf6' : '#10b981') : (darkMode ? '#111827' : '#f9fafb'),
                     color: active ? '#ffffff' : (darkMode ? '#6b7280' : '#9ca3af'),
                     fontSize:12, fontWeight:'600', transition:'background-color 0.15s',
-                    borderRight: tab.key === 'buscar' ? '1px solid '+inputBorder : 'none' }}>
+                    borderRight: tab.key !== 'foto' ? '1px solid '+inputBorder : 'none' }}>
                   <i className={'fas '+tab.icon} style={{ marginRight:5 }}></i>{tab.label}
                 </button>
               );
@@ -7066,9 +7126,82 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
             </div>
           )}
 
+          {/* ══ MODO FOTO ════════════════════════════════════════════════════ */}
+          {modo === 'foto' && (
+            <>
+              <input ref={photoInputRef} type="file" accept="image/*" capture="environment"
+                style={{ display:'none' }}
+                onChange={function(e) { if (e.target.files && e.target.files[0]) analizarFoto(e.target.files[0]); e.target.value = ''; }} />
+
+              {fotoAnalizando ? (
+                <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:16, padding:'32px 0' }}>
+                  {fotoPreview && <img src={fotoPreview} alt="" style={{ width:120, height:120, objectFit:'cover', borderRadius:16, opacity:0.6 }} />}
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <i className="fas fa-spinner fa-spin" style={{ color:'#8b5cf6' }}></i>
+                    <span style={{ fontSize:14, fontWeight:600, color: darkMode ? '#f9fafb' : '#111827' }}>
+                      {t('Analizando la foto…','Analyzing photo…')}
+                    </span>
+                  </div>
+                  <p style={{ fontSize:12, color:'#9ca3af', textAlign:'center', maxWidth:240 }}>
+                    {t('Claude identifica la comida y estima los macros automáticamente.','Claude identifies the food and estimates macros automatically.')}
+                  </p>
+                </div>
+              ) : (
+                <button onClick={function() { if (photoInputRef.current) photoInputRef.current.click(); }}
+                  style={{ width:'100%', padding:'36px 16px', borderRadius:16, cursor:'pointer',
+                    border:'2px dashed ' + (darkMode ? '#4b5563' : '#d1d5db'),
+                    backgroundColor: darkMode ? '#0d0d1a' : '#faf5ff',
+                    display:'flex', flexDirection:'column', alignItems:'center', gap:12,
+                    transition:'border-color 0.15s' }}>
+                  <div style={{ width:64, height:64, borderRadius:32,
+                    backgroundColor: darkMode ? '#1e1b4b' : '#ede9fe',
+                    display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <i className="fas fa-camera" style={{ fontSize:28, color:'#8b5cf6' }}></i>
+                  </div>
+                  <div style={{ textAlign:'center' }}>
+                    <p style={{ fontSize:15, fontWeight:700, color: darkMode ? '#f9fafb' : '#111827', marginBottom:4 }}>
+                      {t('Sacar foto o elegir imagen','Take photo or choose image')}
+                    </p>
+                    <p style={{ fontSize:12, color:'#9ca3af', lineHeight:1.4 }}>
+                      {t('Claude detecta la comida y estima los macros automáticamente','Claude detects the food and estimates macros automatically')}
+                    </p>
+                  </div>
+                </button>
+              )}
+            </>
+          )}
+
           {/* ══ MODO ENTRADA RÁPIDA ══════════════════════════════════════════ */}
           {modo === 'manual' && (
             <>
+              {/* ── Thumbnail si viene de análisis de foto ────────────────── */}
+              {fotoPreview && !fotoAnalizando && (
+                <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 12px', borderRadius:12,
+                  backgroundColor: darkMode ? '#1e1b4b' : '#faf5ff',
+                  border:'1px solid ' + (darkMode ? '#4c1d95' : '#ddd6fe') }}>
+                  <img src={fotoPreview} alt="" style={{ width:52, height:52, objectFit:'cover', borderRadius:10, flexShrink:0 }} />
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3, flexWrap:'wrap' }}>
+                      <i className="fas fa-camera-retro" style={{ color:'#8b5cf6', fontSize:11 }}></i>
+                      <span style={{ fontSize:11, fontWeight:700, color:'#8b5cf6' }}>{t('Detectado por IA','Detected by AI')}</span>
+                      {fotoConfianza && (
+                        <span style={{ fontSize:10, fontWeight:600, padding:'1px 7px', borderRadius:8,
+                          backgroundColor: fotoConfianza==='alta' ? '#10b98120' : fotoConfianza==='media' ? '#f59e0b20' : '#f8717120',
+                          color: fotoConfianza==='alta' ? '#10b981' : fotoConfianza==='media' ? '#f59e0b' : '#f87171' }}>
+                          {fotoConfianza==='alta' ? t('Alta confianza','High confidence') : fotoConfianza==='media' ? t('Confianza media','Medium confidence') : t('Baja confianza','Low confidence')}
+                        </span>
+                      )}
+                    </div>
+                    {fotoPorcion && (
+                      <p style={{ fontSize:11, color:'#6b7280', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{fotoPorcion}</p>
+                    )}
+                    <button onClick={function() { setModo('foto'); }}
+                      style={{ fontSize:10, color:'#8b5cf6', background:'none', border:'none', cursor:'pointer', padding:0, marginTop:2 }}>
+                      <i className="fas fa-rotate-left" style={{ marginRight:3 }}></i>{t('Retomar foto','Retake photo')}
+                    </button>
+                  </div>
+                </div>
+              )}
               {/* ── Nombre ───────────────────────────────────────────────── */}
               <div>
                 <label style={{ display:'block', fontSize:11, fontWeight:'700', color:'#6b7280', marginBottom:5 }}>
@@ -7303,13 +7436,13 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
                 {t('Cancelar','Cancel')}
               </button>
               <button onClick={() => handleSubmit(false)}
-                disabled={modo === 'manual' && !nombre.trim()}
+                disabled={fotoAnalizando || (modo !== 'foto' && !nombre.trim())}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-green-500 text-white hover:bg-green-600 transition-colors cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
                 <i className="fas fa-check mr-1.5"></i>{t('Ya lo comí','I ate this')}
               </button>
             </div>
             <button onClick={() => handleSubmit(true)}
-              disabled={modo === 'manual' && !nombre.trim()}
+              disabled={fotoAnalizando || (modo !== 'foto' && !nombre.trim())}
               className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 ${darkMode ? 'bg-amber-900/40 text-amber-300 hover:bg-amber-900/60 border border-amber-800/60' : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'}`}>
               <i className="fas fa-clock"></i>{t('Planear para luego (no cuenta aún)','Plan for later (not counted yet)')}
             </button>

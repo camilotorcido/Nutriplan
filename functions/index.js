@@ -285,6 +285,65 @@ exports.calibrateChat = onCall(
   }
 );
 
+// ── Cloud Function: análisis de comida por foto (Claude Vision) ─────────────
+exports.calibrateAnalyzeFood = onCall(
+  {
+    secrets:  [ANTHROPIC_KEY],
+    region:   'us-central1',
+    cors:     ['https://camilotorcido.github.io', 'http://localhost:5000', 'http://localhost:3000'],
+    invoker:  'public'
+  },
+  async (request) => {
+    try {
+      if (!request.data || !request.data.image) {
+        throw new HttpsError('invalid-argument', 'image requerido');
+      }
+      const { image, mimeType = 'image/jpeg' } = request.data;
+      const apiKey = ANTHROPIC_KEY.value();
+      if (!apiKey) throw new HttpsError('internal', 'ANTHROPIC_API_KEY no configurada');
+
+      const response = await callAnthropic(apiKey, {
+        model:      'claude-haiku-4-5',
+        max_tokens: 512,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: mimeType, data: image }
+            },
+            {
+              type: 'text',
+              text: `Analiza esta foto de comida y estima los valores nutricionales para la porción visible.\nDevuelve ÚNICAMENTE un objeto JSON válido (sin markdown, sin texto adicional) con este formato:\n{"nombre":"nombre del plato","porcion":"descripción de la porción, ej: 1 plato mediano ~350g","kcal":420,"proteinas_g":25,"carbohidratos_g":45,"grasas_g":12,"descripcion":"descripción breve","confianza":"alta"}\nEl campo confianza puede ser: "alta" (comida claramente visible), "media" (dudas parciales), "baja" (foto borrosa o poco clara).\nSi no detectas comida, devuelve: {"error":"No se detectó comida en la imagen"}`
+            }
+          ]
+        }]
+      });
+
+      const textBlock = response.content && response.content.find(b => b.type === 'text');
+      if (!textBlock) throw new HttpsError('internal', 'Sin respuesta de Claude');
+
+      let result;
+      try {
+        const match = textBlock.text.match(/\{[\s\S]*\}/);
+        result = JSON.parse(match ? match[0] : textBlock.text);
+      } catch(e) {
+        throw new HttpsError('internal', 'Respuesta no parseable: ' + textBlock.text.slice(0, 200));
+      }
+
+      if (result.error) throw new HttpsError('failed-precondition', result.error);
+
+      console.log('[calibrateAnalyzeFood] OK:', result.nombre, '|', result.kcal, 'kcal | confianza:', result.confianza);
+      return result;
+
+    } catch (err) {
+      if (err instanceof HttpsError) throw err;
+      console.error('[calibrateAnalyzeFood] ERROR:', err.message);
+      throw new HttpsError('internal', err.message || String(err));
+    }
+  }
+);
+
 // ── Cloud Function: transcripción de voz via Groq Whisper ───────────────────
 exports.calibrateTranscribe = onCall(
   {
