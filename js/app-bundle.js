@@ -4229,7 +4229,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                     ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
                     : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                 }`}>
-                <i className="fas fa-calendar-week mr-1.5 text-xs"></i>Semana {n}
+                <i className="fas fa-calendar-week mr-1.5 text-xs"></i>{t('Semana','Week')} {n}
               </button>
             ))}
           </div>
@@ -4252,11 +4252,11 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                       : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                 }`}>
                 <div className="font-semibold flex items-center gap-1.5">
-                  {dia.slice(0, 3)}
+                  {t(dia, {Lunes:'Mon',Martes:'Tue','Miércoles':'Wed',Jueves:'Thu',Viernes:'Fri','Sábado':'Sat',Domingo:'Sun'}[dia] || dia.slice(0,3))}
                   {esHoy && (
                     <span className={`inline-block px-1.5 py-0.5 text-[11px] font-bold rounded-full leading-none ${
                       diaSeleccionado === dia ? 'bg-white/30 text-white' : 'bg-green-500 text-white'
-                    }`}>HOY</span>
+                    }`}>{t('HOY','TODAY')}</span>
                   )}
                 </div>
                 <div className={`text-xs mt-0.5 ${diaSeleccionado === dia ? 'text-green-100' : 'text-gray-400'}`}>
@@ -4272,7 +4272,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
       <div className={`rounded-2xl shadow-sm border p-5 mb-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <h3 className={`font-semibold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>{diaSeleccionado}</h3>
+            <h3 className={`font-semibold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>{t(diaSeleccionado, {Lunes:'Monday',Martes:'Tuesday','Miércoles':'Wednesday',Jueves:'Thursday',Viernes:'Friday','Sábado':'Saturday',Domingo:'Sunday'}[diaSeleccionado] || diaSeleccionado)}</h3>
             {onRegenDay && (
               <button onClick={() => onRegenDay(diaSeleccionado, semanaActiva)} title="Regenerar 5 comidas de este día"
                 className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all cursor-pointer ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-gray-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-400 hover:text-gray-600'}`}>
@@ -7556,7 +7556,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         return (
           <div className={`rounded-2xl px-5 py-3 flex items-center justify-between ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
             <span className={`text-xs font-semibold uppercase tracking-wider flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              <i className="fas fa-calendar-check mr-1.5"></i>Esta semana
+              <i className="fas fa-calendar-check mr-1.5"></i>{t('Esta semana','This week')}
             </span>
             <div className="flex items-center gap-2">
               {semana.map(d => {
@@ -7992,7 +7992,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                       <span className="text-white font-extrabold text-lg">{entrenoHoy.tipo}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{entrenoHoy.tipoInfo ? entrenoHoy.tipoInfo.corto : 'Tipo ' + entrenoHoy.tipo}</div>
+                      <div className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{entrenoHoy.tipoInfo ? t(entrenoHoy.tipoInfo.corto, {Empuje:'Push',Piernas:'Legs',Jalar:'Pull',Circuito:'Circuit'}[entrenoHoy.tipoInfo.corto] || entrenoHoy.tipoInfo.corto) : 'Tipo ' + entrenoHoy.tipo}</div>
                       {entrenoHoy.foco && (
                         <div className={`text-xs mt-0.5 font-medium ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{entrenoHoy.foco}</div>
                       )}
@@ -11847,7 +11847,7 @@ function App() {
       </main>
 
       <footer className={`text-center py-6 text-xs no-print ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-        <p>Calibrate · El método, no la motivación.</p>
+        <p>Calibrate · {t('El método, no la motivación.','The method, not the motivation.')}</p>
         <p className="mt-1">calibrate.cl</p>
       </footer>
 
