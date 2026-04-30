@@ -10858,9 +10858,20 @@ function ChatPanel({ darkMode }) {
   }
 
   // ── Auto-scroll ─────────────────────────────────────────────────────────
+  // Al recibir mensajes/loading nuevos → smooth (animación natural)
   React.useEffect(function() {
-    if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior:'smooth' });
+    if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  // ── Al abrir el panel → ir al último mensaje instantáneo (sin animación) ─
+  React.useEffect(function() {
+    if (!open) return;
+    // Pequeño delay para que el panel termine de montarse/expandirse
+    var t = setTimeout(function() {
+      if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior: 'instant' });
+    }, 50);
+    return function() { clearTimeout(t); };
+  }, [open]);
 
   // ── Focus al abrir ──────────────────────────────────────────────────────
   React.useEffect(function() {
