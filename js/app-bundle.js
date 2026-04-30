@@ -7355,6 +7355,13 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     return !entries.some(e => e.fecha >= hace7Str && e.peso != null);
   }, [tieneEntrenamiento, refresh]);
 
+  // ¿Ya hay un registro de peso para HOY específicamente?
+  const pesoHoyYaRegistrado = React.useMemo(() => {
+    if (!window.NP_BodyComp || !window.NP_BodyComp.cargar) return false;
+    const hoyStr = new Date().toISOString().split('T')[0];
+    return (window.NP_BodyComp.cargar() || []).some(e => e.fecha === hoyStr && e.peso != null);
+  }, [refresh]);
+
   // Suma de macros de comidas externas
   const resumenExt = comidasExt.reduce(function(acc, c) {
     return {
@@ -7607,6 +7614,36 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── Peso de hoy: aparece solo si no hay comidas marcadas y no hay peso registrado hoy ── */}
+      {!pesoHoyYaRegistrado && !pesoGuardado && consumidoHoy.calorias === 0 && window.NP_BodyComp && (
+        <div className={`rounded-2xl p-5 border animate-fadeIn ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
+          <div className="flex items-center gap-3 mb-3">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${darkMode ? 'bg-orange-900/30' : 'bg-orange-50'}`}>
+              <i className="fas fa-weight-scale text-orange-500"></i>
+            </div>
+            <div>
+              <div className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{t('Tu peso de hoy',"Today's weight")}</div>
+              <div className="text-xs text-gray-400">{t('Pésate antes de comer para mayor precisión','Weigh before eating for best accuracy')}</div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="number" step="0.1" min="20" max="300"
+              value={pesoInput}
+              onChange={e => { setPesoInput(e.target.value); if (pesoError) setPesoError(''); }}
+              onKeyDown={e => { if (e.key === 'Enter') guardarPeso(); }}
+              placeholder={t('Ej: 78.5','E.g. 78.5')}
+              className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-semibold ${pesoError ? 'border-red-400' : ''} ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200 text-gray-800 placeholder-gray-400'}`}
+            />
+            <button onClick={guardarPeso} disabled={!pesoInput}
+              className={`px-5 py-2.5 rounded-xl font-bold transition-all ${pesoInput ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+              <i className="fas fa-check"></i>
+            </button>
+          </div>
+          {pesoError && <p className="text-red-500 text-xs mt-2">{pesoError}</p>}
         </div>
       )}
 
