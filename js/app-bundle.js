@@ -2853,7 +2853,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}>
             <i className={`fas ${perfil.objetivo === 'perdida' ? 'fa-fire' : perfil.objetivo === 'volumen' ? 'fa-arrow-trend-up' : 'fa-scale-balanced'} mr-2`}></i>
-            {tienePlan ? 'Guardar y Regenerar Plan' : 'Generar Plan Semanal'}
+            {tienePlan ? t('Guardar y Regenerar Plan', 'Save & Regenerate Plan') : t('Generar Plan Semanal', 'Generate Weekly Plan')}
           </button>
         </form>
       </div>
@@ -3759,7 +3759,7 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
                             <button
                               onClick={(e) => { e.stopPropagation(); setExpandedIdx(null); }}
                               className={`text-[11px] px-2 py-1 cursor-pointer transition-colors ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}>
-                              Cancelar
+                              {t('Cancelar','Cancel')}
                             </button>
                           </div>
                         </div>
@@ -4558,14 +4558,14 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
             className={`inline-flex items-center gap-2 px-6 py-3 border rounded-xl transition-all text-sm font-medium ${
               darkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
             }`}>
-            <i className="fas fa-shuffle"></i>Regenerar Plan
+            <i className="fas fa-shuffle"></i>{t('Regenerar Plan','Regenerate Plan')}
           </button>
           {onCompartir && (
             <button onClick={onCompartir}
               className={`inline-flex items-center gap-2 px-6 py-3 border rounded-xl transition-all text-sm font-medium ${
                 darkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}>
-              <i className="fas fa-share-nodes" style={{ color: '#22C55E' }}></i>Compartir
+              <i className="fas fa-share-nodes" style={{ color: '#22C55E' }}></i>{t('Compartir','Share')}
             </button>
           )}
 
@@ -5051,11 +5051,11 @@ function ModalPreferenciasGeneracion({ onConfirm, onCancel, darkMode }) {
         <div className="flex gap-2">
           <button onClick={onCancel}
             className={`flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-            Cancelar
+            {t('Cancelar','Cancel')}
           </button>
           <button onClick={() => onConfirm({ cocina, altaProteina, rapido })}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 transition-all">
-            <i className="fas fa-shuffle mr-1.5"></i>Regenerar
+            <i className="fas fa-shuffle mr-1.5"></i>{t('Regenerar','Regenerate')}
           </button>
         </div>
       </div>
@@ -5459,7 +5459,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
               }
             }}
               className={`block w-full py-3 rounded-xl font-medium text-sm text-center no-underline transition-all ${darkMode ? 'bg-green-700 hover:bg-green-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}`}>
-              <i className="fab fa-whatsapp text-lg mr-2"></i>Compartir por WhatsApp
+              <i className="fab fa-whatsapp text-lg mr-2"></i>{t('Compartir por WhatsApp','Share via WhatsApp')}
             </a>
           </div>
         </div>
@@ -5580,10 +5580,10 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
             <div className="flex items-center gap-2">
               <i className={`fas fa-calendar-alt text-sm ${soloRestantes ? 'text-blue-500' : 'text-gray-400'}`}></i>
               <span className={`text-sm font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                Solo desde mañana
+                {t('Solo desde mañana','From tomorrow only')}
               </span>
               <span className={`text-xs px-2 py-0.5 rounded-full ${soloRestantes ? 'bg-blue-100 text-blue-600' : darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
-                {soloRestantes ? `${diasRestantes.length} días` : `${diasRestantes.length + 1} días`}
+                {soloRestantes ? `${diasRestantes.length} ${t('días','days')}` : `${diasRestantes.length + 1} ${t('días','days')}`}
               </span>
             </div>
             <button onClick={() => setSoloRestantes(!soloRestantes)}
@@ -5598,7 +5598,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
           {soloRestantes && (
             <div className={`mt-2 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               <i className="fas fa-info-circle mr-1"></i>
-              Hoy es {diaActual}. Mostrando ingredientes para: {diasRestantes.join(', ')}
+              {t('Hoy es', 'Today is')} {diaActual}. {t('Mostrando ingredientes para:', 'Showing ingredients for:')} {diasRestantes.join(', ')}
             </div>
           )}
         </div>
@@ -5611,20 +5611,20 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
             className={`w-full pl-10 pr-4 py-2.5 rounded-xl border transition-colors text-sm ${
               darkMode ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' : 'border-gray-200'
             } focus:border-green-500`}
-            placeholder="Buscar ingrediente..." />
+            placeholder={t('Buscar ingrediente...', 'Search ingredient...')} />
         </div>
         <div className="flex gap-2">
           <button onClick={marcarTodos}
             className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
               darkMode ? 'bg-green-900/40 text-green-400 hover:bg-green-900/60' : 'bg-green-50 text-green-700 hover:bg-green-100'
             }`}>
-            <i className="fas fa-check-double mr-1"></i>Marcar todos
+            <i className="fas fa-check-double mr-1"></i>{t('Marcar todos', 'Mark all')}
           </button>
           <button onClick={desmarcarTodos}
             className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
               darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
             }`}>
-            <i className="fas fa-times mr-1"></i>Limpiar
+            <i className="fas fa-times mr-1"></i>{t('Limpiar', 'Clear')}
           </button>
         </div>
       </div>
@@ -5634,14 +5634,14 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
         <button onClick={() => setMostrarAgregar(!mostrarAgregar)}
           className={`flex items-center gap-2 text-sm font-medium w-full ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
           <i className={`fas ${mostrarAgregar ? 'fa-chevron-down' : 'fa-plus-circle'} text-green-500`}></i>
-          Agregar ingrediente manual
+          {t('Agregar ingrediente manual', 'Add ingredient manually')}
         </button>
         {mostrarAgregar && (
           <div className="flex gap-2 mt-3">
             <input type="text" value={nuevoIngrediente} onChange={(e) => setNuevoIngrediente(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && agregarIngredienteManual()}
               className={`flex-1 px-3 py-2 rounded-xl border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} focus:border-green-500`}
-              placeholder="Ej: Pan, Mantequilla, etc." />
+              placeholder={t('Ej: Pan, Mantequilla, etc.', 'E.g. Bread, Butter, etc.')} />
             <button onClick={agregarIngredienteManual}
               className="px-4 py-2 bg-green-500 text-white rounded-xl text-sm font-medium hover:bg-green-600 transition-colors">
               <i className="fas fa-plus"></i>
@@ -5650,7 +5650,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
         )}
         {ingredientesManual.length > 0 && (
           <div className={`mt-3 pt-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-            <div className={`text-xs mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Mis ingredientes ({ingredientesManual.length})</div>
+            <div className={`text-xs mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Mis ingredientes', 'My ingredients')} ({ingredientesManual.length})</div>
             {ingredientesManual.map(ing => (
               <div key={ing.id} className={`flex items-center justify-between py-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                 <div className="flex items-center gap-2">
@@ -5796,7 +5796,7 @@ function EsencialesRecurrentes({ darkMode }) {
       {expandido && (
         <div className={`px-4 py-3 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
           <p className={`text-xs mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            Items que siempre compras. Marca los que necesites esta semana y se sumarán al texto de la lista.
+            {t('Items que siempre compras. Marca los que necesites esta semana y se sumarán al texto de la lista.', 'Items you always buy. Check the ones you need this week and they\'ll be added to the list.')}
           </p>
           <div className="flex gap-2 mb-3">
             <input
@@ -5804,7 +5804,7 @@ function EsencialesRecurrentes({ darkMode }) {
               value={nuevoNombre}
               onChange={(e) => setNuevoNombre(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') agregar(); }}
-              placeholder="Agregar item (ej: servilletas)"
+              placeholder={t('Agregar item (ej: servilletas)', 'Add item (e.g. napkins)')}
               className={`flex-1 px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-200 text-gray-800'}`}
             />
             <button onClick={agregar}
@@ -5835,7 +5835,7 @@ function EsencialesRecurrentes({ darkMode }) {
           {activos > 0 && (
             <button onClick={desmarcarTodos}
               className={`text-xs mt-2 ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
-              <i className="fas fa-eraser mr-1"></i>Desmarcar todos
+              <i className="fas fa-eraser mr-1"></i>{t('Desmarcar todos', 'Unmark all')}
             </button>
           )}
         </div>
@@ -6014,8 +6014,8 @@ function ShoppingList({ plan, darkMode }) {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
             <i className="fas fa-check-circle text-green-500 text-4xl"></i>
           </div>
-          <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>¡Tienes todo!</h3>
-          <p className="text-gray-500 mb-6">Tu despensa está completa para la semana.</p>
+          <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{t('¡Tienes todo!', 'You have everything!')}</h3>
+          <p className="text-gray-500 mb-6">{t('Tu despensa está completa para la semana.', 'Your pantry is complete for the week.')}</p>
         </div>
         <EsencialesRecurrentes darkMode={darkMode} />
       </div>
@@ -6027,18 +6027,18 @@ function ShoppingList({ plan, darkMode }) {
       <div className={`rounded-2xl shadow-sm border p-5 mb-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
         <div className="flex items-center justify-between mb-3">
           <h3 className={`font-semibold text-lg flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-            <i className="fas fa-shopping-cart text-amber-500"></i>Lista de Compras
+            <i className="fas fa-shopping-cart text-amber-500"></i>{t('Lista de Compras','Shopping List')}
           </h3>
           <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm font-medium">{ingredientesFaltantes.length} items</span>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => setAgrupado(true)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${agrupado ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
-            <i className="fas fa-layer-group mr-1"></i>Agrupado
+            <i className="fas fa-layer-group mr-1"></i>{t('Agrupado','Grouped')}
           </button>
           <button onClick={() => setAgrupado(false)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${!agrupado ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
-            <i className="fas fa-list mr-1"></i>Lista simple
+            <i className="fas fa-list mr-1"></i>{t('Lista simple','Simple list')}
           </button>
         </div>
         {diasRestantes.length > 0 && (
@@ -6046,10 +6046,10 @@ function ShoppingList({ plan, darkMode }) {
             <div className="flex items-center gap-2">
               <i className={`fas fa-calendar-alt text-sm ${soloRestantes ? 'text-blue-500' : 'text-gray-400'}`}></i>
               <span className={`text-sm font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                Solo desde mañana
+                {t('Solo desde mañana','From tomorrow only')}
               </span>
               <span className={`text-xs px-2 py-0.5 rounded-full ${soloRestantes ? 'bg-blue-100 text-blue-600' : darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
-                {soloRestantes ? `${diasRestantes.length} días` : `${diasRestantes.length + 1} días`}
+                {soloRestantes ? `${diasRestantes.length} ${t('días','days')}` : `${diasRestantes.length + 1} ${t('días','days')}`}
               </span>
             </div>
             <button onClick={() => setSoloRestantes(!soloRestantes)}
@@ -6065,7 +6065,7 @@ function ShoppingList({ plan, darkMode }) {
         {soloRestantes && diasRestantes.length > 0 && (
           <div className={`mt-2 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             <i className="fas fa-info-circle mr-1"></i>
-            Hoy es {diaActual}. Comprando para: {diasRestantes.join(', ')}
+            {t('Hoy es','Today is')} {diaActual}. {t('Comprando para:','Buying for:')} {diasRestantes.join(', ')}
           </div>
         )}
       </div>
@@ -6074,9 +6074,9 @@ function ShoppingList({ plan, darkMode }) {
         <div className={`flex items-center justify-between rounded-xl p-3 mb-3 ${darkMode ? 'bg-green-900/30 border border-green-800' : 'bg-green-50 border border-green-100'}`}>
           <span className="text-sm text-green-600 font-medium">
             <i className="fas fa-check-circle mr-1"></i>
-            {Object.values(comprados).filter(v => v).length} marcado(s) como comprado
+            {Object.values(comprados).filter(v => v).length} {t('marcado(s) como comprado','marked as bought')}
           </span>
-          <button onClick={limpiarComprados} className="text-xs text-green-600 hover:text-green-700 font-medium">Limpiar</button>
+          <button onClick={limpiarComprados} className="text-xs text-green-600 hover:text-green-700 font-medium">{t('Limpiar','Clear')}</button>
         </div>
       )}
 
@@ -6169,15 +6169,15 @@ function ShoppingList({ plan, darkMode }) {
           copiado ? 'bg-green-500 text-white shadow-lg shadow-green-200' : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-200 hover:shadow-xl'
         }`}>
         {copiado
-          ? <span><i className="fas fa-check mr-2"></i>¡Copiado al Portapapeles!</span>
-          : <span><i className="fas fa-copy mr-2"></i>Copiar Lista al Portapapeles</span>}
+          ? <span><i className="fas fa-check mr-2"></i>{t('¡Copiado al Portapapeles!','Copied to Clipboard!')}</span>
+          : <span><i className="fas fa-copy mr-2"></i>{t('Copiar Lista al Portapapeles','Copy List to Clipboard')}</span>}
       </button>
 
       {/* Exports adicionales */}
       {typeof window.exports !== 'undefined' && ingredientesFaltantes.length > 0 && (
         <div className="mt-3">
           <div className={`text-[11px] font-bold uppercase tracking-wider mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            <i className="fas fa-download mr-1"></i>Exportar lista
+            <i className="fas fa-download mr-1"></i>{t('Exportar lista','Export list')}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button onClick={() => {
@@ -6194,7 +6194,7 @@ function ShoppingList({ plan, darkMode }) {
               className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition-all active:scale-[0.98] ${
                 darkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}>
-              <i className="fas fa-file-csv text-emerald-500"></i>Descargar CSV
+              <i className="fas fa-file-csv text-emerald-500"></i>{t('Descargar CSV','Download CSV')}
             </button>
             <button onClick={async () => {
                 let texto = window.exports.textoSupermercado(ingredientesFaltantes);
@@ -8188,7 +8188,7 @@ function NutricionLogView({ perfil, darkMode }) {
         <text x="50" y="47" textAnchor="middle" fontSize="12" fontWeight="bold"
           fill={darkMode ? '#f9fafb' : '#111827'}>{datos.avgKcal > 0 ? datos.avgKcal.toLocaleString('es-CL') : '—'}</text>
         <text x="50" y="58" textAnchor="middle" fontSize="7"
-          fill={darkMode ? '#9ca3af' : '#6b7280'}>kcal/día</text>
+          fill={darkMode ? '#9ca3af' : '#6b7280'}>{t('kcal/día','kcal/day')}</text>
       </svg>
     );
   };
@@ -8197,8 +8197,8 @@ function NutricionLogView({ perfil, darkMode }) {
     <div className={`rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white border border-gray-100'}`}>
       <EmptyState
         icon="fa-chart-pie"
-        title="Sin datos para el período"
-        desc="Marca tus comidas como consumidas en la vista «Hoy» para ver el historial nutricional aquí."
+        title={t('Sin datos para el período', 'No data for this period')}
+        desc={t('Marca tus comidas como consumidas en la vista «Hoy» para ver el historial nutricional aquí.', 'Mark your meals as eaten in the Today view to see your nutrition history here.')}
         darkMode={darkMode}
       />
     </div>
@@ -8212,7 +8212,7 @@ function NutricionLogView({ perfil, darkMode }) {
       {/* ── Selector de período + Export ── */}
       <div className="flex gap-2">
         <div className={`flex flex-1 rounded-xl p-1 gap-1 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-          {[{d:7,l:'7 días'},{d:14,l:'2 semanas'},{d:30,l:'30 días'}].map(opt => (
+          {[{d:7,l:t('7 días','7 days')},{d:14,l:t('2 semanas','2 weeks')},{d:30,l:t('30 días','30 days')}].map(opt => (
             <button key={opt.d} onClick={() => setDias(opt.d)}
               className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 dias === opt.d
@@ -8228,7 +8228,7 @@ function NutricionLogView({ perfil, darkMode }) {
             if (typeof window.exports !== 'undefined' && window.exports.logCSV) {
               window.exports.logCSV(dias);
             } else {
-              alert('Módulo de exportación no disponible');
+              alert(t('Módulo de exportación no disponible', 'Export module not available'));
             }
           }}
           title="Exportar log como CSV"
@@ -8241,14 +8241,14 @@ function NutricionLogView({ perfil, darkMode }) {
       {/* ── Promedios diarios + adherencia ── */}
       <div className={card}>
         <p className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-          Promedio diario · {datos.nConRegistro} día{datos.nConRegistro !== 1 ? 's' : ''} con registro
+          {t('Promedio diario', 'Daily average')} · {datos.nConRegistro} {datos.nConRegistro !== 1 ? t('días','days') : t('día','day')} {t('con registro','with data')}
         </p>
         <div className="grid grid-cols-2 gap-2 mb-3">
           {[
-            { label: 'Calorías',      val: datos.avgKcal, unit: 'kcal', tgt: datos.kcalTarget, color: 'var(--color-accent)', est: false },
-            { label: 'Proteína',      val: datos.avgProt, unit: 'g',    tgt: datos.protTarget, color: '#60a5fa',             est: false },
-            { label: 'Carbohidratos', val: datos.avgCarb, unit: 'g',    tgt: datos.carbTarget, color: '#fbbf24',             est: true  },
-            { label: 'Grasa',         val: datos.avgFat,  unit: 'g',    tgt: datos.fatTarget,  color: '#f87171',             est: true  },
+            { label: t('Calorías','Calories'),      val: datos.avgKcal, unit: 'kcal', tgt: datos.kcalTarget, color: 'var(--color-accent)', est: false },
+            { label: t('Proteína','Protein'),       val: datos.avgProt, unit: 'g',    tgt: datos.protTarget, color: '#60a5fa',             est: false },
+            { label: t('Carbohidratos','Carbs'),    val: datos.avgCarb, unit: 'g',    tgt: datos.carbTarget, color: '#fbbf24',             est: true  },
+            { label: t('Grasa','Fat'),              val: datos.avgFat,  unit: 'g',    tgt: datos.fatTarget,  color: '#f87171',             est: true  },
           ].map(item => (
             <div key={item.label} className={`rounded-xl p-3 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
               <div className={`text-[10px] mb-0.5 flex items-center gap-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -8259,7 +8259,7 @@ function NutricionLogView({ perfil, darkMode }) {
               </div>
               {item.tgt && (
                 <div className={`text-[10px] mt-0.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                  obj {item.tgt}{item.unit} · <span style={{color: Math.abs(item.val/item.tgt - 1) < 0.1 ? 'var(--color-success)' : item.val < item.tgt ? '#fbbf24' : '#f87171'}}>
+                  {t('obj','goal')} {item.tgt}{item.unit} · <span style={{color: Math.abs(item.val/item.tgt - 1) < 0.1 ? 'var(--color-success)' : item.val < item.tgt ? '#fbbf24' : '#f87171'}}>
                     {item.val >= item.tgt ? '+' : ''}{Math.round((item.val/item.tgt - 1)*100)}%
                   </span>
                 </div>
@@ -8268,7 +8268,7 @@ function NutricionLogView({ perfil, darkMode }) {
           ))}
         </div>
         <div className={`flex items-center gap-2 pt-2.5 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-          <span className={`text-[11px] flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Adherencia período</span>
+          <span className={`text-[11px] flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Adherencia período', 'Period adherence')}</span>
           <div className="flex-1 h-2 rounded-full overflow-hidden" style={{background: darkMode ? '#374151' : '#e5e7eb'}}>
             <div className="h-full rounded-full transition-all duration-700" style={{width: datos.avgAdher + '%', backgroundColor: 'var(--color-accent)'}}></div>
           </div>
@@ -8279,7 +8279,7 @@ function NutricionLogView({ perfil, darkMode }) {
       {/* ── Composición de macros — donut SVG + leyenda vertical ── */}
       <div className={card}>
         <p className={`text-[10px] font-bold uppercase tracking-widest mb-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-          Composición de macros{datos.tieneMg && <span className={`ml-1 font-normal text-[9px] ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}> · C y G estimados*</span>}
+          {t('Composición de macros', 'Macro composition')}{datos.tieneMg && <span className={`ml-1 font-normal text-[9px] ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}> · {t('C y G estimados*', 'C & F estimated*')}</span>}
         </p>
         {/* Donut centrado */}
         <div className="flex justify-center mb-4">
@@ -8288,9 +8288,9 @@ function NutricionLogView({ perfil, darkMode }) {
         {/* Leyenda en 3 columnas — nunca overflows */}
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: 'Proteína', pct: datos.protPct, g: datos.avgProt, color: '#60a5fa', bg: darkMode ? 'rgba(59,130,246,0.15)' : '#eff6ff' },
-            { label: 'Carbos',   pct: datos.carbPct, g: datos.avgCarb, color: '#fbbf24', bg: darkMode ? 'rgba(245,158,11,0.15)' : '#fffbeb' },
-            { label: 'Grasa',    pct: datos.fatPct,  g: datos.avgFat,  color: '#f87171', bg: darkMode ? 'rgba(248,113,113,0.15)' : '#fff1f2' },
+            { label: t('Proteína','Protein'), pct: datos.protPct, g: datos.avgProt, color: '#60a5fa', bg: darkMode ? 'rgba(59,130,246,0.15)' : '#eff6ff' },
+            { label: t('Carbos','Carbs'),   pct: datos.carbPct, g: datos.avgCarb, color: '#fbbf24', bg: darkMode ? 'rgba(245,158,11,0.15)' : '#fffbeb' },
+            { label: t('Grasa','Fat'),      pct: datos.fatPct,  g: datos.avgFat,  color: '#f87171', bg: darkMode ? 'rgba(248,113,113,0.15)' : '#fff1f2' },
           ].map(item => (
             <div key={item.label} className="rounded-xl p-3 text-center" style={{ background: item.bg }}>
               {/* Porcentaje grande */}
@@ -8316,7 +8316,7 @@ function NutricionLogView({ perfil, darkMode }) {
 
       {/* ── Kcal por día (barras horizontales) ── */}
       <div className={card}>
-        <p className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Kcal por día</p>
+        <p className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{t('Kcal por día', 'Kcal per day')}</p>
         <div className="space-y-1.5">
           {datos.diasData.map(d => {
             if (!d.tieneRegistro) return null;
@@ -8340,7 +8340,7 @@ function NutricionLogView({ perfil, darkMode }) {
         </div>
         {datos.kcalTarget > 0 && (
           <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 pt-2.5 border-t text-[10px] ${darkMode ? 'border-gray-700 text-gray-500' : 'border-gray-100 text-gray-400'}`}>
-            <span><span className="inline-block w-2 h-2 rounded-sm mr-1 align-middle" style={{backgroundColor: 'var(--color-accent)'}}></span>Objetivo · {datos.kcalTarget.toLocaleString('es-CL')} kcal</span>
+            <span><span className="inline-block w-2 h-2 rounded-sm mr-1 align-middle" style={{backgroundColor: 'var(--color-accent)'}}></span>{t('Objetivo','Goal')} · {datos.kcalTarget.toLocaleString('es-CL')} kcal</span>
             <span><span className="inline-block w-2 h-2 rounded-sm mr-1 align-middle bg-amber-400"></span>{'< 80%'}</span>
             <span><span className="inline-block w-2 h-2 rounded-sm mr-1 align-middle bg-rose-400"></span>{'> 110%'}</span>
           </div>
@@ -8349,7 +8349,7 @@ function NutricionLogView({ perfil, darkMode }) {
 
       {datos.tieneMg && (
         <p className={`text-[10px] ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>
-          * Carbohidratos y grasa estimados según la proporción del plan. Solo proteína y kcal totales son valores exactos del registro.
+          {t('* Carbohidratos y grasa estimados según la proporción del plan. Solo proteína y kcal totales son valores exactos del registro.', '* Carbs and fat are estimated based on plan ratios. Only protein and total kcal are exact logged values.')}
         </p>
       )}
     </div>
@@ -8839,16 +8839,16 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
 
       {/* Registro rápido de peso */}
       <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-        <h3 className={`text-sm font-bold uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Peso de hoy</h3>
+        <h3 className={`text-sm font-bold uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Peso de hoy', "Today's weight")}</h3>
         {entradaHoy && entradaHoy.peso != null ? (
           <div className="flex items-center justify-between">
             <div>
               <div className={`text-3xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{entradaHoy.peso} kg</div>
-              <div className="text-xs text-gray-400">Registrado hoy</div>
+              <div className="text-xs text-gray-400">{t('Registrado hoy', 'Logged today')}</div>
             </div>
             <button onClick={() => { window.NP_BodyComp.eliminar(hoy); onRefresh(); }}
               className={`text-xs px-3 py-1.5 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-              <i className="fas fa-pen mr-1"></i>Cambiar
+              <i className="fas fa-pen mr-1"></i>{t('Cambiar', 'Change')}
             </button>
           </div>
         ) : (
@@ -8856,7 +8856,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
             <input type="number" step="0.1" value={pesoInput} onChange={e => setPesoInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') registrarPeso(); }}
               className={`flex-1 px-4 py-3 rounded-xl border text-lg font-semibold ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
-              placeholder="Ej: 82.3" />
+              placeholder={t('Ej: 82.3', 'E.g. 82.3')} />
             <button onClick={registrarPeso} disabled={!pesoInput}
               className={`px-5 py-3 rounded-xl font-semibold ${pesoInput ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
               <i className="fas fa-check"></i>
@@ -8868,11 +8868,11 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
       {/* Promedio + tendencia */}
       <div className="grid grid-cols-2 gap-3">
         <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <div className="text-[11px] text-gray-400 uppercase font-bold">Promedio 7 días</div>
+          <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Promedio 7 días', '7-day avg')}</div>
           <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{promedio7 != null ? promedio7 + ' kg' : '—'}</div>
         </div>
         <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <div className="text-[11px] text-gray-400 uppercase font-bold">Tendencia 14d</div>
+          <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Tendencia 14d', '14d trend')}</div>
           <div className={`text-2xl font-extrabold ${tendencia && tendencia.deltaSemanal != null ? (tendencia.deltaSemanal < 0 ? 'text-green-500' : tendencia.deltaSemanal > 0 ? 'text-red-500' : 'text-gray-400') : 'text-gray-400'}`}>
             {tendencia && tendencia.deltaSemanal != null ? (tendencia.deltaSemanal > 0 ? '+' : '') + tendencia.deltaSemanal + ' kg/sem' : '—'}
           </div>
@@ -8882,7 +8882,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
       {/* Gráfico tendencia peso */}
       {entries.filter(e => e.peso != null).length >= 2 && (
         <div className={`rounded-2xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <h3 className={`text-sm font-bold uppercase tracking-wider mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tendencia de peso</h3>
+          <h3 className={`text-sm font-bold uppercase tracking-wider mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Tendencia de peso', 'Weight trend')}</h3>
           <WeightChart perfil={perfil} entries={entries} darkMode={darkMode} />
           {/* TY4: #6b7280 (gray-500) en lugar de #9ca3af (gray-400, contraste insuficiente), 11px mínimo */}
           <div className="flex items-center gap-5 mt-2" style={{ color: '#6b7280', fontSize: '11px' }}>
@@ -8902,46 +8902,46 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
       {/* Medidas + BF */}
       <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
         <div className="flex items-center justify-between mb-3">
-          <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Medidas (semanal)</h3>
+          <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Medidas (semanal)', 'Measurements (weekly)')}</h3>
           <button onClick={() => setMostrarMedidas(!mostrarMedidas)}
             className={`text-xs px-3 py-1.5 rounded-lg ${mostrarMedidas ? 'bg-orange-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
-            {mostrarMedidas ? 'Cancelar' : '+ Registrar'}
+            {mostrarMedidas ? t('Cancelar', 'Cancel') : t('+ Registrar', '+ Log')}
           </button>
         </div>
         {mostrarMedidas ? (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cintura (cm)</label>
+                <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Cintura (cm)', 'Waist (cm)')}</label>
                 <input type="number" step="0.5" value={medidas.cintura} onChange={e => setMedidas({...medidas, cintura: e.target.value})}
                   className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder={perfil.cintura || '85'} />
               </div>
               <div>
-                <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cuello (cm)</label>
+                <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Cuello (cm)', 'Neck (cm)')}</label>
                 <input type="number" step="0.5" value={medidas.cuello} onChange={e => setMedidas({...medidas, cuello: e.target.value})}
                   className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder={perfil.cuello || '40'} />
               </div>
               {perfil.genero === 'femenino' && (
                 <div>
-                  <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cadera (cm)</label>
+                  <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Cadera (cm)', 'Hip (cm)')}</label>
                   <input type="number" step="0.5" value={medidas.cadera} onChange={e => setMedidas({...medidas, cadera: e.target.value})}
                     className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
                 </div>
               )}
               <div>
-                <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Muslo (cm)</label>
+                <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Muslo (cm)', 'Thigh (cm)')}</label>
                 <input type="number" step="0.5" value={medidas.muslo} onChange={e => setMedidas({...medidas, muslo: e.target.value})}
                   className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="55" />
               </div>
               <div className="col-span-2">
-                <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>BF% manual (opcional — sino se calcula Navy)</label>
+                <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('BF% manual (opcional — sino se calcula Navy)', 'BF% manual (optional — Navy formula if blank)')}</label>
                 <input type="number" step="0.1" value={bfManualInput} onChange={e => setBfManualInput(e.target.value)}
                   className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="Ej: 18.5" />
               </div>
             </div>
             <button onClick={registrarMedidas}
               className="w-full py-2.5 rounded-xl font-semibold bg-gradient-to-r from-orange-500 to-red-500 text-white">
-              <i className="fas fa-check mr-2"></i>Guardar medidas
+              <i className="fas fa-check mr-2"></i>{t('Guardar medidas', 'Save measurements')}
             </button>
           </div>
         ) : (
@@ -8951,7 +8951,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
               if (perfil.genero !== 'femenino' && campo === 'cadera') return null;
               return (
                 <div key={campo} className={`rounded-lg p-2 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
-                  <div className="text-[11px] text-gray-400 uppercase">{campo}</div>
+                  <div className="text-[11px] text-gray-400 uppercase">{{ cintura: t('Cintura','Waist'), cuello: t('Cuello','Neck'), cadera: t('Cadera','Hip'), muslo: t('Muslo','Thigh') }[campo] || campo}</div>
                   <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{last && last[campo] != null ? last[campo] + ' cm' : '—'}</div>
                 </div>
               );
@@ -8981,7 +8981,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
       {ultimas14.length > 0 && (
         <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Últimas 14 entradas</h3>
+            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Últimas 14 entradas', 'Last 14 entries')}</h3>
           </div>
           <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
             {ultimas14.map((e, i) => (
@@ -8991,7 +8991,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
                   {e.peso != null && <span><b>{e.peso}</b> kg</span>}
                   {e.bf != null && <span className="text-xs text-gray-400">{e.bf}% BF</span>}
                   {e.cintura != null && <span className="text-xs text-gray-400">C:{e.cintura}</span>}
-                  <button onClick={() => { if (window.confirm('¿Borrar el registro del ' + e.fecha + '?')) { window.NP_BodyComp.eliminar(e.fecha); onRefresh(); } }}
+                  <button onClick={() => { if (window.confirm(t('¿Borrar el registro del ','Delete entry for ') + e.fecha + '?')) { window.NP_BodyComp.eliminar(e.fecha); onRefresh(); } }}
                     className="text-xs text-red-400 hover:text-red-600">
                     <i className="fas fa-times"></i>
                   </button>
@@ -9027,7 +9027,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
     return (
       <div className={`rounded-xl p-4 text-sm ${darkMode ? 'bg-gray-800 text-gray-500 border border-gray-700' : 'bg-gray-50 text-gray-500 border border-gray-200'}`}>
         <i className="fas fa-radar mr-2"></i>
-        Detector de meseta: necesita ≥14 días de peso registrado para activarse.
+        {t('Detector de meseta: necesita ≥14 días de peso registrado para activarse.', 'Plateau detector: needs ≥14 days of weight data to activate.')}
       </div>
     );
   }
@@ -9046,13 +9046,13 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
     onRefresh();
   };
   const resolver = () => {
-    if (window.confirm('¿Este paso rompió la meseta? Se archivará como "funcionó" y saldrás del protocolo.')) {
+    if (window.confirm(t('¿Este paso rompió la meseta? Se archivará como "funcionó" y saldrás del protocolo.', 'Did this step break the plateau? It will be archived as "worked" and you\'ll exit the protocol.'))) {
       window.NP_Plateau.marcarResuelto();
       onRefresh();
     }
   };
   const cancelar = () => {
-    if (window.confirm('¿Cancelar seguimiento del protocolo sin marcarlo como resuelto?')) {
+    if (window.confirm(t('¿Cancelar seguimiento del protocolo sin marcarlo como resuelto?', 'Cancel protocol tracking without marking it as resolved?'))) {
       window.NP_Plateau.cancelar();
       onRefresh();
     }
@@ -9063,15 +9063,15 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
   if (hayPasoActivo) {
     bannerCls = darkMode ? 'bg-amber-900/30 border-amber-700' : 'bg-amber-50 border-amber-300';
     iconCls = 'text-amber-500';
-    ribbon = 'PROTOCOLO ACTIVO';
+    ribbon = t('PROTOCOLO ACTIVO', 'ACTIVE PROTOCOL');
   } else if (hayPlateau) {
     bannerCls = darkMode ? 'bg-red-900/30 border-red-700' : 'bg-red-50 border-red-300';
     iconCls = 'text-red-500';
-    ribbon = 'MESETA DETECTADA';
+    ribbon = t('MESETA DETECTADA', 'PLATEAU DETECTED');
   } else {
     bannerCls = darkMode ? 'bg-green-900/20 border-green-800' : 'bg-green-50 border-green-200';
     iconCls = 'text-green-500';
-    ribbon = 'PROGRESO NORMAL';
+    ribbon = t('PROGRESO NORMAL', 'NORMAL PROGRESS');
   }
 
   return (
@@ -9079,7 +9079,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <i className={`fas fa-radar ${iconCls}`}></i>
-          <span className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Detector de meseta</span>
+          <span className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t('Detector de meseta', 'Plateau detector')}</span>
         </div>
         <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${iconCls} ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>{ribbon}</span>
       </div>
@@ -9088,18 +9088,18 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
       {est.deteccion.datosSuficientes && (
         <div className="grid grid-cols-3 gap-3 mb-3">
           <div>
-            <div className="text-[11px] text-gray-400 uppercase font-bold">Δ semanal</div>
+            <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Δ semanal', 'Δ weekly')}</div>
             <div className={`text-2xl font-extrabold ${delta == null ? 'text-gray-400' : delta < -0.25 ? 'text-green-500' : delta > 0.25 ? 'text-red-500' : 'text-amber-500'}`}>
               {delta == null ? '—' : (delta > 0 ? '+' : '') + delta}
               {delta != null && <span className="text-sm font-semibold opacity-70 ml-0.5">kg</span>}
             </div>
           </div>
           <div>
-            <div className="text-[11px] text-gray-400 uppercase font-bold">Ventana</div>
+            <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Ventana', 'Window')}</div>
             <div className={`text-2xl font-extrabold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{est.deteccion.diasVentana}<span className="text-sm font-semibold opacity-70 ml-0.5">d</span></div>
           </div>
           <div>
-            <div className="text-[11px] text-gray-400 uppercase font-bold">Umbral</div>
+            <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Umbral', 'Threshold')}</div>
             <div className={`text-sm font-bold mt-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>±0.25 kg/sem</div>
           </div>
         </div>
@@ -9111,11 +9111,11 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
           <div className="flex items-start justify-between gap-2 mb-1">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-[11px] font-bold px-2 py-0.5 rounded bg-amber-500 text-white`}>PASO {est.pasoActual}/6</span>
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded bg-amber-500 text-white`}>{t('PASO','STEP')} {est.pasoActual}/6</span>
                 <span className={`text-base font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{est.pasoDef.accion}</span>
               </div>
               <div className="text-xs text-gray-400 mt-1">
-                Día {est.diasEnPaso} · Duración sugerida: {est.pasoDef.duracion}
+                {t('Día','Day')} {est.diasEnPaso} · {t('Duración sugerida:','Suggested duration:')} {est.pasoDef.duracion}
               </div>
             </div>
           </div>
@@ -9137,12 +9137,12 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
           <div className="flex gap-2 mt-2">
             <button onClick={resolver}
               className="flex-1 py-2 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600">
-              <i className="fas fa-check mr-1"></i>Funcionó
+              <i className="fas fa-check mr-1"></i>{t('Funcionó', 'It worked')}
             </button>
             {est.pasoActual < 6 && (
               <button onClick={avanzar}
                 className={`flex-1 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-amber-500 text-white hover:bg-amber-600'}`}>
-                <i className="fas fa-forward mr-1"></i>Paso {est.pasoActual + 1}
+                <i className="fas fa-forward mr-1"></i>{t('Paso', 'Step')} {est.pasoActual + 1}
               </button>
             )}
             <button onClick={cancelar}
@@ -9157,11 +9157,11 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
       {esSugerencia && !hayPasoActivo && (
         <div className={`rounded-lg p-4 mb-3 ${darkMode ? 'bg-red-900/40' : 'bg-white/70'}`}>
           <div className={`text-sm mb-3 leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-            Tu peso lleva ≥14 días dentro del umbral de meseta. Aplica el primer paso del protocolo antes de tocar calorías: <b>auditar tracking</b>.
+            {t('Tu peso lleva ≥14 días dentro del umbral de meseta. Aplica el primer paso del protocolo antes de tocar calorías:', 'Your weight has been within the plateau threshold for ≥14 days. Apply the first protocol step before touching calories:')} <b>{t('auditar tracking', 'audit tracking')}</b>.
           </div>
           <button onClick={aplicarPaso1}
             className="w-full py-2 rounded-lg text-sm font-semibold bg-red-500 text-white hover:bg-red-600">
-            <i className="fas fa-play mr-2"></i>Iniciar protocolo — Paso 1
+            <i className="fas fa-play mr-2"></i>{t('Iniciar protocolo — Paso 1', 'Start protocol — Step 1')}
           </button>
         </div>
       )}
@@ -9169,7 +9169,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
       {/* Estado normal */}
       {!hayPasoActivo && !esSugerencia && est.deteccion.datosSuficientes && (
         <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          Sin meseta. El peso se mueve a {delta > 0 ? '+' : ''}{delta} kg/sem — fuera del rango de estancamiento.
+          {t('Sin meseta. El peso se mueve a', 'No plateau. Weight is moving at')} {delta > 0 ? '+' : ''}{delta} kg/{t('sem', 'wk')} — {t('fuera del rango de estancamiento.', 'outside stall range.')}
         </div>
       )}
 
@@ -9177,7 +9177,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
       <button onClick={() => setVerProtocolo(!verProtocolo)}
         className={`w-full mt-3 text-xs py-2 rounded ${darkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-white'}`}>
         <i className={`fas fa-chevron-${verProtocolo ? 'up' : 'down'} mr-1`}></i>
-        {verProtocolo ? 'Ocultar' : 'Ver'} protocolo completo (6 pasos)
+        {verProtocolo ? t('Ocultar', 'Hide') : t('Ver', 'View')} {t('protocolo completo (6 pasos)', 'full protocol (6 steps)')}
       </button>
 
       {verProtocolo && (
@@ -9197,7 +9197,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${
                       esActivo ? 'bg-amber-500 text-white' : darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-600'
-                    }`}>PASO {p.paso}</span>
+                    }`}>{t('PASO','STEP')} {p.paso}</span>
                     <span className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{p.accion}</span>
                   </div>
                   <span className="text-xs text-gray-400 flex-shrink-0">{p.duracion}</span>
@@ -9212,7 +9212,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
                     if (window.confirm(msg)) { window.NP_Plateau.aplicarPaso(p.paso); onRefresh(); }
                   }}
                     className={`mt-2 text-xs px-3 py-1.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
-                    Saltar a este paso →
+                    {t('Saltar a este paso →', 'Jump to this step →')}
                   </button>
                 )}
               </div>
@@ -9277,9 +9277,9 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
         className={`w-full rounded-2xl p-5 flex items-center justify-between border transition-colors ${darkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-750' : 'bg-white border-gray-100 shadow-sm hover:bg-gray-50'}`}>
         <div className="flex items-center gap-2">
           <i className={`fas fa-wine-glass ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
-          <span className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Alcohol · últimos 7 días</span>
+          <span className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Alcohol · últimos 7 días', 'Alcohol · last 7 days')}</span>
         </div>
-        <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>+ Registrar <i className="fas fa-chevron-down ml-1"></i></span>
+        <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('+ Registrar', '+ Log')} <i className="fas fa-chevron-down ml-1"></i></span>
       </button>
     );
   }
@@ -9292,10 +9292,10 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
       <div className={`px-5 py-3 border-b flex items-center justify-between ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
         <div className="flex items-center gap-2">
           <i className={`fas fa-wine-glass ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
-          <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Alcohol · últimos 7 días</h3>
+          <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Alcohol · últimos 7 días', 'Alcohol · last 7 days')}</h3>
         </div>
         {impacto && (
-          <span className={`text-[11px] font-bold px-2 py-0.5 rounded uppercase ${badgeNivel}`}>{impacto.nivel}</span>
+          <span className={`text-[11px] font-bold px-2 py-0.5 rounded uppercase ${badgeNivel}`}>{{ minimo: t('mínimo','minimal'), moderado: t('moderado','moderate'), alto: t('alto','high'), critico: t('crítico','critical') }[impacto.nivel] || impacto.nivel}</span>
         )}
       </div>
 
@@ -9304,7 +9304,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <div className={`text-[11px] uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tragos</div>
+            <div className={`text-[11px] uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Tragos', 'Drinks')}</div>
             <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.tragos}</div>
           </div>
           <div>
@@ -9312,7 +9312,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
             <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.kcal}</div>
           </div>
           <div>
-            <div className={`text-[11px] uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Días activos</div>
+            <div className={`text-[11px] uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Días activos', 'Active days')}</div>
             <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               {resumen.dias}<span className={`text-sm font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>/7</span>
             </div>
@@ -9325,12 +9325,12 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
             <div className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{impacto.escenario}</div>
             <div className="grid grid-cols-2 gap-2">
               <div className={`rounded-lg p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-                <div className={`text-[11px] uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Oxidación grasa</div>
-                <div className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>pausada {impacto.horasPausaOxidacion}h</div>
-                {pausaH > 0 && <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{pausaH}h restantes</div>}
+                <div className={`text-[11px] uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Oxidación grasa', 'Fat oxidation')}</div>
+                <div className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{t('pausada', 'paused')} {impacto.horasPausaOxidacion}h</div>
+                {pausaH > 0 && <div className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{pausaH}h {t('restantes', 'remaining')}</div>}
               </div>
               <div className={`rounded-lg p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-                <div className={`text-[11px] uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Síntesis proteica</div>
+                <div className={`text-[11px] uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Síntesis proteica', 'Protein synthesis')}</div>
                 <div className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{impacto.impactoSintesisProteica}</div>
               </div>
             </div>
@@ -9343,7 +9343,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
         {/* Registrar bebida */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <div className={`text-xs uppercase font-bold tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Registrar bebida</div>
+            <div className={`text-xs uppercase font-bold tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Registrar bebida', 'Log a drink')}</div>
             {/* N16: date selector */}
             <input type="date" value={fechaBebida} onChange={e => setFechaBebida(e.target.value)}
               max={new Date().toISOString().split('T')[0]}
@@ -9361,12 +9361,12 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
           <div className="flex gap-2 mt-2">
             <button onClick={() => setModoCustom(!modoCustom)}
               className={`flex-1 text-sm py-2 rounded-lg font-semibold ${modoCustom ? 'bg-orange-500 text-white' : darkMode ? 'bg-gray-700/50 text-gray-300 hover:bg-gray-700' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>
-              {modoCustom ? 'Cancelar' : '+ Custom (ml + %)'}
+              {modoCustom ? t('Cancelar', 'Cancel') : t('+ Custom (ml + %)', '+ Custom (ml + %)')}
             </button>
             {presets.length > 6 && (
               <button onClick={() => setMostrarMas(!mostrarMas)}
                 className={`flex-1 text-sm py-2 rounded-lg font-semibold ${darkMode ? 'bg-gray-700/50 text-gray-300 hover:bg-gray-700' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>
-                {mostrarMas ? 'Menos' : `Más (${presets.length - 6})`} <i className={`fas fa-chevron-${mostrarMas ? 'up' : 'down'} text-xs ml-1`}></i>
+                {mostrarMas ? t('Menos', 'Less') : `${t('Más', 'More')} (${presets.length - 6})`} <i className={`fas fa-chevron-${mostrarMas ? 'up' : 'down'} text-xs ml-1`}></i>
               </button>
             )}
           </div>
@@ -9389,7 +9389,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
         {modoCustom && (
           <div className={`rounded-xl p-3 ${darkMode ? 'bg-gray-700/40 border border-gray-700' : 'bg-gray-50 border border-gray-200'}`}>
             <input type="text" value={customNombre} onChange={e => setCustomNombre(e.target.value)}
-              placeholder="Nombre (opcional)"
+              placeholder={t('Nombre (opcional)', 'Name (optional)')}
               className={`w-full px-3 py-2 rounded-lg border text-sm mb-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200'}`} />
             <div className="grid grid-cols-2 gap-2">
               <input type="text" inputMode="decimal" value={customMl}
@@ -9403,12 +9403,12 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
             </div>
             {kcalCustomPreview != null && (
               <div className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                ≈ <b>{kcalCustomPreview} kcal</b> (solo alcohol puro, sin mezcladores)
+                ≈ <b>{kcalCustomPreview} kcal</b> ({t('solo alcohol puro, sin mezcladores', 'pure alcohol only, no mixers')})
               </div>
             )}
             <button onClick={agregarCustom} disabled={!customMl || !customPct}
               className={`w-full mt-2 py-2 rounded-lg text-sm font-semibold ${customMl && customPct ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-              Registrar
+              {t('Registrar', 'Log')}
             </button>
           </div>
         )}
@@ -9417,7 +9417,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
         {resumen.entries.length > 0 && (
           <div className={`rounded-xl overflow-hidden border ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
             <div className={`px-4 py-2 border-b text-xs uppercase font-bold tracking-wider ${darkMode ? 'bg-gray-700/30 border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>
-              Log 7d
+              {t('Log 7d', 'Log 7d')}
             </div>
             <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
               {resumen.entries.slice().reverse().map(e => (
@@ -9429,7 +9429,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{e.kcal} kcal</span>
-                    <button onClick={() => { if (window.confirm('¿Borrar este registro de ' + e.bebida + '?')) { window.NP_Alcohol.eliminar(e.id); onRefresh(); } }}
+                    <button onClick={() => { if (window.confirm(t('¿Borrar este registro de ','Delete this entry for ') + e.bebida + '?')) { window.NP_Alcohol.eliminar(e.id); onRefresh(); } }}
                       className="text-red-400 hover:text-red-600 text-sm">
                       <i className="fas fa-times"></i>
                     </button>
@@ -9445,7 +9445,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
       {/* T7: py-3 (era py-2.5, ~34px efectivo — ahora ~40px) */}
       <button onClick={() => setExpandido(false)}
         className={`w-full py-3 text-xs border-t transition-colors ${darkMode ? 'border-gray-700 text-gray-500 hover:text-gray-300' : 'border-gray-100 text-gray-400 hover:text-gray-600'}`}>
-        <i className="fas fa-chevron-up mr-1"></i>Colapsar
+        <i className="fas fa-chevron-up mr-1"></i>{t('Colapsar', 'Collapse')}
       </button>
     </div>
   );
@@ -9478,7 +9478,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
       {/* Hoy */}
       <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
         <div className="flex items-center justify-between mb-3">
-          <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Hoy</h3>
+          <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Hoy', 'Today')}</h3>
           <span className="text-xs text-gray-400">Target: <b className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{target ? target.toLocaleString() : '—'}</b></span>
         </div>
         <div className={`text-5xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'} text-center mb-3`}>
@@ -9495,7 +9495,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
                     : 'linear-gradient(to right, #f97316, #ef4444)'
                 }}></div>
             </div>
-            <div className="text-center text-xs mt-1 text-gray-400">{Math.round(pct)}% del target{pct >= 100 ? ' ✓' : ''}</div>
+            <div className="text-center text-xs mt-1 text-gray-400">{Math.round(pct)}% {t('del target', 'of target')}{pct >= 100 ? ' ✓' : ''}</div>
           </>
         )}
         <div className="flex gap-2 mt-4">
@@ -9510,7 +9510,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
           <input type="number" value={pasosInput} onChange={e => setPasosInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && pasosInput) setPasos(parseInt(pasosInput)); }}
             className={`flex-1 px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
-            placeholder="Set exacto (ej: 8450)" />
+            placeholder={t('Set exacto (ej: 8450)', 'Set exact (e.g. 8450)')} />
           <button onClick={() => pasosInput && setPasos(parseInt(pasosInput))} disabled={!pasosInput}
             className={`px-4 py-2 rounded-lg text-sm font-semibold ${pasosInput ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
             Set
@@ -9521,13 +9521,13 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
         <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <div className="text-[11px] text-gray-400 uppercase font-bold">Promedio 7 días</div>
+          <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Promedio 7 días', '7-day avg')}</div>
           <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{prom7.toLocaleString()}</div>
         </div>
         <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <div className="text-[11px] text-gray-400 uppercase font-bold">Racha actual</div>
+          <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Racha actual', 'Current streak')}</div>
           <div className={`text-2xl font-extrabold ${racha > 0 ? 'text-orange-500' : darkMode ? 'text-white' : 'text-gray-800'}`}>
-            {racha} {racha === 1 ? 'día' : 'días'}{racha >= 3 ? <i className="fas fa-fire text-orange-400 ml-1 text-lg"></i> : null}
+            {racha} {racha === 1 ? t('día', 'day') : t('días', 'days')}{racha >= 3 ? <i className="fas fa-fire text-orange-400 ml-1 text-lg"></i> : null}
           </div>
         </div>
       </div>
@@ -9536,13 +9536,13 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
       {ultimos.length === 0 && (
         <div className={`rounded-xl p-5 text-center text-sm ${darkMode ? 'bg-gray-800 border border-gray-700 text-gray-400' : 'bg-gray-50 border border-gray-200 text-gray-500'}`}>
           <i className="fas fa-person-walking text-2xl mb-2 block opacity-40"></i>
-          Aún no registraste pasos. Usa los botones de arriba para empezar.
+          {t('Aún no registraste pasos. Usa los botones de arriba para empezar.', 'No steps recorded yet. Use the buttons above to get started.')}
         </div>
       )}
       {ultimos.length > 0 && (
         <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Últimos 14 días</h3>
+            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Últimos 14 días', 'Last 14 days')}</h3>
           </div>
           <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
             {ultimos.slice().reverse().map((e, i) => {
@@ -9691,7 +9691,7 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
               <a href={protEj.youtube} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1 text-xs text-red-400 hover:text-red-500 font-medium">
                 <i className="fab fa-youtube"></i>
-                <span>ver video</span>
+                <span>{t('ver video', 'watch video')}</span>
               </a>
             )}
           </div>
@@ -9702,7 +9702,7 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
           {eqNoDisp && (
             <div className="text-xs mt-1 font-medium text-amber-500">
               <i className="fas fa-exclamation-triangle mr-1"></i>
-              {eqInfo ? `Requiere ${eqInfo.nombre} — no marcado como disponible` : 'Equipo no disponible'}
+              {eqInfo ? t(`Requiere ${eqInfo.nombre} — no marcado como disponible`, `Requires ${eqInfo.nombre} — not marked as available`) : t('Equipo no disponible', 'Equipment not available')}
             </div>
           )}
         </div>
@@ -9802,19 +9802,19 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
     ? (planActual.schedule[hoyDow] || 'descanso')
     : (window.NP_Training && window.NP_Training.tipoDiaSugerido ? window.NP_Training.tipoDiaSugerido(hoy) : 'descanso');
   const tipos = planActual ? planActual.tipos
-    : [{ k:'A', short:'A', corto:'Empuje' }, { k:'B', short:'B', corto:'Piernas' },
-       { k:'C', short:'C', corto:'Jalar'  }, { k:'D', short:'D', corto:'Circuito' }];
+    : [{ k:'A', short:'A', corto:t('Empuje', 'Push') }, { k:'B', short:'B', corto:t('Piernas', 'Legs') },
+       { k:'C', short:'C', corto:t('Jalar', 'Pull')  }, { k:'D', short:'D', corto:t('Circuito', 'Circuit') }];
 
   const tipoInicial = (sugerido === 'descanso') ? (tipos[0] ? tipos[0].k : 'A') : sugerido;
   const [tipoDia, setTipoDia] = React.useState(tipoInicial);
 
   // Cuando cambia diasSemana, resetear al sugerido si el tipo actual ya no existe en el plan
   React.useEffect(() => {
-    if (!tipos.some(t => t.k === tipoDia)) setTipoDia(tipoInicial);
+    if (!tipos.some(tipo => tipo.k === tipoDia)) setTipoDia(tipoInicial);
   }, [diasSemana]);
 
   if (!window.NP_Training) {
-    return <div className={`rounded-xl p-6 text-sm ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-amber-50 text-amber-700'}`}>Módulo de entreno no disponible.</div>;
+    return <div className={`rounded-xl p-6 text-sm ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-amber-50 text-amber-700'}`}>{t('Módulo de entreno no disponible.', 'Training module not available.')}</div>;
   }
 
   // ── Protocolo dinámico: ejercicios rotan semana a semana ──
@@ -9885,7 +9885,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   };
 
   const limpiarSesion = () => {
-    if (window.confirm('¿Borrar el registro de este entreno?')) {
+    if (window.confirm(t('¿Borrar el registro de este entreno?', 'Delete the log for this workout?'))) {
       window.NP_Training.eliminar(hoy, tipoDia);
       onRefresh();
     }
@@ -9897,22 +9897,22 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
 
   // tipos ya está definido arriba desde planActual
   const gridCols = tipos.length <= 4 ? tipos.length : 3; // 5-6 días → 2 filas de 3
-  const diaSemana = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][new Date(hoy + 'T12:00:00').getDay()];
+  const diaSemana = t('Dom,Lun,Mar,Mié,Jue,Vie,Sáb', 'Sun,Mon,Tue,Wed,Thu,Fri,Sat').split(',')[new Date(hoy + 'T12:00:00').getDay()];
 
   return (
     <div className="space-y-4">
       {/* Resumen semana */}
       <div className="grid grid-cols-3 gap-2">
         <div className={`rounded-xl p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <div className="text-[11px] text-gray-400 uppercase font-bold">Entrenos 7d</div>
+          <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Entrenos 7d', 'Workouts 7d')}</div>
           <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.entrenos}</div>
         </div>
         <div className={`rounded-xl p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <div className="text-[11px] text-gray-400 uppercase font-bold">Completados</div>
+          <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Completados', 'Completed')}</div>
           <div className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.completados}<span className="text-sm text-gray-400">/{resumen.entrenos || 0}</span></div>
         </div>
         <div className={`rounded-xl p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <div className="text-[11px] text-gray-400 uppercase font-bold">Cumplimiento</div>
+          <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Cumplimiento', 'Adherence')}</div>
           <div className={`text-2xl font-extrabold ${resumen.cumplimiento >= 80 ? 'text-green-500' : resumen.cumplimiento >= 50 ? 'text-orange-500' : darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.cumplimiento}%</div>
         </div>
       </div>
@@ -9921,19 +9921,19 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
       <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
         <div className="flex items-center justify-between mb-2">
           <div className={`text-xs uppercase font-bold tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            Día a registrar · hoy ({diaSemana})
+            {t('Día a registrar · hoy', 'Day to log · today')} ({diaSemana})
           </div>
           {esDescanso
-            ? <span className={`text-xs px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>Descanso según plan</span>
+            ? <span className={`text-xs px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>{t('Descanso según plan', 'Rest day per plan')}</span>
             : <span className="text-xs px-2 py-0.5 rounded bg-orange-500/20 text-orange-500 font-bold">
-                Sugerido: Día {(tipos.find(t => t.k === sugerido) || {}).short || sugerido}
+                {t('Sugerido: Día', 'Suggested: Day')} {(tipos.find(tipo => tipo.k === sugerido) || {}).short || sugerido}
               </span>
           }
         </div>
 
         {/* Selector días/semana */}
         <div className="flex items-center gap-2 mb-3">
-          <span className={`text-xs font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Días/sem:</span>
+          <span className={`text-xs font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Días/sem:', 'Days/week:')}</span>
           <div className="flex gap-1">
             {[2,3,4,5,6].map(n => (
               <button key={n}
@@ -9954,11 +9954,11 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
 
         {/* Botones de tipo de día */}
         <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
-          {tipos.map(t => {
-            const activo = tipoDia === t.k;
-            const esSugerido = !esDescanso && sugerido === t.k;
+          {tipos.map(tipo => {
+            const activo = tipoDia === tipo.k;
+            const esSugerido = !esDescanso && sugerido === tipo.k;
             return (
-              <button key={t.k} onClick={() => setTipoDia(t.k)}
+              <button key={tipo.k} onClick={() => setTipoDia(tipo.k)}
                 className="rounded-lg font-semibold flex flex-col items-center cursor-pointer"
                 style={{
                   padding: '10px 0',
@@ -9974,8 +9974,8 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                         : { background: '#f9fafb', color: '#4b5563', border: '1px solid #e5e7eb' }
                   )
                 }}>
-                <span className="text-sm">Día {t.short || t.k}</span>
-                <span style={{ fontSize: '11px', opacity: 0.8 }}>{t.corto}</span>
+                <span className="text-sm">{t('Día', 'Day')} {tipo.short || tipo.k}</span>
+                <span style={{ fontSize: '11px', opacity: 0.8 }}>{tipo.corto}</span>
               </button>
             );
           })}
@@ -9993,7 +9993,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
               <div className="flex items-center gap-2 flex-wrap">
                 <div className={`text-sm uppercase tracking-wider font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{protocolo.nombre}</div>
                 <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded ${darkMode ? 'bg-orange-900/40 text-orange-300' : 'bg-orange-50 text-orange-600'}`}>
-                  Semana {semanaNum}{protocolo.variante ? ' · V' + protocolo.variante : ''}
+                  {t('Semana', 'Week')} {semanaNum}{protocolo.variante ? ' · V' + protocolo.variante : ''}
                 </span>
               </div>
               <div className={`text-base ${darkMode ? 'text-gray-300' : 'text-gray-700'} mt-1`}>{protocolo.foco}</div>
@@ -10018,7 +10018,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
           <div className="flex gap-2 mt-3">
             <button onClick={marcarTodos} disabled={pct === 100}
               className={`flex-1 py-2 rounded-lg text-sm font-semibold ${pct === 100 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-              <i className="fas fa-check-double mr-1"></i>Marcar todos
+              <i className="fas fa-check-double mr-1"></i>{t('Marcar todos', 'Mark all')}
             </button>
             {completados > 0 && (
               <button onClick={() => {
@@ -10026,12 +10026,12 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                 window.NP_Training.guardar(nueva); onRefresh();
               }}
                 className={`px-4 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-              <i className="fas fa-xmark mr-1"></i>Desmarcar
+              <i className="fas fa-xmark mr-1"></i>{t('Desmarcar', 'Unmark')}
             </button>
             )}
             <button onClick={limpiarSesion}
               className={`px-4 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-gray-700 text-red-400 hover:bg-gray-600' : 'bg-gray-100 text-red-500 hover:bg-gray-200'}`}>
-              <i className="fas fa-rotate-left mr-1"></i>Reset
+              <i className="fas fa-rotate-left mr-1"></i>{t('Reset', 'Reset')}
             </button>
           </div>
         </div>
@@ -10059,7 +10059,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
       {window.NP_RoadmapData && window.NP_RoadmapData.ENTRENO_PROTOCOLO && window.NP_RoadmapData.ENTRENO_PROTOCOLO.principios && (
         <details className={`rounded-xl ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <summary className={`px-5 py-3 cursor-pointer text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            <i className="fas fa-lightbulb mr-2"></i>Principios del método
+            <i className="fas fa-lightbulb mr-2"></i>{t('Principios del método', 'Method principles')}
           </summary>
           <div className={`px-5 pb-4 space-y-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
             {window.NP_RoadmapData.ENTRENO_PROTOCOLO.principios.map((p, i) => (
@@ -10076,7 +10076,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
       {ultimas.length > 0 && (
         <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Últimas sesiones</h3>
+            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Últimas sesiones', 'Recent sessions')}</h3>
           </div>
           <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
             {ultimas.map((s, i) => {
@@ -10087,7 +10087,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                 <div key={i} className="px-5 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-400">{s.fecha}</span>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>Día {s.dia_tipo}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>{t('Día', 'Day')} {s.dia_tipo}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`text-sm font-semibold ${s.completado ? 'text-green-500' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -10981,11 +10981,11 @@ function ChatPanel({ darkMode }) {
         }, React.createElement('i', { className:'fas fa-robot', style:{ color:'#fff', fontSize:15 } })),
         React.createElement('div', { style:{ flex:1 } },
           React.createElement('div', { style:{ fontWeight:700, fontSize:14, color:colorText } }, 'Calibrate IA'),
-          React.createElement('div', { style:{ fontSize:11, color:'#10b981' } }, '● En línea')
+          React.createElement('div', { style:{ fontSize:11, color:'#10b981' } }, '● ' + t('En línea','Online'))
         ),
         React.createElement('button', {
           onClick: function() { setMessages([]); localStorage.removeItem('nutriplan_chat_history'); },
-          title:'Borrar conversación',
+          title: t('Borrar conversación', 'Delete conversation'),
           style:{ background:'transparent', border:'none', cursor:'pointer', color:colorMuted, fontSize:13, padding:'4px 6px', borderRadius:6 }
         }, React.createElement('i', { className:'fas fa-trash-can' }))
       ),
