@@ -108,18 +108,20 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2) NavegaciÃ³n HTML: stale-while-revalidate sobre index.html
+  // 2) Navegación HTML: network-first para que index.html sea siempre fresco.
+  // Con ?v= en los assets ya hay cache-busting; lo importante es que index.html
+  // llegue con el APP_VERSION actualizado para registrar el SW correcto.
+  // Fallback al caché sólo si la red no responde (offline).
   if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {
     event.respondWith(
-      caches.match('./index.html').then((cached) => {
-        const fetchPromise = fetch(req)
-          .then((resp) => {
+      fetch(req)
+        .then((resp) => {
+          if (resp && resp.ok) {
             caches.open(CACHE_STATIC).then((c) => c.put('./index.html', resp.clone())).catch(() => {});
-            return resp;
-          })
-          .catch(() => cached);
-        return cached || fetchPromise;
-      })
+          }
+          return resp;
+        })
+        .catch(() => caches.match('./index.html').then((fb) => fb || new Response('', { status: 503, statusText: 'Offline' })))
     );
     return;
   }

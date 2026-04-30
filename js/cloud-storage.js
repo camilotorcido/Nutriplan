@@ -37,7 +37,8 @@
     'nutriplan_comprados',
     'nutriplan_despensa',
     'nutriplan_despensa_manual',
-    'nutriplan_chat_history'
+    'nutriplan_chat_history',
+    'nutriplan_adherencia'   // comidas marcadas como comidas (sync cross-device para progreso diario)
   ];
 
   /* ────────────────────────────────────────────
