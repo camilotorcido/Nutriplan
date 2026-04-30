@@ -11221,11 +11221,9 @@ function ChatPanel({ darkMode }) {
       setError('Firebase Functions no disponible. Intenta recargar la app.');
       return;
     }
-    // Texto por defecto cuando se envía solo la foto
-    if (!texto && imageSnap) texto = t('Comí esto — ¿qué es y cuántos macros tiene? Regístralo.','I ate this — what is it and how many macros? Register it.');
 
-    // Mensaje de display (sin base64 para no inflar localStorage)
-    var displayMsg = { role:'user', content: texto };
+    // Mensaje de display: thumbnail + texto del usuario (o placeholder)
+    var displayMsg = { role:'user', content: texto || t('📷 Analizando foto…','📷 Analyzing photo…') };
     if (imageSnap) displayMsg._imageUrl = imageSnap.previewUrl;
 
     var displayMsgs = messages.concat([displayMsg]);
@@ -11235,10 +11233,38 @@ function ChatPanel({ darkMode }) {
     setLoading(true);
     setError('');
 
+    // ── Si hay imagen: analizar primero con calibrateAnalyzeFood ────────────
+    // Luego mandar el resultado como texto a calibrateChat para que use sus tools.
+    // Evita pasar base64 a través de calibrateChat (causa error functions/internal).
+    if (imageSnap) {
+      try {
+        var fnVision = firebase.functions().httpsCallable('calibrateAnalyzeFood');
+        var visionResult = await fnVision({ image: imageSnap.base64, mimeType: imageSnap.mimeType });
+        var d = visionResult.data;
+        // Construir texto con el análisis visual
+        var analisis = 'Comí esto — análisis de foto: ' + d.nombre +
+          (d.porcion ? ' (' + d.porcion + ')' : '') +
+          '. Macros estimados: ' + d.kcal + ' kcal, P:' + Math.round(d.proteinas_g||0) + 'g, C:' + Math.round(d.carbohidratos_g||0) + 'g, G:' + Math.round(d.grasas_g||0) + 'g.' +
+          (d.confianza === 'baja' ? ' (confianza baja, revisa los valores)' : '') +
+          (texto ? ' Contexto adicional: ' + texto : ' Regístrala como comida de ahora.');
+        texto = analisis;
+        // Actualizar el contenido del mensaje de display con lo detectado
+        displayMsg.content = (texto || '');
+        displayMsgs = displayMsgs.slice(0, -1).concat([displayMsg]);
+        setMessages(displayMsgs);
+      } catch(visionErr) {
+        // Si falla el análisis, continuar con el texto del usuario o un mensaje genérico
+        texto = texto || t('Analiza la comida de la foto y regístrala.','Analyze the food in the photo and register it.');
+        displayMsg.content = texto;
+        displayMsgs = displayMsgs.slice(0, -1).concat([displayMsg]);
+        setMessages(displayMsgs);
+      }
+    }
+
     try {
       var fn = firebase.functions().httpsCallable('calibrateChat');
       var contexto = buildContexto();
-      // Historial previo (todos menos el último que acabamos de agregar)
+      // Historial previo (todos menos el último)
       var apiHistory = [];
       displayMsgs.slice(0, -1).forEach(function(m) {
         if (m._trigger) {
@@ -11248,15 +11274,8 @@ function ChatPanel({ darkMode }) {
           apiHistory.push({ role: m.role, content: Array.isArray(m.content) ? m.content : String(m.content || '').slice(0, 4000) });
         }
       });
-      // Mensaje actual: incluir imagen si la hay
-      if (imageSnap) {
-        apiHistory.push({ role: 'user', content: [
-          { type: 'image', source: { type: 'base64', media_type: imageSnap.mimeType, data: imageSnap.base64 } },
-          { type: 'text', text: texto }
-        ]});
-      } else {
-        apiHistory.push({ role: 'user', content: texto });
-      }
+      // Mensaje actual siempre como texto (imagen ya fue procesada)
+      apiHistory.push({ role: 'user', content: texto });
       var maxRondas = 5;
 
       while (maxRondas-- > 0) {
