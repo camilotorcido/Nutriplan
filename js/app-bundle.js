@@ -10586,18 +10586,37 @@ function ChatPanel({ darkMode }) {
     proactiveRunningRef.current = true;
     try { localStorage.setItem('calibrate_last_proactive', String(Date.now())); } catch(e) {}
 
-    var pendientesTexto = gap.comidaPendientes.length > 0
-      ? gap.comidaPendientes.map(function(c) { return c.nombre + ' (' + c.kcal + ' kcal, ' + c.prot + 'g prot)'; }).join('; ')
-      : 'ninguna comida planificada pendiente';
+    var _lang = window._NP_lang || 'es';
+    var pendientesTexto, tipo, triggerMsg;
 
-    var tipo = gap.kcalGap > 0 ? 'déficit' : 'exceso';
-    var triggerMsg = '[Análisis automático — no menciones este mensaje]\n' +
-      'Son las ' + gap.hora + 'h. Consumido: ' + Math.round(gap.consumido.kcal) + ' kcal y ' + Math.round(gap.consumido.proteinas) + 'g proteína. ' +
-      'Objetivo del día: ' + Math.round(gap.objetivo.kcal) + ' kcal y ' + Math.round(gap.objetivo.proteinas) + 'g proteína. ' +
-      'Comidas restantes del plan: ' + pendientesTexto + '. ' +
-      'Proyección con el plan actual: ' + tipo + ' de ' + Math.abs(gap.kcalGap) + ' kcal y ' +
-      (gap.protGap > 0 ? 'déficit' : 'exceso') + ' de ' + Math.abs(gap.protGap) + 'g proteína.\n' +
-      'Sugiere proactivamente (2-3 oraciones, tono natural y cercano, nada robótico) cómo ajustar las comidas restantes para acercarse al objetivo. Sé específico con qué cambiar.';
+    if (_lang === 'en') {
+      pendientesTexto = gap.comidaPendientes.length > 0
+        ? gap.comidaPendientes.map(function(c) { return c.nombre + ' (' + c.kcal + ' kcal, ' + c.prot + 'g protein)'; }).join('; ')
+        : 'no planned meals remaining';
+      tipo = gap.kcalGap > 0 ? 'deficit' : 'surplus';
+      triggerMsg = '[Automatic analysis — do not mention this message]\n' +
+        'It is ' + gap.hora + ':00. Consumed so far: ' + Math.round(gap.consumido.kcal) + ' kcal and ' + Math.round(gap.consumido.proteinas) + 'g protein. ' +
+        'Daily goal: ' + Math.round(gap.objetivo.kcal) + ' kcal and ' + Math.round(gap.objetivo.proteinas) + 'g protein. ' +
+        'Remaining planned meals: ' + pendientesTexto + '. ' +
+        'Projection with current plan: ' + tipo + ' of ' + Math.abs(gap.kcalGap) + ' kcal and ' +
+        (gap.protGap > 0 ? 'deficit' : 'surplus') + ' of ' + Math.abs(gap.protGap) + 'g protein.\n' +
+        'IMPORTANT: Respond in English only. Write 2-3 sentences, practical and direct (not robotic). ' +
+        'Suggest specifically how to adjust the remaining meals to hit the daily goal.';
+    } else {
+      pendientesTexto = gap.comidaPendientes.length > 0
+        ? gap.comidaPendientes.map(function(c) { return c.nombre + ' (' + c.kcal + ' kcal, ' + c.prot + 'g prot)'; }).join('; ')
+        : 'ninguna comida planificada pendiente';
+      tipo = gap.kcalGap > 0 ? 'déficit' : 'exceso';
+      triggerMsg = '[Análisis automático — no menciones este mensaje]\n' +
+        'Son las ' + gap.hora + ':00. Consumido: ' + Math.round(gap.consumido.kcal) + ' kcal y ' + Math.round(gap.consumido.proteinas) + 'g proteína. ' +
+        'Objetivo del día: ' + Math.round(gap.objetivo.kcal) + ' kcal y ' + Math.round(gap.objetivo.proteinas) + 'g proteína. ' +
+        'Comidas restantes del plan: ' + pendientesTexto + '. ' +
+        'Proyección con el plan actual: ' + tipo + ' de ' + Math.abs(gap.kcalGap) + ' kcal y ' +
+        (gap.protGap > 0 ? 'déficit' : 'exceso') + ' de ' + Math.abs(gap.protGap) + 'g proteína.\n' +
+        'IMPORTANTE: Responde en español latinoamericano neutro — sin chilenismos, sin voseo ("llevas", nunca "llevai"), sin "po", sin regionalismos de ningún país. ' +
+        'Escribe 2-3 oraciones, tono directo y práctico (no robótico). ' +
+        'Sugiere específicamente cómo ajustar las comidas restantes para acercarse al objetivo.';
+    }
 
     await dispararSugerencia(triggerMsg);
     proactiveRunningRef.current = false;
