@@ -14,6 +14,21 @@ const GROQ_KEY      = defineSecret('GROQ_API_KEY');
 // ── Herramientas ────────────────────────────────────────────────────────────
 const TOOLS = [
   {
+    name: 'planear_comida',
+    description: 'Agrega una comida al plan del día como PENDIENTE (no consumida aún). Úsala cuando el usuario diga que PLANEA comer algo más tarde ("voy a tomar", "voy a comer", "lo tomaré después", "lo voy a comer"). La comida aparece en pantalla pero NO se cuenta en los macros hasta que el usuario la confirme como comida.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        nombre:          { type: 'string',  description: 'Nombre descriptivo de la comida' },
+        kcal:            { type: 'number',  description: 'Calorías estimadas' },
+        proteinas_g:     { type: 'number',  description: 'Proteínas en gramos' },
+        carbohidratos_g: { type: 'number',  description: 'Carbohidratos en gramos' },
+        grasas_g:        { type: 'number',  description: 'Grasas en gramos' }
+      },
+      required: ['nombre', 'kcal', 'proteinas_g', 'carbohidratos_g', 'grasas_g']
+    }
+  },
+  {
     name: 'registrar_comida',
     description: 'Registra una comida que el usuario YA comió. SOLO úsala cuando el usuario use tiempo pasado ("comí", "me comí", "almorcé", "tomé"). NUNCA la uses para comidas futuras, planificación, cambios de menú ni sugerencias.',
     input_schema: {
@@ -165,7 +180,7 @@ function buildSystemPrompt(contexto) {
         .join('\n')
     : '  (sin plan cargado)';
 
-  return `Eres el asistente nutricional de Calibrate, una app de nutrición personalizada para chilenos.
+  return `Eres el asistente nutricional de Calibrate, una app de nutrición personalizada.
 
 USUARIO: ${perfil.nombre || 'Usuario'}
 OBJETIVO: ${perfil.objetivo || 'mantenimiento'}
@@ -186,7 +201,8 @@ MACROS CONSUMIDOS HASTA AHORA:
   • Grasas:        ${consumido.grasas || 0} g
 
 INSTRUCCIONES:
-- Habla en español chileno, de forma cercana pero profesional.
+- Responde en español latinoamericano neutro — sin chilenismos, sin voseo (di "llevas", nunca "llevai"), sin "po", sin regionalismos de ningún país. Tono cercano y profesional.
+- Si el usuario escribe en inglés, responde en inglés.
 - Sé breve: máximo 3–4 oraciones por respuesta salvo que te pidan más detalle.
 - No inventes datos del usuario que no estén en el contexto.
 - Si el usuario pregunta por el plan del día, lee los datos de contexto.

@@ -10975,6 +10975,14 @@ function ChatPanel({ darkMode }) {
       return { ok: false, error: 'Sistema de adherencia no disponible.' };
     }
 
+    // ── Planear comida (pendiente, no cuenta en macros aún) ─────────────────
+    if (name === 'planear_comida') {
+      var resultado = typeof window._NP_addPendiente === 'function'
+        ? window._NP_addPendiente(input_)
+        : { ok: false, error: 'Función no disponible' };
+      return resultado;
+    }
+
     return { error: 'tool desconocida: ' + name };
   }
 
