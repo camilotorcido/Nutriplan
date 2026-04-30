@@ -10987,15 +10987,36 @@ function ChatPanel({ darkMode }) {
       var hoy = new Date().toISOString().split('T')[0];
       var extMap = {};
       try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
+      var lista = extMap[hoy] || [];
+
+      // Anti-duplicado: si se especifica reemplaza, buscar una entrada previa con el
+      // mismo nombre (sin reemplaza asignado aún) y actualizarla en vez de crear otra.
+      if (input_.reemplaza) {
+        var nombreBuscar = (input_.nombre || '').toLowerCase();
+        var idxExist = -1;
+        // Preferir coincidencia exacta; si no, coincidencia parcial
+        idxExist = lista.findIndex(function(c) { return !c.reemplaza && c.nombre.toLowerCase() === nombreBuscar; });
+        if (idxExist < 0) {
+          idxExist = lista.findIndex(function(c) { return !c.reemplaza && c.nombre.toLowerCase().includes(nombreBuscar); });
+        }
+        if (idxExist >= 0) {
+          lista[idxExist] = Object.assign({}, lista[idxExist], { reemplaza: input_.reemplaza });
+          extMap[hoy] = lista;
+          localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
+          window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
+          return { ok: true, registrado: lista[idxExist], actualizado: true };
+        }
+      }
+
+      // Sin duplicado → crear nueva entrada
       var nueva = {
         id: 'chat_' + Date.now(),
         nombre: input_.nombre, kcal: input_.kcal,
         proteinas_g: input_.proteinas_g, carbohidratos_g: input_.carbohidratos_g, grasas_g: input_.grasas_g,
         reemplaza: input_.reemplaza || null, fuente: 'chat'
       };
-      extMap[hoy] = (extMap[hoy] || []).concat([nueva]);
+      extMap[hoy] = lista.concat([nueva]);
       localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
-      // Notificar al resto de la app para que actualice la UI
       window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
       return { ok: true, registrado: nueva };
     }

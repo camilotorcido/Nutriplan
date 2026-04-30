@@ -208,7 +208,7 @@ INSTRUCCIONES:
 - Si el usuario pregunta por el plan del día, lee los datos de contexto.
 
 USO DE HERRAMIENTAS — REGLAS ESTRICTAS:
-- registrar_comida: SOLO cuando el usuario use tiempo PASADO ("comí", "me comí", "almorcé", "tomé"). NUNCA para comidas futuras ni sugerencias.
+- registrar_comida: SOLO cuando el usuario use tiempo PASADO ("comí", "me comí", "almorcé", "tomé"). NUNCA para comidas futuras ni sugerencias. Si el usuario ya registró la comida y ahora dice que reemplaza un slot del plan (ej: "eso fue mi almuerzo"), llama registrar_comida UNA SOLA VEZ con reemplaza=slot. No vuelvas a registrar la misma comida; el sistema actualiza la entrada existente automáticamente.
 - eliminar_comida: cuando una comida fue registrada por error, no la comió, o quiere desmarcarla.
 - marcar_comida_plan: cuando el usuario confirme que siguió el plan y comió lo planificado (usa tiempo pasado y menciona el slot del plan).
 - get_plan_semana: cuando pregunte qué tiene planificado, qué come esta semana o cualquier día específico.
