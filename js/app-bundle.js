@@ -6941,37 +6941,39 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
     setIngredientes(function(prev) { return prev.filter(function(_, i) { return i !== idx; }); });
   }
 
-  function handleSubmit() {
+  function handleSubmit(pendiente) {
     var nombreFinal = nombre.trim();
     if (!nombreFinal) { setError(t('El nombre es obligatorio','Name is required')); return; }
     if (finalKcal <= 0) { setError(modo === 'manual'
       ? t('Ingresa al menos un macro (proteínas, carbohidratos o grasas)','Enter at least one macro (protein, carbs or fat)')
       : t('Agrega alimentos o ingresa los macros','Add foods or enter macros')); return; }
     setError('');
-    // ── Guardar en comidas frecuentes ──────────────────────────────────────
-    try {
-      var nuevasFrec = recurrentes.slice();
-      var idxFrec = nuevasFrec.findIndex(function(x) { return x.nombre === nombreFinal; });
-      var hoyFrec = new Date().toISOString().split('T')[0];
-      if (idxFrec >= 0) {
-        nuevasFrec[idxFrec] = Object.assign({}, nuevasFrec[idxFrec], {
-          veces: (nuevasFrec[idxFrec].veces || 1) + 1, ultimaVez: hoyFrec,
-          kcal: Math.round(finalKcal), proteinas_g: Math.round(finalProt),
-          carbohidratos_g: Math.round(finalCarb), grasas_g: Math.round(finalGras)
+    // ── Guardar en comidas frecuentes (solo si se consume ahora) ───────────
+    if (!pendiente) {
+      try {
+        var nuevasFrec = recurrentes.slice();
+        var idxFrec = nuevasFrec.findIndex(function(x) { return x.nombre === nombreFinal; });
+        var hoyFrec = new Date().toISOString().split('T')[0];
+        if (idxFrec >= 0) {
+          nuevasFrec[idxFrec] = Object.assign({}, nuevasFrec[idxFrec], {
+            veces: (nuevasFrec[idxFrec].veces || 1) + 1, ultimaVez: hoyFrec,
+            kcal: Math.round(finalKcal), proteinas_g: Math.round(finalProt),
+            carbohidratos_g: Math.round(finalCarb), grasas_g: Math.round(finalGras)
+          });
+        } else {
+          nuevasFrec.push({ nombre: nombreFinal, kcal: Math.round(finalKcal),
+            proteinas_g: Math.round(finalProt), carbohidratos_g: Math.round(finalCarb),
+            grasas_g: Math.round(finalGras), veces: 1, ultimaVez: hoyFrec });
+        }
+        nuevasFrec.sort(function(a, b) {
+          if (b.veces !== a.veces) return b.veces - a.veces;
+          return (b.ultimaVez || '') > (a.ultimaVez || '') ? 1 : -1;
         });
-      } else {
-        nuevasFrec.push({ nombre: nombreFinal, kcal: Math.round(finalKcal),
-          proteinas_g: Math.round(finalProt), carbohidratos_g: Math.round(finalCarb),
-          grasas_g: Math.round(finalGras), veces: 1, ultimaVez: hoyFrec });
-      }
-      nuevasFrec.sort(function(a, b) {
-        if (b.veces !== a.veces) return b.veces - a.veces;
-        return (b.ultimaVez || '') > (a.ultimaVez || '') ? 1 : -1;
-      });
-      nuevasFrec = nuevasFrec.slice(0, 20);
-      localStorage.setItem('nutriplan_comidas_frecuentes', JSON.stringify(nuevasFrec));
-      setRecurrentes(nuevasFrec);
-    } catch(e) {}
+        nuevasFrec = nuevasFrec.slice(0, 20);
+        localStorage.setItem('nutriplan_comidas_frecuentes', JSON.stringify(nuevasFrec));
+        setRecurrentes(nuevasFrec);
+      } catch(e) {}
+    }
     onAdd({
       id: 'ext_' + Date.now(),
       nombre: nombreFinal,
@@ -6980,7 +6982,8 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
       carbohidratos_g: Math.round(finalCarb),
       grasas_g: Math.round(finalGras),
       reemplaza: reemplaza || null,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      pendiente: pendiente ? true : undefined
     });
     onClose();
   }
@@ -7293,15 +7296,22 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
           )}
 
           {/* ── Botones ───────────────────────────────────────────────────── */}
-          <div className="flex gap-2 pt-1">
-            <button onClick={onClose}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-              {t('Cancelar','Cancel')}
-            </button>
-            <button onClick={handleSubmit}
+          <div className="flex flex-col gap-2 pt-1">
+            <div className="flex gap-2">
+              <button onClick={onClose}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                {t('Cancelar','Cancel')}
+              </button>
+              <button onClick={() => handleSubmit(false)}
+                disabled={modo === 'manual' && !nombre.trim()}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-green-500 text-white hover:bg-green-600 transition-colors cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                <i className="fas fa-check mr-1.5"></i>{t('Ya lo comí','I ate this')}
+              </button>
+            </div>
+            <button onClick={() => handleSubmit(true)}
               disabled={modo === 'manual' && !nombre.trim()}
-              className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-green-500 text-white hover:bg-green-600 transition-colors cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-              <i className="fas fa-plus mr-1.5"></i>{t('Agregar','Add')}
+              className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 ${darkMode ? 'bg-amber-900/40 text-amber-300 hover:bg-amber-900/60 border border-amber-800/60' : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'}`}>
+              <i className="fas fa-clock"></i>{t('Planear para luego (no cuenta aún)','Plan for later (not counted yet)')}
             </button>
           </div>
         </div>
@@ -7427,6 +7437,16 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     return function() { window.removeEventListener('calibrate_cloud_sync', onAdherenciaSync); };
   }, []);
 
+  // Refrescar cuando el coach agrega una comida pendiente vía window._NP_addPendiente
+  React.useEffect(function() {
+    function onPendienteAdded() {
+      setComidasExt(_comidasExtFecha(fechaHoyIso));
+      setRefresh(function(r) { return r + 1; });
+    }
+    window.addEventListener('calibrate_pendiente_added', onPendienteAdded);
+    return function() { window.removeEventListener('calibrate_pendiente_added', onPendienteAdded); };
+  }, [fechaHoyIso]);
+
   const necesitaPeso = React.useMemo(() => {
     if (!tieneEntrenamiento || !window.NP_BodyComp || !window.NP_BodyComp.cargar) return false;
     const entries = window.NP_BodyComp.cargar();
@@ -7443,8 +7463,9 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     return (window.NP_BodyComp.cargar() || []).some(e => e.fecha === hoyStr && e.peso != null);
   }, [refresh]);
 
-  // Suma de macros de comidas externas
+  // Suma de macros de comidas externas (excluir pendientes — no comidas aún)
   const resumenExt = comidasExt.reduce(function(acc, c) {
+    if (c.pendiente) return acc;
     return {
       calorias:      acc.calorias      + (c.kcal            || 0),
       proteinas:     acc.proteinas     + (c.proteinas_g      || 0),
@@ -7454,7 +7475,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
   }, { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0 });
   // Comidas del plan reemplazadas por una externa → se descuentan del resumen
   const tiposReemplazados = comidasExt.filter(function(c) { return c.reemplaza; }).map(function(c) { return c.reemplaza; });
-  const comidasExtAdicional = comidasExt.filter(function(c) { return !c.reemplaza; });
+  const comidasExtAdicional = comidasExt.filter(function(c) { return !c.reemplaza && !c.pendiente; });
+  const comidasPendientes   = comidasExt.filter(function(c) { return c.pendiente; });
   var resumenBase = resumenHoy;
   if (tiposReemplazados.length > 0) {
     var comidasHoyEfectivas = {};
@@ -7504,6 +7526,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     consumidoHoy.grasas        += comida.grasas_escaladas        || comida.grasas        || 0;
   });
   comidasExt.forEach(function(c) {
+    if (c.pendiente) return; // no comida aún — excluir de consumido
     consumidoHoy.calorias      += c.kcal            || 0;
     consumidoHoy.proteinas     += c.proteinas_g      || 0;
     consumidoHoy.carbohidratos += c.carbohidratos_g  || 0;
@@ -8005,7 +8028,60 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             </button>
           </div>
         </div>
-        {comidasExtAdicional.length === 0 ? (
+        {/* ── Comidas pendientes (planeadas pero no comidas aún) ── */}
+        {comidasPendientes.length > 0 && (
+          <div className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            {comidasPendientes.map(function(c) {
+              return (
+                <div key={c.id} className={`px-5 py-2.5 flex items-center gap-3 ${darkMode ? 'bg-amber-900/10' : 'bg-amber-50/70'}`}>
+                  <i className={`fas fa-clock text-sm w-4 text-center text-amber-500`}></i>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-medium truncate ${darkMode ? 'text-amber-200' : 'text-amber-800'}`}>{c.nombre}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">
+                      <span className="text-blue-400 font-semibold">{c.proteinas_g}g</span>{' '}{t('prot','prot')}
+                      {' · '}
+                      <span className="text-amber-400 font-semibold">{c.carbohidratos_g}g</span>{' '}{t('carb','carb')}
+                      {' · '}
+                      <span className="text-purple-400 font-semibold">{c.grasas_g}g</span>{' '}{t('grasas','fat')}
+                      {' · '}
+                      <span className="text-amber-500 font-semibold">{c.kcal} kcal</span>
+                      {' · '}
+                      <span className={`italic ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>{t('pendiente','pending')}</span>
+                    </div>
+                  </div>
+                  {/* Confirmar consumida */}
+                  <button
+                    onClick={function() {
+                      var confirmada = Object.assign({}, c, { pendiente: undefined });
+                      var nuevas = comidasExt.map(function(x) { return x.id === c.id ? confirmada : x; });
+                      setComidasExt(nuevas);
+                      _guardarComidasExt(fechaHoyIso, nuevas);
+                      _agregarAdherenciaExt(diaActual, confirmada);
+                      setRefresh(function(r) { return r + 1; });
+                    }}
+                    title={t('Marcar como comido','Mark as eaten')}
+                    className={`flex-shrink-0 h-7 px-2 rounded-lg flex items-center gap-1 text-xs font-semibold transition-all cursor-pointer ${darkMode ? 'bg-green-900/50 text-green-400 hover:bg-green-800' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}>
+                    <i className="fas fa-check text-[10px]"></i>{t('Comido','Eaten')}
+                  </button>
+                  {/* Eliminar */}
+                  <button
+                    onClick={function() {
+                      var nuevas = comidasExt.filter(function(x) { return x.id !== c.id; });
+                      setComidasExt(nuevas);
+                      _guardarComidasExt(fechaHoyIso, nuevas);
+                      setRefresh(function(r) { return r + 1; });
+                    }}
+                    aria-label={t('Eliminar','Remove')}
+                    className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${darkMode ? 'text-gray-600 hover:text-red-400 hover:bg-gray-700' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'}`}>
+                    <i className="fas fa-trash text-xs"></i>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {comidasExtAdicional.length === 0 && comidasPendientes.length === 0 ? (
           <button onClick={function() { setShowModalExt(true); }}
             className={`w-full px-5 py-4 text-center text-xs transition-colors cursor-pointer ${darkMode ? 'text-gray-500 hover:bg-gray-700/50' : 'text-gray-400 hover:bg-gray-50'}`}>
             <i className="fas fa-plus-circle mr-1.5"></i>{t('Registrar comida no planificada','Log an unplanned meal')}
@@ -8042,6 +8118,10 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                 </div>
               );
             })}
+            <button onClick={function() { setShowModalExt(true); }}
+              className={`w-full px-5 py-3 text-center text-xs transition-colors cursor-pointer ${darkMode ? 'text-gray-500 hover:bg-gray-700/50' : 'text-gray-400 hover:bg-gray-50'}`}>
+              <i className="fas fa-plus-circle mr-1.5"></i>{t('Agregar otra','Add another')}
+            </button>
           </div>
         )}
       </div>
@@ -11728,6 +11808,36 @@ function App() {
   window._NP_nav = navegarA;
   window._NP_toast = mostrarToast;
   window._NP_setPlan = setPlanSemanal;
+
+  // ── Herramienta para el coach: agregar comida planificada (pendiente) ──
+  // La agente llama: window._NP_addPendiente({ nombre, kcal, proteinas_g, carbohidratos_g, grasas_g })
+  window._NP_addPendiente = function(datos) {
+    try {
+      var hoyStr = new Date().toISOString().split('T')[0];
+      var entrada = {
+        id: 'pend_' + Date.now(),
+        nombre: datos.nombre || t('Comida planeada','Planned meal'),
+        kcal:            Math.round(parseFloat(datos.kcal)            || 0),
+        proteinas_g:     Math.round(parseFloat(datos.proteinas_g)     || datos.proteinas  || 0),
+        carbohidratos_g: Math.round(parseFloat(datos.carbohidratos_g) || datos.carbos     || 0),
+        grasas_g:        Math.round(parseFloat(datos.grasas_g)        || datos.grasas     || 0),
+        reemplaza: datos.reemplaza || null,
+        timestamp: Date.now(),
+        pendiente: true
+      };
+      var todas = _comidasExtFecha(hoyStr);
+      _guardarComidasExt(hoyStr, todas.concat([entrada]));
+      // Disparar evento para que HoyView actualice su estado
+      window.dispatchEvent(new CustomEvent('calibrate_pendiente_added', { detail: entrada }));
+      if (window._NP_toast) window._NP_toast(
+        t('Comida planeada agregada: ' + entrada.nombre, 'Planned meal added: ' + entrada.nombre),
+        'info'
+      );
+      return { ok: true, id: entrada.id };
+    } catch(e) {
+      return { ok: false, error: e.message };
+    }
+  };
 
   // ─── Elementos globales (loading overlay + toast) ───
   const globalOverlays = (
