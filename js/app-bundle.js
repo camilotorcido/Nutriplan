@@ -4286,7 +4286,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
           </div>
           <div className="text-right">
             <div className={`text-2xl font-bold font-display ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.calorias}</div>
-            <div className="text-xs text-gray-400">de {caloriasObj} kcal objetivo</div>
+            <div className="text-xs text-gray-400">{t('de','of')} {caloriasObj} kcal {t('objetivo','goal')}</div>
           </div>
         </div>
         {/* Tiempo y costo del día */}
@@ -4298,7 +4298,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                 {resumen.tiempo_total_min} min
               </div>
               <div className="text-[11px] text-gray-400">
-                Prep {resumen.tiempo_prep_min}′ + Cocción {resumen.tiempo_coccion_min}′
+                {t('Prep','Prep')} {resumen.tiempo_prep_min}′ + {t('Cocción','Cooking')} {resumen.tiempo_coccion_min}′
               </div>
             </div>
           </div>
@@ -4308,15 +4308,15 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
               <div className={`text-sm font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>
                 ${(Math.ceil(resumen.costo_clp / 100) * 100).toLocaleString('es-CL')} CLP
               </div>
-              <div className="text-[11px] text-gray-400">Costo estimado del día</div>
+              <div className="text-[11px] text-gray-400">{t('Costo estimado del día','Estimated daily cost')}</div>
             </div>
           </div>
         </div>
         <div className="space-y-3">
           {[
-            { label: "Proteínas", color: "blue", actual: resumen.proteinas, objetivo: macrosObj.proteinas_g },
-            { label: "Carbohidratos", color: "amber", actual: resumen.carbohidratos, objetivo: macrosObj.carbohidratos_g },
-            { label: "Grasas", color: "rose", actual: resumen.grasas, objetivo: macrosObj.grasas_g }
+            { label: t('Proteínas','Proteins'), color: "blue", actual: resumen.proteinas, objetivo: macrosObj.proteinas_g },
+            { label: t('Carbohidratos','Carbs'), color: "amber", actual: resumen.carbohidratos, objetivo: macrosObj.carbohidratos_g },
+            { label: t('Grasas','Fat'), color: "rose", actual: resumen.grasas, objetivo: macrosObj.grasas_g }
           ].map(macro => (
             <div key={macro.label}>
               <div className="flex justify-between text-xs mb-1">
@@ -4533,7 +4533,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                 {Math.floor(totalesSemana.tiempo_total_min / 60)}h {totalesSemana.tiempo_total_min % 60}min
               </div>
               <div className="text-[11px] text-gray-400">
-                Prep {totalesSemana.tiempo_prep_min}′ + Cocción {totalesSemana.tiempo_coccion_min}′
+                {t('Prep','Prep')} {totalesSemana.tiempo_prep_min}′ + {t('Cocción','Cooking')} {totalesSemana.tiempo_coccion_min}′
               </div>
             </div>
           </div>
@@ -11632,7 +11632,7 @@ function App() {
               <i className="fas fa-seedling text-white text-sm"></i>
             </div>
             <span className={`font-bold text-lg tracking-tight ${darkMode ? 'text-white' : 'text-gray-800'}`}>Calibrate</span>
-            {perfil && <span className="text-xs text-gray-400 hidden sm:inline">{perfil.caloriasObjetivo} kcal/día{perfil.numSemanas > 1 ? ` · ${perfil.numSemanas} sem` : ''}</span>}
+            {perfil && <span className="text-xs text-gray-400 hidden sm:inline">{perfil.caloriasObjetivo} {t('kcal/día','kcal/day')}{perfil.numSemanas > 1 ? ` · ${perfil.numSemanas} ${t('sem','wk')}` : ''}</span>}
           </div>
           <div className="flex items-center gap-1">
             {/* A1: aria-label en los 3 botones icono-only del header */}
