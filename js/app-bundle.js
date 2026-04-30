@@ -62,6 +62,47 @@ function t(es, en) {
   return (window._NP_lang || 'es') === 'en' && en !== undefined ? en : es;
 }
 
+/** Translate data-driven strings stored in roadmap/workout data files. Falls back to original. */
+var _DATA_EN = {
+  // ── Phase names ──
+  'Fase Única':              'Single Phase',
+  'Fase 1: Fundación':       'Phase 1: Foundation',
+  'Fase 2: Cierre':          'Phase 2: Close Out',
+  'Fase 2: Profundizar':     'Phase 2: Deepen',
+  'Fase 3: Last Mile':       'Phase 3: Last Mile',
+  'Retomar corte':           'Resume Cut',
+  // ── Phase focus ──
+  'Sostener el déficit y los hábitos durante todo el proceso.':
+    'Sustain the deficit and habits throughout the entire process.',
+  'Establecer hábitos, calibrar hambre y pasos. Proteína innegociable todos los días.':
+    'Build habits, calibrate hunger and steps. Protein non-negotiable every single day.',
+  'Momentum sostenido. Ajustar pasos al alza. Primeros signos de definición.':
+    'Sustained momentum. Increase daily steps. First signs of definition appearing.',
+  'Paciencia máxima. Los últimos puntos de BF son los más lentos. Aumentar cardio y disciplina.':
+    'Maximum patience. The last BF points are the slowest. Increase cardio and discipline.',
+  'Restaurar leptina y adherencia. 2 semanas exactas a mantenimiento. Subida de peso esperada 0.5-1.5 kg (glucógeno + agua, NO grasa).':
+    'Restore leptin and adherence. Exactly 2 weeks at maintenance. Expected weight gain 0.5–1.5 kg (glycogen + water, NOT fat).',
+  // ── Workout day names ──
+  'Día A — EMPUJE':            'Day A — PUSH',
+  'Día B — PIERNAS':           'Day B — LEGS',
+  'Día C — JALAR / ESPALDA':   'Day C — PULL / BACK',
+  'Día D — FULL BODY CIRCUITO':'Day D — FULL BODY CIRCUIT',
+  // ── Workout day foco ──
+  'Pecho, Hombros, Tríceps + Core':      'Chest, Shoulders, Triceps + Core',
+  'Squat, Hip Hinge, Glúteos':           'Squat, Hip Hinge, Glutes',
+  'Espalda, Rowing, Bíceps':             'Back, Rowing, Biceps',
+  'Circuito metabólico + cardio optativo':'Metabolic circuit + optional cardio',
+  // ── Workout equipamiento ──
+  'Speediance + peso corporal':       'Speediance + bodyweight',
+  'Speediance modo remo + cables':    'Speediance rowing mode + cables',
+  'Peso corporal + Treadmill':        'Bodyweight + Treadmill',
+};
+function tData(str) {
+  if (!str) return str;
+  if ((window._NP_lang || 'es') !== 'en') return str;
+  return _DATA_EN[str] || str;
+}
+
 /** Translate meal-type slot keys (desayuno, snack_am, …) */
 function tComida(tipo) {
   if ((window._NP_lang || 'es') === 'en') {
@@ -3372,42 +3413,42 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
     <div className="animate-fadeIn">
       <div className={`rounded-2xl p-5 border mb-4 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
         <h3 className={`font-semibold text-lg mb-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-          <i className="fas fa-wand-magic-sparkles text-purple-500 mr-2"></i>Generador de recetas
+          <i className="fas fa-wand-magic-sparkles text-purple-500 mr-2"></i>{t('Generador de recetas','Recipe Generator')}
         </h3>
         <p className="text-xs text-gray-400 mb-4">
-          {totalCombos.toLocaleString('es-CL')} combinaciones posibles · proteína × carbo × vegetal × técnica × cocina
+          {totalCombos.toLocaleString('es-CL')} {t('combinaciones posibles · proteína × carbo × vegetal × técnica × cocina','possible combinations · protein × carb × veggie × technique × cuisine')}
         </p>
 
         <div className="grid grid-cols-2 gap-2 mb-3">
           <div>
-            <label className="text-[11px] text-gray-400 block mb-1">Tipo de comida</label>
+            <label className="text-[11px] text-gray-400 block mb-1">{t('Tipo de comida','Meal type')}</label>
             <select value={filtros.tipo_comida} onChange={(e) => setFiltros({...filtros, tipo_comida: e.target.value})} className={selectClass}>
-              <option value="almuerzo">Almuerzo</option>
-              <option value="cena">Cena</option>
+              <option value="almuerzo">{t('Almuerzo','Lunch')}</option>
+              <option value="cena">{t('Cena','Dinner')}</option>
             </select>
           </div>
           <div>
-            <label className="text-[11px] text-gray-400 block mb-1">Cocina</label>
+            <label className="text-[11px] text-gray-400 block mb-1">{t('Cocina','Cuisine')}</label>
             <select value={filtros.cocina} onChange={(e) => setFiltros({...filtros, cocina: e.target.value})} className={selectClass}>
-              <option value="">Cualquiera</option>
+              <option value="">{t('Cualquiera','Any')}</option>
               {Object.entries(gen.catalogos.cocinas).map(([k, v]) => (
                 <option key={k} value={k}>{v.display}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="text-[11px] text-gray-400 block mb-1">Técnica</label>
+            <label className="text-[11px] text-gray-400 block mb-1">{t('Técnica','Technique')}</label>
             <select value={filtros.tecnica} onChange={(e) => setFiltros({...filtros, tecnica: e.target.value})} className={selectClass}>
-              <option value="">Cualquiera</option>
+              <option value="">{t('Cualquiera','Any')}</option>
               {Object.entries(gen.catalogos.tecnicas).map(([k, v]) => (
                 <option key={k} value={k}>{v.display}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="text-[11px] text-gray-400 block mb-1">Proteína</label>
+            <label className="text-[11px] text-gray-400 block mb-1">{t('Proteína','Protein')}</label>
             <select value={filtros.proteina} onChange={(e) => setFiltros({...filtros, proteina: e.target.value})} className={selectClass}>
-              <option value="">Cualquiera</option>
+              <option value="">{t('Cualquiera','Any')}</option>
               {Object.entries(gen.catalogos.proteinas).map(([k, v]) => (
                 <option key={k} value={k}>{v.display}</option>
               ))}
@@ -3416,29 +3457,29 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
         </div>
 
         <div className="flex items-center gap-3 mb-3">
-          <label className="text-xs text-gray-400">Cantidad:</label>
-          <input type="number" min="1" max="20" value={cantidad} 
+          <label className="text-xs text-gray-400">{t('Cantidad:','Amount:')}</label>
+          <input type="number" min="1" max="20" value={cantidad}
             onChange={(e) => setCantidad(parseInt(e.target.value) || 6)}
             className={`w-20 px-2 py-1 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-200'}`} />
         </div>
 
         <button onClick={generar}
           className="w-full py-3 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-lg transition-all">
-          <i className="fas fa-wand-magic-sparkles mr-2"></i>Generar {cantidad} receta{cantidad !== 1 ? 's' : ''}
+          <i className="fas fa-wand-magic-sparkles mr-2"></i>{t(`Generar ${cantidad} receta${cantidad !== 1 ? 's' : ''}`,`Generate ${cantidad} recipe${cantidad !== 1 ? 's' : ''}`)}
         </button>
       </div>
 
       {recetasGeneradas.length === 0 && (
         <div className={`text-center py-12 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           <i className="fas fa-seedling text-4xl mb-3"></i>
-          <p className="text-sm">Ajusta filtros (o déjalos libres) y genera recetas únicas</p>
+          <p className="text-sm">{t('Ajusta filtros (o déjalos libres) y genera recetas únicas','Adjust filters (or leave them open) and generate unique recipes')}</p>
         </div>
       )}
 
       {recetasGeneradas.length > 0 && (
         <div className="space-y-2">
           <div className={`text-xs mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            {recetasGeneradas.length} receta{recetasGeneradas.length !== 1 ? 's' : ''} generada{recetasGeneradas.length !== 1 ? 's' : ''}
+            {recetasGeneradas.length} {t(`receta${recetasGeneradas.length !== 1 ? 's' : ''} generada${recetasGeneradas.length !== 1 ? 's' : ''}`,`recipe${recetasGeneradas.length !== 1 ? 's' : ''} generated`)}
           </div>
           {recetasGeneradas.map((r, idx) => {
             const recetaConEscala = {
@@ -4171,7 +4212,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                 )}
               </div>
               <h3 className={`text-2xl font-bold leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                {faseInfo.nombreFase}
+                {tData(faseInfo.nombreFase)}
               </h3>
               <p className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 {t('Día','Day')} {faseInfo.diaDentroDeFase} {t('de fase · Mes','of phase · Month')} {faseInfo.mesInicio}{faseInfo.mesFin !== faseInfo.mesInicio ? '–' + faseInfo.mesFin : ''}
@@ -4208,7 +4249,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
             {faseInfo.foco && (
               <div className="flex items-start gap-3 min-w-0">
                 <i className="fas fa-bullseye text-amber-500 mt-1 flex-shrink-0"></i>
-                <p className={`text-sm leading-relaxed min-w-0 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{faseInfo.foco}</p>
+                <p className={`text-sm leading-relaxed min-w-0 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{tData(faseInfo.foco)}</p>
               </div>
             )}
 
@@ -4218,7 +4259,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                 <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
                   <i className={`fas fa-forward-fast flex-shrink-0 ${faseInfo.tipoFase === 'dietBreak' ? 'text-violet-400' : 'text-amber-500'}`}></i>
                   <span className="flex-shrink-0">{t('Próximo:','Next:')}</span>
-                  <span className={`font-semibold truncate ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{faseInfo.proximoHito.nombre}</span>
+                  <span className={`font-semibold truncate ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{tData(faseInfo.proximoHito.nombre)}</span>
                 </div>
                 <span className="flex-shrink-0 text-xs opacity-70">{t('en','in')} {faseInfo.proximoHito.enDias}d</span>
               </div>
@@ -8034,7 +8075,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                     <div className="flex-1 min-w-0">
                       <div className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{entrenoHoy.tipoInfo ? t(entrenoHoy.tipoInfo.corto, {Empuje:'Push',Piernas:'Legs',Jalar:'Pull',Circuito:'Circuit'}[entrenoHoy.tipoInfo.corto] || entrenoHoy.tipoInfo.corto) : 'Tipo ' + entrenoHoy.tipo}</div>
                       {entrenoHoy.foco && (
-                        <div className={`text-xs mt-0.5 font-medium ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{entrenoHoy.foco}</div>
+                        <div className={`text-xs mt-0.5 font-medium ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{tData(entrenoHoy.foco)}</div>
                       )}
                       {entrenoHoy.duracionMin && !entrenoHoy.foco && (
                         <div className="text-xs text-gray-400 mt-0.5"><i className="fas fa-clock mr-1"></i>{entrenoHoy.duracionMin} min</div>
@@ -10068,14 +10109,14 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <div className={`text-sm uppercase tracking-wider font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{protocolo.nombre}</div>
+                <div className={`text-sm uppercase tracking-wider font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{tData(protocolo.nombre)}</div>
                 <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded ${darkMode ? 'bg-orange-900/40 text-orange-300' : 'bg-orange-50 text-orange-600'}`}>
                   {t('Semana', 'Week')} {semanaNum}{protocolo.variante ? ' · V' + protocolo.variante : ''}
                 </span>
               </div>
-              <div className={`text-base ${darkMode ? 'text-gray-300' : 'text-gray-700'} mt-1`}>{protocolo.foco}</div>
+              <div className={`text-base ${darkMode ? 'text-gray-300' : 'text-gray-700'} mt-1`}>{tData(protocolo.foco)}</div>
               <div className="text-xs text-gray-400 mt-1">
-                <i className="fas fa-clock mr-1"></i>{protocolo.duracionMin} min · {protocolo.equipamiento}
+                <i className="fas fa-clock mr-1"></i>{protocolo.duracionMin} min · {tData(protocolo.equipamiento)}
               </div>
             </div>
             <div className="text-right flex-shrink-0">
