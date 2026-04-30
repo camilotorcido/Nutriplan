@@ -10758,6 +10758,8 @@ function ChatPanel({ darkMode }) {
   const mediaRecorderRef = React.useRef(null);
   const audioChunksRef   = React.useRef([]);
   const [badge, setBadge]               = React.useState(false);  // punto rojo en FAB
+  const [chatImage, setChatImage]       = React.useState(null);   // { base64, mimeType, previewUrl }
+  const chatImageInputRef               = React.useRef(null);
   const proactiveRunningRef             = React.useRef(false);    // guard anti-doble-ejecución
   const messagesRef                     = React.useRef([]);
   React.useEffect(function() { messagesRef.current = messages; }, [messages]);
@@ -10848,6 +10850,36 @@ function ChatPanel({ darkMode }) {
       objetivo:  ctx.macrosObjetivo,
       hora:      hora
     };
+  }
+
+  // ── Compresión + captura de imagen para el chat ─────────────────────────
+  async function handleChatImageSelect(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    var previewUrl = URL.createObjectURL(file);
+    try {
+      // Reutilizar misma lógica canvas que en ModalComidaExterna
+      var base64 = await new Promise(function(resolve, reject) {
+        var img = new Image();
+        var url = URL.createObjectURL(file);
+        img.onload = function() {
+          URL.revokeObjectURL(url);
+          var canvas = document.createElement('canvas');
+          var maxPx = 1024, w = img.width, h = img.height;
+          if (w > maxPx || h > maxPx) {
+            if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+            else { w = Math.round(w * maxPx / h); h = maxPx; }
+          }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.82).split(',')[1]);
+        };
+        img.onerror = reject;
+        img.src = url;
+      });
+      setChatImage({ base64: base64, mimeType: 'image/jpeg', previewUrl: previewUrl });
+    } catch(e) {
+      console.warn('[ChatPanel] Error comprimiendo imagen:', e);
+    }
   }
 
   async function dispararSugerencia(triggerMsg) {
@@ -11180,28 +11212,35 @@ function ChatPanel({ darkMode }) {
     }
   }
 
-  // ── Enviar mensaje ──────────────────────────────────────────────────────
+  // ── Enviar mensaje (con soporte de imagen adjunta) ──────────────────────
   async function sendMessage(textoOverride) {
     var texto = typeof textoOverride === 'string' ? textoOverride.trim() : input.trim();
-    if (!texto || loading) return;
+    var imageSnap = chatImage; // capturar antes de limpiar estado
+    if ((!texto && !imageSnap) || loading) return;
     if (typeof firebase === 'undefined' || !firebase.functions) {
       setError('Firebase Functions no disponible. Intenta recargar la app.');
       return;
     }
+    // Texto por defecto cuando se envía solo la foto
+    if (!texto && imageSnap) texto = t('Comí esto — ¿qué es y cuántos macros tiene? Regístralo.','I ate this — what is it and how many macros? Register it.');
 
-    var displayMsgs = messages.concat([{ role:'user', content: texto }]);
+    // Mensaje de display (sin base64 para no inflar localStorage)
+    var displayMsg = { role:'user', content: texto };
+    if (imageSnap) displayMsg._imageUrl = imageSnap.previewUrl;
+
+    var displayMsgs = messages.concat([displayMsg]);
     setMessages(displayMsgs);
     setInput('');
+    setChatImage(null);
     setLoading(true);
     setError('');
 
     try {
       var fn = firebase.functions().httpsCallable('calibrateChat');
       var contexto = buildContexto();
-      // Expandir historial: mensajes proactivos llevan _trigger hidden que
-      // debe insertarse como user-message antes del assistant-message
+      // Historial previo (todos menos el último que acabamos de agregar)
       var apiHistory = [];
-      displayMsgs.forEach(function(m) {
+      displayMsgs.slice(0, -1).forEach(function(m) {
         if (m._trigger) {
           apiHistory.push({ role: 'user',      content: m._trigger });
           apiHistory.push({ role: 'assistant', content: typeof m.content === 'string' ? m.content : '' });
@@ -11209,6 +11248,15 @@ function ChatPanel({ darkMode }) {
           apiHistory.push({ role: m.role, content: Array.isArray(m.content) ? m.content : String(m.content || '').slice(0, 4000) });
         }
       });
+      // Mensaje actual: incluir imagen si la hay
+      if (imageSnap) {
+        apiHistory.push({ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: imageSnap.mimeType, data: imageSnap.base64 } },
+          { type: 'text', text: texto }
+        ]});
+      } else {
+        apiHistory.push({ role: 'user', content: texto });
+      }
       var maxRondas = 5;
 
       while (maxRondas-- > 0) {
@@ -11420,6 +11468,11 @@ function ChatPanel({ darkMode }) {
                 React.createElement('i', { className:'fas fa-lightbulb', style:{ fontSize:9 } }),
                 ' Sugerencia de Calibrate'
               ),
+              /* Thumbnail de foto adjunta */
+              m._imageUrl && React.createElement('img', {
+                src: m._imageUrl, alt: '',
+                style:{ width:'100%', maxWidth:180, borderRadius:10, marginBottom: m.content ? 6 : 0, display:'block', objectFit:'cover' }
+              }),
               m.content
             )
           );
@@ -11435,45 +11488,90 @@ function ChatPanel({ darkMode }) {
 
       /* Input */
       React.createElement('div', {
-        style:{ padding:'10px 12px', borderTop:'1px solid '+borderColor, display:'flex', gap:8, flexShrink:0, alignItems:'center' }
+        style:{ borderTop:'1px solid '+borderColor, flexShrink:0 }
       },
-        React.createElement('input', {
-          ref: inputRef,
-          value: input,
-          onChange: function(e) { setInput(e.target.value); },
-          onKeyDown: function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } },
-          placeholder: 'Escribe aquí…',
-          disabled: loading,
-          style:{
-            flex:1, padding:'9px 13px', borderRadius:12, fontSize:13,
-            border:'1px solid '+borderColor,
-            background: darkMode ? '#1f2937' : '#f9fafb',
-            color: colorText, outline:'none'
-          }
-        }),
-        React.createElement('button', {
-          onClick: toggleRecording,
-          disabled: loading,
-          title: recording ? 'Soltar para enviar' : 'Hablar',
-          style:{
-            width:38, height:38, borderRadius:12, border:'none', flexShrink:0,
-            background: recording ? 'linear-gradient(135deg,#ef4444,#dc2626)' : (darkMode ? '#374151' : '#e5e7eb'),
-            color: recording ? '#fff' : colorMuted,
-            cursor: loading ? 'not-allowed' : 'pointer',
-            display:'flex', alignItems:'center', justifyContent:'center'
-          }
-        }, React.createElement('i', { className: recording ? 'fas fa-stop' : 'fas fa-microphone', style:{ fontSize:14 } })),
-        React.createElement('button', {
-          onClick: sendMessage,
-          disabled: loading || !input.trim(),
-          style:{
-            width:38, height:38, borderRadius:12, border:'none', flexShrink:0,
-            background: (loading || !input.trim()) ? (darkMode ? '#374151' : '#e5e7eb') : 'linear-gradient(135deg,#10b981,#059669)',
-            color: (loading || !input.trim()) ? colorMuted : '#fff',
-            cursor: (loading || !input.trim()) ? 'not-allowed' : 'pointer',
-            display:'flex', alignItems:'center', justifyContent:'center', fontSize:16
-          }
-        }, React.createElement('i', { className:'fas fa-paper-plane', style:{ fontSize:14 } }))
+        /* Preview de imagen adjunta */
+        chatImage && React.createElement('div', {
+          style:{ padding:'8px 12px 0', display:'flex', alignItems:'center', gap:8 }
+        },
+          React.createElement('div', { style:{ position:'relative', display:'inline-block' } },
+            React.createElement('img', { src: chatImage.previewUrl, alt:'',
+              style:{ width:52, height:52, objectFit:'cover', borderRadius:8, display:'block' } }),
+            React.createElement('button', {
+              onClick: function() { setChatImage(null); },
+              style:{ position:'absolute', top:-6, right:-6, width:18, height:18, borderRadius:'50%',
+                background:'#ef4444', border:'2px solid '+bgPanel, color:'#fff',
+                fontSize:8, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                padding:0 }
+            }, React.createElement('i', { className:'fas fa-times' }))
+          ),
+          React.createElement('span', { style:{ fontSize:11, color:colorMuted, lineHeight:1.4 } },
+            t('Foto adjunta — escribe contexto o envía directamente','Photo attached — add context or send directly')
+          )
+        ),
+        /* Fila de input */
+        React.createElement('div', {
+          style:{ padding:'10px 12px', display:'flex', gap:8, alignItems:'center' }
+        },
+          /* File input oculto */
+          React.createElement('input', {
+            ref: chatImageInputRef, type:'file', accept:'image/*', capture:'environment',
+            style:{ display:'none' },
+            onChange: function(e) { if (e.target.files && e.target.files[0]) handleChatImageSelect(e.target.files[0]); e.target.value = ''; }
+          }),
+          React.createElement('input', {
+            ref: inputRef,
+            value: input,
+            onChange: function(e) { setInput(e.target.value); },
+            onKeyDown: function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } },
+            placeholder: chatImage ? t('Agrega contexto (opcional)…','Add context (optional)…') : t('Escribe aquí…','Type here…'),
+            disabled: loading,
+            style:{
+              flex:1, padding:'9px 13px', borderRadius:12, fontSize:13,
+              border:'1px solid '+borderColor,
+              background: darkMode ? '#1f2937' : '#f9fafb',
+              color: colorText, outline:'none'
+            }
+          }),
+          /* Botón cámara */
+          React.createElement('button', {
+            onClick: function() { if (chatImageInputRef.current) chatImageInputRef.current.click(); },
+            disabled: loading,
+            title: t('Enviar foto de comida','Send food photo'),
+            style:{
+              width:38, height:38, borderRadius:12, border:'none', flexShrink:0,
+              background: chatImage ? '#8b5cf6' : (darkMode ? '#374151' : '#e5e7eb'),
+              color: chatImage ? '#fff' : colorMuted,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display:'flex', alignItems:'center', justifyContent:'center'
+            }
+          }, React.createElement('i', { className:'fas fa-camera', style:{ fontSize:14 } })),
+          /* Botón micrófono */
+          React.createElement('button', {
+            onClick: toggleRecording,
+            disabled: loading,
+            title: recording ? t('Soltar para enviar','Release to send') : t('Hablar','Speak'),
+            style:{
+              width:38, height:38, borderRadius:12, border:'none', flexShrink:0,
+              background: recording ? 'linear-gradient(135deg,#ef4444,#dc2626)' : (darkMode ? '#374151' : '#e5e7eb'),
+              color: recording ? '#fff' : colorMuted,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display:'flex', alignItems:'center', justifyContent:'center'
+            }
+          }, React.createElement('i', { className: recording ? 'fas fa-stop' : 'fas fa-microphone', style:{ fontSize:14 } })),
+          /* Botón enviar */
+          React.createElement('button', {
+            onClick: sendMessage,
+            disabled: loading || (!input.trim() && !chatImage),
+            style:{
+              width:38, height:38, borderRadius:12, border:'none', flexShrink:0,
+              background: (loading || (!input.trim() && !chatImage)) ? (darkMode ? '#374151' : '#e5e7eb') : 'linear-gradient(135deg,#10b981,#059669)',
+              color: (loading || (!input.trim() && !chatImage)) ? colorMuted : '#fff',
+              cursor: (loading || (!input.trim() && !chatImage)) ? 'not-allowed' : 'pointer',
+              display:'flex', alignItems:'center', justifyContent:'center'
+            }
+          }, React.createElement('i', { className:'fas fa-paper-plane', style:{ fontSize:14 } }))
+        )
       )
     )
   );
