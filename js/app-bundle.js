@@ -7447,6 +7447,16 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     return function() { window.removeEventListener('calibrate_pendiente_added', onPendienteAdded); };
   }, [fechaHoyIso]);
 
+  // Refrescar cuando el coach registra / elimina una comida (calibrate_meal_logged)
+  React.useEffect(function() {
+    function onMealLogged() {
+      setComidasExt(_comidasExtFecha(fechaHoyIso));
+      setRefresh(function(r) { return r + 1; });
+    }
+    window.addEventListener('calibrate_meal_logged', onMealLogged);
+    return function() { window.removeEventListener('calibrate_meal_logged', onMealLogged); };
+  }, [fechaHoyIso]);
+
   const necesitaPeso = React.useMemo(() => {
     if (!tieneEntrenamiento || !window.NP_BodyComp || !window.NP_BodyComp.cargar) return false;
     const entries = window.NP_BodyComp.cargar();
