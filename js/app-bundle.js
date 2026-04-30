@@ -7499,7 +7499,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                 </div>
               );
             })()}
-            {/* Mensaje motivacional según progreso del día */}
+            {/* Mensaje motivacional según progreso del día — siempre visible si hay plan */}
             {metaKcalDia > 0 && (() => {
               var _pct = consumidoHoy.calorias > 0 ? Math.round((consumidoHoy.calorias / metaKcalDia) * 100) : 0;
               var _msg = _pct >= 100
@@ -7507,9 +7507,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                 : _pct >= 70 ? t('¡Casi listo! Un poco más y llegas al objetivo.','Almost there! Just a little more.')
                 : _pct >= 30 ? t('¡Vas muy bien! Continúa con el plan.','Great progress! Keep going.')
                 : _pct > 0  ? t('¡Buen comienzo! Registra tu próxima comida.','Good start! Log your next meal.')
-                : null;
-              if (!_msg) return null;
-              return <p style={{ fontSize: '12px', opacity: 0.85, marginTop: '6px', fontWeight: 500 }}>{_msg}</p>;
+                : t('¡Marca las comidas que ya tomaste para ver tu progreso!','Mark the meals you\'ve had to see your progress!');
+              return <p style={{ fontSize: '12px', opacity: 0.82, marginTop: '6px', fontWeight: 500 }}>{_msg}</p>;
             })()}
           </div>
         );
