@@ -12264,10 +12264,12 @@ function App() {
         </div>
       </nav>
 
-      <main key={pantalla} className="max-w-3xl mx-auto px-4 py-6 animate-fadeIn">
-        {pantalla === "hoy" && (
-          <HoyView perfil={perfil} darkMode={darkMode} planSemanal={planSemanal} onNavigate={navegarA} onSwapRecipe={handleSwapRecipe} swapping={swapping} onVetoRecipe={handleVetoRecipe} />
-        )}
+      {/* HoyView siempre montada (fuera del main con key) — listener activo desde cualquier tab */}
+      <div style={{ display: pantalla === "hoy" ? "block" : "none" }} className="max-w-3xl mx-auto px-4 py-6">
+        <HoyView perfil={perfil} darkMode={darkMode} planSemanal={planSemanal} onNavigate={navegarA} onSwapRecipe={handleSwapRecipe} swapping={swapping} onVetoRecipe={handleVetoRecipe} />
+      </div>
+
+      <main key={pantalla} className="max-w-3xl mx-auto px-4 py-6 animate-fadeIn" style={{ display: pantalla === "hoy" ? "none" : "" }}>
         {pantalla === "plan" && (planSemanal ? (
           <WeeklyPlan plan={planSemanal} perfil={perfil}
             onRecipeClick={(receta) => setRecetaSeleccionada(receta)}
