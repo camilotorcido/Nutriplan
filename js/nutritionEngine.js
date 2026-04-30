@@ -603,6 +603,8 @@ const _CONSOLIDAR_NOMBRE = {
   'semillas_chia': 'chia',
   // Aceitunas (variantes)
   'aceitunas_negras': 'aceituna', 'aceitunas_verdes': 'aceituna', 'aceitunas': 'aceituna',
+  // Lácteos (variantes de leche descremada, semidescremada, etc.)
+  'leche_descremada': 'leche', 'leche_semidescremada': 'leche', 'leche_entera': 'leche',
   // Quesos (variantes → clave genérica si idéntico uso)
   'queso_laminas': 'queso_laminado',
   // Caldos (variantes de nombre)
