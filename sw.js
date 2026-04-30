@@ -1,13 +1,13 @@
-﻿/* ============================================
-   Calibrate â€” Service Worker
+/* ============================================
+   Calibrate — Service Worker
    Estrategia:
    - Cache-first para JS/CSS/iconos (assets versionados con ?v=)
-   - Stale-while-revalidate para index.html
+   - Network-first para index.html (siempre fresco, SW se actualiza en 1 apertura)
    - Network-first para peticiones externas (TheMealDB, etc.)
+   - Network-only para version.json (detección de actualización)
    ============================================ */
 
 // Versión leída desde la URL de registro (sw.js?v=xxx)
-// → sw.js nunca necesita editarse para bumpar versión
 const VERSION = (function () {
   try {
     var v = new URL(self.location.href).searchParams.get('v');
@@ -17,7 +17,6 @@ const VERSION = (function () {
 const CACHE_STATIC  = 'calibrate-static-'  + VERSION;
 const CACHE_RUNTIME = 'calibrate-runtime-' + VERSION;
 
-// Assets mÃ­nimos para el shell (Fase 6.2: recipes-extra y upgrades son lazy)
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -55,27 +54,26 @@ const PRECACHE_URLS = [
   './js/app-bundle.js'
 ];
 
-// â”€â”€â”€ Install: pre-cachear shell â”€â”€â”€
-// FIX: skipWaiting() se llama SIEMPRE, aunque falle algÃºn asset del precache.
-// Un fallo parcial no debe bloquear al nuevo SW indefinidamente.
+// --- Install ---
+// skipWaiting() se llama INMEDIATAMENTE — el nuevo SW toma control en segundos,
+// sin esperar a que el precache de 30+ URLs complete (que en mobile lento = 15-30s).
+// event.waitUntil mantiene el SW vivo para que el precache continue en background.
 self.addEventListener('install', (event) => {
+  self.skipWaiting(); // activar ya, sin bloquear en el precache
   event.waitUntil(
-    caches.open(CACHE_STATIC)
-      .then((cache) => {
-        // addAll con fallback individual: si un asset falla, los demÃ¡s siguen
-        return Promise.allSettled(
-          PRECACHE_URLS.map((u) =>
-            cache.add(new Request(u, { cache: 'reload' })).catch((e) => {
-              console.warn('[SW] No se pudo pre-cachear:', u, e);
-            })
-          )
-        );
-      })
-      .then(() => self.skipWaiting()) // â† siempre se activa
+    caches.open(CACHE_STATIC).then((cache) => {
+      return Promise.allSettled(
+        PRECACHE_URLS.map((u) =>
+          cache.add(new Request(u, { cache: 'reload' })).catch((e) => {
+            console.warn('[SW] No se pudo pre-cachear:', u, e);
+          })
+        )
+      );
+    })
   );
 });
 
-// â”€â”€â”€ Activate: limpiar cachÃ©s viejos â”€â”€â”€
+// --- Activate: limpiar cachés viejos ---
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
@@ -86,7 +84,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// â”€â”€â”€ Fetch: enrutar segÃºn tipo de recurso â”€â”€â”€
+// --- Fetch ---
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -94,7 +92,13 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   const esMismoOrigen = url.origin === self.location.origin;
 
-  // 1) API externa (TheMealDB, etc.): network-first con fallback a cachÃ©
+  // 0) version.json: SIEMPRE de red, nunca del caché — usado para detección de updates
+  if (esMismoOrigen && url.pathname.endsWith('/version.json')) {
+    event.respondWith(fetch(req, { cache: 'no-store' }).catch(() => new Response('{}', { status: 200 })));
+    return;
+  }
+
+  // 1) API externa: network-first con fallback al caché
   if (!esMismoOrigen) {
     event.respondWith(
       fetch(req)
@@ -109,9 +113,8 @@ self.addEventListener('fetch', (event) => {
   }
 
   // 2) Navegación HTML: network-first para que index.html sea siempre fresco.
-  // Con ?v= en los assets ya hay cache-busting; lo importante es que index.html
-  // llegue con el APP_VERSION actualizado para registrar el SW correcto.
-  // Fallback al caché sólo si la red no responde (offline).
+  // El APP_VERSION actualizado permite registrar el SW correcto en 1 apertura.
+  // Fallback al caché solo si sin red (offline).
   if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {
     event.respondWith(
       fetch(req)
@@ -126,14 +129,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3) Assets estÃ¡ticos mismo origen
-  // Estrategia: cache-first para hit exacto; network-first para miss.
-  // FIX: eliminado el fallback ignoreSearch que devolvÃ­a versiones antiguas
-  // cuando cambiaba el ?v= de versionado. Ahora el miss va directo a red.
+  // 3) Assets estáticos mismo origen: cache-first para hit exacto; network para miss.
   event.respondWith(
     caches.match(req).then((cached) => {
-      // Hit exacto: servir del cachÃ© + revalidar en background
       if (cached && cached.ok) {
+        // Revalidar en background
         fetch(req).then((resp) => {
           if (resp && resp.ok && resp.status !== 404) {
             caches.open(CACHE_STATIC).then((c) => c.put(req, resp.clone())).catch(() => {});
@@ -141,7 +141,6 @@ self.addEventListener('fetch', (event) => {
         }).catch(() => {});
         return cached;
       }
-
       // Miss: red primero
       return fetch(req).then((resp) => {
         if (resp && resp.ok && resp.status !== 404) {
@@ -150,7 +149,6 @@ self.addEventListener('fetch', (event) => {
         }
         return resp;
       }).catch(() => {
-        // Sin red: Ãºltimo recurso â€” buscar sin query string (solo offline)
         return caches.match(req, { ignoreSearch: true })
           .then((fb) => fb || new Response('', { status: 503, statusText: 'Offline' }));
       });
@@ -158,12 +156,12 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// â”€â”€â”€ Mensaje para forzar actualizaciÃ³n â”€â”€â”€
+// --- Mensaje para forzar actualización ---
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-// â”€â”€â”€ Fase 5.3: click en notificaciÃ³n â†’ abrir/enfocar la app â”€â”€â”€
+// --- Click en notificación → abrir/enfocar la app ---
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl = (event.notification.data && event.notification.data.url) || './';
@@ -176,5 +174,3 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
-
-

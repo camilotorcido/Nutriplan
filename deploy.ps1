@@ -14,6 +14,10 @@ $html = [regex]::Replace($html, '\?v=[\da-z]+', ('?v=' + $version))
 [System.IO.File]::WriteAllText(($PSScriptRoot + '\index.html'), $html, [System.Text.UTF8Encoding]::new($false))
 Write-Host 'index.html actualizado' -ForegroundColor Green
 
+# Generar version.json para detección de updates en iOS PWA (bypass SW cache)
+'{"v":"' + $version + '"}' | Out-File -FilePath ($PSScriptRoot + '\version.json') -Encoding utf8 -NoNewline
+Write-Host 'version.json actualizado' -ForegroundColor Green
+
 $msg = if ($message) { $message } else { ('chore: deploy ' + $version) }
 git add -A
 $st = git status --short

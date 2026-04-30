@@ -260,15 +260,51 @@
                         if (!nw) return;
                         nw.addEventListener('statechange', function() {
                             if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('[PWA] Nueva versiÃ³n lista, activando...');
+                                console.log('[PWA] Nueva version lista, activando...');
                                 nw.postMessage({ type: 'SKIP_WAITING' });
                             }
                         });
                     });
+
+                    // Fix iOS PWA: visibilitychange fuerza reg.update() al volver al foreground
+                    // (el evento 'load' no re-dispara en iOS cuando se abre la app desde home screen)
+                    document.addEventListener('visibilitychange', function() {
+                        if (document.visibilityState === 'visible') {
+                            reg.update();
+                        }
+                    });
                 })
                 .catch(function(err) {
-                    console.warn('[PWA] Registro fallÃ³:', err);
+                    console.warn('[PWA] Registro fallo:', err);
                 });
+
+            // Version check via version.json (bypass completo del SW cache)
+            // Verifica al cargar y cada vez que la app vuelve al foreground
+            var _lastVersionCheck = 0;
+            function checkVersionJson() {
+                var now = Date.now();
+                if (now - _lastVersionCheck < 30000) return; // max 1 vez cada 30s
+                _lastVersionCheck = now;
+                fetch('./version.json?_=' + now, { cache: 'no-store' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(d) {
+                        if (d && d.v && d.v !== APP_VERSION) {
+                            console.log('[PWA] Nueva version detectada via version.json:', d.v);
+                            navigator.serviceWorker.getRegistration().then(function(reg) {
+                                if (reg) {
+                                    reg.update().then(function() {
+                                        if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                                    });
+                                }
+                            });
+                        }
+                    })
+                    .catch(function() {});
+            }
+            checkVersionJson();
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'visible') checkVersionJson();
+            });
         });
     }
     </script>
