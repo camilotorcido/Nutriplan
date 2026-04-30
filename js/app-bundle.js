@@ -62,6 +62,15 @@ function t(es, en) {
   return (window._NP_lang || 'es') === 'en' && en !== undefined ? en : es;
 }
 
+/** Translate meal-type slot keys (desayuno, snack_am, …) */
+function tComida(tipo) {
+  if ((window._NP_lang || 'es') === 'en') {
+    var EN_MEALS = { desayuno: 'Breakfast', snack_am: 'AM Snack', almuerzo: 'Lunch', snack_pm: 'PM Snack', cena: 'Dinner' };
+    return EN_MEALS[tipo] || tipo;
+  }
+  return (typeof NOMBRES_COMIDAS !== 'undefined' ? NOMBRES_COMIDAS[tipo] : null) || tipo;
+}
+
 // English labels for FACTORES_ACTIVIDAD (defined in nutritionEngine.js)
 var FACTORES_ACTIVIDAD_EN = {
   sedentario: 'Sedentary (little or no exercise)',
@@ -396,7 +405,7 @@ function EmptyState({ icon, title, desc, cta, onCta, darkMode }) {
 // =============================================
 // COMPONENTE: ProfileSetup
 // =============================================
-function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBack, tienePlan, lang, onLangChange }) {
+function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBack, tienePlan, lang, onLangChange, units, onUnitsChange }) {
   const [perfil, setPerfil] = React.useState(() => {
     // v20260418x: sincronizar fatLossMode con objetivo='perdida' si venía de una versión anterior
     if (perfilInicial) {
@@ -712,12 +721,12 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   // ── v20260428ai: Wizard onboarding ──────────────────────────────────────
   if (pasoWizard !== null) {
 
-    // ── Paso 0: Selector de idioma (pantalla completa, antes del wizard) ───
+    // ── Paso 0: Selector de idioma + unidades (pantalla completa, antes del wizard) ───
     if (pasoWizard === 0) {
-      const _pickLang = (code) => {
-        if (onLangChange) onLangChange(code);
-        setPasoWizard(1);
-      };
+      const _selectLang = (code) => { if (onLangChange) onLangChange(code); };
+      const _selectUnits = (code) => { if (onUnitsChange) onUnitsChange(code); };
+      const _continuar = () => setPasoWizard(1);
+      const _currentUnits = units || 'metric';
       return (
         <div className={`min-h-screen flex flex-col items-center justify-center px-4 py-8 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50'}`}>
           <button onClick={onToggleDark} aria-label={darkMode ? 'Light mode' : 'Dark mode'}
@@ -725,38 +734,69 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'} text-sm`}></i>
           </button>
           <div className={`w-full max-w-sm rounded-2xl shadow-xl p-8 animate-scaleIn ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'}`}>
-            <div className="text-center mb-8">
+            <div className="text-center mb-6">
               <div className="w-16 h-16 brand-icon-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <i className="fas fa-seedling text-white text-2xl"></i>
               </div>
               <h1 className={`text-2xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-800'}`}>Calibrate</h1>
             </div>
-            <div className="text-center mb-6">
-              <p className={`text-base font-semibold mb-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Choose your language</p>
-              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Elige tu idioma</p>
+
+            {/* ── Language ── */}
+            <div className="mb-5">
+              <p className={`text-xs font-semibold uppercase tracking-wide mb-3 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Choose your language · Elige tu idioma</p>
+              <div className="space-y-3">
+                <button onClick={() => _selectLang('es')}
+                  className={`w-full py-3.5 rounded-2xl font-semibold text-base transition-all flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] ${
+                    (lang || 'es') === 'es'
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200'
+                      : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}>
+                  <span className="text-2xl" role="img" aria-label="España">🇪🇸</span>
+                  <span>Español</span>
+                  {(lang || 'es') === 'es' && <i className="fas fa-check text-sm ml-auto"></i>}
+                </button>
+                <button onClick={() => _selectLang('en')}
+                  className={`w-full py-3.5 rounded-2xl font-semibold text-base transition-all flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] ${
+                    lang === 'en'
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200'
+                      : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}>
+                  <span className="text-2xl" role="img" aria-label="United States">🇺🇸</span>
+                  <span>English</span>
+                  {lang === 'en' && <i className="fas fa-check text-sm ml-auto"></i>}
+                </button>
+              </div>
             </div>
-            <div className="space-y-3">
-              <button onClick={() => _pickLang('es')}
-                className={`w-full py-4 rounded-2xl font-semibold text-base transition-all flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] ${
-                  (lang || 'es') === 'es'
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200'
-                    : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
-                }`}>
-                <span className="text-2xl" role="img" aria-label="España">🇪🇸</span>
-                <span>Español</span>
-                {(lang || 'es') === 'es' && <i className="fas fa-check text-sm ml-auto"></i>}
-              </button>
-              <button onClick={() => _pickLang('en')}
-                className={`w-full py-4 rounded-2xl font-semibold text-base transition-all flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] ${
-                  lang === 'en'
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200'
-                    : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
-                }`}>
-                <span className="text-2xl" role="img" aria-label="United States">🇺🇸</span>
-                <span>English</span>
-                {lang === 'en' && <i className="fas fa-check text-sm ml-auto"></i>}
-              </button>
+
+            {/* ── Units ── */}
+            <div className={`mb-6 pt-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+              <p className={`text-xs font-semibold uppercase tracking-wide mb-3 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                {t('Unidades de medida','Units of measurement')}
+              </p>
+              <div className="flex gap-3">
+                {[
+                  { code: 'metric',   icon: 'fa-weight-scale', label: t('Métricas','Metric'),    sub: 'kg · cm' },
+                  { code: 'imperial', icon: 'fa-ruler',        label: t('Imperiales','Imperial'), sub: 'lb · in' }
+                ].map(({ code, icon, label, sub }) => (
+                  <button key={code} onClick={() => _selectUnits(code)}
+                    className={`flex-1 py-3 rounded-2xl font-semibold text-sm transition-all flex flex-col items-center gap-1 cursor-pointer active:scale-[0.98] ${
+                      _currentUnits === code
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200'
+                        : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                    }`}>
+                    <span className="flex items-center gap-1.5"><i className={`fas ${icon} text-xs`}></i>{label}</span>
+                    <span className={`text-[10px] font-normal ${_currentUnits === code ? 'text-white/80' : 'text-gray-400'}`}>{sub}</span>
+                    {_currentUnits === code && <i className="fas fa-check text-xs"></i>}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* ── Continuar ── */}
+            <button onClick={_continuar}
+              className="w-full py-4 rounded-2xl font-bold text-base bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200 transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
+              {t('Continuar','Continue')} <i className="fas fa-arrow-right text-sm"></i>
+            </button>
           </div>
           <p className={`mt-6 text-xs ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>
             Solo para amigos · Beta privada
@@ -3476,7 +3516,7 @@ function AdherenceWidget({ darkMode, forceUpdate }) {
       {/* Header */}
       <div className="flex items-center justify-between" style={{ marginBottom: '16px' }}>
         <div className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-          <i className="fas fa-clipboard-check mr-1.5"></i>Adherencia 7 días
+          <i className="fas fa-clipboard-check mr-1.5"></i>{t('Adherencia 7 días','7-Day Adherence')}
         </div>
         <div className={`text-2xl font-bold font-display text-${color}-500`}>{stats.porcentaje}%</div>
       </div>
@@ -3485,7 +3525,7 @@ function AdherenceWidget({ darkMode, forceUpdate }) {
         <div className={`rounded-xl text-center ${darkMode ? 'bg-gray-700/60' : 'bg-gray-50'}`}
           style={{ padding: '12px 8px' }}>
           <div className="font-bold text-emerald-500" style={{ fontSize: '18px', lineHeight: 1.2 }}>{stats.cumplidos}</div>
-          <div style={{ fontSize: '11px', marginTop: '4px' }} className="text-gray-400">cumplidas</div>
+          <div style={{ fontSize: '11px', marginTop: '4px' }} className="text-gray-400">{t('cumplidas','completed')}</div>
         </div>
         <div className={`rounded-xl text-center ${darkMode ? 'bg-gray-700/60' : 'bg-gray-50'}`}
           style={{ padding: '12px 8px' }}>
@@ -3495,7 +3535,7 @@ function AdherenceWidget({ darkMode, forceUpdate }) {
         <div className={`rounded-xl text-center ${darkMode ? 'bg-gray-700/60' : 'bg-gray-50'}`}
           style={{ padding: '12px 8px' }}>
           <div className="font-bold text-rose-500" style={{ fontSize: '18px', lineHeight: 1.2 }}>{stats.kcal_perdidas.toLocaleString('es-CL')}</div>
-          <div style={{ fontSize: '11px', marginTop: '4px' }} className="text-gray-400">kcal perdidas</div>
+          <div style={{ fontSize: '11px', marginTop: '4px' }} className="text-gray-400">{t('kcal perdidas','kcal missed')}</div>
         </div>
       </div>
       {/* Bar chart */}
@@ -3564,8 +3604,8 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
     planMod[semKey][diaActual][tipo] = receta;
     window.guardarPlanSemanal(planMod);
     if (window._NP_setPlan) window._NP_setPlan(planMod);
-    const tipoLabel = NOMBRES_COMIDAS[tipo] || tipo;
-    if (window._NP_toast) window._NP_toast(`"${getNombreReceta(receta)}" reemplazó tu ${tipoLabel} de hoy ✓`);
+    const tipoLabel = tComida(tipo);
+    if (window._NP_toast) window._NP_toast(t(`"${getNombreReceta(receta)}" reemplazó tu ${tipoLabel} de hoy ✓`,`"${getNombreReceta(receta)}" replaced your ${tipoLabel} for today ✓`));
     setExpandedIdx(null);
   };
 
@@ -3701,7 +3741,7 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium bg-${color}-100 text-${color}-700`}>
-                            {NOMBRES_COMIDAS[r.receta.tipo_comida]}
+                            {tComida(r.receta.tipo_comida)}
                           </span>
                           <span className={`text-[11px] font-bold text-${color}-500`}>{r.porcentaje}% match</span>
                         </div>
@@ -3750,7 +3790,7 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
                                     ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-amber-900/40 hover:border-amber-600 hover:text-amber-300'
                                     : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-amber-50 hover:border-amber-400 hover:text-amber-700'
                                 }`}>
-                                {NOMBRES_COMIDAS[slot.tipo] || slot.tipo}
+                                {tComida(slot.tipo)}
                                 <span className={`ml-1 font-normal text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>
                                   · {slot.nombre.split(' ').slice(0, 2).join(' ')}
                                 </span>
@@ -3941,7 +3981,7 @@ function SlotAcciones({
                   onMouseEnter={e => e.currentTarget.style.backgroundColor = itemHover}
                   onMouseLeave={e => e.currentTarget.style.backgroundColor = itemSolid}>
                   <div style={{ fontSize: '10px', color: darkMode ? '#6b7280' : '#9ca3af', marginBottom: '2px' }}>
-                    {s.daysAgo === 1 ? 'Ayer' : 'Anteayer'} · {NOMBRES_COMIDAS[s.tipoComida] || s.tipoComida}
+                    {s.daysAgo === 1 ? t('Ayer','Yesterday') : t('Anteayer','2 days ago')} · {tComida(s.tipoComida)}
                   </div>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: darkMode ? '#e5e7eb' : '#111827', lineHeight: 1.3, marginBottom: '2px' }}>
                     {getNombreReceta(s.receta)}
@@ -3960,7 +4000,7 @@ function SlotAcciones({
       {/* Swap button */}
       <button onClick={(e) => { setShowHist(false); setShowSobras(false); onSwap(e); }}
         disabled={!!isSwappingThis}
-        aria-label={`Cambiar receta de ${NOMBRES_COMIDAS[tipo] || tipo}`}
+        aria-label={`${t('Cambiar receta de','Change recipe for')} ${tComida(tipo)}`}
         style={{ width: 32, height: 32, minWidth: 32 }}
         className={`flex items-center justify-center rounded-lg transition-all ${
           isSwappingThis
@@ -3980,7 +4020,7 @@ function SlotAcciones({
         <i className="fas fa-ban text-xs"></i>
       </button>
       {/* Ver receta */}
-      <button onClick={() => onRecipeClick()} aria-label={`${t('Ver receta de','View recipe for')} ${getNombreReceta(comida) || NOMBRES_COMIDAS[tipo]}`}
+      <button onClick={() => onRecipeClick()} aria-label={`${t('Ver receta de','View recipe for')} ${getNombreReceta(comida) || tComida(tipo)}`}
         className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer rounded">
         <i className="fas fa-chevron-right text-sm"></i>
       </button>
@@ -4340,7 +4380,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
           if (!comida) {
             return (
               <div key={tipo} className={`rounded-xl p-4 border border-dashed text-center ${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-gray-50 border-gray-300'}`}>
-                <span className="text-gray-400 text-sm">No hay receta disponible para {NOMBRES_COMIDAS[tipo]}</span>
+                <span className="text-gray-400 text-sm">{t('No hay receta disponible para','No recipe available for')} {tComida(tipo)}</span>
               </div>
             );
           }
@@ -4357,10 +4397,10 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`${colores.badge} px-2 py-0.5 rounded-lg text-xs font-medium`}>
-                        <i className={`fas ${iconosComida[tipo]} mr-1`}></i>{NOMBRES_COMIDAS[tipo]}
+                        <i className={`fas ${iconosComida[tipo]} mr-1`}></i>{tComida(tipo)}
                       </span>
                       <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
-                        comido
+                        {t('comido','eaten')}
                       </span>
                     </div>
                     <h4 className={`font-semibold text-sm mt-2 ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{extReemplazo.nombre}</h4>
@@ -4398,7 +4438,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                 <div className="flex-1" onClick={() => onRecipeClick(comida)}>
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`${colores.badge} px-2 py-0.5 rounded-lg text-xs font-medium`}>
-                      <i className={`fas ${iconosComida[tipo]} mr-1`}></i>{NOMBRES_COMIDAS[tipo]}
+                      <i className={`fas ${iconosComida[tipo]} mr-1`}></i>{tComida(tipo)}
                     </span>
                     {comida._fuente === 'online' && (
                       <span className="online-badge"><i className="fas fa-globe mr-1"></i>Internet</span>
@@ -4523,7 +4563,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
       {/* Totales de la semana */}
       <div className={`mt-6 rounded-2xl p-4 border ${darkMode ? 'bg-gradient-to-br from-indigo-900/30 to-emerald-900/20 border-gray-700' : 'bg-gradient-to-br from-indigo-50 to-emerald-50 border-gray-200'}`}>
         <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-          <i className="fas fa-calendar-week mr-1"></i>Total Semana {semanaActiva}
+          <i className="fas fa-calendar-week mr-1"></i>{(window._NP_lang||'es')==='en' ? `Week ${semanaActiva} Total` : `Total Semana ${semanaActiva}`}
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex items-center gap-2">
@@ -4663,7 +4703,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
           )}
         </div>
         <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          <i className="fas fa-info-circle mr-1"></i>El calendario exporta desde el próximo lunes. Abre el .ics con Google Calendar, Apple Calendar u Outlook.
+          <i className="fas fa-info-circle mr-1"></i>{t('El calendario exporta desde el próximo lunes. Abre el .ics con Google Calendar, Apple Calendar u Outlook.','The calendar exports from next Monday. Open the .ics file with Google Calendar, Apple Calendar or Outlook.')}
         </p>
       </div>
 
@@ -4673,7 +4713,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
           darkMode={darkMode}
           diaActual={diaSeleccionado}
           comidasHoy={comidasDia}
-          nombresComida={NOMBRES_COMIDAS}
+          nombresComida={{ desayuno: tComida('desayuno'), snack_am: tComida('snack_am'), almuerzo: tComida('almuerzo'), snack_pm: tComida('snack_pm'), cena: tComida('cena') }}
           onAdd={function(comida) {
             var todas = (typeof _comidasExtFecha === 'function') ? _comidasExtFecha(fechaDiaIso) : [];
             var nuevas = todas.concat([comida]);
@@ -5130,7 +5170,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
             <div className="flex-1 pr-4">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <span className="bg-white/20 px-2 py-0.5 rounded-lg text-xs font-medium backdrop-blur-sm">
-                  {NOMBRES_COMIDAS[receta.tipo_comida]}
+                  {tComida(receta.tipo_comida)}
                 </span>
                 {receta._fuente === 'online' && (
                   <span className="bg-blue-400/40 px-2 py-0.5 rounded-lg text-xs font-medium backdrop-blur-sm">
@@ -10172,7 +10212,7 @@ function LoadingOverlay({ mensaje, darkMode }) {
 // =============================================
 // COMPONENTE: CuentaModal
 // =============================================
-function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange }) {
+function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange, units, onUnitsChange }) {
   const isGoogle = (authUser.providerData?.[0]?.providerId === 'google.com');
   const [view, setView]          = React.useState('main');
   const [newPass, setNewPass]    = React.useState('');
@@ -10298,6 +10338,29 @@ function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange }) {
                           : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
                       }`}>
                       <span>{flag}</span>{label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Units selector ── */}
+            {onUnitsChange && (
+              <div className={`mt-4 pt-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${mutedCls}`}>{t('Unidades','Units')}</p>
+                <div className="flex gap-2">
+                  {[
+                    { code: 'metric',   icon: 'fa-weight-scale', label: t('Métricas','Metric'),   sub: 'kg · cm · °C' },
+                    { code: 'imperial', icon: 'fa-ruler',        label: t('Imperiales','Imperial'), sub: 'lb · in · °F' }
+                  ].map(({ code, icon, label, sub }) => (
+                    <button key={code} onClick={() => { if (onUnitsChange) onUnitsChange(code); }}
+                      className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 px-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                        (units || 'metric') === code
+                          ? 'bg-green-500 text-white shadow-sm'
+                          : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
+                      }`}>
+                      <span className="flex items-center gap-1.5"><i className={`fas ${icon} text-xs`}></i>{label}</span>
+                      <span className={`text-[10px] font-normal ${(units || 'metric') === code ? 'text-white/80' : 'text-gray-400'}`}>{sub}</span>
                     </button>
                   ))}
                 </div>
@@ -11172,13 +11235,24 @@ function App() {
   const [preferenciasGen, setPreferenciasGen] = React.useState({ cocina: 'cualquiera', altaProteina: false, rapido: false });
 
   // ─── v20260428ai: Language state ───
-  const [lang, setLang] = React.useState(() => localStorage.getItem('nutriplan_lang') || 'es');
+  // NOTE: uses 'calibrate_lang' (not 'nutriplan_lang') to bypass cloud-storage proxy
+  // so the value is readable before auth/login — same pattern as 'calibrate_dark_mode'.
+  const [lang, setLang] = React.useState(() => localStorage.getItem('calibrate_lang') || 'es');
   // Sync to global so t() works inside any component during render
   window._NP_lang = lang;
   const changeLang = (newLang) => {
-    localStorage.setItem('nutriplan_lang', newLang);
+    try { localStorage.setItem('calibrate_lang', newLang); } catch(e) {}
     window._NP_lang = newLang;
     setLang(newLang);
+  };
+
+  // ─── Units state (metric / imperial) ───
+  const [units, setUnits] = React.useState(() => localStorage.getItem('calibrate_units') || 'metric');
+  window._NP_units = units;
+  const changeUnits = (newUnits) => {
+    try { localStorage.setItem('calibrate_units', newUnits); } catch(e) {}
+    window._NP_units = newUnits;
+    setUnits(newUnits);
   };
 
   // ─── Auth state ───
@@ -11538,7 +11612,7 @@ function App() {
         );
         setPlanSemanal(nuevoPlan);
         guardarPlanSemanal(nuevoPlan);
-        const tipoNombre = NOMBRES_COMIDAS[tipoComida] || tipoComida;
+        const tipoNombre = tComida(tipoComida);
         const semKey = 'semana_' + numSemana;
         const recetaNueva = nuevoPlan[semKey]?.[dia]?.[tipoComida];
         if (recetaNueva && recetaNueva._fuente === 'online') {
@@ -11673,7 +11747,9 @@ function App() {
           onBack={planSemanal ? handleVolverAlPlan : null}
           tienePlan={!!planSemanal}
           lang={lang}
-          onLangChange={changeLang} />
+          onLangChange={changeLang}
+          units={units}
+          onUnitsChange={changeUnits} />
         {globalOverlays}
       </React.Fragment>
     );
@@ -11722,7 +11798,7 @@ function App() {
                   }
                   <i className={`fas fa-chevron-down text-xs transition-transform ${showCuenta ? 'rotate-180' : ''} ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
                 </button>
-                {showCuenta && <CuentaModal authUser={authUser} darkMode={darkMode} onClose={() => setShowCuenta(false)} lang={lang} onLangChange={changeLang} />}
+                {showCuenta && <CuentaModal authUser={authUser} darkMode={darkMode} onClose={() => setShowCuenta(false)} lang={lang} onLangChange={changeLang} units={units} onUnitsChange={changeUnits} />}
               </div>
             )}
           </div>
