@@ -7542,7 +7542,9 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
   const [pesoInput, setPesoInput] = React.useState('');
   const [pesoGuardado, setPesoGuardado] = React.useState(false);
   const [pesoError, setPesoError] = React.useState(''); // N23
-  const [comidasExt, setComidasExt] = React.useState(function() { return _comidasExtFecha(fechaHoyIso); });
+  // comidasExt se deriva de refresh: cualquier bump (evento, acción, sync remoto)
+  // re-lee localStorage directamente — elimina la brecha entre setComidasExt y setRefresh.
+  const comidasExt = React.useMemo(function() { return _comidasExtFecha(fechaHoyIso); }, [refresh, fechaHoyIso]);
   const [showModalExt, setShowModalExt] = React.useState(false);
   const [showScanner, setShowScanner] = React.useState(false);
 
@@ -7572,23 +7574,17 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
 
   // Refrescar cuando el coach agrega una comida pendiente vía window._NP_addPendiente
   React.useEffect(function() {
-    function onPendienteAdded() {
-      setComidasExt(_comidasExtFecha(fechaHoyIso));
-      setRefresh(function(r) { return r + 1; });
-    }
+    function onPendienteAdded() { setRefresh(function(r) { return r + 1; }); }
     window.addEventListener('calibrate_pendiente_added', onPendienteAdded);
     return function() { window.removeEventListener('calibrate_pendiente_added', onPendienteAdded); };
-  }, [fechaHoyIso]);
+  }, []);
 
   // Refrescar cuando el coach registra / elimina una comida (calibrate_meal_logged)
   React.useEffect(function() {
-    function onMealLogged() {
-      setComidasExt(_comidasExtFecha(fechaHoyIso));
-      setRefresh(function(r) { return r + 1; });
-    }
+    function onMealLogged() { setRefresh(function(r) { return r + 1; }); }
     window.addEventListener('calibrate_meal_logged', onMealLogged);
     return function() { window.removeEventListener('calibrate_meal_logged', onMealLogged); };
-  }, [fechaHoyIso]);
+  }, []);
 
   const necesitaPeso = React.useMemo(() => {
     if (!tieneEntrenamiento || !window.NP_BodyComp || !window.NP_BodyComp.cargar) return false;
@@ -8039,7 +8035,6 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                     <button
                       onClick={function() {
                         var nuevas = comidasExt.filter(function(x) { return x.id !== extReemplazo.id; });
-                        setComidasExt(nuevas);
                         _guardarComidasExt(fechaHoyIso, nuevas);
                         _eliminarAdherenciaExt(diaActual, extReemplazo.id);
                         setRefresh(function(r) { return r + 1; });
@@ -8197,7 +8192,6 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                     onClick={function() {
                       var confirmada = Object.assign({}, c, { pendiente: undefined });
                       var nuevas = comidasExt.map(function(x) { return x.id === c.id ? confirmada : x; });
-                      setComidasExt(nuevas);
                       _guardarComidasExt(fechaHoyIso, nuevas);
                       _agregarAdherenciaExt(diaActual, confirmada);
                       setRefresh(function(r) { return r + 1; });
@@ -8210,7 +8204,6 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                   <button
                     onClick={function() {
                       var nuevas = comidasExt.filter(function(x) { return x.id !== c.id; });
-                      setComidasExt(nuevas);
                       _guardarComidasExt(fechaHoyIso, nuevas);
                       setRefresh(function(r) { return r + 1; });
                     }}
@@ -8249,7 +8242,6 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                   <button
                     onClick={function() {
                       var nuevas = comidasExt.filter(function(x) { return x.id !== c.id; });
-                      setComidasExt(nuevas);
                       _guardarComidasExt(fechaHoyIso, nuevas);
                       _eliminarAdherenciaExt(diaActual, c.id);
                       setRefresh(function(r) { return r + 1; });
@@ -8374,7 +8366,6 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           darkMode={darkMode}
           onAdd={function(comida) {
             var nuevas = comidasExt.concat([comida]);
-            setComidasExt(nuevas);
             _guardarComidasExt(fechaHoyIso, nuevas);
             _agregarAdherenciaExt(diaActual, comida);
             setRefresh(function(r) { return r + 1; });
@@ -8392,7 +8383,6 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           nombresComida={nombresComida}
           onAdd={function(comida) {
             var nuevas = comidasExt.concat([comida]);
-            setComidasExt(nuevas);
             _guardarComidasExt(fechaHoyIso, nuevas);
             _agregarAdherenciaExt(diaActual, comida);
             // Si reemplaza una comida planificada → marcarla como comida
