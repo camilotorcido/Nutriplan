@@ -7478,6 +7478,138 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 }
 
 // =============================================
+// COMPONENTE: EveningRatingCard
+// Aparece después de las 19h si hay comidas marcadas como comidas sin rating.
+// =============================================
+var _EVENING_TIPOS = ['desayuno', 'snack_am', 'almuerzo', 'snack_pm', 'cena'];
+function EveningRatingCard({ semanaData, diaActual, numSemanaActual, darkMode, refresh }) {
+  var fechaHoy  = _localDate();
+  var hora      = new Date().getHours();
+  var dismissKey = 'calibrate_rating_dismissed_' + fechaHoy;
+
+  var [dismissed,   setDismissed]   = React.useState(function() {
+    try { return localStorage.getItem(dismissKey) === '1'; } catch(e) { return false; }
+  });
+  var [localRatings, setLocalRatings] = React.useState({}); // id → stars ya guardadas en esta sesión
+  var [justRated,    setJustRated]    = React.useState({}); // id → true mientras anima el "Guardado"
+
+  var unratedEaten = React.useMemo(function() {
+    if (!semanaData || !diaActual) return [];
+    var ratings     = typeof cargarRatings === 'function' ? cargarRatings() : {};
+    var comidasHoy  = semanaData[diaActual] || {};
+    var LABELS = {
+      desayuno: t('Desayuno','Breakfast'),
+      snack_am: 'Snack AM',
+      almuerzo: t('Almuerzo','Lunch'),
+      snack_pm: 'Snack PM',
+      cena:     t('Cena','Dinner')
+    };
+    return _EVENING_TIPOS.reduce(function(acc, tipo) {
+      var comida = comidasHoy[tipo];
+      if (!comida || !comida.id || !comida.nombre) return acc;
+      var adh = (window.adherencia && window.adherencia.estado)
+        ? window.adherencia.estado(diaActual, tipo, numSemanaActual) : null;
+      if (!adh || !adh.comido) return acc;
+      if ((ratings[comida.id] || 0) > 0 || (localRatings[comida.id] || 0) > 0) return acc;
+      acc.push({ tipo: tipo, id: comida.id, nombre: comida.nombre, label: LABELS[tipo] });
+      return acc;
+    }, []);
+  }, [semanaData, diaActual, numSemanaActual, localRatings, refresh]);
+
+  if (hora < 19 || dismissed || unratedEaten.length === 0) return null;
+
+  function handleDismiss() {
+    try { localStorage.setItem(dismissKey, '1'); } catch(e) {}
+    setDismissed(true);
+  }
+
+  function handleRate(id, stars) {
+    if (typeof guardarRating === 'function') guardarRating(id, stars);
+    setJustRated(function(p) { var n = Object.assign({}, p); n[id] = true; return n; });
+    setTimeout(function() {
+      setLocalRatings(function(p) { var n = Object.assign({}, p); n[id] = stars; return n; });
+    }, 600);
+  }
+
+  var EMOJIS = [
+    { icon: '😕', stars: 1, label: t('No me gustó','Disliked') },
+    { icon: '🙂', stars: 3, label: t('Estuvo bien','Pretty good') },
+    { icon: '😍', stars: 5, label: t('Delicioso','Delicious') }
+  ];
+
+  return (
+    <div className={`rounded-2xl border overflow-hidden ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}
+      style={{ animation: 'fadeUp 0.35s ease both' }}>
+      {/* Header */}
+      <div className={`flex items-center justify-between px-4 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+        <div className="flex items-center gap-2.5">
+          <span style={{ fontSize: 17 }}>🌙</span>
+          <span className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+            {t('Cierre del día','Day wrap-up')}
+          </span>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${darkMode ? 'bg-indigo-900/40 text-indigo-300' : 'bg-indigo-50 text-indigo-600'}`}>
+            {unratedEaten.length} {t('sin calificar','unrated')}
+          </span>
+        </div>
+        <button onClick={handleDismiss} title={t('Omitir por hoy','Skip for today')}
+          className={`w-7 h-7 flex items-center justify-center rounded-full cursor-pointer border-0 transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+          style={{ background: 'none' }}>
+          <i className="fas fa-times" style={{ fontSize: 11 }}></i>
+        </button>
+      </div>
+      {/* Bajada */}
+      <div className={`px-4 pt-3 pb-1 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        {t('¿Cómo estuvieron las comidas de hoy?','How were today\'s meals?')}
+      </div>
+      {/* Lista de comidas */}
+      <div className="px-3 pb-3 pt-1.5 space-y-1.5">
+        {unratedEaten.map(function(m) {
+          /* Estado "recién calificada" → fade-out antes de desaparecer */
+          if (justRated[m.id]) {
+            return (
+              <div key={m.id} className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                style={{ opacity: 0.45, transition: 'opacity 0.5s' }}>
+                <i className="fas fa-check-circle text-emerald-500" style={{ fontSize: 13 }}></i>
+                <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{m.label}</span>
+                <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>· {t('Guardado','Saved')} ✓</span>
+              </div>
+            );
+          }
+          return (
+            <div key={m.id} className={`flex items-center justify-between gap-3 px-3 py-2 rounded-xl ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+              <div className="flex-1 min-w-0">
+                <div className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {m.label}
+                </div>
+                <div className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                  {m.nombre}
+                </div>
+              </div>
+              <div className="flex items-center gap-0.5 flex-shrink-0">
+                {EMOJIS.map(function(e) {
+                  return (
+                    <button key={e.stars}
+                      onClick={function() { handleRate(m.id, e.stars); }}
+                      title={e.label}
+                      className="cursor-pointer"
+                      style={{ background: 'none', border: 'none', fontSize: 23, lineHeight: 1,
+                               padding: '3px 5px', borderRadius: 8, transition: 'transform 0.12s' }}
+                      onMouseEnter={function(ev) { ev.currentTarget.style.transform = 'scale(1.25)'; }}
+                      onMouseLeave={function(ev) { ev.currentTarget.style.transform = 'scale(1)'; }}>
+                      {e.icon}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// =============================================
 // COMPONENTE: HoyView — Dashboard diario (v20260429ux)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swapping }) {
@@ -7890,6 +8022,15 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           </div>
         </div>
       )}
+
+      {/* ── Cierre del día: calificación de comidas (solo ≥ 19h si hay comidas sin rating) ── */}
+      <EveningRatingCard
+        semanaData={semanaData}
+        diaActual={diaActual}
+        numSemanaActual={numSemanaActual}
+        darkMode={darkMode}
+        refresh={refresh}
+      />
 
       {/* ── Peso de hoy: aparece solo si no hay comidas marcadas y no hay peso registrado hoy ── */}
       {!pesoHoyYaRegistrado && !pesoGuardado && consumidoHoy.calorias === 0 && window.NP_BodyComp && (
