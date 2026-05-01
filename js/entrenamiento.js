@@ -1,3 +1,8 @@
+// ─── Fecha local (fallback si app-bundle no cargó primero) ───────────────
+var _localDate = window._localDate || function(d) {
+  var dt = d || new Date();
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+};
 /* ============================================
    Calibrate — Training Log (v20260418ad)
    Registro de sesiones de entreno (A/B/C/D) con cargas por ejercicio.
@@ -53,7 +58,7 @@ function ejerciciosBase(tipoDia) {
 
 // ─── Obtener o crear sesión para (fecha, tipo) ───
 function obtenerSesion(fecha, tipoDia) {
-  const f = fecha || new Date().toISOString().split('T')[0];
+  const f = fecha || _localDate();
   const t = tipoDia || tipoDiaSugerido(f);
   if (t === 'descanso') return null;
   const sesiones = cargarSesiones();
@@ -136,7 +141,7 @@ function resumen7Dias() {
   const ahora = new Date();
   const hace7 = new Date(ahora);
   hace7.setDate(hace7.getDate() - 7);
-  const limite = hace7.toISOString().split('T')[0];
+  const limite = _localDate(hace7);
   const filtradas = cargarSesiones().filter(s => s.fecha >= limite);
   const completadas = filtradas.filter(s => s.completado).length;
   const porTipo = { A: 0, B: 0, C: 0, D: 0 };

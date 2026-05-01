@@ -1,3 +1,8 @@
+// ─── Fecha local (fallback si app-bundle no cargó primero) ───────────────
+var _localDate = window._localDate || function(d) {
+  var dt = d || new Date();
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+};
 /* ============================================
    Calibrate — Gestión de LocalStorage
    Persistencia completa de datos de usuario
@@ -99,7 +104,7 @@ function cargarHistorialRecetas() {
 // Agregar recetas usadas al historial con fecha
 function agregarAlHistorial(planSemanal) {
   const historial = cargarHistorialRecetas();
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = _localDate();
   
   // Recopilar IDs de recetas del plan
   Object.entries(planSemanal).forEach(([key, comidasDia]) => {
@@ -118,7 +123,7 @@ function agregarAlHistorial(planSemanal) {
   // Limpiar entradas de más de 14 días
   const hace14Dias = new Date();
   hace14Dias.setDate(hace14Dias.getDate() - 14);
-  const limite = hace14Dias.toISOString().split('T')[0];
+  const limite = _localDate(hace14Dias);
   const historialFiltrado = historial.filter(h => h.fecha >= limite);
   
   guardarHistorialRecetas(historialFiltrado);
@@ -130,7 +135,7 @@ function obtenerRecetasUsadas14Dias() {
   const historial = cargarHistorialRecetas();
   const hace14Dias = new Date();
   hace14Dias.setDate(hace14Dias.getDate() - 14);
-  const limite = hace14Dias.toISOString().split('T')[0];
+  const limite = _localDate(hace14Dias);
   
   const ids = new Set();
   historial.filter(h => h.fecha >= limite).forEach(h => ids.add(h.receta_id));
@@ -304,7 +309,7 @@ function trimirHistorialAdherencia() {
     var data = JSON.parse(raw);
     var hace30 = new Date();
     hace30.setDate(hace30.getDate() - 30);
-    var limite = hace30.toISOString().split('T')[0];
+    var limite = _localDate(hace30);
     var trimmed = {};
     Object.keys(data).forEach(function(fecha) {
       if (fecha >= limite) trimmed[fecha] = data[fecha];

@@ -1,3 +1,8 @@
+// ─── Fecha local (fallback si app-bundle no cargó primero) ───────────────
+var _localDate = window._localDate || function(d) {
+  var dt = d || new Date();
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+};
 /* ============================================
    Calibrate — Alcohol Calculator (v20260418ag)
    Log de bebidas + impacto semanal (oxidación grasa + síntesis proteica).
@@ -22,7 +27,7 @@ function guardarBebidas(entries) {
 
 // ─── Registrar bebida (append, no upsert — puede haber varias por día) ───
 function registrar(entrada) {
-  const f = entrada.fecha || new Date().toISOString().split('T')[0];
+  const f = entrada.fecha || _localDate();
   const nueva = {
     id: Date.now() + Math.floor(Math.random() * 1000),
     fecha: f,
@@ -72,7 +77,7 @@ function resumen7Dias() {
   const ahora = new Date();
   const hace7 = new Date(ahora);
   hace7.setDate(hace7.getDate() - 7);
-  const limite = hace7.toISOString().split('T')[0];
+  const limite = _localDate(hace7);
   const recientes = cargarBebidas().filter(e => e.fecha >= limite);
   const diasConsumidos = new Set(recientes.map(e => e.fecha));
   return {

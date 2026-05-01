@@ -1,3 +1,8 @@
+// ─── Fecha local (fallback si app-bundle no cargó primero) ───────────────
+var _localDate = window._localDate || function(d) {
+  var dt = d || new Date();
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+};
 /* ============================================
    Calibrate — Motor de generación de Fat Loss Roadmap
    Puro: inputs del wizard → array de fases dinámicas
@@ -246,7 +251,7 @@ function generarRoadmapFatLoss(input) {
 
   return {
     fechaGeneracion: new Date().toISOString(),
-    fechaInicio: input.fechaInicio || new Date().toISOString().split('T')[0],
+    fechaInicio: input.fechaInicio || _localDate(),
     inputs: {
       peso: input.peso, altura: input.altura, edad: input.edad, genero: input.genero,
       cintura: input.cintura, cuello: input.cuello, cadera: input.cadera || null,

@@ -1,3 +1,8 @@
+// ─── Fecha local (fallback si app-bundle no cargó primero) ───────────────
+var _localDate = window._localDate || function(d) {
+  var dt = d || new Date();
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+};
 /* ============================================
    Calibrate — Plateau Detector (v20260418af)
    Detecta estancamiento de peso (≥14d con delta semanal <0.25 kg)
@@ -108,7 +113,7 @@ function estado() {
 function aplicarPaso(n) {
   const p = pasoPorNumero(n);
   if (!p) return null;
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = _localDate();
   const raw = cargarEstado();
   // Si había paso anterior sin cerrar, lo archivamos como "escalado"
   if (raw.pasoActual > 0 && raw.pasoActual !== n && raw.inicioPaso) {
@@ -134,7 +139,7 @@ function avanzarPaso() {
 
 // ─── Marcar que el paso actual rompió la meseta ───
 function marcarResuelto() {
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = _localDate();
   const raw = cargarEstado();
   if (raw.pasoActual > 0 && raw.inicioPaso) {
     raw.historial = raw.historial || [];

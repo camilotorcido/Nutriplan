@@ -1,3 +1,8 @@
+// ─── Fecha local (fallback si app-bundle no cargó primero) ───────────────
+var _localDate = window._localDate || function(d) {
+  var dt = d || new Date();
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+};
 /* ============================================
    Calibrate — Body Composition Tracking (v20260418aa)
    Log diario de peso + log semanal de medidas.
@@ -23,7 +28,7 @@ function guardarBodyComp(entries) {
 
 // ─── Registrar entrada del día (upsert: sobrescribe si ya existe para esa fecha) ───
 function registrarEntrada(entrada) {
-  const fecha = entrada.fecha || new Date().toISOString().split('T')[0];
+  const fecha = entrada.fecha || _localDate();
   const entries = cargarBodyComp();
   const idx = entries.findIndex(e => e.fecha === fecha);
 
@@ -76,7 +81,7 @@ function promedioMovil(entries, campo, dias) {
   const ahora = new Date();
   const limite = new Date(ahora);
   limite.setDate(limite.getDate() - dias);
-  const limiteIso = limite.toISOString().split('T')[0];
+  const limiteIso = _localDate(limite);
 
   const filtradas = entries.filter(e => e.fecha >= limiteIso && e[campo] != null);
   if (filtradas.length === 0) return null;
@@ -94,8 +99,8 @@ function tendencia(entries, campo) {
   hace21.setDate(hace21.getDate() - 21);
   const hace14 = new Date(ahora);
   hace14.setDate(hace14.getDate() - 14);
-  const iso21 = hace21.toISOString().split('T')[0];
-  const iso14 = hace14.toISOString().split('T')[0];
+  const iso21 = _localDate(hace21);
+  const iso14 = _localDate(hace14);
 
   const anteriores = entries.filter(e => e.fecha >= iso21 && e.fecha < iso14 && e[campo] != null);
   if (anteriores.length === 0) return { actual: avgActual, delta: null, deltaSemanal: null };

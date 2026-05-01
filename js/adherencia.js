@@ -1,3 +1,8 @@
+// ─── Fecha local (fallback si app-bundle no cargó primero) ───────────────
+var _localDate = window._localDate || function(d) {
+  var dt = d || new Date();
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+};
 /* ============================================
    Calibrate — Sistema de adherencia
    Registro "comí/no comí" + dashboard histórico
@@ -35,7 +40,7 @@
   }
 
   function fechaISO(date) {
-    return date.toISOString().split('T')[0];
+    return _localDate(date);
   }
 
   // Obtener la fecha correspondiente al día de la semana activo

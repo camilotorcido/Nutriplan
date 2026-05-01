@@ -1,3 +1,8 @@
+// ─── Fecha local (fallback si app-bundle no cargó primero) ───────────────
+var _localDate = window._localDate || function(d) {
+  var dt = d || new Date();
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+};
 /* ============================================
    Calibrate — Motor de Cálculos Nutricionales
    Incluye: TDEE (Mifflin-St Jeor), escalado de 
@@ -491,7 +496,7 @@ function cambiarRecetaIndividual(planMulti, dia, tipoComida, perfil, caloriasObj
   nuevoPlan[semanaKey] = { ...semanaActual, [dia]: { ...semanaActual[dia], [tipoComida]: nuevaReceta } };
   
   const historial = cargarHistorialRecetas();
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = _localDate();
   const yaExiste = historial.some(h => h.fecha === hoy && h.receta_id === nuevaReceta.id);
   if (!yaExiste) {
     historial.push({ fecha: hoy, receta_id: nuevaReceta.id });
@@ -1651,7 +1656,7 @@ async function cambiarRecetaIndividualAsync(planMulti, dia, tipoComida, perfil, 
   nuevoPlan[semanaKey] = { ...semanaActual, [dia]: { ...semanaActual[dia], [tipoComida]: nuevaReceta } };
   
   const historial = cargarHistorialRecetas();
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = _localDate();
   const yaExiste = historial.some(h => h.fecha === hoy && h.receta_id === nuevaReceta.id);
   if (!yaExiste) {
     historial.push({ fecha: hoy, receta_id: nuevaReceta.id });

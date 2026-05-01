@@ -1,3 +1,8 @@
+// ─── Fecha local (fallback si app-bundle no cargó primero) ───────────────
+var _localDate = window._localDate || function(d) {
+  var dt = d || new Date();
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+};
 /* ============================================
    Calibrate — Step Tracker (v20260418aa)
    Log manual de pasos diarios. Target dinámico según fase activa.
@@ -21,7 +26,7 @@ function guardarSteps(entries) {
 
 // ─── Registrar pasos del día (upsert) ───
 function registrarPasos(fecha, pasos, target) {
-  const f = fecha || new Date().toISOString().split('T')[0];
+  const f = fecha || _localDate();
   const entries = cargarSteps();
   const idx = entries.findIndex(e => e.fecha === f);
   const nueva = { fecha: f, pasos: Number(pasos) || 0, target: target || null };
@@ -40,7 +45,7 @@ function eliminarPasos(fecha) {
 
 // ─── Sumar al contador de hoy ───
 function sumarPasos(cantidad, target) {
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = _localDate();
   const entries = cargarSteps();
   const actual = entries.find(e => e.fecha === hoy);
   const nuevos = (actual ? actual.pasos : 0) + (Number(cantidad) || 0);
@@ -56,7 +61,7 @@ function targetHoy() {
 
 // ─── Entrada de hoy ───
 function pasosDeHoy() {
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = _localDate();
   const entries = cargarSteps();
   const e = entries.find(x => x.fecha === hoy);
   return e || { fecha: hoy, pasos: 0, target: targetHoy() };
@@ -67,7 +72,7 @@ function promedio7Dias() {
   const ahora = new Date();
   const hace7 = new Date(ahora);
   hace7.setDate(hace7.getDate() - 7);
-  const limite = hace7.toISOString().split('T')[0];
+  const limite = _localDate(hace7);
   const filtradas = cargarSteps().filter(e => e.fecha >= limite);
   if (filtradas.length === 0) return 0;
   const suma = filtradas.reduce((s, e) => s + (e.pasos || 0), 0);
@@ -98,7 +103,7 @@ function ultimosNDias(n) {
   const ahora = new Date();
   const hace = new Date(ahora);
   hace.setDate(hace.getDate() - n);
-  const limite = hace.toISOString().split('T')[0];
+  const limite = _localDate(hace);
   return cargarSteps().filter(e => e.fecha >= limite);
 }
 

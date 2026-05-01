@@ -1,3 +1,8 @@
+// ─── Fecha local (fallback si app-bundle no cargó primero) ───────────────
+var _localDate = window._localDate || function(d) {
+  var dt = d || new Date();
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+};
 /* ============================================
    Calibrate — Exports
    - Lista de compras: CSV, Google Keep, Jumbo/Líder copy
@@ -71,7 +76,7 @@
 
     // UTF-8 BOM para compatibilidad con Excel en Windows
     const contenido = '\uFEFF' + filas.join('\n');
-    const fecha = new Date().toISOString().split('T')[0];
+    const fecha = _localDate();
     descargarArchivo(contenido, `nutriplan-lista-${fecha}.csv`, 'text/csv');
     return { total_items: ingredientes.length, total_clp: totalCLP };
   }
@@ -245,7 +250,7 @@
 
     // iCalendar usa CRLF
     const contenido = lineas.join('\r\n');
-    const fecha = new Date().toISOString().split('T')[0];
+    const fecha = _localDate();
     descargarArchivo(contenido, `nutriplan-plan-${fecha}.ics`, 'text/calendar');
     return { dias: semanas.length * 7, semanas: semanas.length };
   }
@@ -326,7 +331,7 @@
 
     lineas.push('END:VCALENDAR');
     const contenido = lineas.join('\r\n');
-    const fecha = new Date().toISOString().split('T')[0];
+    const fecha = _localDate();
     descargarArchivo(contenido, `nutriplan-plan-detallado-${fecha}.ics`, 'text/calendar');
   }
 
@@ -573,7 +578,7 @@
         pageW / 2, pageH - 5, { align: 'center' });
     }
 
-    var fecha = new Date().toISOString().split('T')[0];
+    var fecha = _localDate();
     doc.save('nutriplan-plan-' + fecha + '.pdf');
     return { paginas: totalPages };
   }
@@ -600,7 +605,7 @@
     for (let i = dias - 1; i >= 0; i--) {
       const f = new Date(hoy);
       f.setDate(hoy.getDate() - i);
-      fechas.push(f.toISOString().split('T')[0]);
+      fechas.push(_localDate(f));
     }
 
     const DIAS_ES  = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];

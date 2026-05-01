@@ -130,6 +130,16 @@ var AJUSTES_OBJETIVO_EN = {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─── Fecha local YYYY-MM-DD (evita desfase UTC en zonas horarias como Chile UTC-3/4) ──
+// toISOString() devuelve UTC: a las 22:30 CLT (UTC-3) ya marca el día siguiente en UTC.
+function _localDate(d) {
+  var dt = d || new Date();
+  return dt.getFullYear() + '-' +
+    String(dt.getMonth() + 1).padStart(2, '0') + '-' +
+    String(dt.getDate()).padStart(2, '0');
+}
+window._localDate = _localDate; // expuesto para módulos externos
+
 // ─── Helpers: Comidas Externas ─────────────────────────────────────────────
 var _EXT_KEY = 'nutriplan_comidas_externas';
 function _repararNombreUtf8(str) {
@@ -167,18 +177,18 @@ function _guardarComidasExt(fecha, lista) {
 function diaToIso(diaNombre, semanaActiva, planNorm) {
   var DIAS = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
   var idx = DIAS.indexOf(diaNombre);
-  if (idx < 0) return new Date().toISOString().split('T')[0];
+  if (idx < 0) return _localDate();
   if (planNorm && planNorm._fechaCreacion) {
     var inicio = new Date(planNorm._fechaCreacion + 'T00:00:00');
     inicio.setDate(inicio.getDate() + ((semanaActiva || 1) - 1) * 7 + idx);
-    return inicio.toISOString().split('T')[0];
+    return _localDate(inicio);
   }
   // Sin _fechaCreacion: semana calendario actual
   var hoy = new Date();
   var idxHoy = (hoy.getDay() + 6) % 7; // 0=lun
   var fecha = new Date(hoy);
   fecha.setDate(hoy.getDate() + (idx - idxHoy));
-  return fecha.toISOString().split('T')[0];
+  return _localDate(fecha);
 }
 function _agregarAdherenciaExt(diaActual, comida) {
   if (typeof window.adherencia === 'undefined') return;
@@ -190,7 +200,7 @@ function _eliminarAdherenciaExt(diaActual, comidaId) {
   try {
     var raw = localStorage.getItem('nutriplan_adherencia');
     var data = raw ? JSON.parse(raw) : {};
-    var fecha = new Date().toISOString().split('T')[0];
+    var fecha = _localDate();
     if (data[fecha]) {
       delete data[fecha][diaActual + ':ext_' + comidaId];
       localStorage.setItem('nutriplan_adherencia', JSON.stringify(data));
@@ -4125,7 +4135,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
     return DIAS_SEMANA.includes(diaActual) ? diaActual : DIAS_SEMANA[0];
   });
   // ISO date del día seleccionado → clave de almacenamiento de comidas externas
-  const fechaHoyIsoWP = new Date().toISOString().split('T')[0];
+  const fechaHoyIsoWP = _localDate();
   const semanaHoyIdx = React.useMemo(() => {
     const keys = Object.keys(planNorm).filter(k => k.startsWith('semana_')).sort();
     if (keys.length <= 1 || !planNorm._fechaCreacion) return 1;
@@ -5005,7 +5015,7 @@ function calcularStreakAdherencia() {
     var d = new Date();
     d.setDate(d.getDate() - 1); // empezar desde ayer
     for (var i = 0; i < 90; i++) {
-      var key = d.toISOString().split('T')[0];
+      var key = _localDate(d);
       var dia = data[key] || {};
       var total = 0, cumplidos = 0;
       Object.values(dia).forEach(function(e) { total++; if (e.comido) cumplidos++; });
@@ -7012,7 +7022,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
       try {
         var nuevasFrec = recurrentes.slice();
         var idxFrec = nuevasFrec.findIndex(function(x) { return x.nombre === nombreFinal; });
-        var hoyFrec = new Date().toISOString().split('T')[0];
+        var hoyFrec = _localDate();
         if (idxFrec >= 0) {
           nuevasFrec[idxFrec] = Object.assign({}, nuevasFrec[idxFrec], {
             veces: (nuevasFrec[idxFrec].veces || 1) + 1, ultimaVez: hoyFrec,
@@ -7495,7 +7505,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
   }, [planSemanal]);
 
   const comidasHoy = semanaData ? (semanaData[diaActual] || {}) : {};
-  const fechaHoyIso = new Date().toISOString().split('T')[0];
+  const fechaHoyIso = _localDate();
   const resumenHoy = calcularResumenDiario(comidasHoy);
   const tiposOrden = ["desayuno", "snack_am", "almuerzo", "snack_pm", "cena"];
   const iconosComida = { desayuno: "fa-sun", snack_am: "fa-apple-whole", almuerzo: "fa-utensils", snack_pm: "fa-cookie-bite", cena: "fa-moon" };
@@ -7512,7 +7522,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
 
   const entrenoHoy = React.useMemo(() => {
     if (!tieneEntrenamiento) return null;
-    const hoyStr = new Date().toISOString().split('T')[0];
+    const hoyStr = _localDate();
     const diasSemana = parseInt(localStorage.getItem('nutriplan_dias_semana') || '4');
     const planActual = window.NP_RoadmapData && window.NP_RoadmapData.SCHEDULES_POR_DIAS
       ? (window.NP_RoadmapData.SCHEDULES_POR_DIAS[diasSemana] || window.NP_RoadmapData.SCHEDULES_POR_DIAS[4])
@@ -7591,14 +7601,14 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     const entries = window.NP_BodyComp.cargar();
     if (!entries || entries.length === 0) return true;
     const hace7 = new Date(); hace7.setDate(hace7.getDate() - 7);
-    const hace7Str = hace7.toISOString().split('T')[0];
+    const hace7Str = _localDate(hace7);
     return !entries.some(e => e.fecha >= hace7Str && e.peso != null);
   }, [tieneEntrenamiento, refresh]);
 
   // ¿Ya hay un registro de peso para HOY específicamente?
   const pesoHoyYaRegistrado = React.useMemo(() => {
     if (!window.NP_BodyComp || !window.NP_BodyComp.cargar) return false;
-    const hoyStr = new Date().toISOString().split('T')[0];
+    const hoyStr = _localDate();
     return (window.NP_BodyComp.cargar() || []).some(e => e.fecha === hoyStr && e.peso != null);
   }, [refresh]);
 
@@ -7639,7 +7649,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     if (val < 20 || val > 300) { setPesoError(t('El peso debe estar entre 20 y 300 kg','Weight must be between 20 and 300 kg')); return; }
     setPesoError('');
     if (window.NP_BodyComp) {
-      const hoyStr = new Date().toISOString().split('T')[0];
+      const hoyStr = _localDate();
       window.NP_BodyComp.registrar({
         fecha: hoyStr, peso: val,
         _genero: perfil && perfil.genero === 'femenino' ? 'F' : 'M',
@@ -7768,7 +7778,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
       {typeof window.adherencia !== 'undefined' && (() => {
         // Calcular lunes de la semana actual
         const hoy = new Date();
-        const hoyFecha = hoy.toISOString().split('T')[0];
+        const hoyFecha = _localDate(hoy);
         const dow = hoy.getDay(); // 0=Dom,1=Lun..6=Sáb
         const diffLunes = dow === 0 ? -6 : 1 - dow;
         const lunes = new Date(hoy);
@@ -7784,7 +7794,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         const semana = LABELS.map((label, i) => {
           const d = new Date(lunes);
           d.setDate(lunes.getDate() + i);
-          const fecha = d.toISOString().split('T')[0];
+          const fecha = _localDate(d);
           const esFuturo = fecha > hoyFecha;
           const isHoy = fecha === hoyFecha;
           const diaData = adherData[fecha] || {};
@@ -8433,7 +8443,7 @@ function NutricionLogView({ perfil, darkMode }) {
     for (let i = dias - 1; i >= 0; i--) {
       const d = new Date(hoy);
       d.setDate(hoy.getDate() - i);
-      const fecha   = d.toISOString().split('T')[0];
+      const fecha   = _localDate(d);
       const diaData = adher[fecha] || {};
       const extData = ext[fecha]   || [];
 
@@ -9029,7 +9039,7 @@ function WeightChart({ perfil, entries, darkMode }) {
   const pesoInicial = rm.inputs.peso;
   const pesoTarget = rm.calculados.pesoTarget;
   const tasaSemanal = rm.calculados.tasaSemanal || 0.5;
-  const hoyIso = new Date().toISOString().split('T')[0];
+  const hoyIso = _localDate();
 
   // X
   const t0 = new Date(conPeso[0].fecha + 'T12:00:00').getTime();
@@ -9132,7 +9142,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
   const tendencia = (window.NP_BodyComp && window.NP_BodyComp.tendencia) ? window.NP_BodyComp.tendencia(entries, 'peso') : null;
   const promedio7 = (window.NP_BodyComp && window.NP_BodyComp.promedio) ? window.NP_BodyComp.promedio(entries, 'peso', 7) : null;
 
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = _localDate();
   const entradaHoy = entries.find(e => e.fecha === hoy);
 
   const registrarPeso = () => {
@@ -9564,7 +9574,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
   const [customPct, setCustomPct] = React.useState('');
   const [customNombre, setCustomNombre] = React.useState('');
   // N16: date selector — defaults to today
-  const [fechaBebida, setFechaBebida] = React.useState(() => new Date().toISOString().split('T')[0]);
+  const [fechaBebida, setFechaBebida] = React.useState(() => _localDate());
 
   if (!window.NP_Alcohol) return null;
   const resumen = window.NP_Alcohol.resumen7();
@@ -9677,7 +9687,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
             <div className={`text-xs uppercase font-bold tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Registrar bebida', 'Log a drink')}</div>
             {/* N16: date selector */}
             <input type="date" value={fechaBebida} onChange={e => setFechaBebida(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
+              max={_localDate()}
               className={`text-xs px-2 py-1 rounded-lg border ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-300' : 'bg-white border-gray-200 text-gray-600'}`} />
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -10118,7 +10128,7 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
 
 // ─── Sub-vista: Entreno (log de cargas por día A/B/C/D) ───
 function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = _localDate();
 
   // ── Días/semana: persiste en localStorage, modifica todo el plan ──
   const [diasSemana, setDiasSemana] = React.useState(() =>
@@ -10771,7 +10781,7 @@ function ChatPanel({ darkMode }) {
       carbohidratos: (mg && mg.carbohidratos)  || 0,
       grasas:        (mg && mg.grasas)         || 0
     };
-    var hoy = new Date().toISOString().split('T')[0];
+    var hoy = _localDate();
     var extMap = {};
     try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
     var extHoy = extMap[hoy] || [];
@@ -10799,7 +10809,7 @@ function ChatPanel({ darkMode }) {
     // Leer adherencia para saber qué ya comió
     var adherData = {};
     try { adherData = JSON.parse(localStorage.getItem('nutriplan_adherencia') || '{}'); } catch(e) {}
-    var fecha = new Date().toISOString().split('T')[0];
+    var fecha = _localDate();
     var adherHoy = adherData[fecha] || {};
 
     // Comidas registradas vía chat que reemplazan un slot del plan
@@ -10974,7 +10984,7 @@ function ChatPanel({ darkMode }) {
   // ── Ejecutar tool calls localmente ─────────────────────────────────────
   function ejecutarTool(name, input_) {
     if (name === 'registrar_comida') {
-      var hoy = new Date().toISOString().split('T')[0];
+      var hoy = _localDate();
       var extMap = {};
       try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
       var lista = extMap[hoy] || [];
@@ -11017,7 +11027,7 @@ function ChatPanel({ darkMode }) {
       return { resultados: res };
     }
     if (name === 'eliminar_comida') {
-      var hoy = new Date().toISOString().split('T')[0];
+      var hoy = _localDate();
       var extMap = {};
       try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
       var lista = extMap[hoy] || [];
@@ -12092,7 +12102,7 @@ function App() {
   // La agente llama: window._NP_addPendiente({ nombre, kcal, proteinas_g, carbohidratos_g, grasas_g })
   window._NP_addPendiente = function(datos) {
     try {
-      var hoyStr = new Date().toISOString().split('T')[0];
+      var hoyStr = _localDate();
       var entrada = {
         id: 'pend_' + Date.now(),
         nombre: datos.nombre || t('Comida planeada','Planned meal'),
