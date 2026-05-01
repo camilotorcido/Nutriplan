@@ -4128,6 +4128,20 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
     window.addEventListener('perfiles-change', handler);
     return () => window.removeEventListener('perfiles-change', handler);
   }, []);
+
+  // Refrescar comidas externas del día cuando el coach registra / elimina una comida
+  React.useEffect(() => {
+    function onMealLogged() { setForceUpdate(function(n) { return n + 1; }); }
+    window.addEventListener('calibrate_meal_logged', onMealLogged);
+    return () => window.removeEventListener('calibrate_meal_logged', onMealLogged);
+  }, []);
+
+  // Función global directa — llamada por ejecutarTool sin depender de eventos
+  React.useEffect(() => {
+    window._NP_refreshWeeklyPlan = function() { setForceUpdate(function(n) { return n + 1; }); };
+    return () => { window._NP_refreshWeeklyPlan = null; };
+  }, []);
+
   const semanaData = planNorm['semana_' + semanaActiva] || {};
   
   const diaActual = obtenerDiaActual();
@@ -11013,6 +11027,7 @@ function ChatPanel({ darkMode }) {
           localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
           window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
           if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
+          if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
           return { ok: true, registrado: lista[idxExist], actualizado: true };
         }
       }
@@ -11028,6 +11043,7 @@ function ChatPanel({ darkMode }) {
       localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
       window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
       if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
+      if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
       return { ok: true, registrado: nueva };
     }
     if (name === 'buscar_alimento') {
@@ -11055,6 +11071,7 @@ function ChatPanel({ darkMode }) {
       localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
       window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
       if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
+      if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
       return { ok: true, eliminadas: antes - lista.length };
     }
     if (name === 'get_resumen_dia') {
@@ -11178,6 +11195,7 @@ function ChatPanel({ darkMode }) {
         }, 1);
         window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
         if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
+        if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
         return { ok: true, marcado: comida.nombre + ' (' + dia + ' · ' + tipo + ')' };
       }
       return { ok: false, error: 'Sistema de adherencia no disponible.' };
