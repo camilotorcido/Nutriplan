@@ -7596,6 +7596,13 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     return function() { window.removeEventListener('calibrate_meal_logged', onMealLogged); };
   }, []);
 
+  // Función global directa — llamada por ejecutarTool sin depender de eventos.
+  // Garantiza re-render aunque React batchee o el CustomEvent se pierda.
+  React.useEffect(function() {
+    window._NP_refreshHoyView = function() { setRefresh(function(r) { return r + 1; }); };
+    return function() { window._NP_refreshHoyView = null; };
+  }, []);
+
   const necesitaPeso = React.useMemo(() => {
     if (!tieneEntrenamiento || !window.NP_BodyComp || !window.NP_BodyComp.cargar) return false;
     const entries = window.NP_BodyComp.cargar();
@@ -10789,7 +10796,8 @@ function ChatPanel({ darkMode }) {
       return { kcal: acc.kcal + (c.kcal||0), proteinas: acc.proteinas + (c.proteinas_g||0),
                carbohidratos: acc.carbohidratos + (c.carbohidratos_g||0), grasas: acc.grasas + (c.grasas_g||0) };
     }, { kcal:0, proteinas:0, carbohidratos:0, grasas:0 });
-    return { perfil, planHoy, macrosObjetivo, macrosConsumidos, diaActual };
+    var fechaHoy = _localDate();
+    return { perfil, planHoy, macrosObjetivo, macrosConsumidos, diaActual, fechaHoy };
   }
 
   // ── Análisis proactivo: detectar brecha y sugerir ajustes ───────────────
@@ -11004,6 +11012,7 @@ function ChatPanel({ darkMode }) {
           extMap[hoy] = lista;
           localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
           window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
+          if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
           return { ok: true, registrado: lista[idxExist], actualizado: true };
         }
       }
@@ -11018,6 +11027,7 @@ function ChatPanel({ darkMode }) {
       extMap[hoy] = lista.concat([nueva]);
       localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
       window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
+      if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
       return { ok: true, registrado: nueva };
     }
     if (name === 'buscar_alimento') {
@@ -11044,6 +11054,7 @@ function ChatPanel({ darkMode }) {
       extMap[hoy] = lista;
       localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
       window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
+      if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
       return { ok: true, eliminadas: antes - lista.length };
     }
     if (name === 'get_resumen_dia') {
@@ -11166,6 +11177,7 @@ function ChatPanel({ darkMode }) {
           nombre: comida.nombre
         }, 1);
         window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
+        if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
         return { ok: true, marcado: comida.nombre + ' (' + dia + ' · ' + tipo + ')' };
       }
       return { ok: false, error: 'Sistema de adherencia no disponible.' };

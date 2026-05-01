@@ -184,8 +184,9 @@ function buildSystemPrompt(contexto) {
 
 USUARIO: ${perfil.nombre || 'Usuario'}
 OBJETIVO: ${perfil.objetivo || 'mantenimiento'}
+DÍA Y FECHA HOY: ${contexto?.diaActual || ''} ${contexto?.fechaHoy || ''}
 
-PLAN DE HOY:
+PLAN DE HOY (${contexto?.diaActual || ''}):
 ${planTexto}
 
 MACROS OBJETIVO HOY:
