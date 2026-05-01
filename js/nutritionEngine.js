@@ -455,22 +455,27 @@ function cambiarRecetaIndividual(planMulti, dia, tipoComida, perfil, caloriasObj
 
   if (recetasDelTipo.length === 0) return plan;
 
-  // Recopilar IDs de recetas ya en uso en TODAS las semanas
+  // Para swap: solo excluir recetas de la SEMANA ACTIVA (no de todas las semanas).
+  // Excluir todas las semanas dejaba <12 candidatas de 40, causando loops de 4-5 opciones.
   const idsEnUso = new Set();
-  for (let s = 1; s <= (plan._numSemanas || 1); s++) {
-    const sem = plan['semana_' + s];
-    if (!sem) continue;
-    Object.values(sem).forEach(comidasDia => {
+  const semActiva = plan[semanaKey];
+  if (semActiva) {
+    Object.values(semActiva).forEach(comidasDia => {
       if (typeof comidasDia !== 'object' || comidasDia === null) return;
-      Object.values(comidasDia).forEach(comida => {
+      Object.entries(comidasDia).forEach(([tipo, comida]) => {
+        // No excluir la receta del slot que se está cambiando
+        if (tipo === tipoComida && comidasDia === semActiva[dia]) return;
         if (comida && comida.id) idsEnUso.add(comida.id);
       });
     });
   }
 
-  const recetasUsadas14 = obtenerRecetasUsadas14Dias();
+  // Para swap usar ventana de 7 días (vs 14 del plan inicial) — amplía el pool x2
+  const recetasUsadas7 = (typeof obtenerRecetasUsadas7Dias === 'function')
+    ? obtenerRecetasUsadas7Dias()
+    : obtenerRecetasUsadas14Dias();
 
-  let candidatas = recetasDelTipo.filter(r => !idsEnUso.has(r.id) && !recetasUsadas14.has(r.id));
+  let candidatas = recetasDelTipo.filter(r => !idsEnUso.has(r.id) && !recetasUsadas7.has(r.id));
   if (candidatas.length === 0) {
     candidatas = recetasDelTipo.filter(r => !idsEnUso.has(r.id));
   }
@@ -481,14 +486,11 @@ function cambiarRecetaIndividual(planMulti, dia, tipoComida, perfil, caloriasObj
 
   if (candidatas.length === 0) return plan;
 
-  // Compliance proteína: filtrar por densidad mínima al hacer swap individual
-  const minDensidadSwap = caloriasObjetivo > 0
-    ? _resolverProteinaTarget(perfil, caloriasObjetivo) / caloriasObjetivo : 0;
-  candidatas = _filtrarPorProteinaMinima(candidatas, minDensidadSwap);
+  // Ordenar por rating + aleatorio (ratings iguales ya son random en _sortPorRating)
+  // Usar pool COMPLETO en vez de top 60% — el 60% era la causa directa del loop de 4-5
   candidatas = _sortPorRating(candidatas);
-
+  const idx = Math.floor(Math.random() * candidatas.length);
   const caloriasComida = Math.round(caloriasObjetivo * DISTRIBUCION_COMIDAS[tipoComida]);
-  const idx = Math.floor(Math.random() * Math.max(1, Math.ceil(candidatas.length * 0.6)));
   const nuevaReceta = escalarReceta(candidatas[idx], caloriasComida);
 
   // Actualizar plan multi-semana
@@ -1605,22 +1607,26 @@ async function cambiarRecetaIndividualAsync(planMulti, dia, tipoComida, perfil, 
     .filter(r => r.tipo_comida === tipoComida && !vetadasAsync.has(r.id));
   const todasDelTipo = [...recetasDelTipo, ...onlineFiltradas];
 
-  // Recopilar IDs de recetas en uso en TODAS las semanas
+  // Para swap: solo excluir recetas de la SEMANA ACTIVA (no de todas las semanas).
   const idsEnUso = new Set();
-  for (let s = 1; s <= (plan._numSemanas || 1); s++) {
-    const sem = plan['semana_' + s];
-    if (!sem) continue;
-    Object.values(sem).forEach(comidasDia => {
+  const semActivaAsync = plan[semanaKey];
+  if (semActivaAsync) {
+    Object.entries(semActivaAsync).forEach(([diaK, comidasDia]) => {
       if (typeof comidasDia !== 'object' || comidasDia === null) return;
-      Object.values(comidasDia).forEach(comida => {
+      Object.entries(comidasDia).forEach(([tipo, comida]) => {
+        // No excluir el slot que se está reemplazando
+        if (diaK === dia && tipo === tipoComida) return;
         if (comida && comida.id) idsEnUso.add(comida.id);
       });
     });
   }
 
-  const recetasUsadas14 = obtenerRecetasUsadas14Dias();
+  // Ventana 7 días para swaps (vs 14 del plan inicial) — amplía pool disponible
+  const recetasUsadas7Async = (typeof obtenerRecetasUsadas7Dias === 'function')
+    ? obtenerRecetasUsadas7Dias()
+    : obtenerRecetasUsadas14Dias();
 
-  let candidatas = todasDelTipo.filter(r => !idsEnUso.has(r.id) && !recetasUsadas14.has(r.id));
+  let candidatas = todasDelTipo.filter(r => !idsEnUso.has(r.id) && !recetasUsadas7Async.has(r.id));
 
   if (candidatas.length === 0) {
     candidatas = todasDelTipo.filter(r => !idsEnUso.has(r.id));
@@ -1643,12 +1649,13 @@ async function cambiarRecetaIndividualAsync(planMulti, dia, tipoComida, perfil, 
     const recetaActual = semanaActual[dia]?.[tipoComida];
     candidatas = todasDelTipo.filter(r => !recetaActual || r.id !== recetaActual.id);
   }
-  
-  if (candidatas.length === 0) return plan;
-  candidatas = _sortPorRating(candidatas);
 
+  if (candidatas.length === 0) return plan;
+
+  // Pool COMPLETO (no top 60%) — el 60% era la causa directa del loop de 4-5 opciones
+  candidatas = _sortPorRating(candidatas);
   const caloriasComida = Math.round(caloriasObjetivo * DISTRIBUCION_COMIDAS[tipoComida]);
-  const idx = Math.floor(Math.random() * Math.max(1, Math.ceil(candidatas.length * 0.6)));
+  const idx = Math.floor(Math.random() * candidatas.length);
   const nuevaReceta = escalarReceta(candidatas[idx], caloriasComida);
   
   // Actualizar plan multi-semana

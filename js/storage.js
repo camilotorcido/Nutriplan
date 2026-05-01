@@ -130,17 +130,22 @@ function agregarAlHistorial(planSemanal) {
   return historialFiltrado;
 }
 
-// Obtener IDs de recetas usadas en los últimos 14 días
-function obtenerRecetasUsadas14Dias() {
+// Obtener IDs de recetas usadas en los últimos N días
+function _obtenerRecetasUsadasNDias(n) {
   const historial = cargarHistorialRecetas();
-  const hace14Dias = new Date();
-  hace14Dias.setDate(hace14Dias.getDate() - 14);
-  const limite = _localDate(hace14Dias);
-  
+  const hace = new Date();
+  hace.setDate(hace.getDate() - n);
+  const limite = _localDate(hace);
   const ids = new Set();
   historial.filter(h => h.fecha >= limite).forEach(h => ids.add(h.receta_id));
   return ids;
 }
+
+// Para generación inicial del plan: ventana amplia (14 días)
+function obtenerRecetasUsadas14Dias() { return _obtenerRecetasUsadasNDias(14); }
+
+// Para swaps individuales: ventana corta (7 días) — duplica el pool disponible
+function obtenerRecetasUsadas7Dias() { return _obtenerRecetasUsadasNDias(7); }
 
 // ─── MEJORA 5: Dark mode persistence ───
 function guardarDarkMode(isDark) {
