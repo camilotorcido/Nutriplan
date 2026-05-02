@@ -4179,8 +4179,13 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
   const consumidoDia = React.useMemo(function() {
     if (!esDiaPasado || !fechaDiaIso) return null;
     var kcal = 0, prot = 0, carb = 0, fat = 0;
+    // Comidas externas primero (para determinar slots reemplazados)
+    var exts = (typeof _comidasExtFecha === 'function') ? _comidasExtFecha(fechaDiaIso) : [];
+    // Slots del plan reemplazados por externa → no doble-contar
+    var tiposReemplazados = exts.filter(function(c) { return c.reemplaza; }).map(function(c) { return c.reemplaza; });
     var tiposOrdenC = ['desayuno', 'snack_am', 'almuerzo', 'snack_pm', 'cena'];
     tiposOrdenC.forEach(function(tipo) {
+      if (tiposReemplazados.indexOf(tipo) >= 0) return; // contado via externa
       var estado = (typeof window.adherencia !== 'undefined' && window.adherencia.estado)
         ? window.adherencia.estado(diaSeleccionado, tipo, semanaActiva) : null;
       if (!estado || !estado.comido) return;
@@ -4191,8 +4196,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
       carb += cp.carbohidratos_escalados   || cp.carbohidratos   || 0;
       fat  += cp.grasas_escaladas          || cp.grasas          || 0;
     });
-    // Comidas externas
-    var exts = (typeof _comidasExtFecha === 'function') ? _comidasExtFecha(fechaDiaIso) : [];
+    // Sumar externas (todas, pendiente excluida)
     exts.forEach(function(c) {
       if (c.pendiente) return;
       kcal += c.kcal || 0; prot += c.proteinas_g || 0;
