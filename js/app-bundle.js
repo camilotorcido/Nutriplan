@@ -165,6 +165,18 @@ function _comidasExtFecha(fecha) {
     });
   } catch(e) { return []; }
 }
+// Devuelve "HH:MM" de una comida externa. Usa registradoEn si existe,
+// si no lo deduce del ID (formato 'chat_<timestamp>' o 'ext_<timestamp>').
+function _horaComida(c) {
+  var ts = c && c.registradoEn;
+  if (!ts && c && c.id) {
+    var m = c.id.match(/(\d{10,13})$/);
+    if (m) ts = parseInt(m[1], 10);
+  }
+  if (!ts || isNaN(ts)) return '';
+  var d = new Date(ts);
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
 function _guardarComidasExt(fecha, lista) {
   try {
     var a = JSON.parse(localStorage.getItem(_EXT_KEY) || '{}');
@@ -8287,6 +8299,11 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                         <span style={{ fontSize: '10px', fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
                           {t('comido','eaten')}
                         </span>
+                        {_horaComida(extReemplazo) && (
+                          <span className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                            <i className="fas fa-clock mr-0.5" style={{fontSize:'8px'}}></i>{_horaComida(extReemplazo)}
+                          </span>
+                        )}
                       </div>
                       <div className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{extReemplazo.nombre}</div>
                       <div className="text-xs mt-0.5">
@@ -8493,7 +8510,14 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                 <div key={c.id} className="px-5 py-2.5 flex items-center gap-3">
                   <i className={`fas fa-utensils text-sm w-4 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
                   <div className="flex-1 min-w-0">
-                    <div className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{c.nombre}</div>
+                    <div className="flex items-center gap-1.5">
+                      <div className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{c.nombre}</div>
+                      {_horaComida(c) && (
+                        <span className={`text-[10px] flex-shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          <i className="fas fa-clock mr-0.5" style={{fontSize:'8px'}}></i>{_horaComida(c)}
+                        </span>
+                      )}
+                    </div>
                     <div className="text-xs text-gray-400 mt-0.5">
                       <span className="text-blue-400 font-semibold">{c.proteinas_g}g</span>{' '}{t('prot','prot')}
                       {' · '}
@@ -8629,9 +8653,10 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         <BarcodeScannerModal
           darkMode={darkMode}
           onAdd={function(comida) {
-            var nuevas = comidasExt.concat([comida]);
+            var c2 = Object.assign({ registradoEn: Date.now() }, comida);
+            var nuevas = comidasExt.concat([c2]);
             _guardarComidasExt(fechaHoyIso, nuevas);
-            _agregarAdherenciaExt(diaActual, comida);
+            _agregarAdherenciaExt(diaActual, c2);
             setRefresh(function(r) { return r + 1; });
           }}
           onClose={function() { setShowScanner(false); }}
@@ -8646,6 +8671,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           comidasHoy={comidasHoy}
           nombresComida={nombresComida}
           onAdd={function(comida) {
+            var comida = Object.assign({ registradoEn: Date.now() }, comida);
             var nuevas = comidasExt.concat([comida]);
             _guardarComidasExt(fechaHoyIso, nuevas);
             _agregarAdherenciaExt(diaActual, comida);
@@ -11326,8 +11352,10 @@ function ChatPanel({ darkMode }) {
       }
 
       // Sin duplicado → crear nueva entrada
+      var _ts = Date.now();
       var nueva = {
-        id: 'chat_' + Date.now(),
+        id: 'chat_' + _ts,
+        registradoEn: _ts,
         nombre: input_.nombre, kcal: input_.kcal,
         proteinas_g: input_.proteinas_g, carbohidratos_g: input_.carbohidratos_g, grasas_g: input_.grasas_g,
         reemplaza: input_.reemplaza || null, fuente: 'chat'
