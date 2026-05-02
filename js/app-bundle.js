@@ -4174,28 +4174,24 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
     return fechaDiaIso < _localDate();
   }, [fechaDiaIso]);
   // Macros consumidos reales para días pasados
+  // Usa window.adherencia.estado() — mismo mecanismo que los badges "comido" —
+  // para garantizar que el número coincida exactamente con lo que se muestra.
   const consumidoDia = React.useMemo(function() {
-    if (!esDiaPasado) return null;
-    var adhData = {};
-    try { adhData = JSON.parse(localStorage.getItem('nutriplan_adherencia') || '{}'); } catch(e) {}
-    var adhFecha = adhData[fechaDiaIso] || {};
+    if (!esDiaPasado || !fechaDiaIso) return null;
     var kcal = 0, prot = 0, carb = 0, fat = 0;
-    Object.keys(adhFecha).forEach(function(key) {
-      var e = adhFecha[key];
-      if (!e || !e.comido) return;
-      var tipo = key.split(':')[1];
-      if (!tipo || tipo.startsWith('ext_')) return;
+    var tiposOrdenC = ['desayuno', 'snack_am', 'almuerzo', 'snack_pm', 'cena'];
+    tiposOrdenC.forEach(function(tipo) {
+      var estado = (typeof window.adherencia !== 'undefined' && window.adherencia.estado)
+        ? window.adherencia.estado(diaSeleccionado, tipo, semanaActiva) : null;
+      if (!estado || !estado.comido) return;
       var cp = comidasDia[tipo];
-      if (cp) {
-        kcal += cp.calorias_escaladas  || cp.calorias      || e.kcal_plan       || 0;
-        prot += cp.proteinas_escaladas || cp.proteinas     || e.proteinas_plan  || 0;
-        carb += cp.carbohidratos_escalados || cp.carbohidratos || 0;
-        fat  += cp.grasas_escaladas    || cp.grasas        || 0;
-      } else {
-        kcal += e.kcal_plan || 0;
-        prot += e.proteinas_plan || 0;
-      }
+      if (!cp) return;
+      kcal += cp.calorias_escaladas        || cp.calorias        || 0;
+      prot += cp.proteinas_escaladas       || cp.proteinas       || 0;
+      carb += cp.carbohidratos_escalados   || cp.carbohidratos   || 0;
+      fat  += cp.grasas_escaladas          || cp.grasas          || 0;
     });
+    // Comidas externas
     var exts = (typeof _comidasExtFecha === 'function') ? _comidasExtFecha(fechaDiaIso) : [];
     exts.forEach(function(c) {
       if (c.pendiente) return;
@@ -4203,7 +4199,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
       carb += c.carbohidratos_g || 0; fat += c.grasas_g || 0;
     });
     return { kcal: Math.round(kcal), prot: Math.round(prot), carb: Math.round(carb), fat: Math.round(fat) };
-  }, [esDiaPasado, fechaDiaIso, comidasDia, forceUpdate]);
+  }, [esDiaPasado, fechaDiaIso, diaSeleccionado, semanaActiva, comidasDia, forceUpdate]);
   const tiposComidaOrden = ["desayuno", "snack_am", "almuerzo", "snack_pm", "cena"];
   const iconosComida = { desayuno: "fa-sun", snack_am: "fa-apple-whole", almuerzo: "fa-utensils", snack_pm: "fa-cookie-bite", cena: "fa-moon" };
   const coloresComida = {
