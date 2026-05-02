@@ -8107,11 +8107,6 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               {t('Ir a hoy','Go to today')}
             </button>
           )}
-          <button
-            onClick={() => setShowVacaciones(true)}
-            title={t('Modo Vacaciones','Vacation Mode')}
-            className={`text-base leading-none cursor-pointer transition-opacity hover:opacity-80 ${esVacaciones ? 'opacity-100' : 'opacity-40'}`}
-          >🏖</button>
         </span>
         <button
           onClick={() => setDayOffset(function(o) { return Math.min(0, o + 1); })}
@@ -8170,6 +8165,41 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               return <p style={{ fontSize: '12px', opacity: 0.82, marginTop: '6px', fontWeight: 500 }}>{_msg}</p>;
             })()}
           </div>
+        );
+      })()}
+
+      {/* ── Chip Vacaciones — solo si hay período en la semana actual ────── */}
+      {(() => {
+        const hoyD = new Date();
+        const dow = hoyD.getDay();
+        const diffL = dow === 0 ? -6 : 1 - dow;
+        const lun = new Date(hoyD); lun.setDate(hoyD.getDate() + diffL);
+        const dom = new Date(lun);  dom.setDate(lun.getDate() + 6);
+        const lunesFecha = _localDate(lun);
+        const domingoFecha = _localDate(dom);
+        const hayVacSemana = _vacacionesGet().some(function(v) {
+          return v.inicio <= domingoFecha && v.fin >= lunesFecha;
+        });
+        if (!hayVacSemana) return null;
+        return (
+          <button
+            onClick={() => setShowVacaciones(true)}
+            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl cursor-pointer transition-colors ${
+              darkMode
+                ? 'bg-teal-900/40 border border-teal-700/60 hover:bg-teal-900/70'
+                : 'bg-teal-50 border border-teal-200 hover:bg-teal-100'
+            }`}
+          >
+            <span className={`flex items-center gap-2 text-sm font-semibold ${darkMode ? 'text-teal-300' : 'text-teal-700'}`}>
+              <span className="text-base">🏖</span>
+              {esVacaciones
+                ? t('Estás en modo vacaciones','Vacation Mode is active')
+                : t('Tienes vacaciones esta semana','You have vacation days this week')}
+            </span>
+            <span className={`text-xs font-medium ${darkMode ? 'text-teal-400' : 'text-teal-600'}`}>
+              {t('Gestionar →','Manage →')}
+            </span>
+          </button>
         );
       })()}
 
