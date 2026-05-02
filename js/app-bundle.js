@@ -184,6 +184,19 @@ function _guardarComidasExt(fecha, lista) {
     localStorage.setItem(_EXT_KEY, JSON.stringify(a));
   } catch(e) {}
 }
+// ─── Vacation Mode helpers ───
+var _VAC_KEY = 'nutriplan_vacaciones';
+function _vacacionesGet() {
+  try { return JSON.parse(localStorage.getItem(_VAC_KEY) || '[]'); } catch(e) { return []; }
+}
+function _vacacionesSave(arr) {
+  try { localStorage.setItem(_VAC_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+// Devuelve true si la fecha ISO cae dentro de algún período de vacaciones
+function _esDiaVacaciones(fecha) {
+  var arr = _vacacionesGet();
+  return arr.some(function(v) { return v.inicio <= fecha && fecha <= v.fin; });
+}
 // Convierte nombre de día + semana activa → ISO date usando _fechaCreacion del plan.
 // Fallback: semana calendario actual (lunes=0 … domingo=6).
 function diaToIso(diaNombre, semanaActiva, planNorm) {
@@ -7672,6 +7685,127 @@ function EveningRatingCard({ semanaData, diaActual, numSemanaActual, darkMode, r
 }
 
 // =============================================
+// COMPONENTE: VacacionesModal — Gestión de períodos de vacaciones
+// =============================================
+function VacacionesModal({ darkMode, onClose }) {
+  const [periodos, setPeriodos] = React.useState(function() { return _vacacionesGet(); });
+  const [inicio, setInicio] = React.useState('');
+  const [fin, setFin] = React.useState('');
+  const [label, setLabel] = React.useState('');
+  const [error, setError] = React.useState('');
+  var hoy = _localDate();
+
+  function agregar() {
+    if (!inicio || !fin) { setError(t('Selecciona ambas fechas.','Select both dates.')); return; }
+    if (fin < inicio) { setError(t('La fecha de fin debe ser ≥ inicio.','End date must be ≥ start.')); return; }
+    var nuevo = { id: Date.now(), inicio: inicio, fin: fin, label: label || t('Vacaciones','Vacation') };
+    var arr = _vacacionesGet();
+    arr.push(nuevo);
+    _vacacionesSave(arr);
+    setPeriodos(arr);
+    setInicio(''); setFin(''); setLabel(''); setError('');
+  }
+
+  function eliminar(id) {
+    var arr = _vacacionesGet().filter(function(v) { return v.id !== id; });
+    _vacacionesSave(arr);
+    setPeriodos(arr);
+  }
+
+  return (
+    React.createElement('div', {
+      className: 'fixed inset-0 z-50 flex items-end justify-center',
+      style: { background: 'rgba(0,0,0,0.55)' },
+      onClick: function(e) { if (e.target === e.currentTarget) onClose(); }
+    },
+      React.createElement('div', {
+        className: 'w-full max-w-lg rounded-t-2xl p-5 space-y-4 ' + (darkMode ? 'bg-gray-900' : 'bg-white'),
+        style: { maxHeight: '82vh', overflowY: 'auto' }
+      },
+        /* Header */
+        React.createElement('div', { className: 'flex items-center justify-between' },
+          React.createElement('h3', { className: 'text-base font-bold ' + (darkMode ? 'text-white' : 'text-gray-900') },
+            '🏖 ' + t('Modo Vacaciones','Vacation Mode')
+          ),
+          React.createElement('button', {
+            onClick: onClose,
+            className: 'w-8 h-8 flex items-center justify-center rounded-full cursor-pointer ' + (darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500')
+          }, React.createElement('i', { className: 'fas fa-times' }))
+        ),
+        /* Descripción */
+        React.createElement('p', { className: 'text-xs ' + (darkMode ? 'text-gray-400' : 'text-gray-500') },
+          t('Durante las vacaciones verás macros y kcal sin slots de comidas. Esos días quedan excluidos de la adherencia semanal.',
+            'During vacation you\'ll see macros & kcal without meal slots. Those days are excluded from weekly adherence.')
+        ),
+        /* Lista de períodos existentes */
+        periodos.length > 0 && React.createElement('div', { className: 'space-y-2' },
+          periodos.map(function(v) {
+            var pasado = v.fin < hoy;
+            return React.createElement('div', {
+              key: v.id,
+              className: 'flex items-center justify-between rounded-xl px-4 py-3 ' + (darkMode ? 'bg-gray-800' : 'bg-gray-50')
+            },
+              React.createElement('div', null,
+                React.createElement('p', { className: 'text-sm font-semibold ' + (darkMode ? 'text-white' : 'text-gray-800') },
+                  '🏖 ' + v.label,
+                  pasado && React.createElement('span', { className: 'ml-2 text-xs font-normal ' + (darkMode ? 'text-gray-500' : 'text-gray-400') }, t('(pasado)','(past)'))
+                ),
+                React.createElement('p', { className: 'text-xs mt-0.5 ' + (darkMode ? 'text-gray-400' : 'text-gray-500') },
+                  v.inicio + ' → ' + v.fin
+                )
+              ),
+              React.createElement('button', {
+                onClick: function() { eliminar(v.id); },
+                className: 'text-xs px-3 py-1 rounded-lg cursor-pointer transition-colors ' + (darkMode ? 'bg-red-900/40 text-red-400 hover:bg-red-900/70' : 'bg-red-50 text-red-500 hover:bg-red-100')
+              }, t('Eliminar','Delete'))
+            );
+          })
+        ),
+        /* Agregar nuevo período */
+        React.createElement('div', { className: 'rounded-xl p-4 space-y-3 ' + (darkMode ? 'bg-gray-800' : 'bg-gray-50') },
+          React.createElement('p', { className: 'text-xs font-semibold uppercase tracking-wider ' + (darkMode ? 'text-gray-400' : 'text-gray-500') },
+            t('Nuevo período','New period')
+          ),
+          React.createElement('div', { className: 'grid grid-cols-2 gap-2' },
+            React.createElement('div', null,
+              React.createElement('label', { className: 'text-xs mb-1 block ' + (darkMode ? 'text-gray-400' : 'text-gray-500') }, t('Inicio','Start')),
+              React.createElement('input', {
+                type: 'date', value: inicio, min: hoy,
+                onChange: function(e) { setInicio(e.target.value); },
+                className: 'w-full text-sm rounded-lg px-3 py-2 border ' + (darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200 text-gray-800')
+              })
+            ),
+            React.createElement('div', null,
+              React.createElement('label', { className: 'text-xs mb-1 block ' + (darkMode ? 'text-gray-400' : 'text-gray-500') }, t('Fin','End')),
+              React.createElement('input', {
+                type: 'date', value: fin, min: inicio || hoy,
+                onChange: function(e) { setFin(e.target.value); },
+                className: 'w-full text-sm rounded-lg px-3 py-2 border ' + (darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200 text-gray-800')
+              })
+            )
+          ),
+          React.createElement('div', null,
+            React.createElement('label', { className: 'text-xs mb-1 block ' + (darkMode ? 'text-gray-400' : 'text-gray-500') }, t('Etiqueta (opcional)','Label (optional)')),
+            React.createElement('input', {
+              type: 'text', value: label,
+              onChange: function(e) { setLabel(e.target.value); },
+              placeholder: t('ej: Vacaciones septiembre','e.g. September vacation'),
+              className: 'w-full text-sm rounded-lg px-3 py-2 border ' + (darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200 text-gray-800')
+            })
+          ),
+          error && React.createElement('p', { className: 'text-xs text-red-500' }, error),
+          React.createElement('button', {
+            onClick: agregar,
+            className: 'w-full py-2.5 rounded-xl text-sm font-bold text-white cursor-pointer transition-opacity hover:opacity-90',
+            style: { background: 'linear-gradient(135deg,#0ea5e9,#0284c7)' }
+          }, t('Agregar período','Add period'))
+        )
+      )
+    )
+  );
+}
+
+// =============================================
 // COMPONENTE: HoyView — Dashboard diario (v20260429ux)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swapping }) {
@@ -7779,6 +7913,9 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
   const comidasExt = React.useMemo(function() { return _comidasExtFecha(fechaHoyIso); }, [refresh, fechaHoyIso]);
   const [showModalExt, setShowModalExt] = React.useState(false);
   const [showScanner, setShowScanner] = React.useState(false);
+  const [showVacaciones, setShowVacaciones] = React.useState(false);
+  // Vacation mode: true si la fecha visualizada cae en un período de vacaciones
+  const esVacaciones = _esDiaVacaciones(fechaHoyIso);
 
   // Coach card: último tip proactivo del agente
   const [coachTip, setCoachTip] = React.useState(function() {
@@ -7970,6 +8107,11 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               {t('Ir a hoy','Go to today')}
             </button>
           )}
+          <button
+            onClick={() => setShowVacaciones(true)}
+            title={t('Modo Vacaciones','Vacation Mode')}
+            className={`text-base leading-none cursor-pointer transition-opacity hover:opacity-80 ${esVacaciones ? 'opacity-100' : 'opacity-40'}`}
+          >🏖</button>
         </span>
         <button
           onClick={() => setDayOffset(function(o) { return Math.min(0, o + 1); })}
@@ -8054,13 +8196,16 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           const fecha = _localDate(d);
           const esFuturo = fecha > hoyFecha;
           const isHoy = fecha === hoyFecha;
+          const esVac = _esDiaVacaciones(fecha);
           const diaData = adherData[fecha] || {};
           let total = 0, cumplidos = 0;
-          Object.values(diaData).forEach(e => { total++; if (e.comido) cumplidos++; });
-          return { label, fecha, esFuturo, isHoy, total, cumplidos };
+          if (!esVac) {
+            Object.values(diaData).forEach(e => { total++; if (e.comido) cumplidos++; });
+          }
+          return { label, fecha, esFuturo, isHoy, total, cumplidos, esVac };
         });
 
-        const hayDatos = semana.some(d => !d.esFuturo && d.total > 0);
+        const hayDatos = semana.some(d => !d.esFuturo && (d.total > 0 || d.esVac));
         if (!hayDatos) return null;
 
         return (
@@ -8071,19 +8216,23 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             <div className="flex items-center gap-2">
               {semana.map(d => {
                 let dotClass = 'adh-dot adh-dot--empty';
-                if (d.esFuturo) {
+                if (!d.esVac && d.esFuturo) {
                   dotClass = 'adh-dot adh-dot--empty';
-                } else if (d.total > 0) {
+                } else if (!d.esVac && d.total > 0) {
                   const pct = d.cumplidos / d.total;
                   dotClass = pct >= 0.8 ? 'adh-dot adh-dot--ok' : pct >= 0.4 ? 'adh-dot adh-dot--partial' : 'adh-dot adh-dot--miss';
                 }
                 return (
                   <div key={d.fecha} className="flex flex-col items-center gap-1"
-                    title={d.esFuturo ? d.label : `${d.label}: ${d.cumplidos}/${d.total}`}>
-                    <span className={dotClass}
-                      style={d.isHoy ? { boxShadow: '0 0 0 2px var(--color-accent)', opacity: 1 } : d.esFuturo ? { opacity: 0.25 } : {}}></span>
+                    title={d.esVac ? '🏖 Vacaciones' : d.esFuturo ? d.label : `${d.label}: ${d.cumplidos}/${d.total}`}>
+                    {d.esVac ? (
+                      <span className="text-[11px]" style={{ lineHeight: 1, opacity: d.isHoy ? 1 : 0.7 }}>🏖</span>
+                    ) : (
+                      <span className={dotClass}
+                        style={d.isHoy ? { boxShadow: '0 0 0 2px var(--color-accent)', opacity: 1 } : d.esFuturo ? { opacity: 0.25 } : {}}></span>
+                    )}
                     <span className={`text-[9px] ${d.isHoy ? 'font-bold' : ''} ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}
-                      style={d.esFuturo ? { opacity: 0.4 } : {}}>
+                      style={d.esFuturo && !d.esVac ? { opacity: 0.4 } : {}}>
                       {d.label}
                     </span>
                   </div>
@@ -8239,8 +8388,108 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         </div>
       )}
 
-      {/* Comidas del día */}
-      {planSemanal ? (
+      {/* Comidas del día — en vacaciones se muestra vista de macros libre */}
+      {esVacaciones ? (
+        <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-teal-800/50' : 'bg-white border border-teal-200 shadow-sm'}`}>
+          {/* Banner vacaciones */}
+          <div className="px-5 py-3 flex items-center justify-between" style={{ background: 'linear-gradient(135deg,#0d9488,#0891b2)' }}>
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🏖</span>
+              <div>
+                <p className="text-white text-sm font-bold leading-tight">{t('Modo Vacaciones','Vacation Mode')}</p>
+                <p className="text-teal-100 text-xs opacity-90">{t('Sin slots de comidas — registra libremente','No meal slots — log freely')}</p>
+              </div>
+            </div>
+            <button onClick={() => setShowVacaciones(true)}
+              className="text-xs text-teal-100 font-semibold hover:text-white cursor-pointer transition-colors">
+              {t('Gestionar →','Manage →')}
+            </button>
+          </div>
+          {/* Macros consumidos durante vacaciones */}
+          <div className="px-5 py-4 space-y-4">
+            <div>
+              <div className="flex items-end justify-between mb-2">
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-3xl font-extrabold font-display leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {consumidoHoy.calorias}
+                  </span>
+                  <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>
+                    {metaKcalDia > 0 ? '/ ' + metaKcalDia + ' kcal' : 'kcal'}
+                  </span>
+                </div>
+                {metaKcalDia > 0 && (
+                  <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                    {metaKcalDia - consumidoHoy.calorias > 0
+                      ? (metaKcalDia - consumidoHoy.calorias) + t(' kcal restantes',' kcal left')
+                      : t('¡Meta alcanzada! 🎯','Goal reached! 🎯')}
+                  </span>
+                )}
+              </div>
+              {metaKcalDia > 0 && (
+                <div className={`w-full h-3 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  <div className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-teal-500 to-cyan-400"
+                    style={{ width: Math.min(100, consumidoHoy.calorias > 0 ? Math.round((consumidoHoy.calorias / metaKcalDia) * 100) : 0) + '%' }}>
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Macros en vacaciones */}
+            <div className={`grid grid-cols-3 gap-2`}>
+              {[
+                { label: t('Proteínas','Protein'), val: consumidoHoy.proteinas, meta: metaProtDia, color: '#3b82f6', unit: 'g' },
+                { label: t('Carbos','Carbs'), val: consumidoHoy.carbohidratos, meta: metaCarbDia, color: '#f59e0b', unit: 'g' },
+                { label: t('Grasas','Fats'), val: consumidoHoy.grasas, meta: metaGrasDia, color: '#f43f5e', unit: 'g' }
+              ].map(function(m) {
+                return React.createElement('div', {
+                  key: m.label,
+                  className: 'rounded-xl p-3 text-center ' + (darkMode ? 'bg-gray-700' : 'bg-gray-50')
+                },
+                  React.createElement('p', { className: 'text-lg font-extrabold leading-none', style: { color: m.color } }, m.val + m.unit),
+                  m.meta > 0 && React.createElement('p', { className: 'text-[10px] mt-0.5 ' + (darkMode ? 'text-gray-400' : 'text-gray-400') }, '/ ' + m.meta + m.unit),
+                  React.createElement('p', { className: 'text-[10px] mt-1 font-medium ' + (darkMode ? 'text-gray-500' : 'text-gray-500') }, m.label)
+                );
+              })}
+            </div>
+            {/* Comidas externas registradas hoy */}
+            {comidasExt.filter(function(c) { return !c.pendiente && !c.reemplaza; }).length > 0 && (
+              <div className="space-y-2">
+                <p className={`text-xs font-semibold uppercase tracking-wider ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  {t('Registrado hoy','Logged today')}
+                </p>
+                {comidasExt.filter(function(c) { return !c.pendiente && !c.reemplaza; }).map(function(c) {
+                  return React.createElement('div', {
+                    key: c.id,
+                    className: 'flex items-center justify-between gap-2 ' + (darkMode ? 'bg-gray-700/60' : 'bg-gray-50') + ' rounded-xl px-3 py-2'
+                  },
+                    React.createElement('div', { className: 'flex-1 min-w-0' },
+                      React.createElement('p', { className: 'text-sm font-medium truncate ' + (darkMode ? 'text-gray-200' : 'text-gray-700') }, c.nombre),
+                      React.createElement('p', { className: 'text-xs ' + (darkMode ? 'text-gray-500' : 'text-gray-400') },
+                        c.kcal + ' kcal' + (_horaComida(c) ? ' · ' + _horaComida(c) : '')
+                      )
+                    ),
+                    React.createElement('button', {
+                      onClick: function() {
+                        var nuevas = comidasExt.filter(function(x) { return x.id !== c.id; });
+                        _guardarComidasExt(fechaHoyIso, nuevas);
+                        setRefresh(function(r) { return r + 1; });
+                      },
+                      className: 'w-7 h-7 flex items-center justify-center rounded-lg flex-shrink-0 cursor-pointer transition-colors ' + (darkMode ? 'hover:bg-gray-600 text-gray-500' : 'hover:bg-gray-200 text-gray-400')
+                    }, React.createElement('i', { className: 'fas fa-times text-xs' }))
+                  );
+                })}
+              </div>
+            )}
+            {/* Botón agregar comida */}
+            <button
+              onClick={() => setShowModalExt(true)}
+              className={`w-full py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors flex items-center justify-center gap-2 ${darkMode ? 'bg-teal-800/50 text-teal-300 hover:bg-teal-800' : 'bg-teal-50 text-teal-700 hover:bg-teal-100'}`}
+            >
+              <i className="fas fa-plus text-xs"></i>
+              {t('Registrar comida','Log a meal')}
+            </button>
+          </div>
+        </div>
+      ) : planSemanal ? (
         <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <div className={`px-5 py-3 flex items-center justify-between border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
             <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -8686,6 +8935,17 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             setRefresh(function(r) { return r + 1; });
           }}
           onClose={function() { setShowModalExt(false); }}
+        />
+      )}
+
+      {/* Modal Vacaciones */}
+      {showVacaciones && (
+        <VacacionesModal
+          darkMode={darkMode}
+          onClose={function() {
+            setShowVacaciones(false);
+            setRefresh(function(r) { return r + 1; });
+          }}
         />
       )}
     </div>
