@@ -58,7 +58,7 @@ const TOOLS = [
   },
   {
     name: 'get_resumen_dia',
-    description: 'Devuelve el resumen de macros consumidos vs objetivo. Sin fecha devuelve hoy; con fecha devuelve ese día específico.',
+    description: 'Devuelve el resumen de macros consumidos vs objetivo para una fecha, incluyendo el listado detallado de cada comida registrada. La respuesta incluye: consumido (totales kcal/proteínas/carbos/grasas), objetivo, comidas_externas (array con id/nombre/kcal de cada comida registrada manualmente) y comidas_plan_comidas (array con slot/nombre/kcal de los slots del plan marcados como comidos). Sin fecha devuelve hoy; con fecha devuelve ese día específico.',
     input_schema: {
       type: 'object',
       properties: {
@@ -226,7 +226,7 @@ USO DE HERRAMIENTAS — REGLAS ESTRICTAS:
 - marcar_comprado: cuando diga que ya compró un ingrediente específico.
 - marcar_en_despensa: cuando diga que ya tiene un ingrediente en casa.
 - quitar_de_despensa: cuando diga que se le acabó algo o que necesita comprar un ingrediente que tenía.
-- get_resumen_dia: cuando pregunte cómo va el día, cuántas calorías lleva, etc. Pasar fecha para consultar días anteriores.
+- get_resumen_dia: cuando pregunte cómo va el día, cuántas calorías lleva, qué comidas tiene registradas, o pida listar lo que comió en un día. La respuesta incluye comidas_externas (cada comida registrada manualmente con nombre y kcal) y comidas_plan_comidas (slots del plan marcados como comidos). Úsala para mostrar el desglose individual cuando el usuario pida "lista mis comidas de ayer" o similar. Pasar fecha para días anteriores.
 - buscar_alimento: cuando pregunte los macros de un alimento específico.
 - Si el usuario pide cambiar, sugerir o planificar comidas futuras, responde con texto solamente — NO llames a registrar_comida.
 - Si no sabes los macros exactos al registrar, estímalos razonablemente y dilo.
