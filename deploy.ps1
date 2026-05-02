@@ -26,5 +26,17 @@ if ($st) {
     git push
     Write-Host ('Deploy OK: ' + $version) -ForegroundColor Green
 } else {
-    Write-Host 'Sin cambios.' -ForegroundColor Yellow
+    Write-Host 'Sin cambios en frontend.' -ForegroundColor Yellow
+}
+
+# ── Deploy Cloud Functions si functions/index.js cambió ─────────────────────
+$fnChanged = git diff HEAD~1 --name-only 2>$null | Where-Object { $_ -match '^functions/' }
+if ($fnChanged) {
+    Write-Host 'Detectados cambios en functions/ → desplegando Cloud Functions...' -ForegroundColor Cyan
+    firebase deploy --only functions
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host 'Cloud Functions OK' -ForegroundColor Green
+    } else {
+        Write-Host 'ERROR en Cloud Functions deploy' -ForegroundColor Red
+    }
 }
