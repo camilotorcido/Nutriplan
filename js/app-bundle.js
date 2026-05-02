@@ -11367,23 +11367,46 @@ function ChatPanel({ darkMode }) {
     }
     if (name === 'get_resumen_dia') {
       var ctx = buildContexto();
-      // Si se especifica una fecha distinta a hoy, leer las comidas externas de esa fecha
       var resumenFecha = (input_.fecha && /^\d{4}-\d{2}-\d{2}$/.test(input_.fecha)) ? input_.fecha : _localDate();
-      var consumidoFecha = ctx.macrosConsumidos; // default: hoy
-      if (resumenFecha !== _localDate()) {
-        var _extMapR = {};
-        try { _extMapR = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
-        var _extFecha = _extMapR[resumenFecha] || [];
-        consumidoFecha = _extFecha.reduce(function(acc, c) {
-          return { kcal: acc.kcal + (c.kcal||0), proteinas: acc.proteinas + (c.proteinas_g||0),
-                   carbohidratos: acc.carbohidratos + (c.carbohidratos_g||0), grasas: acc.grasas + (c.grasas_g||0) };
-        }, { kcal:0, proteinas:0, carbohidratos:0, grasas:0 });
-      }
+      var _extMapR = {};
+      try { _extMapR = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
+      var _extFecha = _extMapR[resumenFecha] || [];
+      // Comidas externas del día
+      var detalleExternas = _extFecha.map(function(c) {
+        return { id: c.id, nombre: c.nombre, kcal: c.kcal||0, proteinas_g: c.proteinas_g||0,
+                 carbohidratos_g: c.carbohidratos_g||0, grasas_g: c.grasas_g||0, reemplaza: c.reemplaza||null };
+      });
+      var totExt = _extFecha.reduce(function(acc, c) {
+        return { kcal: acc.kcal+(c.kcal||0), proteinas: acc.proteinas+(c.proteinas_g||0),
+                 carbohidratos: acc.carbohidratos+(c.carbohidratos_g||0), grasas: acc.grasas+(c.grasas_g||0) };
+      }, { kcal:0, proteinas:0, carbohidratos:0, grasas:0 });
+      // Comidas del plan marcadas como comidas ese día (adherencia)
+      var _adhR = {};
+      try { _adhR = JSON.parse(localStorage.getItem('nutriplan_adherencia') || '{}'); } catch(e) {}
+      var _adhFechaR = _adhR[resumenFecha] || {};
+      var detallePlan = [];
+      var totPlan = { kcal:0, proteinas:0, carbohidratos:0, grasas:0 };
+      var _tiposReplR = _extFecha.filter(function(c){return c.reemplaza;}).map(function(c){return c.reemplaza;});
+      Object.keys(_adhFechaR).forEach(function(key) {
+        var e = _adhFechaR[key];
+        if (!e || !e.comido) return;
+        var tipo = key.split(':')[1];
+        if (!tipo || tipo.startsWith('ext_') || _tiposReplR.indexOf(tipo) >= 0) return;
+        detallePlan.push({ slot: tipo, nombre: e.nombre || tipo, kcal: e.kcal_plan||0, proteinas_g: e.proteinas_plan||0 });
+        totPlan.kcal        += e.kcal_plan      || 0;
+        totPlan.proteinas   += e.proteinas_plan || 0;
+      });
+      var consumidoFecha = resumenFecha === _localDate()
+        ? ctx.macrosConsumidos
+        : { kcal: Math.round(totPlan.kcal+totExt.kcal), proteinas: Math.round(totPlan.proteinas+totExt.proteinas),
+            carbohidratos: Math.round(totPlan.carbohidratos+totExt.carbohidratos), grasas: Math.round(totPlan.grasas+totExt.grasas) };
       return { fecha: resumenFecha, consumido: consumidoFecha, objetivo: ctx.macrosObjetivo,
-        diferencia: { kcal: ctx.macrosObjetivo.kcal - consumidoFecha.kcal,
-          proteinas: ctx.macrosObjetivo.proteinas - consumidoFecha.proteinas,
-          carbohidratos: ctx.macrosObjetivo.carbohidratos - consumidoFecha.carbohidratos,
-          grasas: ctx.macrosObjetivo.grasas - consumidoFecha.grasas } };
+        diferencia: { kcal: ctx.macrosObjetivo.kcal-consumidoFecha.kcal,
+          proteinas: ctx.macrosObjetivo.proteinas-consumidoFecha.proteinas,
+          carbohidratos: ctx.macrosObjetivo.carbohidratos-consumidoFecha.carbohidratos,
+          grasas: ctx.macrosObjetivo.grasas-consumidoFecha.grasas },
+        comidas_plan_comidas: detallePlan,
+        comidas_externas: detalleExternas };
     }
 
     // ── Herramientas de plan semanal ─────────────────────────────────────────
