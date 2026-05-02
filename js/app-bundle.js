@@ -4173,11 +4173,12 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
     if (!fechaDiaIso) return false;
     return fechaDiaIso < _localDate();
   }, [fechaDiaIso]);
-  // Macros consumidos reales para días pasados
+  // Macros consumidos reales para hoy y días pasados
   // Usa window.adherencia.estado() — mismo mecanismo que los badges "comido" —
   // para garantizar que el número coincida exactamente con lo que se muestra.
   const consumidoDia = React.useMemo(function() {
-    if (!esDiaPasado || !fechaDiaIso) return null;
+    // Solo calcular para hoy o días pasados; días futuros muestran plan
+    if (!fechaDiaIso || fechaDiaIso > _localDate()) return null;
     var kcal = 0, prot = 0, carb = 0, fat = 0;
     // Comidas externas primero (para determinar slots reemplazados)
     var exts = (typeof _comidasExtFecha === 'function') ? _comidasExtFecha(fechaDiaIso) : [];
@@ -4203,7 +4204,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
       carb += c.carbohidratos_g || 0; fat += c.grasas_g || 0;
     });
     return { kcal: Math.round(kcal), prot: Math.round(prot), carb: Math.round(carb), fat: Math.round(fat) };
-  }, [esDiaPasado, fechaDiaIso, diaSeleccionado, semanaActiva, comidasDia, forceUpdate]);
+  }, [fechaDiaIso, diaSeleccionado, semanaActiva, comidasDia, forceUpdate]);
   const tiposComidaOrden = ["desayuno", "snack_am", "almuerzo", "snack_pm", "cena"];
   const iconosComida = { desayuno: "fa-sun", snack_am: "fa-apple-whole", almuerzo: "fa-utensils", snack_pm: "fa-cookie-bite", cena: "fa-moon" };
   const coloresComida = {
@@ -4426,7 +4427,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
             </button>
           </div>
           <div className="text-right">
-            {esDiaPasado && consumidoDia ? (
+            {consumidoDia ? (
               <>
                 <div className={`text-2xl font-bold font-display ${darkMode ? 'text-white' : 'text-gray-800'}`}>{consumidoDia.kcal}</div>
                 <div className="text-xs text-gray-400">{t('consumidas · plan:','consumed · plan:')} {resumen.calorias} kcal</div>
@@ -4434,7 +4435,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
             ) : (
               <>
                 <div className={`text-2xl font-bold font-display ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.calorias}</div>
-                <div className="text-xs text-gray-400">{t('de','of')} {caloriasObj} kcal {t('objetivo','goal')}</div>
+                <div className="text-xs text-gray-400">{t('planificadas · obj.','planned · goal')} {caloriasObj} kcal</div>
               </>
             )}
           </div>
