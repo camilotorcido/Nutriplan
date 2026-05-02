@@ -10899,6 +10899,18 @@ function ChatPanel({ darkMode }) {
   const [error, setError]     = React.useState('');
   const [messages, setMessages] = React.useState(function() {
     try {
+      // Resetear conversación al cambiar de día — el historial cross-day confunde los totales de macros.
+      var chatDateKey = 'nutriplan_chat_date';
+      var today = _localDate();
+      var storedDate = localStorage.getItem(chatDateKey);
+      if (storedDate && storedDate !== today) {
+        // Nuevo día: borrar historial y actualizar fecha
+        localStorage.removeItem('nutriplan_chat_history');
+        localStorage.setItem(chatDateKey, today);
+        return [];
+      }
+      if (!storedDate) localStorage.setItem(chatDateKey, today);
+
       // Migración one-time: mover datos de clave antigua (no scoped) a la nueva (scoped por usuario)
       var oldKey = 'calibrate_chat_history';
       var newKey = 'nutriplan_chat_history';
@@ -11077,6 +11089,7 @@ function ChatPanel({ darkMode }) {
       setMessages(function(prev) {
         var nuevo = prev.concat([proactiveMsg]);
         localStorage.setItem('nutriplan_chat_history', JSON.stringify(nuevo.slice(-20)));
+        localStorage.setItem('nutriplan_chat_date', _localDate());
         return nuevo;
       });
       // Persistir el último tip del coach para la coach card en HoyView
@@ -11169,7 +11182,8 @@ function ChatPanel({ darkMode }) {
           window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
           if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
           if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
-          return { ok: true, registrado: lista[idxExist], actualizado: true };
+          var _ctx1 = buildContexto();
+          return { ok: true, registrado: lista[idxExist], actualizado: true, totalHoy: _ctx1.macrosConsumidos, fecha: hoy };
         }
       }
 
@@ -11185,7 +11199,8 @@ function ChatPanel({ darkMode }) {
       window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
       if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
       if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
-      return { ok: true, registrado: nueva };
+      var _ctx2 = buildContexto();
+      return { ok: true, registrado: nueva, totalHoy: _ctx2.macrosConsumidos, fecha: hoy };
     }
     if (name === 'buscar_alimento') {
       var q = (input_.query || '').toLowerCase();
@@ -11213,7 +11228,8 @@ function ChatPanel({ darkMode }) {
       window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
       if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
       if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
-      return { ok: true, eliminadas: antes - lista.length };
+      var _ctx3 = buildContexto();
+      return { ok: true, eliminadas: antes - lista.length, totalHoy: _ctx3.macrosConsumidos, fecha: hoy };
     }
     if (name === 'get_resumen_dia') {
       var ctx = buildContexto();
@@ -11505,6 +11521,7 @@ function ChatPanel({ darkMode }) {
 
     setMessages(displayMsgs);
     localStorage.setItem('nutriplan_chat_history', JSON.stringify(displayMsgs.slice(-20)));
+    localStorage.setItem('nutriplan_chat_date', _localDate());
   }
 
   // ── Auto-scroll ─────────────────────────────────────────────────────────
