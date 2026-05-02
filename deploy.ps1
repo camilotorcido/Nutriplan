@@ -14,7 +14,7 @@ $html = [regex]::Replace($html, '\?v=[\da-z]+', ('?v=' + $version))
 [System.IO.File]::WriteAllText(($PSScriptRoot + '\index.html'), $html, [System.Text.UTF8Encoding]::new($false))
 Write-Host 'index.html actualizado' -ForegroundColor Green
 
-# Generar version.json para detección de updates en iOS PWA (bypass SW cache)
+# Generar version.json para deteccion de updates en iOS PWA (bypass SW cache)
 '{"v":"' + $version + '"}' | Out-File -FilePath ($PSScriptRoot + '\version.json') -Encoding utf8 -NoNewline
 Write-Host 'version.json actualizado' -ForegroundColor Green
 
@@ -29,10 +29,10 @@ if ($st) {
     Write-Host 'Sin cambios en frontend.' -ForegroundColor Yellow
 }
 
-# ── Deploy Cloud Functions si functions/index.js cambió ─────────────────────
+# Deploy Cloud Functions si functions/index.js cambio
 $fnChanged = git diff HEAD~1 --name-only 2>$null | Where-Object { $_ -match '^functions/' }
 if ($fnChanged) {
-    Write-Host 'Detectados cambios en functions/ → desplegando Cloud Functions...' -ForegroundColor Cyan
+    Write-Host 'Detectados cambios en functions/ -> desplegando Cloud Functions...' -ForegroundColor Cyan
     firebase deploy --only functions
     if ($LASTEXITCODE -eq 0) {
         Write-Host 'Cloud Functions OK' -ForegroundColor Green

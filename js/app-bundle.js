@@ -11217,23 +11217,54 @@ function ChatPanel({ darkMode }) {
       var extMap = {};
       try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
       var lista = extMap[hoy] || [];
-      var antes = lista.length;
+      var comidaEliminada = null;
+
       if (input_.id) {
+        comidaEliminada = lista.find(function(c) { return c.id === input_.id; }) || null;
         lista = lista.filter(function(c) { return c.id !== input_.id; });
       } else if (input_.nombre) {
         var nombreBuscar = (input_.nombre || '').toLowerCase();
         var idx = lista.findLastIndex
           ? lista.findLastIndex(function(c) { return c.nombre.toLowerCase().includes(nombreBuscar); })
           : (function() { for (var i = lista.length - 1; i >= 0; i--) { if (lista[i].nombre.toLowerCase().includes(nombreBuscar)) return i; } return -1; })();
-        if (idx >= 0) lista.splice(idx, 1);
+        if (idx >= 0) { comidaEliminada = lista[idx]; lista.splice(idx, 1); }
       }
+
+      // Si no encontró nada, devolver error con la lista real para que el coach corrija
+      if (!comidaEliminada) {
+        var disponibles = (extMap[hoy] || []).map(function(c) {
+          return '"' + c.nombre + '" (id:' + c.id + ', ' + c.kcal + ' kcal' + (c.reemplaza ? ', reemplaza:' + c.reemplaza : '') + ')';
+        });
+        return {
+          ok: false,
+          eliminadas: 0,
+          fecha: hoy,
+          error: 'No se encontró ninguna comida con ese criterio para ' + hoy + '.',
+          comidas_registradas_ese_dia: disponibles.length > 0 ? disponibles : ['(ninguna)']
+        };
+      }
+
+      // Si la comida reemplazaba un slot del plan, limpiar también la adherencia de ese slot
+      if (comidaEliminada.reemplaza) {
+        try {
+          var DIAS_JS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+          var _diaEliminado = DIAS_JS[new Date(hoy + 'T12:00:00').getDay()];
+          var _adhRawE = localStorage.getItem('nutriplan_adherencia');
+          var _adhDataE = _adhRawE ? JSON.parse(_adhRawE) : {};
+          if (_adhDataE[hoy] && _adhDataE[hoy][_diaEliminado + ':' + comidaEliminada.reemplaza]) {
+            delete _adhDataE[hoy][_diaEliminado + ':' + comidaEliminada.reemplaza];
+            localStorage.setItem('nutriplan_adherencia', JSON.stringify(_adhDataE));
+          }
+        } catch(_e) {}
+      }
+
       extMap[hoy] = lista;
       localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
       window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
       if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
       if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
       var _ctx3 = buildContexto();
-      return { ok: true, eliminadas: antes - lista.length, totalHoy: _ctx3.macrosConsumidos, fecha: hoy };
+      return { ok: true, eliminada: comidaEliminada.nombre, fecha: hoy, totalHoy: _ctx3.macrosConsumidos };
     }
     if (name === 'get_resumen_dia') {
       var ctx = buildContexto();
