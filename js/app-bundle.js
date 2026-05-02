@@ -10964,7 +10964,11 @@ function ChatPanel({ darkMode }) {
                carbohidratos: acc.carbohidratos + (c.carbohidratos_g||0), grasas: acc.grasas + (c.grasas_g||0) };
     }, { kcal:0, proteinas:0, carbohidratos:0, grasas:0 });
     var fechaHoy = _localDate();
-    return { perfil, planHoy, macrosObjetivo, macrosConsumidos, diaActual, fechaHoy };
+    var _ayerD = new Date(); _ayerD.setDate(_ayerD.getDate() - 1);
+    var _antD  = new Date(); _antD.setDate(_antD.getDate() - 2);
+    var ayer     = _localDate(_ayerD);
+    var anteayer = _localDate(_antD);
+    return { perfil, planHoy, macrosObjetivo, macrosConsumidos, diaActual, fechaHoy, ayer, anteayer };
   }
 
   // ── Análisis proactivo: detectar brecha y sugerir ajustes ───────────────
@@ -11160,7 +11164,7 @@ function ChatPanel({ darkMode }) {
   // ── Ejecutar tool calls localmente ─────────────────────────────────────
   function ejecutarTool(name, input_) {
     if (name === 'registrar_comida') {
-      var hoy = _localDate();
+      var hoy = (input_.fecha && /^\d{4}-\d{2}-\d{2}$/.test(input_.fecha)) ? input_.fecha : _localDate();
       var extMap = {};
       try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
       var lista = extMap[hoy] || [];
@@ -11209,7 +11213,7 @@ function ChatPanel({ darkMode }) {
       return { resultados: res };
     }
     if (name === 'eliminar_comida') {
-      var hoy = _localDate();
+      var hoy = (input_.fecha && /^\d{4}-\d{2}-\d{2}$/.test(input_.fecha)) ? input_.fecha : _localDate();
       var extMap = {};
       try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
       var lista = extMap[hoy] || [];
@@ -11233,11 +11237,23 @@ function ChatPanel({ darkMode }) {
     }
     if (name === 'get_resumen_dia') {
       var ctx = buildContexto();
-      return { consumido: ctx.macrosConsumidos, objetivo: ctx.macrosObjetivo,
-        diferencia: { kcal: ctx.macrosObjetivo.kcal - ctx.macrosConsumidos.kcal,
-          proteinas: ctx.macrosObjetivo.proteinas - ctx.macrosConsumidos.proteinas,
-          carbohidratos: ctx.macrosObjetivo.carbohidratos - ctx.macrosConsumidos.carbohidratos,
-          grasas: ctx.macrosObjetivo.grasas - ctx.macrosConsumidos.grasas } };
+      // Si se especifica una fecha distinta a hoy, leer las comidas externas de esa fecha
+      var resumenFecha = (input_.fecha && /^\d{4}-\d{2}-\d{2}$/.test(input_.fecha)) ? input_.fecha : _localDate();
+      var consumidoFecha = ctx.macrosConsumidos; // default: hoy
+      if (resumenFecha !== _localDate()) {
+        var _extMapR = {};
+        try { _extMapR = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
+        var _extFecha = _extMapR[resumenFecha] || [];
+        consumidoFecha = _extFecha.reduce(function(acc, c) {
+          return { kcal: acc.kcal + (c.kcal||0), proteinas: acc.proteinas + (c.proteinas_g||0),
+                   carbohidratos: acc.carbohidratos + (c.carbohidratos_g||0), grasas: acc.grasas + (c.grasas_g||0) };
+        }, { kcal:0, proteinas:0, carbohidratos:0, grasas:0 });
+      }
+      return { fecha: resumenFecha, consumido: consumidoFecha, objetivo: ctx.macrosObjetivo,
+        diferencia: { kcal: ctx.macrosObjetivo.kcal - consumidoFecha.kcal,
+          proteinas: ctx.macrosObjetivo.proteinas - consumidoFecha.proteinas,
+          carbohidratos: ctx.macrosObjetivo.carbohidratos - consumidoFecha.carbohidratos,
+          grasas: ctx.macrosObjetivo.grasas - consumidoFecha.grasas } };
     }
 
     // ── Herramientas de plan semanal ─────────────────────────────────────────
@@ -11345,15 +11361,31 @@ function ChatPanel({ darkMode }) {
       var comida = comidasDia[tipo];
       if (!comida) return { ok: false, error: 'Slot no encontrado: ' + tipo + ' del ' + dia };
       if (typeof window.adherencia !== 'undefined' && typeof window.adherencia.marcar === 'function') {
-        window.adherencia.marcar(dia, tipo, true, {
-          kcal_plan: comida.calorias_escaladas || comida.calorias || 0,
-          proteinas_plan: comida.proteinas_escaladas || comida.proteinas || 0,
-          nombre: comida.nombre
-        }, 1);
+        // Si viene fecha explícita, escribir directo a esa fecha en adherencia (bypass fechaParaDia)
+        if (input_.fecha && /^\d{4}-\d{2}-\d{2}$/.test(input_.fecha)) {
+          try {
+            var _adhRaw = localStorage.getItem('nutriplan_adherencia');
+            var _adhData = _adhRaw ? JSON.parse(_adhRaw) : {};
+            if (!_adhData[input_.fecha]) _adhData[input_.fecha] = {};
+            _adhData[input_.fecha][dia + ':' + tipo] = {
+              comido: true, timestamp: Date.now(),
+              kcal_plan: comida.calorias_escaladas || comida.calorias || 0,
+              proteinas_plan: comida.proteinas_escaladas || comida.proteinas || 0,
+              nombre: comida.nombre, semana: 1
+            };
+            localStorage.setItem('nutriplan_adherencia', JSON.stringify(_adhData));
+          } catch(_e) {}
+        } else {
+          window.adherencia.marcar(dia, tipo, true, {
+            kcal_plan: comida.calorias_escaladas || comida.calorias || 0,
+            proteinas_plan: comida.proteinas_escaladas || comida.proteinas || 0,
+            nombre: comida.nombre
+          }, 1);
+        }
         window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
         if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
         if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
-        return { ok: true, marcado: comida.nombre + ' (' + dia + ' · ' + tipo + ')' };
+        return { ok: true, marcado: comida.nombre + ' (' + dia + ' · ' + tipo + ')', fecha: input_.fecha || 'hoy' };
       }
       return { ok: false, error: 'Sistema de adherencia no disponible.' };
     }

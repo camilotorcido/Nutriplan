@@ -30,7 +30,7 @@ const TOOLS = [
   },
   {
     name: 'registrar_comida',
-    description: 'Registra una comida que el usuario YA comió. SOLO úsala cuando el usuario use tiempo pasado ("comí", "me comí", "almorcé", "tomé"). NUNCA la uses para comidas futuras, planificación, cambios de menú ni sugerencias.',
+    description: 'Registra una comida que el usuario YA comió. SOLO úsala cuando el usuario use tiempo pasado ("comí", "me comí", "almorcé", "tomé"). NUNCA la uses para comidas futuras, planificación, cambios de menú ni sugerencias. Puede registrar en días anteriores especificando fecha.',
     input_schema: {
       type: 'object',
       properties: {
@@ -39,7 +39,8 @@ const TOOLS = [
         proteinas_g:     { type: 'number',  description: 'Proteínas en gramos' },
         carbohidratos_g: { type: 'number',  description: 'Carbohidratos en gramos' },
         grasas_g:        { type: 'number',  description: 'Grasas en gramos' },
-        reemplaza:       { type: 'string',  description: 'Slot del plan que reemplaza: desayuno | almuerzo | once | cena | colacion. Null si es comida adicional.' }
+        reemplaza:       { type: 'string',  description: 'Slot del plan que reemplaza: desayuno | almuerzo | once | cena | colacion. Null si es comida adicional.' },
+        fecha:           { type: 'string',  description: 'Fecha en formato YYYY-MM-DD. Omitir para usar hoy. Usar cuando el usuario mencione un día anterior ("ayer comí", "el lunes tuve", etc.).' }
       },
       required: ['nombre', 'kcal', 'proteinas_g', 'carbohidratos_g', 'grasas_g']
     }
@@ -57,17 +58,23 @@ const TOOLS = [
   },
   {
     name: 'get_resumen_dia',
-    description: 'Devuelve el resumen de macros consumidos vs objetivo del día actual.',
-    input_schema: { type: 'object', properties: {} }
+    description: 'Devuelve el resumen de macros consumidos vs objetivo. Sin fecha devuelve hoy; con fecha devuelve ese día específico.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        fecha: { type: 'string', description: 'Fecha en formato YYYY-MM-DD. Omitir para hoy.' }
+      }
+    }
   },
   {
     name: 'eliminar_comida',
-    description: 'Elimina una comida registrada por error del log de hoy. Úsala cuando el usuario diga que una comida fue registrada por error, que no la comió, o que quiere desmarcarla.',
+    description: 'Elimina una comida registrada por error del log. Úsala cuando el usuario diga que una comida fue registrada por error, que no la comió, o que quiere desmarcarla.',
     input_schema: {
       type: 'object',
       properties: {
         id:     { type: 'string', description: 'ID de la comida a eliminar (si se conoce)' },
-        nombre: { type: 'string', description: 'Nombre de la comida a eliminar (si no se conoce el ID)' }
+        nombre: { type: 'string', description: 'Nombre de la comida a eliminar (si no se conoce el ID)' },
+        fecha:  { type: 'string', description: 'Fecha en formato YYYY-MM-DD. Omitir para hoy.' }
       }
     }
   },
@@ -116,12 +123,13 @@ const TOOLS = [
   },
   {
     name: 'marcar_comida_plan',
-    description: 'Marca una comida del plan semanal como cumplida (ya la comió, siguió el plan). Úsala cuando el usuario confirme que comió exactamente lo que tenía planificado para ese slot del plan.',
+    description: 'Marca una comida del plan semanal como cumplida (ya la comió, siguió el plan). Úsala cuando el usuario confirme que comió exactamente lo que tenía planificado para ese slot del plan. Puede marcar días anteriores con fecha.',
     input_schema: {
       type: 'object',
       properties: {
-        dia:  { type: 'string', description: 'Día de la semana: Lunes | Martes | Miércoles | Jueves | Viernes | Sábado | Domingo' },
-        tipo: { type: 'string', description: 'Slot del plan: desayuno | almuerzo | once | cena | colacion' }
+        dia:   { type: 'string', description: 'Día de la semana: Lunes | Martes | Miércoles | Jueves | Viernes | Sábado | Domingo' },
+        tipo:  { type: 'string', description: 'Slot del plan: desayuno | almuerzo | once | cena | colacion' },
+        fecha: { type: 'string', description: 'Fecha exacta YYYY-MM-DD. Usar cuando el usuario mencione un día anterior. Si se omite, se infiere del día de la semana más reciente.' }
       },
       required: ['dia', 'tipo']
     }
@@ -218,11 +226,19 @@ USO DE HERRAMIENTAS — REGLAS ESTRICTAS:
 - marcar_comprado: cuando diga que ya compró un ingrediente específico.
 - marcar_en_despensa: cuando diga que ya tiene un ingrediente en casa.
 - quitar_de_despensa: cuando diga que se le acabó algo o que necesita comprar un ingrediente que tenía.
-- get_resumen_dia: cuando pregunte cómo va el día, cuántas calorías lleva, etc.
+- get_resumen_dia: cuando pregunte cómo va el día, cuántas calorías lleva, etc. Pasar fecha para consultar días anteriores.
 - buscar_alimento: cuando pregunte los macros de un alimento específico.
 - Si el usuario pide cambiar, sugerir o planificar comidas futuras, responde con texto solamente — NO llames a registrar_comida.
 - Si no sabes los macros exactos al registrar, estímalos razonablemente y dilo.
-- Puedes encadenar múltiples tool calls en un mismo turno si la solicitud lo requiere.`;
+- Puedes encadenar múltiples tool calls en un mismo turno si la solicitud lo requiere.
+
+FECHAS Y DÍAS ANTERIORES:
+- La fecha de hoy es ${contexto?.fechaHoy || ''}. Cualquier mención a "ayer" = ${contexto?.ayer || ''}, "anteayer" = ${contexto?.anteayer || ''}.
+- Si el usuario dice "ayer comí X", "el lunes tuve Y", "olvidé registrar el desayuno de ayer", etc. → usa registrar_comida con el campo fecha en YYYY-MM-DD correspondiente.
+- Si dice "borra lo que registré ayer" o "quita el almuerzo de ayer" → eliminar_comida con fecha=ayer.
+- Si dice "marqué como comido el almuerzo del lunes pero no lo comí" → eliminar_comida o marcar_comida_plan con fecha del lunes correspondiente.
+- Para consultar qué llevaba un día anterior → get_resumen_dia con la fecha correcta.
+- Calcula las fechas correctamente a partir de la fecha de hoy antes de llamar la herramienta.`;
 }
 
 // ── Cloud Function ──────────────────────────────────────────────────────────
