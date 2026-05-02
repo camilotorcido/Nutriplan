@@ -4168,6 +4168,42 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
   const [showModalExtPlan, setShowModalExtPlan] = React.useState(false);
   const comidasDia = semanaData[diaSeleccionado] || {};
   const resumen = calcularResumenDiario(comidasDia);
+  // ¿El día seleccionado ya pasó? (para mostrar consumido real en lugar de plan)
+  const esDiaPasado = React.useMemo(function() {
+    if (!fechaDiaIso) return false;
+    return fechaDiaIso < _localDate();
+  }, [fechaDiaIso]);
+  // Macros consumidos reales para días pasados
+  const consumidoDia = React.useMemo(function() {
+    if (!esDiaPasado) return null;
+    var adhData = {};
+    try { adhData = JSON.parse(localStorage.getItem('nutriplan_adherencia') || '{}'); } catch(e) {}
+    var adhFecha = adhData[fechaDiaIso] || {};
+    var kcal = 0, prot = 0, carb = 0, fat = 0;
+    Object.keys(adhFecha).forEach(function(key) {
+      var e = adhFecha[key];
+      if (!e || !e.comido) return;
+      var tipo = key.split(':')[1];
+      if (!tipo || tipo.startsWith('ext_')) return;
+      var cp = comidasDia[tipo];
+      if (cp) {
+        kcal += cp.calorias_escaladas  || cp.calorias      || e.kcal_plan       || 0;
+        prot += cp.proteinas_escaladas || cp.proteinas     || e.proteinas_plan  || 0;
+        carb += cp.carbohidratos_escalados || cp.carbohidratos || 0;
+        fat  += cp.grasas_escaladas    || cp.grasas        || 0;
+      } else {
+        kcal += e.kcal_plan || 0;
+        prot += e.proteinas_plan || 0;
+      }
+    });
+    var exts = (typeof _comidasExtFecha === 'function') ? _comidasExtFecha(fechaDiaIso) : [];
+    exts.forEach(function(c) {
+      if (c.pendiente) return;
+      kcal += c.kcal || 0; prot += c.proteinas_g || 0;
+      carb += c.carbohidratos_g || 0; fat += c.grasas_g || 0;
+    });
+    return { kcal: Math.round(kcal), prot: Math.round(prot), carb: Math.round(carb), fat: Math.round(fat) };
+  }, [esDiaPasado, fechaDiaIso, comidasDia, forceUpdate]);
   const tiposComidaOrden = ["desayuno", "snack_am", "almuerzo", "snack_pm", "cena"];
   const iconosComida = { desayuno: "fa-sun", snack_am: "fa-apple-whole", almuerzo: "fa-utensils", snack_pm: "fa-cookie-bite", cena: "fa-moon" };
   const coloresComida = {
@@ -4390,8 +4426,17 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
             </button>
           </div>
           <div className="text-right">
-            <div className={`text-2xl font-bold font-display ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.calorias}</div>
-            <div className="text-xs text-gray-400">{t('de','of')} {caloriasObj} kcal {t('objetivo','goal')}</div>
+            {esDiaPasado && consumidoDia ? (
+              <>
+                <div className={`text-2xl font-bold font-display ${darkMode ? 'text-white' : 'text-gray-800'}`}>{consumidoDia.kcal}</div>
+                <div className="text-xs text-gray-400">{t('consumidas · plan:','consumed · plan:')} {resumen.calorias} kcal</div>
+              </>
+            ) : (
+              <>
+                <div className={`text-2xl font-bold font-display ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.calorias}</div>
+                <div className="text-xs text-gray-400">{t('de','of')} {caloriasObj} kcal {t('objetivo','goal')}</div>
+              </>
+            )}
           </div>
         </div>
         {/* Tiempo y costo del día */}
@@ -4418,11 +4463,15 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
           </div>
         </div>
         <div className="space-y-3">
-          {[
-            { label: t('Proteínas','Proteins'), color: "blue", actual: resumen.proteinas, objetivo: macrosObj.proteinas_g },
+          {(esDiaPasado && consumidoDia ? [
+            { label: t('Proteínas','Proteins'), color: "blue",  actual: consumidoDia.prot, objetivo: macrosObj.proteinas_g },
+            { label: t('Carbohidratos','Carbs'), color: "amber", actual: consumidoDia.carb, objetivo: macrosObj.carbohidratos_g },
+            { label: t('Grasas','Fat'),          color: "rose",  actual: consumidoDia.fat,  objetivo: macrosObj.grasas_g }
+          ] : [
+            { label: t('Proteínas','Proteins'), color: "blue",  actual: resumen.proteinas,     objetivo: macrosObj.proteinas_g },
             { label: t('Carbohidratos','Carbs'), color: "amber", actual: resumen.carbohidratos, objetivo: macrosObj.carbohidratos_g },
-            { label: t('Grasas','Fat'), color: "rose", actual: resumen.grasas, objetivo: macrosObj.grasas_g }
-          ].map(macro => (
+            { label: t('Grasas','Fat'),          color: "rose",  actual: resumen.grasas,        objetivo: macrosObj.grasas_g }
+          ]).map(macro => (
             <div key={macro.label}>
               <div className="flex justify-between text-xs mb-1">
                 <span className={`text-${macro.color}-600 font-medium`}>{macro.label}</span>
