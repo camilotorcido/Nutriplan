@@ -7613,7 +7613,11 @@ function EveningRatingCard({ semanaData, diaActual, numSemanaActual, darkMode, r
 // COMPONENTE: HoyView — Dashboard diario (v20260429ux)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swapping }) {
-  const hoy = new Date();
+  const [dayOffset, setDayOffset] = React.useState(0);
+  const hoyReal = new Date();
+  // hoy = fecha que el usuario está viendo (hoy, ayer, etc.)
+  const hoy = new Date(hoyReal.getFullYear(), hoyReal.getMonth(), hoyReal.getDate() + dayOffset);
+  const esHoy = dayOffset === 0;
   const diasJS    = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
   const diasEN    = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   const mesesES   = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
@@ -7623,7 +7627,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     diaActual + ' ' + hoy.getDate() + ' de ' + mesesES[hoy.getMonth()],
     diasEN[hoy.getDay()] + ', ' + mesesEN[hoy.getMonth()] + ' ' + hoy.getDate()
   );
-  const hora = hoy.getHours();
+  const hora = hoyReal.getHours(); // hora real de hoy (para saludo y tips)
   const saludo = hora < 12 ? t('Buenos días','Good morning') : hora < 19 ? t('Buenas tardes','Good afternoon') : t('Buenas noches','Good evening');
   const nombreCorto = perfil && perfil.nombre ? perfil.nombre.split(' ')[0] : '';
 
@@ -7651,7 +7655,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
   }, [planSemanal]);
 
   const comidasHoy = semanaData ? (semanaData[diaActual] || {}) : {};
-  const fechaHoyIso = _localDate();
+  const fechaHoyIso = _localDate(hoy); // fecha de la vista, no siempre "hoy"
   const resumenHoy = calcularResumenDiario(comidasHoy);
   const tiposOrden = ["desayuno", "snack_am", "almuerzo", "snack_pm", "cena"];
   const iconosComida = { desayuno: "fa-sun", snack_am: "fa-apple-whole", almuerzo: "fa-utensils", snack_pm: "fa-cookie-bite", cena: "fa-moon" };
@@ -7875,6 +7879,34 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
 
   return (
     <div className="space-y-4 animate-fadeIn">
+      {/* Navegador de fecha */}
+      <div className={`flex items-center justify-between rounded-2xl px-4 py-2.5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100'} shadow-sm`}>
+        <button
+          onClick={() => setDayOffset(function(o) { return Math.max(-7, o - 1); })}
+          className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors cursor-pointer ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
+        >
+          <i className="fas fa-chevron-left text-sm"></i>
+        </button>
+        <span className={`text-sm font-semibold flex items-center gap-2 ${esHoy ? (darkMode ? 'text-gray-200' : 'text-gray-700') : (darkMode ? 'text-amber-300' : 'text-amber-600')}`}>
+          {!esHoy && <i className="fas fa-clock-rotate-left text-xs opacity-70"></i>}
+          {esHoy ? t('Hoy','Today') : dayOffset === -1 ? t('Ayer','Yesterday') : diaActual + ' ' + hoy.getDate()}
+          {!esHoy && (
+            <button
+              onClick={() => setDayOffset(0)}
+              className={`ml-1 text-xs px-2.5 py-0.5 rounded-full font-medium ${darkMode ? 'bg-amber-700/60 text-amber-200 hover:bg-amber-700' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'} transition-colors cursor-pointer`}
+            >
+              {t('Ir a hoy','Go to today')}
+            </button>
+          )}
+        </span>
+        <button
+          onClick={() => setDayOffset(function(o) { return Math.min(0, o + 1); })}
+          disabled={esHoy}
+          className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${esHoy ? 'opacity-20 cursor-default' : ('cursor-pointer ' + (darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'))}`}
+        >
+          <i className="fas fa-chevron-right text-sm"></i>
+        </button>
+      </div>
       {/* Saludo */}
       {(() => {
         const obj = perfil && perfil.objetivo ? perfil.objetivo.toLowerCase() : 'default';
