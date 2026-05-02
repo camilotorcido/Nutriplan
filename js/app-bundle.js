@@ -10959,10 +10959,28 @@ function ChatPanel({ darkMode }) {
     var extMap = {};
     try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
     var extHoy = extMap[hoy] || [];
+    // Tipos de comidas del plan reemplazados por comidas externas (no doble-contar)
+    var tiposReemplazadosHoy = extHoy.filter(function(c) { return c.reemplaza; }).map(function(c) { return c.reemplaza; });
+    // Sumar comidas externas
     var macrosConsumidos = extHoy.reduce(function(acc, c) {
       return { kcal: acc.kcal + (c.kcal||0), proteinas: acc.proteinas + (c.proteinas_g||0),
                carbohidratos: acc.carbohidratos + (c.carbohidratos_g||0), grasas: acc.grasas + (c.grasas_g||0) };
     }, { kcal:0, proteinas:0, carbohidratos:0, grasas:0 });
+    // Sumar comidas del plan marcadas como comidas hoy (via adherencia)
+    try {
+      var adhData = JSON.parse(localStorage.getItem('nutriplan_adherencia') || '{}');
+      var adhHoy  = adhData[hoy] || {};
+      Object.keys(adhHoy).forEach(function(key) {
+        var entrada = adhHoy[key];
+        if (!entrada || !entrada.comido) return;
+        // Las ext_ se contabilizan ya en extHoy; las reemplazadas tampoco
+        var tipo = key.split(':')[1];
+        if (tipo && (tipo.startsWith('ext_') || tiposReemplazadosHoy.indexOf(tipo) >= 0)) return;
+        macrosConsumidos.kcal        += entrada.kcal_plan        || 0;
+        macrosConsumidos.proteinas   += entrada.proteinas_plan   || 0;
+        // carbs y grasas no siempre están en adherencia; estimación proporcional si sólo hay kcal
+      });
+    } catch(_e) {}
     var fechaHoy = _localDate();
     var _ayerD = new Date(); _ayerD.setDate(_ayerD.getDate() - 1);
     var _antD  = new Date(); _antD.setDate(_antD.getDate() - 2);
