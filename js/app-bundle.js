@@ -11271,6 +11271,31 @@ function ChatPanel({ darkMode }) {
     proactiveRunningRef.current = false;
   }
 
+  // ── Helper: total de macros consumidos para una fecha (no solo hoy) ─────
+  function _macrosFecha(fecha) {
+    var extM = {};
+    try { extM = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
+    var extsF = extM[fecha] || [];
+    var tiposR = extsF.filter(function(c) { return c.reemplaza; }).map(function(c) { return c.reemplaza; });
+    var kcal = 0, prot = 0, carb = 0, fat = 0;
+    extsF.forEach(function(c) {
+      if (c.pendiente) return;
+      kcal += c.kcal || 0; prot += c.proteinas_g || 0;
+      carb += c.carbohidratos_g || 0; fat += c.grasas_g || 0;
+    });
+    try {
+      var adhD = JSON.parse(localStorage.getItem('nutriplan_adherencia') || '{}');
+      var adhF = adhD[fecha] || {};
+      Object.keys(adhF).forEach(function(k) {
+        var e = adhF[k]; if (!e || !e.comido) return;
+        var tp = k.split(':')[1];
+        if (!tp || tp.startsWith('ext_') || tiposR.indexOf(tp) >= 0) return;
+        kcal += e.kcal_plan || 0; prot += e.proteinas_plan || 0;
+      });
+    } catch(e2) {}
+    return { kcal: Math.round(kcal), proteinas: Math.round(prot), carbohidratos: Math.round(carb), grasas: Math.round(fat) };
+  }
+
   // ── Ejecutar tool calls localmente ─────────────────────────────────────
   function ejecutarTool(name, input_) {
     if (name === 'registrar_comida') {
@@ -11296,8 +11321,7 @@ function ChatPanel({ darkMode }) {
           window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
           if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
           if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
-          var _ctx1 = buildContexto();
-          return { ok: true, registrado: lista[idxExist], actualizado: true, totalHoy: _ctx1.macrosConsumidos, fecha: hoy };
+          return { ok: true, registrado: lista[idxExist], actualizado: true, totalFecha: _macrosFecha(hoy), fecha: hoy };
         }
       }
 
@@ -11313,8 +11337,7 @@ function ChatPanel({ darkMode }) {
       window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
       if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
       if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
-      var _ctx2 = buildContexto();
-      return { ok: true, registrado: nueva, totalHoy: _ctx2.macrosConsumidos, fecha: hoy };
+      return { ok: true, registrado: nueva, totalFecha: _macrosFecha(hoy), fecha: hoy };
     }
     if (name === 'buscar_alimento') {
       var q = (input_.query || '').toLowerCase();
@@ -11549,7 +11572,8 @@ function ChatPanel({ darkMode }) {
         window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
         if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
         if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
-        return { ok: true, marcado: comida.nombre + ' (' + dia + ' · ' + tipo + ')', fecha: input_.fecha || 'hoy' };
+        var _fechaMarca = input_.fecha || _localDate();
+        return { ok: true, marcado: comida.nombre + ' (' + dia + ' · ' + tipo + ')', fecha: _fechaMarca, totalFecha: _macrosFecha(_fechaMarca) };
       }
       return { ok: false, error: 'Sistema de adherencia no disponible.' };
     }
