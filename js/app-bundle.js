@@ -7663,7 +7663,17 @@ function EveningRatingCard({ semanaData, diaActual, numSemanaActual, darkMode, r
 // COMPONENTE: HoyView — Dashboard diario (v20260429ux)
 // =============================================
 function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swapping }) {
-  const [dayOffset, setDayOffset] = React.useState(0);
+  // Persiste dayOffset en sessionStorage para sobrevivir cambios de tab.
+  // Se resetea automáticamente al cerrar/reabrir el navegador (session scope).
+  const [dayOffset, setDayOffset] = React.useState(function() {
+    try {
+      var saved = parseInt(sessionStorage.getItem('np_hoy_dayOffset') || '0', 10);
+      return (isNaN(saved) || saved > 0) ? 0 : Math.max(-7, saved);
+    } catch(e) { return 0; }
+  });
+  React.useEffect(function() {
+    try { sessionStorage.setItem('np_hoy_dayOffset', String(dayOffset)); } catch(e) {}
+  }, [dayOffset]);
   const hoyReal = new Date();
   // hoy = fecha que el usuario está viendo (hoy, ayer, etc.)
   const hoy = new Date(hoyReal.getFullYear(), hoyReal.getMonth(), hoyReal.getDate() + dayOffset);
