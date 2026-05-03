@@ -233,6 +233,49 @@ function _eliminarAdherenciaExt(diaActual, comidaId) {
   } catch(e) {}
 }
 
+// ─── Alimentos de referencia para recomendaciones diarias ───────────────────
+var _ALIMENTOS_RECOM = [
+  { nombre: 'Yogur griego natural (150g)', kcal: 150, prot: 15, carb: 8,  gras: 5  },
+  { nombre: 'Huevo duro',                  kcal: 78,  prot: 6,  carb: 0,  gras: 5  },
+  { nombre: 'Pechuga de pollo (100g)',      kcal: 165, prot: 31, carb: 0,  gras: 4  },
+  { nombre: 'Atún en agua (80g)',           kcal: 92,  prot: 20, carb: 0,  gras: 1  },
+  { nombre: 'Requesón (100g)',              kcal: 98,  prot: 11, carb: 3,  gras: 5  },
+  { nombre: 'Plátano mediano',             kcal: 105, prot: 1,  carb: 27, gras: 0  },
+  { nombre: 'Manzana',                     kcal: 80,  prot: 0,  carb: 21, gras: 0  },
+  { nombre: 'Almendras (30g)',              kcal: 170, prot: 6,  carb: 6,  gras: 15 },
+  { nombre: 'Nueces (30g)',                 kcal: 196, prot: 4,  carb: 4,  gras: 20 },
+  { nombre: 'Avena cocida (45g)',           kcal: 166, prot: 5,  carb: 28, gras: 4  },
+  { nombre: 'Pan integral (2 rebanadas)',   kcal: 140, prot: 6,  carb: 26, gras: 2  },
+  { nombre: 'Arroz cocido (150g)',          kcal: 195, prot: 4,  carb: 43, gras: 0  },
+  { nombre: 'Palta (60g)',                  kcal: 96,  prot: 1,  carb: 5,  gras: 9  },
+  { nombre: 'Leche semidescremada (250ml)', kcal: 120, prot: 8,  carb: 12, gras: 4  },
+  { nombre: 'Queso fresco (50g)',           kcal: 90,  prot: 8,  carb: 1,  gras: 6  },
+  { nombre: 'Batido de leche y avena',      kcal: 280, prot: 12, carb: 45, gras: 5  },
+  { nombre: 'Galletas de arroz (3u)',        kcal: 70,  prot: 1,  carb: 15, gras: 0  },
+];
+// Devuelve hasta 3 alimentos que se acercan al gap calórico restante.
+// Prioriza proteína cuando gapProt > 20g.
+function _getRecomendaciones(gapKcal, gapProt) {
+  if (!gapKcal || gapKcal <= 0) return [];
+  var target = Math.max(60, Math.round(gapKcal / 3));
+  var priorizaProt = (gapProt || 0) > 20;
+  var scored = _ALIMENTOS_RECOM
+    .filter(function(f) { return f.kcal <= gapKcal * 1.08; })
+    .map(function(f) {
+      var fit = 1 - Math.min(1, Math.abs(f.kcal - target) / Math.max(target, 1));
+      var protBonus = priorizaProt ? (f.prot / Math.max(f.kcal, 1)) * 6 : 0;
+      return { food: f, score: fit + protBonus };
+    })
+    .sort(function(a, b) { return b.score - a.score; });
+  var picks = [];
+  for (var i = 0; i < scored.length && picks.length < 3; i++) {
+    var f = scored[i].food;
+    var tooClose = picks.some(function(p) { return Math.abs(p.kcal - f.kcal) < 20; });
+    if (!tooClose) picks.push(f);
+  }
+  return picks;
+}
+
 // =============================================
 // COMPONENTE: LoginScreen
 // =============================================
@@ -8739,11 +8782,13 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         </div>
       )}
 
-      {/* Comidas externas */}
+      {/* ── Comidas adicionales ── */}
       <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+
+        {/* Header */}
         <div className={`px-5 py-3 flex items-center justify-between border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
           <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            <i className="fas fa-circle-plus mr-2"></i>{t('Comidas externas','Extra meals')}
+            <i className="fas fa-circle-plus mr-2"></i>{t('Comidas adicionales','Extra meals')}
           </h3>
           <div className="flex items-center gap-2">
             <button onClick={function() { setShowScanner(true); }}
@@ -8758,106 +8803,196 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             </button>
           </div>
         </div>
-        {/* ── Comidas pendientes (planeadas pero no comidas aún) ── */}
-        {comidasPendientes.length > 0 && (
-          <div className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-            {comidasPendientes.map(function(c) {
-              return (
-                <div key={c.id} className={`px-5 py-2.5 flex items-center gap-3 ${darkMode ? 'bg-amber-900/10' : 'bg-amber-50/70'}`}>
-                  <i className={`fas fa-clock text-sm w-4 text-center text-amber-500`}></i>
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-sm font-medium truncate ${darkMode ? 'text-amber-200' : 'text-amber-800'}`}>{c.nombre}</div>
-                    <div className="text-xs text-gray-400 mt-0.5">
-                      <span className="text-blue-400 font-semibold">{c.proteinas_g}g</span>{' '}{t('prot','prot')}
-                      {' · '}
-                      <span className="text-amber-400 font-semibold">{c.carbohidratos_g}g</span>{' '}{t('carb','carb')}
-                      {' · '}
-                      <span className="text-purple-400 font-semibold">{c.grasas_g}g</span>{' '}{t('grasas','fat')}
-                      {' · '}
-                      <span className="text-amber-500 font-semibold">{c.kcal} kcal</span>
-                      {' · '}
-                      <span className={`italic ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>{t('pendiente','pending')}</span>
-                    </div>
-                  </div>
-                  {/* Confirmar consumida */}
-                  <button
-                    onClick={function() {
-                      var confirmada = Object.assign({}, c, { pendiente: undefined });
-                      var nuevas = comidasExt.map(function(x) { return x.id === c.id ? confirmada : x; });
-                      _guardarComidasExt(fechaHoyIso, nuevas);
-                      _agregarAdherenciaExt(diaActual, confirmada);
-                      setRefresh(function(r) { return r + 1; });
-                    }}
-                    title={t('Marcar como comido','Mark as eaten')}
-                    className={`flex-shrink-0 h-7 px-2 rounded-lg flex items-center gap-1 text-xs font-semibold transition-all cursor-pointer ${darkMode ? 'bg-green-900/50 text-green-400 hover:bg-green-800' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}>
-                    <i className="fas fa-check text-[10px]"></i>{t('Comido','Eaten')}
-                  </button>
-                  {/* Eliminar */}
-                  <button
-                    onClick={function() {
-                      var nuevas = comidasExt.filter(function(x) { return x.id !== c.id; });
-                      _guardarComidasExt(fechaHoyIso, nuevas);
-                      setRefresh(function(r) { return r + 1; });
-                    }}
-                    aria-label={t('Eliminar','Remove')}
-                    className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${darkMode ? 'text-gray-600 hover:text-red-400 hover:bg-gray-700' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'}`}>
-                    <i className="fas fa-trash text-xs"></i>
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
 
-        {comidasExtAdicional.length === 0 && comidasPendientes.length === 0 ? (
-          <button onClick={function() { setShowModalExt(true); }}
-            className={`w-full px-5 py-4 text-center text-xs transition-colors cursor-pointer ${darkMode ? 'text-gray-500 hover:bg-gray-700/50' : 'text-gray-400 hover:bg-gray-50'}`}>
-            <i className="fas fa-plus-circle mr-1.5"></i>{t('Registrar comida no planificada','Log an unplanned meal')}
-          </button>
-        ) : (
-          <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
-            {comidasExtAdicional.map(function(c) {
-              return (
-                <div key={c.id} className="px-5 py-2.5 flex items-center gap-3">
-                  <i className={`fas fa-utensils text-sm w-4 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <div className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{c.nombre}</div>
-                      {_horaComida(c) && (
-                        <span className={`text-[10px] flex-shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                          <i className="fas fa-clock mr-0.5" style={{fontSize:'8px'}}></i>{_horaComida(c)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-gray-400 mt-0.5">
-                      <span className="text-blue-400 font-semibold">{c.proteinas_g}g</span>{' '}{t('prot','prot')}
-                      {' · '}
-                      <span className="text-amber-400 font-semibold">{c.carbohidratos_g}g</span>{' '}{t('carb','carb')}
-                      {' · '}
-                      <span className="text-purple-400 font-semibold">{c.grasas_g}g</span>{' '}{t('grasas','fat')}
-                    </div>
-                  </div>
-                  <span className={`text-xs font-bold flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{c.kcal} kcal</span>
-                  <button
-                    onClick={function() {
-                      var nuevas = comidasExt.filter(function(x) { return x.id !== c.id; });
-                      _guardarComidasExt(fechaHoyIso, nuevas);
-                      _eliminarAdherenciaExt(diaActual, c.id);
-                      setRefresh(function(r) { return r + 1; });
-                    }}
-                    aria-label={t('Eliminar comida externa','Remove extra meal')}
-                    className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${darkMode ? 'text-gray-600 hover:text-red-400 hover:bg-gray-700' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'}`}>
-                    <i className="fas fa-trash text-xs"></i>
-                  </button>
+        {/* ── Sub-sección 1: Recomendadas para hoy ── */}
+        {(function() {
+          var gapKcal = Math.round(metaKcalDia - consumidoHoy.calorias);
+          var gapProt = Math.round(metaProtDia - consumidoHoy.proteinas);
+          var recom = (gapKcal >= 50) ? _getRecomendaciones(gapKcal, gapProt) : [];
+          return (
+            <div className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+              {/* Sub-header */}
+              <div className={`px-5 py-2 flex items-center justify-between ${darkMode ? 'bg-teal-900/10' : 'bg-teal-50/50'}`}>
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${darkMode ? 'text-teal-400' : 'text-teal-600'}`}>
+                  <i className="fas fa-lightbulb mr-1.5" style={{fontSize:'9px'}}></i>
+                  {t('Recomendadas para hoy','Recommended for today')}
+                </span>
+                {gapKcal > 0 && (
+                  <span className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                    {t('Faltan','Remaining')}{' '}
+                    <span className={`font-semibold ${gapKcal <= 150 ? 'text-green-500' : (darkMode ? 'text-gray-300' : 'text-gray-600')}`}>{gapKcal}</span>
+                    {' kcal'}
+                  </span>
+                )}
+              </div>
+              {gapKcal <= 0 ? (
+                <div className={`px-5 py-3 flex items-center gap-2 text-xs ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                  <i className="fas fa-circle-check"></i>
+                  <span>{t('¡Objetivo calórico alcanzado hoy!','Daily calorie goal reached!')}</span>
                 </div>
-              );
-            })}
-            <button onClick={function() { setShowModalExt(true); }}
-              className={`w-full px-5 py-3 text-center text-xs transition-colors cursor-pointer ${darkMode ? 'text-gray-500 hover:bg-gray-700/50' : 'text-gray-400 hover:bg-gray-50'}`}>
-              <i className="fas fa-plus-circle mr-1.5"></i>{t('Agregar otra','Add another')}
-            </button>
+              ) : gapKcal < 50 ? (
+                <div className={`px-5 py-3 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {t('Casi listo','Almost there')} — {t('solo faltan','only')} {gapKcal} kcal.
+                </div>
+              ) : recom.length === 0 ? (
+                <div className={`px-5 py-3 text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  {t('Registra tus comidas del plan para ver sugerencias.','Log your plan meals to see suggestions.')}
+                </div>
+              ) : (
+                <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
+                  {recom.map(function(food, idx) {
+                    return (
+                      <div key={idx} className={`px-5 py-2.5 flex items-center gap-3 transition-colors ${darkMode ? 'hover:bg-gray-700/30' : 'hover:bg-gray-50/80'}`}>
+                        <i className="fas fa-leaf text-xs w-4 text-center text-teal-500"></i>
+                        <div className="flex-1 min-w-0">
+                          <div className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{food.nombre}</div>
+                          <div className="text-xs text-gray-400 mt-0.5">
+                            <span className="text-blue-400 font-semibold">{food.prot}g</span>{' prot · '}
+                            <span className="text-amber-400 font-semibold">{food.carb}g</span>{' carb · '}
+                            <span className="text-purple-400 font-semibold">{food.gras}g</span>{' gras'}
+                          </div>
+                        </div>
+                        <span className={`text-xs font-bold flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{food.kcal} kcal</span>
+                        <button
+                          onClick={function() {
+                            var nueva = {
+                              id: 'ext_' + Date.now() + Math.random().toString(36).slice(2,6),
+                              nombre: food.nombre,
+                              kcal: food.kcal,
+                              proteinas_g: food.prot,
+                              carbohidratos_g: food.carb,
+                              grasas_g: food.gras,
+                              timestamp: Date.now()
+                            };
+                            var actuales = _comidasExtFecha(fechaHoyIso);
+                            _guardarComidasExt(fechaHoyIso, actuales.concat([nueva]));
+                            _agregarAdherenciaExt(diaActual, nueva);
+                            window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
+                            setRefresh(function(r) { return r + 1; });
+                          }}
+                          className={`flex-shrink-0 h-6 px-2.5 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-all cursor-pointer ${darkMode ? 'bg-teal-900/50 text-teal-400 hover:bg-teal-800/60' : 'bg-teal-50 text-teal-600 hover:bg-teal-100'}`}>
+                          <i className="fas fa-plus text-[9px]"></i>{t(' Agregar',' Add')}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* ── Sub-sección 2: Mis registros del día ── */}
+        <div>
+          {/* Sub-header */}
+          <div className={`px-5 py-2 flex items-center ${darkMode ? '' : 'bg-gray-50/40'}`}>
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+              <i className="fas fa-pen-to-square mr-1.5" style={{fontSize:'9px'}}></i>
+              {t('Mis registros del día','My daily entries')}
+            </span>
           </div>
-        )}
+
+          {/* Comidas pendientes (planeadas pero no comidas aún) */}
+          {comidasPendientes.length > 0 && (
+            <div className={`border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+              {comidasPendientes.map(function(c) {
+                return (
+                  <div key={c.id} className={`px-5 py-2.5 flex items-center gap-3 ${darkMode ? 'bg-amber-900/10' : 'bg-amber-50/70'}`}>
+                    <i className={`fas fa-clock text-sm w-4 text-center text-amber-500`}></i>
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-medium truncate ${darkMode ? 'text-amber-200' : 'text-amber-800'}`}>{c.nombre}</div>
+                      <div className="text-xs text-gray-400 mt-0.5">
+                        <span className="text-blue-400 font-semibold">{c.proteinas_g}g</span>{' '}{t('prot','prot')}
+                        {' · '}
+                        <span className="text-amber-400 font-semibold">{c.carbohidratos_g}g</span>{' '}{t('carb','carb')}
+                        {' · '}
+                        <span className="text-purple-400 font-semibold">{c.grasas_g}g</span>{' '}{t('grasas','fat')}
+                        {' · '}
+                        <span className="text-amber-500 font-semibold">{c.kcal} kcal</span>
+                        {' · '}
+                        <span className={`italic ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>{t('pendiente','pending')}</span>
+                      </div>
+                    </div>
+                    {/* Confirmar consumida */}
+                    <button
+                      onClick={function() {
+                        var confirmada = Object.assign({}, c, { pendiente: undefined });
+                        var nuevas = comidasExt.map(function(x) { return x.id === c.id ? confirmada : x; });
+                        _guardarComidasExt(fechaHoyIso, nuevas);
+                        _agregarAdherenciaExt(diaActual, confirmada);
+                        setRefresh(function(r) { return r + 1; });
+                      }}
+                      title={t('Marcar como comido','Mark as eaten')}
+                      className={`flex-shrink-0 h-7 px-2 rounded-lg flex items-center gap-1 text-xs font-semibold transition-all cursor-pointer ${darkMode ? 'bg-green-900/50 text-green-400 hover:bg-green-800' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}>
+                      <i className="fas fa-check text-[10px]"></i>{t('Comido','Eaten')}
+                    </button>
+                    {/* Eliminar */}
+                    <button
+                      onClick={function() {
+                        var nuevas = comidasExt.filter(function(x) { return x.id !== c.id; });
+                        _guardarComidasExt(fechaHoyIso, nuevas);
+                        setRefresh(function(r) { return r + 1; });
+                      }}
+                      aria-label={t('Eliminar','Remove')}
+                      className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${darkMode ? 'text-gray-600 hover:text-red-400 hover:bg-gray-700' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'}`}>
+                      <i className="fas fa-trash text-xs"></i>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {comidasExtAdicional.length === 0 && comidasPendientes.length === 0 ? (
+            <button onClick={function() { setShowModalExt(true); }}
+              className={`w-full px-5 py-4 text-center text-xs transition-colors cursor-pointer border-t ${darkMode ? 'text-gray-500 hover:bg-gray-700/50 border-gray-700' : 'text-gray-400 hover:bg-gray-50 border-gray-100'}`}>
+              <i className="fas fa-plus-circle mr-1.5"></i>{t('Registrar comida no planificada','Log an unplanned meal')}
+            </button>
+          ) : (
+            <div className={`divide-y border-t ${darkMode ? 'divide-gray-700 border-gray-700' : 'divide-gray-50 border-gray-100'}`}>
+              {comidasExtAdicional.map(function(c) {
+                return (
+                  <div key={c.id} className="px-5 py-2.5 flex items-center gap-3">
+                    <i className={`fas fa-utensils text-sm w-4 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <div className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{c.nombre}</div>
+                        {_horaComida(c) && (
+                          <span className={`text-[10px] flex-shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                            <i className="fas fa-clock mr-0.5" style={{fontSize:'8px'}}></i>{_horaComida(c)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-0.5">
+                        <span className="text-blue-400 font-semibold">{c.proteinas_g}g</span>{' '}{t('prot','prot')}
+                        {' · '}
+                        <span className="text-amber-400 font-semibold">{c.carbohidratos_g}g</span>{' '}{t('carb','carb')}
+                        {' · '}
+                        <span className="text-purple-400 font-semibold">{c.grasas_g}g</span>{' '}{t('grasas','fat')}
+                      </div>
+                    </div>
+                    <span className={`text-xs font-bold flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{c.kcal} kcal</span>
+                    <button
+                      onClick={function() {
+                        var nuevas = comidasExt.filter(function(x) { return x.id !== c.id; });
+                        _guardarComidasExt(fechaHoyIso, nuevas);
+                        _eliminarAdherenciaExt(diaActual, c.id);
+                        setRefresh(function(r) { return r + 1; });
+                      }}
+                      aria-label={t('Eliminar comida adicional','Remove extra meal')}
+                      className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${darkMode ? 'text-gray-600 hover:text-red-400 hover:bg-gray-700' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'}`}>
+                      <i className="fas fa-trash text-xs"></i>
+                    </button>
+                  </div>
+                );
+              })}
+              <button onClick={function() { setShowModalExt(true); }}
+                className={`w-full px-5 py-3 text-center text-xs transition-colors cursor-pointer ${darkMode ? 'text-gray-500 hover:bg-gray-700/50' : 'text-gray-400 hover:bg-gray-50'}`}>
+                <i className="fas fa-plus-circle mr-1.5"></i>{t('Agregar otra','Add another')}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Bloque Fitness (solo fatLossMode) */}
