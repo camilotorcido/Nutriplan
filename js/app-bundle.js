@@ -12104,13 +12104,19 @@ function ChatPanel({ darkMode }) {
   }, []);
 
   // ── Análisis proactivo tras registrar comida ─────────────────────────────
+  // Debounce de 8s: si el agente encadena múltiples tool calls, solo dispara
+  // proactiveCheck después del ÚLTIMO — evita leer macros incompletas entre tools.
   React.useEffect(function() {
+    var _proactiveTimer = null;
     function onMealLogged() {
-      // Pequeña pausa para que el estado de macros se estabilice
-      setTimeout(function() { proactiveCheck().catch(function() {}); }, 1500);
+      clearTimeout(_proactiveTimer);
+      _proactiveTimer = setTimeout(function() { proactiveCheck().catch(function() {}); }, 8000);
     }
     window.addEventListener('calibrate_meal_logged', onMealLogged);
-    return function() { window.removeEventListener('calibrate_meal_logged', onMealLogged); };
+    return function() {
+      window.removeEventListener('calibrate_meal_logged', onMealLogged);
+      clearTimeout(_proactiveTimer);
+    };
   }, []);
 
   // ── Apertura externa del chat (desde coach card en HoyView) ─────────────
