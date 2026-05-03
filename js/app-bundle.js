@@ -7917,14 +7917,23 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
   // Vacation mode: true si la fecha visualizada cae en un período de vacaciones
   const esVacaciones = _esDiaVacaciones(fechaHoyIso);
 
-  // Coach card: último tip proactivo del agente
+  // Coach card: último tip proactivo del agente — solo del día de hoy
   const [coachTip, setCoachTip] = React.useState(function() {
-    try { return localStorage.getItem('nutriplan_last_coach_tip') || null; } catch(e) { return null; }
+    try {
+      var tip  = localStorage.getItem('nutriplan_last_coach_tip');
+      var date = localStorage.getItem('nutriplan_last_coach_tip_date');
+      return (tip && date === _localDate()) ? tip : null;
+    } catch(e) { return null; }
   });
   const [coachDismissed, setCoachDismissed] = React.useState(false);
   React.useEffect(function() {
     function onCoachTip() {
-      try { setCoachTip(localStorage.getItem('nutriplan_last_coach_tip') || null); setCoachDismissed(false); } catch(e) {}
+      try {
+        var tip  = localStorage.getItem('nutriplan_last_coach_tip');
+        var date = localStorage.getItem('nutriplan_last_coach_tip_date');
+        setCoachTip((tip && date === _localDate()) ? tip : null);
+        setCoachDismissed(false);
+      } catch(e) {}
     }
     window.addEventListener('calibrate_coach_tip', onCoachTip);
     return function() { window.removeEventListener('calibrate_coach_tip', onCoachTip); };
@@ -8554,7 +8563,9 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           {resumenTotal.calorias > 0 && (
             <div className={`px-5 py-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-50 bg-gray-50'}`}>
               <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{resumenTotal.calorias} kcal</span>
+                <span className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                  {resumenTotal.calorias} <span className={`font-normal text-[11px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>kcal plan</span>
+                </span>
                 <div className="flex gap-3 text-gray-400">
                   <span><span className="text-blue-500 font-semibold">{resumenTotal.proteinas}g</span> {t('prot','prot')}</span>
                   <span><span className="text-amber-500 font-semibold">{resumenTotal.carbohidratos}g</span> {t('carb','carb')}</span>
@@ -11543,9 +11554,10 @@ function ChatPanel({ darkMode }) {
         localStorage.setItem('nutriplan_chat_date', _localDate());
         return nuevo;
       });
-      // Persistir el último tip del coach para la coach card en HoyView
+      // Persistir el último tip del coach para la coach card en HoyView (con fecha para expirar al día siguiente)
       try {
         localStorage.setItem('nutriplan_last_coach_tip', texto);
+        localStorage.setItem('nutriplan_last_coach_tip_date', _localDate());
         window.dispatchEvent(new CustomEvent('calibrate_coach_tip'));
       } catch(e) {}
       setBadge(true);
