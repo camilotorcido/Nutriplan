@@ -8207,15 +8207,17 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         return (
           <button
             onClick={() => setShowVacaciones(true)}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-colors ${
-              darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-colors border ${
+              darkMode
+                ? 'bg-gray-800 border-gray-700 hover:bg-gray-750 hover:border-gray-600'
+                : 'bg-white border-gray-100 shadow-sm hover:bg-gray-50'
             }`}
           >
-            <span className={`flex items-center gap-2 text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-              <span>🏖</span>
+            <span className={`flex items-center gap-2.5 text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <span className="text-base">🏖</span>
               {t('Modo Vacaciones','Vacation Mode')}
             </span>
-            <span className={`text-xs ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}>
+            <span className={`text-xs font-medium ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
               {t('Configurar →','Set up →')}
             </span>
           </button>
