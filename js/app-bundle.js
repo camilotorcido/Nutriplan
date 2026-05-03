@@ -8168,7 +8168,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         );
       })()}
 
-      {/* ── Chip Vacaciones — solo si hay período en la semana actual ────── */}
+      {/* ── Chip Vacaciones — siempre visible, estilo según estado ─────────── */}
       {(() => {
         const hoyD = new Date();
         const dow = hoyD.getDay();
@@ -8180,24 +8180,43 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         const hayVacSemana = _vacacionesGet().some(function(v) {
           return v.inicio <= domingoFecha && v.fin >= lunesFecha;
         });
-        if (!hayVacSemana) return null;
+        if (esVacaciones || hayVacSemana) {
+          // Estado activo: chip teal prominente
+          return (
+            <button
+              onClick={() => setShowVacaciones(true)}
+              className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl cursor-pointer transition-colors ${
+                darkMode
+                  ? 'bg-teal-900/40 border border-teal-700/60 hover:bg-teal-900/70'
+                  : 'bg-teal-50 border border-teal-200 hover:bg-teal-100'
+              }`}
+            >
+              <span className={`flex items-center gap-2 text-sm font-semibold ${darkMode ? 'text-teal-300' : 'text-teal-700'}`}>
+                <span className="text-base">🏖</span>
+                {esVacaciones
+                  ? t('Estás en modo vacaciones','Vacation Mode is active')
+                  : t('Tienes vacaciones esta semana','You have vacation days this week')}
+              </span>
+              <span className={`text-xs font-medium ${darkMode ? 'text-teal-400' : 'text-teal-600'}`}>
+                {t('Gestionar →','Manage →')}
+              </span>
+            </button>
+          );
+        }
+        // Estado inactivo: link sutil, siempre visible
         return (
           <button
             onClick={() => setShowVacaciones(true)}
-            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl cursor-pointer transition-colors ${
-              darkMode
-                ? 'bg-teal-900/40 border border-teal-700/60 hover:bg-teal-900/70'
-                : 'bg-teal-50 border border-teal-200 hover:bg-teal-100'
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-colors ${
+              darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
             }`}
           >
-            <span className={`flex items-center gap-2 text-sm font-semibold ${darkMode ? 'text-teal-300' : 'text-teal-700'}`}>
-              <span className="text-base">🏖</span>
-              {esVacaciones
-                ? t('Estás en modo vacaciones','Vacation Mode is active')
-                : t('Tienes vacaciones esta semana','You have vacation days this week')}
+            <span className={`flex items-center gap-2 text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+              <span>🏖</span>
+              {t('Modo Vacaciones','Vacation Mode')}
             </span>
-            <span className={`text-xs font-medium ${darkMode ? 'text-teal-400' : 'text-teal-600'}`}>
-              {t('Gestionar →','Manage →')}
+            <span className={`text-xs ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}>
+              {t('Configurar →','Set up →')}
             </span>
           </button>
         );
