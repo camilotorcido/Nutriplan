@@ -12228,6 +12228,10 @@ function ChatPanel({ darkMode }) {
     setMessages(displayMsgs);
     localStorage.setItem('nutriplan_chat_history', JSON.stringify(displayMsgs.slice(-20)));
     localStorage.setItem('nutriplan_chat_date', _localDate());
+    // Garantizar que HoyView y PlanView muestren cambios del coach aunque React 18
+    // haya diferido el setRefresh interno del tool loop hasta aquí.
+    if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
+    if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
   }
 
   // ── Auto-scroll ─────────────────────────────────────────────────────────
