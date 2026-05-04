@@ -279,22 +279,35 @@ function _getRecomendaciones(gapKcal, gapProt, registradas) {
 
   var target = Math.max(60, Math.round(gapKcal / 3));
   var priorizaProt = (gapProt || 0) > 20;
-  // Rotación determinista: cantidad de registros + bucket de gap (cada 100 kcal cambia)
-  // Esto garantiza que cada nuevo registro produce un orden distinto en el sort.
-  var seed = (registradas.length * 7 + Math.floor(gapKcal / 100) * 3) % 17;
-  var scored = _ALIMENTOS_RECOM
+  // Seed de rotación: cambia con cada nuevo registro y con cada bucket de 100 kcal del gap.
+  var seed = (registradas.length * 7919 + Math.floor(gapKcal / 100) * 31) % 1009;
+
+  // Scoring base (fit + protBonus, determinista) sobre el pool elegible
+  var elegibles = _ALIMENTOS_RECOM
     .filter(function(f) { return f.kcal <= gapKcal * 1.08 && !_yaRegistrado(f); })
-    .map(function(f, idx) {
+    .map(function(f) {
       var fit = 1 - Math.min(1, Math.abs(f.kcal - target) / Math.max(target, 1));
       var protBonus = priorizaProt ? (f.prot / Math.max(f.kcal, 1)) * 6 : 0;
-      // Jitter pseudo-aleatorio basado en seed e idx — desempata picks similares y rota el pool
-      var jitter = ((idx * 13 + seed) % 11) / 100; // 0 - 0.10
-      return { food: f, score: fit + protBonus + jitter };
-    })
-    .sort(function(a, b) { return b.score - a.score; });
+      return { food: f, baseScore: fit + protBonus };
+    });
+
+  if (elegibles.length === 0) return [];
+
+  // Tomar top-N candidatos (por baseScore) y rotar entre ellos según el seed.
+  // Esto da variedad visible: cada vez que el seed cambia, el orden interno del top cambia.
+  elegibles.sort(function(a, b) { return b.baseScore - a.baseScore; });
+  var topN = Math.min(elegibles.length, Math.max(6, 3));
+  var top = elegibles.slice(0, topN);
+
+  // Hash determinista por food index, modulado por seed → orden distinto cada vez
+  top.forEach(function(item, idx) {
+    item.rotScore = (idx * 113 + seed * 17 + item.food.kcal * 3) % 997;
+  });
+  top.sort(function(a, b) { return a.rotScore - b.rotScore; });
+
   var picks = [];
-  for (var i = 0; i < scored.length && picks.length < 3; i++) {
-    var f = scored[i].food;
+  for (var i = 0; i < top.length && picks.length < 3; i++) {
+    var f = top[i].food;
     var tooClose = picks.some(function(p) { return Math.abs(p.kcal - f.kcal) < 20; });
     if (!tooClose) picks.push(f);
   }
