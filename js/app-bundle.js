@@ -11780,6 +11780,25 @@ function ChatPanel({ darkMode }) {
     return { kcal: Math.round(kcal), proteinas: Math.round(prot), carbohidratos: Math.round(carb), grasas: Math.round(fat) };
   }
 
+  // ── Flush inmediato de HoyView/PlanView tras mutación de datos ─────────
+  // ReactDOM.flushSync fuerza un re-render sincrónico ANTES de que el loop
+  // agentic haga la siguiente llamada a la API. Sin esto, React 18 batchea
+  // los setRefresh() y los aplica recién al terminar todo sendMessage(),
+  // haciendo que el usuario vea la UI desactualizada hasta que llega el
+  // texto final del coach.
+  function _flushHoyView() {
+    try {
+      ReactDOM.flushSync(function() {
+        if (typeof window._NP_refreshHoyView    === 'function') window._NP_refreshHoyView();
+        if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
+      });
+    } catch(_fe) {
+      // Fallback si flushSync falla (p.ej. llamado durante render)
+      if (typeof window._NP_refreshHoyView    === 'function') window._NP_refreshHoyView();
+      if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
+    }
+  }
+
   // ── Ejecutar tool calls localmente ─────────────────────────────────────
   function ejecutarTool(name, input_) {
     if (name === 'registrar_comida') {
@@ -11803,8 +11822,7 @@ function ChatPanel({ darkMode }) {
           extMap[hoy] = lista;
           localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
           window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
-          if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
-          if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
+          _flushHoyView();
           return { ok: true, registrado: lista[idxExist], actualizado: true, totalFecha: _macrosFecha(hoy), fecha: hoy };
         }
       }
@@ -11821,8 +11839,7 @@ function ChatPanel({ darkMode }) {
       extMap[hoy] = lista.concat([nueva]);
       localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
       window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
-      if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
-      if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
+      _flushHoyView();
       return { ok: true, registrado: nueva, totalFecha: _macrosFecha(hoy), fecha: hoy };
     }
     if (name === 'buscar_alimento') {
@@ -11880,8 +11897,7 @@ function ChatPanel({ darkMode }) {
       extMap[hoy] = lista;
       localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
       window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
-      if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
-      if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
+      _flushHoyView();
       var _ctx3 = buildContexto();
       return { ok: true, eliminada: comidaEliminada.nombre, fecha: hoy, totalHoy: _ctx3.macrosConsumidos };
     }
@@ -12056,8 +12072,7 @@ function ChatPanel({ darkMode }) {
           }, 1);
         }
         window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
-        if (typeof window._NP_refreshHoyView === 'function') window._NP_refreshHoyView();
-        if (typeof window._NP_refreshWeeklyPlan === 'function') window._NP_refreshWeeklyPlan();
+        _flushHoyView();
         var _fechaMarca = input_.fecha || _localDate();
         return { ok: true, marcado: comida.nombre + ' (' + dia + ' · ' + tipo + ')', fecha: _fechaMarca, totalFecha: _macrosFecha(_fechaMarca) };
       }
