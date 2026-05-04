@@ -11561,7 +11561,9 @@ function ChatPanel({ darkMode }) {
     var _antD  = new Date(); _antD.setDate(_antD.getDate() - 2);
     var ayer     = _localDate(_ayerD);
     var anteayer = _localDate(_antD);
-    return { perfil, planHoy, macrosObjetivo, macrosConsumidos, diaActual, fechaHoy, ayer, anteayer };
+    // Exponer qué slots ya están reemplazados hoy para que el coach no doble-reemplace
+    return { perfil, planHoy, macrosObjetivo, macrosConsumidos, diaActual, fechaHoy, ayer, anteayer,
+             slotsReemplazados: tiposReemplazadosHoy };
   }
 
   // ── Análisis proactivo: detectar brecha y sugerir ajustes ───────────────
@@ -11820,6 +11822,13 @@ function ChatPanel({ darkMode }) {
       var extMap = {};
       try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
       var lista = extMap[hoy] || [];
+
+      // Guard: si el slot ya está reemplazado por otra entrada, registrar como adicional
+      // Evita que el coach doble-reemplace un slot que ya tiene comida externa asignada.
+      if (input_.reemplaza) {
+        var yaReemplazado = lista.some(function(c) { return c.reemplaza === input_.reemplaza; });
+        if (yaReemplazado) input_ = Object.assign({}, input_, { reemplaza: null });
+      }
 
       // Anti-duplicado: si se especifica reemplaza, buscar una entrada previa con el
       // mismo nombre (sin reemplaza asignado aún) y actualizarla en vez de crear otra.

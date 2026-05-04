@@ -180,13 +180,20 @@ function buildSystemPrompt(contexto) {
   const macros    = contexto?.macrosObjetivo || {};
   const plan      = contexto?.planHoy || {};
   const consumido = contexto?.macrosConsumidos || {};
+  const slotsReemplazados = contexto?.slotsReemplazados || [];
 
   const planTexto = Object.entries(plan).length > 0
     ? Object.entries(plan)
         .filter(([k]) => !k.startsWith('_'))
-        .map(([tipo, receta]) => `  • ${tipo}: ${receta?.nombre || '—'}`)
+        .map(([tipo, receta]) => {
+          const yaReemplazado = slotsReemplazados.includes(tipo);
+          return `  • ${tipo}: ${receta?.nombre || '—'}${yaReemplazado ? ' ⚠️ YA REEMPLAZADO HOY' : ''}`;
+        })
         .join('\n')
     : '  (sin plan cargado)';
+
+  const slotsLibres   = ['desayuno','snack_am','almuerzo','snack_pm','cena'].filter(s => !slotsReemplazados.includes(s));
+  const slotsOcupados = slotsReemplazados;
 
   return `Eres el asistente nutricional de Calibrate, una app de nutrición personalizada.
 
@@ -196,6 +203,11 @@ DÍA Y FECHA HOY: ${contexto?.diaActual || ''} ${contexto?.fechaHoy || ''}
 
 PLAN DE HOY (${contexto?.diaActual || ''}):
 ${planTexto}
+
+SLOTS YA REEMPLAZADOS HOY (tienen comida externa registrada; NO usar reemplaza para estos):
+  ${slotsOcupados.length > 0 ? slotsOcupados.join(', ') : '(ninguno)'}
+SLOTS LIBRES HOY (se pueden reemplazar si el usuario menciona ese tipo de comida):
+  ${slotsLibres.length > 0 ? slotsLibres.join(', ') : '(todos reemplazados)'}
 
 MACROS OBJETIVO HOY:
   • Calorías:      ${macros.kcal || '—'} kcal
@@ -234,14 +246,15 @@ ELIGE UNA SOLA VÍA, NUNCA LAS DOS:
   NUNCA llames registrar_comida Y marcar_comida_plan para la misma comida — causaría doble conteo.
 
 REGLA CRÍTICA — inferir reemplaza automáticamente:
-  Si el usuario menciona el nombre de una comida principal al registrar, SIEMPRE asigna reemplaza:
+  Si el usuario menciona el nombre de una comida principal al registrar, Y ese slot aparece en "SLOTS LIBRES HOY", asigna reemplaza:
   • "desayuné X", "de desayuno comí X", "en el desayuno tuve X" → reemplaza: "desayuno"
   • "almorcé X", "en el almuerzo comí X", "al almuerzo tuve X" → reemplaza: "almuerzo"
   • "en la once comí X", "en la merienda", "en el snack de la tarde" → reemplaza: "snack_pm"
   • "cené X", "en la cena comí X" → reemplaza: "cena"
   • "en la colación de la mañana", "snack de mañana" → reemplaza: "snack_am"
   El usuario NO necesita decir explícitamente "esto reemplaza mi desayuno" — basta con mencionar el tipo de comida.
-  Solo omite reemplaza si la comida es genuinamente extra sin horario de slot (ej: "me comí una fruta mientras trabajaba").
+  EXCEPCIÓN — slot ya ocupado: si el slot mencionado aparece en "SLOTS YA REEMPLAZADOS HOY", NO uses reemplaza. Registra como comida adicional (sin reemplaza). El usuario está comiendo algo extra en ese horario, no reemplazando de nuevo.
+  Solo omite reemplaza si el slot ya está ocupado, o si la comida es genuinamente extra sin horario de slot (ej: "me comí una fruta mientras trabajaba").
 
 - registrar_comida: para comidas en tiempo PASADO o confirmaciones de propuestas. Los valores válidos para reemplaza son: desayuno | snack_am | almuerzo | snack_pm | cena.
 - eliminar_comida: cuando una comida fue registrada por error, no la comió, o quiere desmarcarla.
