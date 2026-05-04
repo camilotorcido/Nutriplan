@@ -5204,76 +5204,78 @@ function MacroDonut({ consumed, metas, darkMode }) {
   var prot = metas.proteinas > 0 ? Math.min(1, (consumed.proteinas || 0) / metas.proteinas) : 0;
   var carb = metas.carbohidratos > 0 ? Math.min(1, (consumed.carbohidratos || 0) / metas.carbohidratos) : 0;
   var gras = metas.grasas > 0 ? Math.min(1, (consumed.grasas || 0) / metas.grasas) : 0;
-  var kcalPct = metas.calorias > 0 ? Math.min(999, Math.round((consumed.calorias || 0) / metas.calorias * 100)) : 0;
-  var kcalRem = Math.max(0, (metas.calorias || 0) - (consumed.calorias || 0));
-  var kcalOver = Math.max(0, (consumed.calorias || 0) - (metas.calorias || 0));
-  // Ring grande (140) — más presencia. Tres arcos concéntricos estilo Apple Activity.
-  var SIZE = 140, CX = 70, CY = 70;
-  var trackColor = darkMode ? '#1F2937' : '#F1F5F9';
-  // Tres anillos concéntricos (de afuera hacia adentro): proteína, carbos, grasas
-  var rings = [
-    { label: 'Prot',   val: consumed.proteinas || 0,      meta: metas.proteinas,      pct: Math.round(prot*100), color: darkMode ? '#60A5FA' : '#2563EB', r: 60 },
-    { label: 'Carb',   val: consumed.carbohidratos || 0,  meta: metas.carbohidratos,  pct: Math.round(carb*100), color: darkMode ? '#FBBF24' : '#D97706', r: 47 },
-    { label: 'Grasas', val: consumed.grasas || 0,         meta: metas.grasas,         pct: Math.round(gras*100), color: darkMode ? '#F87171' : '#DC2626', r: 34 },
-  ];
-  function ringStroke(r, fillFrac) {
-    // Arco completo de 270° (3/4 de círculo) con apertura abajo para mejor lectura
-    var totalArc = 270;
-    var startAngle = 135; // empieza abajo-izquierda
-    var deg = totalArc * Math.max(0, Math.min(1, fillFrac));
-    var s = (startAngle - 90) * Math.PI / 180;
-    var e = (startAngle - 90 + deg) * Math.PI / 180;
-    var x1 = CX + r * Math.cos(s), y1 = CY + r * Math.sin(s);
-    var x2 = CX + r * Math.cos(e), y2 = CY + r * Math.sin(e);
-    return deg < 1 ? null : `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${deg > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
-  }
-  function trackStroke(r) {
-    var totalArc = 270;
-    var startAngle = 135;
-    var s = (startAngle - 90) * Math.PI / 180;
-    var e = (startAngle - 90 + totalArc) * Math.PI / 180;
-    var x1 = CX + r * Math.cos(s), y1 = CY + r * Math.sin(s);
-    var x2 = CX + r * Math.cos(e), y2 = CY + r * Math.sin(e);
-    return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${totalArc > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
-  }
+  var kcalPctRaw = metas.calorias > 0 ? (consumed.calorias || 0) / metas.calorias : 0;
+  var kcalPct    = Math.min(1, kcalPctRaw);
+  var kcalRem    = Math.max(0, (metas.calorias || 0) - (consumed.calorias || 0));
+  var kcalOver   = Math.max(0, (consumed.calorias || 0) - (metas.calorias || 0));
+  var inRange    = kcalPctRaw >= 0.95 && kcalPctRaw <= 1.05;
+
+  // Anillo único grande para kcal — un solo trazo limpio
+  var SIZE = 132, CX = 66, CY = 66, R = 56, STROKE = 11;
+  var CIRC = 2 * Math.PI * R;
+  var dashFill = CIRC * kcalPct;
+
+  var trackColor = darkMode ? '#1F2937' : '#E2E8F0';
+  var ringColor  = kcalOver > 105
+    ? (darkMode ? '#F87171' : '#DC2626')
+    : inRange
+      ? (darkMode ? '#4ADE80' : '#16A34A')
+      : (darkMode ? '#34D399' : '#0D9488');
+
   var heroNum  = kcalOver > 0 ? kcalOver : kcalRem;
   var heroLbl  = kcalOver > 0 ? t('exceso','over') : t('restantes','left');
-  var heroColor = kcalOver > 0 ? (darkMode ? '#F87171' : '#DC2626') : (darkMode ? '#FFFFFF' : '#0F172A');
+  var heroColor = kcalOver > 0 ? (darkMode ? '#F87171' : '#DC2626') : (darkMode ? '#F8FAFC' : '#0F172A');
+
+  var bars = [
+    { label: 'Prot',   val: Math.round(consumed.proteinas || 0),     meta: metas.proteinas,     pct: Math.round(prot*100), color: darkMode ? '#60A5FA' : '#2563EB' },
+    { label: 'Carb',   val: Math.round(consumed.carbohidratos || 0), meta: metas.carbohidratos, pct: Math.round(carb*100), color: darkMode ? '#FBBF24' : '#D97706' },
+    { label: 'Grasas', val: Math.round(consumed.grasas || 0),        meta: metas.grasas,        pct: Math.round(gras*100), color: darkMode ? '#F87171' : '#DC2626' },
+  ];
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', paddingTop: '12px', borderTop: `1px solid ${darkMode ? '#1F2937' : '#F1F5F9'}` }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '18px', paddingTop: '14px', borderTop: '1px solid ' + (darkMode ? '#1F2937' : '#F1F5F9') }}>
+      {/* Anillo de kcal */}
       <div style={{ position: 'relative', width: SIZE, height: SIZE, flexShrink: 0 }}>
-        <svg width={SIZE} height={SIZE} viewBox={'0 0 ' + SIZE + ' ' + SIZE}>
-          {rings.map(function(m) {
-            return <path key={m.label + 't'} d={trackStroke(m.r)} fill="none" stroke={trackColor} strokeWidth="9" strokeLinecap="round"/>;
-          })}
-          {rings.map(function(m) {
-            var d = ringStroke(m.r, m.pct / 100);
-            return d ? <path key={m.label + 'f'} d={d} fill="none" stroke={m.color} strokeWidth="9" strokeLinecap="round" style={{ transition: 'stroke-dasharray 0.6s ease-out' }}/> : null;
-          })}
+        <svg width={SIZE} height={SIZE} viewBox={'0 0 ' + SIZE + ' ' + SIZE} style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx={CX} cy={CY} r={R} fill="none" stroke={trackColor} strokeWidth={STROKE}/>
+          <circle
+            cx={CX} cy={CY} r={R}
+            fill="none"
+            stroke={ringColor}
+            strokeWidth={STROKE}
+            strokeLinecap="round"
+            strokeDasharray={CIRC}
+            strokeDashoffset={CIRC - dashFill}
+            style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.22, 1, 0.36, 1), stroke 0.3s' }}
+          />
         </svg>
-        {/* Hero number en el centro del ring */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-          <span style={{ fontSize: '28px', fontWeight: 800, lineHeight: 1, color: heroColor, fontFamily: 'var(--font-display, Inter)', fontVariantNumeric: 'tabular-nums' }}>{heroNum}</span>
-          <span style={{ fontSize: '10px', fontWeight: 600, marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.08em', color: darkMode ? '#94A3B8' : '#64748B' }}>kcal {heroLbl}</span>
+        {/* Hero centrado */}
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', textAlign: 'center', padding: '0 8px' }}>
+          <span style={{ fontSize: '30px', fontWeight: 800, lineHeight: 1, color: heroColor, fontFamily: 'var(--font-display, Inter), Inter, system-ui, sans-serif', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>{heroNum}</span>
+          <span style={{ fontSize: '9px', fontWeight: 700, marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.1em', color: darkMode ? '#94A3B8' : '#64748B', whiteSpace: 'nowrap' }}>
+            kcal {heroLbl}
+          </span>
         </div>
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0 }}>
-        {rings.map(function(m) {
+
+      {/* Barras de macros */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '11px', minWidth: 0 }}>
+        {bars.map(function(m) {
           var fillPct = Math.min(100, m.pct);
           return (
             <div key={m.label}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: darkMode ? '#94A3B8' : '#64748B' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: m.color, display: 'inline-block' }}></span>
+                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: m.color, display: 'inline-block' }}></span>
                   {m.label}
                 </span>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: darkMode ? '#E2E8F0' : '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
-                  <span style={{ fontWeight: 700 }}>{m.val}</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontWeight: 700, color: darkMode ? '#E2E8F0' : '#0F172A' }}>{m.val}</span>
                   <span style={{ color: darkMode ? '#64748B' : '#94A3B8', fontWeight: 500 }}>{' / ' + m.meta + 'g'}</span>
                 </span>
               </div>
-              <div style={{ width: '100%', height: '6px', borderRadius: '999px', overflow: 'hidden', backgroundColor: darkMode ? '#1F2937' : '#F1F5F9' }}>
-                <div style={{ width: fillPct + '%', height: '100%', borderRadius: '999px', backgroundColor: m.color, transition: 'width 0.6s ease-out' }}></div>
+              <div style={{ width: '100%', height: '5px', borderRadius: '999px', overflow: 'hidden', backgroundColor: darkMode ? '#1F2937' : '#E2E8F0' }}>
+                <div style={{ width: fillPct + '%', height: '100%', borderRadius: '999px', backgroundColor: m.color, transition: 'width 0.6s cubic-bezier(0.22, 1, 0.36, 1)' }}></div>
               </div>
             </div>
           );
