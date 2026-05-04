@@ -30,7 +30,7 @@ const TOOLS = [
   },
   {
     name: 'registrar_comida',
-    description: 'Registra una comida que el usuario YA comió. SOLO úsala cuando el usuario use tiempo pasado ("comí", "me comí", "almorcé", "tomé"). NUNCA la uses para comidas futuras, planificación, cambios de menú ni sugerencias. Puede registrar en días anteriores especificando fecha.',
+    description: 'Registra una comida que el usuario YA comió. SOLO úsala cuando el usuario use tiempo pasado ("comí", "me comí", "almorcé", "tomé", "desayuné", "cené"). NUNCA la uses para comidas futuras, planificación, cambios de menú ni sugerencias. Puede registrar en días anteriores especificando fecha.\n\nREGLA CRÍTICA — campo reemplaza: si el usuario menciona el tipo de comida ("de desayuno", "en el almuerzo", "en la once", "en la cena", "en la colación", o usa verbos como "desayuné", "almorcé", "cené"), SIEMPRE debes asignar reemplaza con el slot correcto. Usa EXACTAMENTE uno de estos valores: desayuno | snack_am | almuerzo | snack_pm | cena. Mapeo: desayuno/breakfast → "desayuno", colación AM/snack mañana → "snack_am", almuerzo/lunch → "almuerzo", once/snack tarde/merienda → "snack_pm", cena/dinner → "cena". Solo deja reemplaza vacío/null si la comida es genuinamente adicional sin relación a ningún slot del plan (ej: "me comí una fruta de snack entre comidas sin horario definido").',
     input_schema: {
       type: 'object',
       properties: {
@@ -39,7 +39,7 @@ const TOOLS = [
         proteinas_g:     { type: 'number',  description: 'Proteínas en gramos' },
         carbohidratos_g: { type: 'number',  description: 'Carbohidratos en gramos' },
         grasas_g:        { type: 'number',  description: 'Grasas en gramos' },
-        reemplaza:       { type: 'string',  description: 'Slot del plan que reemplaza: desayuno | almuerzo | once | cena | colacion. Null si es comida adicional.' },
+        reemplaza:       { type: 'string',  description: 'Slot del plan que reemplaza. Valores exactos permitidos: desayuno | snack_am | almuerzo | snack_pm | cena. Omitir (o null) SOLO si es una comida adicional sin relación a ningún slot del plan.' },
         fecha:           { type: 'string',  description: 'Fecha en formato YYYY-MM-DD. Omitir para usar hoy. Usar cuando el usuario mencione un día anterior ("ayer comí", "el lunes tuve", etc.).' }
       },
       required: ['nombre', 'kcal', 'proteinas_g', 'carbohidratos_g', 'grasas_g']
@@ -128,7 +128,7 @@ const TOOLS = [
       type: 'object',
       properties: {
         dia:   { type: 'string', description: 'Día de la semana: Lunes | Martes | Miércoles | Jueves | Viernes | Sábado | Domingo' },
-        tipo:  { type: 'string', description: 'Slot del plan: desayuno | almuerzo | once | cena | colacion' },
+        tipo:  { type: 'string', description: 'Slot del plan. Valores exactos: desayuno | snack_am | almuerzo | snack_pm | cena. Mapeo: desayuno → "desayuno", colación mañana → "snack_am", almuerzo → "almuerzo", once/merienda tarde → "snack_pm", cena → "cena".' },
         fecha: { type: 'string', description: 'Fecha exacta YYYY-MM-DD. Usar cuando el usuario mencione un día anterior. Si se omite, se infiere del día de la semana más reciente.' }
       },
       required: ['dia', 'tipo']
@@ -233,7 +233,17 @@ ELIGE UNA SOLA VÍA, NUNCA LAS DOS:
   • Comió algo ADICIONAL sin relación con ningún slot → USA SOLO registrar_comida SIN reemplaza.
   NUNCA llames registrar_comida Y marcar_comida_plan para la misma comida — causaría doble conteo.
 
-- registrar_comida: para comidas en tiempo PASADO o confirmaciones de propuestas. Si el usuario dice que reemplaza un slot del plan, usar reemplaza=slot.
+REGLA CRÍTICA — inferir reemplaza automáticamente:
+  Si el usuario menciona el nombre de una comida principal al registrar, SIEMPRE asigna reemplaza:
+  • "desayuné X", "de desayuno comí X", "en el desayuno tuve X" → reemplaza: "desayuno"
+  • "almorcé X", "en el almuerzo comí X", "al almuerzo tuve X" → reemplaza: "almuerzo"
+  • "en la once comí X", "en la merienda", "en el snack de la tarde" → reemplaza: "snack_pm"
+  • "cené X", "en la cena comí X" → reemplaza: "cena"
+  • "en la colación de la mañana", "snack de mañana" → reemplaza: "snack_am"
+  El usuario NO necesita decir explícitamente "esto reemplaza mi desayuno" — basta con mencionar el tipo de comida.
+  Solo omite reemplaza si la comida es genuinamente extra sin horario de slot (ej: "me comí una fruta mientras trabajaba").
+
+- registrar_comida: para comidas en tiempo PASADO o confirmaciones de propuestas. Los valores válidos para reemplaza son: desayuno | snack_am | almuerzo | snack_pm | cena.
 - eliminar_comida: cuando una comida fue registrada por error, no la comió, o quiere desmarcarla.
 - marcar_comida_plan: SOLO cuando el usuario confirme que comió EXACTAMENTE lo planificado en un slot. NUNCA la combines con registrar_comida para la misma comida.
 - get_plan_semana: cuando pregunte qué tiene planificado, qué come esta semana o cualquier día específico.

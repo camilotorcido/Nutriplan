@@ -11800,9 +11800,23 @@ function ChatPanel({ darkMode }) {
   }
 
   // ── Ejecutar tool calls localmente ─────────────────────────────────────
+  // Normalizar nombres de slot que el coach puede enviar en distintos formatos
+  function _normalizarSlot(s) {
+    if (!s) return null;
+    var mapa = {
+      once: 'snack_pm', merienda: 'snack_pm', 'snack pm': 'snack_pm', snack_tarde: 'snack_pm',
+      colacion: 'snack_am', colación: 'snack_am', 'snack am': 'snack_am', snack_mañana: 'snack_am',
+      desayuno: 'desayuno', almuerzo: 'almuerzo', cena: 'cena',
+      snack_am: 'snack_am', snack_pm: 'snack_pm'
+    };
+    return mapa[s.toLowerCase().trim()] || s;
+  }
+
   function ejecutarTool(name, input_) {
     if (name === 'registrar_comida') {
       var hoy = (input_.fecha && /^\d{4}-\d{2}-\d{2}$/.test(input_.fecha)) ? input_.fecha : _localDate();
+      // Normalizar slot en caso de que el coach envíe 'once', 'colacion', etc.
+      if (input_.reemplaza) input_ = Object.assign({}, input_, { reemplaza: _normalizarSlot(input_.reemplaza) });
       var extMap = {};
       try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
       var lista = extMap[hoy] || [];
@@ -12040,7 +12054,7 @@ function ChatPanel({ darkMode }) {
     // ── Adherencia al plan ─────────────────────────────────────────────────
     if (name === 'marcar_comida_plan') {
       var dia = input_.dia;
-      var tipo = input_.tipo;
+      var tipo = _normalizarSlot(input_.tipo);
       if (!dia || !tipo) return { ok: false, error: 'Falta dia o tipo.' };
       var plan = typeof cargarPlanSemanal === 'function' ? cargarPlanSemanal() : null;
       if (!plan) return { ok: false, error: 'Sin plan semanal activo.' };
