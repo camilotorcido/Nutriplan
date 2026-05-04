@@ -12313,6 +12313,26 @@ function ChatPanel({ darkMode }) {
     return function() { window.removeEventListener('calibrate_open_chat', onOpenChat); };
   }, []);
 
+  // ── Reset cross-day: limpiar historial si el día cambia mientras la app está abierta ──
+  // El useState initializer solo corre al montar; esto captura midnight y retorno de foco.
+  React.useEffect(function() {
+    function checkDateRollover() {
+      var today = _localDate();
+      var storedDate = localStorage.getItem('nutriplan_chat_date');
+      if (storedDate && storedDate !== today) {
+        localStorage.removeItem('nutriplan_chat_history');
+        localStorage.setItem('nutriplan_chat_date', today);
+        setMessages([]);
+      }
+    }
+    window.addEventListener('focus', checkDateRollover);
+    var interval = setInterval(checkDateRollover, 2 * 60 * 1000); // cada 2 min
+    return function() {
+      window.removeEventListener('focus', checkDateRollover);
+      clearInterval(interval);
+    };
+  }, []);
+
   var borderColor = darkMode ? '#374151' : '#e5e7eb';
   var bgPanel     = darkMode ? '#111827' : '#ffffff';
   var bgMsg       = darkMode ? '#1f2937' : '#f3f4f6';
