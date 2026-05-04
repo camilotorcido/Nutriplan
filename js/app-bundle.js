@@ -255,7 +255,8 @@ var _ALIMENTOS_RECOM = [
 ];
 // Devuelve hasta 3 alimentos que se acercan al gap calórico restante.
 // Prioriza proteína cuando gapProt > 20g.
-// Excluye foods ya registrados hoy (para que el pool rote a medida que el usuario loguea).
+// Excluye foods ya registrados hoy y rota por cantidad de comidas logueadas
+// para que las recomendaciones varíen visiblemente con cada registro.
 function _getRecomendaciones(gapKcal, gapProt, registradas) {
   if (!gapKcal || gapKcal <= 0) return [];
   registradas = registradas || [];
@@ -268,18 +269,27 @@ function _getRecomendaciones(gapKcal, gapProt, registradas) {
     var fn = food.nombre.toLowerCase();
     var firstWord = fn.split(/[\s(]/)[0]; // "Yogur griego natural (150g)" → "yogur"
     return nombresReg.some(function(reg) {
-      return reg === fn || reg.includes(firstWord) || fn.includes(reg.split(/[\s(]/)[0]);
+      var regFirstWord = reg.split(/[\s(]/)[0];
+      // Matching por primera palabra significativa (al menos 4 chars para evitar falsos positivos)
+      if (firstWord.length >= 4 && reg.indexOf(firstWord) >= 0) return true;
+      if (regFirstWord.length >= 4 && fn.indexOf(regFirstWord) >= 0) return true;
+      return false;
     });
   }
 
   var target = Math.max(60, Math.round(gapKcal / 3));
   var priorizaProt = (gapProt || 0) > 20;
+  // Rotación determinista: cantidad de registros + bucket de gap (cada 100 kcal cambia)
+  // Esto garantiza que cada nuevo registro produce un orden distinto en el sort.
+  var seed = (registradas.length * 7 + Math.floor(gapKcal / 100) * 3) % 17;
   var scored = _ALIMENTOS_RECOM
     .filter(function(f) { return f.kcal <= gapKcal * 1.08 && !_yaRegistrado(f); })
-    .map(function(f) {
+    .map(function(f, idx) {
       var fit = 1 - Math.min(1, Math.abs(f.kcal - target) / Math.max(target, 1));
       var protBonus = priorizaProt ? (f.prot / Math.max(f.kcal, 1)) * 6 : 0;
-      return { food: f, score: fit + protBonus };
+      // Jitter pseudo-aleatorio basado en seed e idx — desempata picks similares y rota el pool
+      var jitter = ((idx * 13 + seed) % 11) / 100; // 0 - 0.10
+      return { food: f, score: fit + protBonus + jitter };
     })
     .sort(function(a, b) { return b.score - a.score; });
   var picks = [];
