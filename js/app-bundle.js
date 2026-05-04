@@ -5204,53 +5204,76 @@ function MacroDonut({ consumed, metas, darkMode }) {
   var prot = metas.proteinas > 0 ? Math.min(1, (consumed.proteinas || 0) / metas.proteinas) : 0;
   var carb = metas.carbohidratos > 0 ? Math.min(1, (consumed.carbohidratos || 0) / metas.carbohidratos) : 0;
   var gras = metas.grasas > 0 ? Math.min(1, (consumed.grasas || 0) / metas.grasas) : 0;
-  var kcalPct = metas.calorias > 0 ? Math.min(100, Math.round((consumed.calorias || 0) / metas.calorias * 100)) : 0;
-  var R = 44, CX = 56, CY = 56, gapDeg = 6;
-  var trackColor = darkMode ? '#374151' : '#E5E7EB';
-  function arcD(startDeg, fillFrac) {
-    var deg = (120 - gapDeg) * Math.max(0, Math.min(1, fillFrac));
-    var s = (startDeg - 90) * Math.PI / 180;
-    var e = s + deg * Math.PI / 180;
-    var x1 = CX + R * Math.cos(s), y1 = CY + R * Math.sin(s);
-    var x2 = CX + R * Math.cos(e), y2 = CY + R * Math.sin(e);
-    return deg < 0.5 ? null : `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${R} ${R} 0 ${deg > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
-  }
-  function trackD(startDeg) {
-    var deg = 120 - gapDeg;
-    var s = (startDeg - 90) * Math.PI / 180;
-    var e = s + deg * Math.PI / 180;
-    var x1 = CX + R * Math.cos(s), y1 = CY + R * Math.sin(s);
-    var x2 = CX + R * Math.cos(e), y2 = CY + R * Math.sin(e);
-    return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${R} ${R} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
-  }
-  var macros = [
-    { label: 'Prot',   val: consumed.proteinas || 0,      meta: metas.proteinas,      pct: Math.round(prot*100), color: '#3B82F6', start: 3   },
-    { label: 'Carb',   val: consumed.carbohidratos || 0,  meta: metas.carbohidratos,  pct: Math.round(carb*100), color: '#F59E0B', start: 123 },
-    { label: 'Grasas', val: consumed.grasas || 0,         meta: metas.grasas,         pct: Math.round(gras*100), color: '#EF4444', start: 243 },
+  var kcalPct = metas.calorias > 0 ? Math.min(999, Math.round((consumed.calorias || 0) / metas.calorias * 100)) : 0;
+  var kcalRem = Math.max(0, (metas.calorias || 0) - (consumed.calorias || 0));
+  var kcalOver = Math.max(0, (consumed.calorias || 0) - (metas.calorias || 0));
+  // Ring grande (140) — más presencia. Tres arcos concéntricos estilo Apple Activity.
+  var SIZE = 140, CX = 70, CY = 70;
+  var trackColor = darkMode ? '#1F2937' : '#F1F5F9';
+  // Tres anillos concéntricos (de afuera hacia adentro): proteína, carbos, grasas
+  var rings = [
+    { label: 'Prot',   val: consumed.proteinas || 0,      meta: metas.proteinas,      pct: Math.round(prot*100), color: darkMode ? '#60A5FA' : '#2563EB', r: 60 },
+    { label: 'Carb',   val: consumed.carbohidratos || 0,  meta: metas.carbohidratos,  pct: Math.round(carb*100), color: darkMode ? '#FBBF24' : '#D97706', r: 47 },
+    { label: 'Grasas', val: consumed.grasas || 0,         meta: metas.grasas,         pct: Math.round(gras*100), color: darkMode ? '#F87171' : '#DC2626', r: 34 },
   ];
+  function ringStroke(r, fillFrac) {
+    // Arco completo de 270° (3/4 de círculo) con apertura abajo para mejor lectura
+    var totalArc = 270;
+    var startAngle = 135; // empieza abajo-izquierda
+    var deg = totalArc * Math.max(0, Math.min(1, fillFrac));
+    var s = (startAngle - 90) * Math.PI / 180;
+    var e = (startAngle - 90 + deg) * Math.PI / 180;
+    var x1 = CX + r * Math.cos(s), y1 = CY + r * Math.sin(s);
+    var x2 = CX + r * Math.cos(e), y2 = CY + r * Math.sin(e);
+    return deg < 1 ? null : `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${deg > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+  }
+  function trackStroke(r) {
+    var totalArc = 270;
+    var startAngle = 135;
+    var s = (startAngle - 90) * Math.PI / 180;
+    var e = (startAngle - 90 + totalArc) * Math.PI / 180;
+    var x1 = CX + r * Math.cos(s), y1 = CY + r * Math.sin(s);
+    var x2 = CX + r * Math.cos(e), y2 = CY + r * Math.sin(e);
+    return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${totalArc > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+  }
+  var heroNum  = kcalOver > 0 ? kcalOver : kcalRem;
+  var heroLbl  = kcalOver > 0 ? t('exceso','over') : t('restantes','left');
+  var heroColor = kcalOver > 0 ? (darkMode ? '#F87171' : '#DC2626') : (darkMode ? '#FFFFFF' : '#0F172A');
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', paddingTop: '8px', borderTop: `1px solid ${darkMode ? '#374151' : '#F9FAFB'}` }}>
-      <svg width="100" height="100" viewBox="0 0 112 112" style={{ flexShrink: 0 }}>
-        {macros.map(m => (
-          <path key={m.label + 't'} d={trackD(m.start)} fill="none" stroke={trackColor} strokeWidth="10" strokeLinecap="round"/>
-        ))}
-        {macros.map(m => {
-          var d = arcD(m.start, m.pct / 100);
-          return d ? <path key={m.label + 'f'} d={d} fill="none" stroke={m.color} strokeWidth="10" strokeLinecap="round"/> : null;
-        })}
-        <text x={CX} y={CY - 4} textAnchor="middle" fill={darkMode ? 'white' : '#111827'} fontSize="17" fontWeight="bold">{kcalPct}%</text>
-        <text x={CX} y={CY + 11} textAnchor="middle" fill={darkMode ? '#9CA3AF' : '#6B7280'} fontSize="9">kcal</text>
-      </svg>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {macros.map(function(m) {
+    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', paddingTop: '12px', borderTop: `1px solid ${darkMode ? '#1F2937' : '#F1F5F9'}` }}>
+      <div style={{ position: 'relative', width: SIZE, height: SIZE, flexShrink: 0 }}>
+        <svg width={SIZE} height={SIZE} viewBox={'0 0 ' + SIZE + ' ' + SIZE}>
+          {rings.map(function(m) {
+            return <path key={m.label + 't'} d={trackStroke(m.r)} fill="none" stroke={trackColor} strokeWidth="9" strokeLinecap="round"/>;
+          })}
+          {rings.map(function(m) {
+            var d = ringStroke(m.r, m.pct / 100);
+            return d ? <path key={m.label + 'f'} d={d} fill="none" stroke={m.color} strokeWidth="9" strokeLinecap="round" style={{ transition: 'stroke-dasharray 0.6s ease-out' }}/> : null;
+          })}
+        </svg>
+        {/* Hero number en el centro del ring */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <span style={{ fontSize: '28px', fontWeight: 800, lineHeight: 1, color: heroColor, fontFamily: 'var(--font-display, Inter)', fontVariantNumeric: 'tabular-nums' }}>{heroNum}</span>
+          <span style={{ fontSize: '10px', fontWeight: 600, marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.08em', color: darkMode ? '#94A3B8' : '#64748B' }}>kcal {heroLbl}</span>
+        </div>
+      </div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0 }}>
+        {rings.map(function(m) {
+          var fillPct = Math.min(100, m.pct);
           return (
             <div key={m.label}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: darkMode ? '#9CA3AF' : '#6B7280' }}>{m.label}</span>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: darkMode ? '#E5E7EB' : '#1F2937' }}>{m.val}/{m.meta}g</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: darkMode ? '#94A3B8' : '#64748B' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: m.color, display: 'inline-block' }}></span>
+                  {m.label}
+                </span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: darkMode ? '#E2E8F0' : '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ fontWeight: 700 }}>{m.val}</span>
+                  <span style={{ color: darkMode ? '#64748B' : '#94A3B8', fontWeight: 500 }}>{' / ' + m.meta + 'g'}</span>
+                </span>
               </div>
-              <div style={{ width: '100%', height: '5px', borderRadius: '999px', overflow: 'hidden', backgroundColor: darkMode ? '#374151' : '#E5E7EB' }}>
-                <div style={{ width: Math.min(100, m.pct) + '%', height: '100%', borderRadius: '999px', backgroundColor: m.color, transition: 'width 0.5s' }}></div>
+              <div style={{ width: '100%', height: '6px', borderRadius: '999px', overflow: 'hidden', backgroundColor: darkMode ? '#1F2937' : '#F1F5F9' }}>
+                <div style={{ width: fillPct + '%', height: '100%', borderRadius: '999px', backgroundColor: m.color, transition: 'width 0.6s ease-out' }}></div>
               </div>
             </div>
           );
@@ -8457,44 +8480,67 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
       )}
 
       {/* ── Progreso del día ─────────────────────────────────────────────── */}
-      {metaKcalDia > 0 && (
+      {metaKcalDia > 0 && (() => {
+        var pctKcal = Math.round((consumidoHoy.calorias / Math.max(metaKcalDia, 1)) * 100);
+        var pctClamped = Math.min(100, pctKcal);
+        var inRange = pctKcal >= 95 && pctKcal <= 105;
+        var over = pctKcal > 105;
+        var barColor = over
+          ? (darkMode ? '#F87171' : '#DC2626')
+          : inRange
+            ? (darkMode ? '#4ADE80' : '#16A34A')
+            : (darkMode ? '#34D399' : '#0D9488');
+        return (
         <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
           <div className={`px-5 py-3 flex items-center justify-between border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-            <h3 className={`text-sm font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              <i className="fas fa-chart-line mr-2"></i>{t('Progreso del día','Daily progress')}
+            <h3 className={`text-[11px] font-bold uppercase tracking-[0.12em] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              {t('Resumen de hoy','Today\'s summary')}
             </h3>
             {consumidoHoy.calorias > 0 && (
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                consumidoHoy.calorias >= metaKcalDia
-                  ? 'bg-green-500/20 text-green-600'
-                  : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'
+              <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full tabular-nums ${
+                inRange
+                  ? (darkMode ? 'bg-green-900/40 text-green-400' : 'bg-green-50 text-green-700')
+                  : over
+                    ? (darkMode ? 'bg-red-900/40 text-red-400' : 'bg-red-50 text-red-700')
+                    : (darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700')
               }`}>
-                {Math.min(100, Math.round((consumidoHoy.calorias / metaKcalDia) * 100))}%
+                {pctKcal}%
               </span>
             )}
           </div>
           <div className="px-5 py-4 space-y-4">
-            {/* Kcal principal */}
+            {/* Kcal principal: número grande tabular + meta secundaria */}
             <div>
-              <div className="flex items-end justify-between mb-2">
-                <div className="flex items-baseline gap-1">
-                  <span className={`text-3xl font-extrabold font-display leading-none ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              <div className="flex items-end justify-between mb-2.5">
+                <div className="flex items-baseline gap-1.5">
+                  <span className={`font-display leading-none tabular-nums ${darkMode ? 'text-white' : 'text-gray-900'}`}
+                    style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
                     {consumidoHoy.calorias}
                   </span>
-                  <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>
+                  <span className={`text-sm font-medium tabular-nums ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                     / {metaKcalDia} kcal
                   </span>
                 </div>
-                <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                <span className={`text-[11px] font-semibold uppercase tracking-wider tabular-nums ${
+                  over
+                    ? (darkMode ? 'text-red-400' : 'text-red-600')
+                    : (darkMode ? 'text-gray-400' : 'text-gray-500')
+                }`}>
                   {metaKcalDia - consumidoHoy.calorias > 0
-                    ? (metaKcalDia - consumidoHoy.calorias) + t(' kcal restantes',' kcal left')
-                    : t('¡Meta alcanzada! 🎯','Goal reached! 🎯')}
+                    ? (metaKcalDia - consumidoHoy.calorias) + ' ' + t('restantes','left')
+                    : over
+                      ? '+' + (consumidoHoy.calorias - metaKcalDia) + ' ' + t('exceso','over')
+                      : t('Meta alcanzada','Goal reached')}
                 </span>
               </div>
-              <div className={`w-full h-3 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+              <div className={`w-full h-2.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700/60' : 'bg-gray-100'}`}>
                 <div
-                  className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-green-500 to-emerald-400"
-                  style={{ width: Math.min(100, consumidoHoy.calorias > 0 ? Math.round((consumidoHoy.calorias / metaKcalDia) * 100) : 0) + '%' }}>
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: pctClamped + '%',
+                    background: barColor,
+                    transition: 'width 0.6s cubic-bezier(0.22, 1, 0.36, 1), background 0.3s'
+                  }}>
                 </div>
               </div>
             </div>
@@ -8527,7 +8573,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             )}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Comidas del día — en vacaciones se muestra vista de macros libre */}
       {esVacaciones ? (
@@ -8911,8 +8958,9 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                             window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
                             setRefresh(function(r) { return r + 1; });
                           }}
-                          className={`flex-shrink-0 h-6 px-2.5 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-all cursor-pointer ${darkMode ? 'bg-teal-900/50 text-teal-400 hover:bg-teal-800/60' : 'bg-teal-50 text-teal-600 hover:bg-teal-100'}`}>
-                          <i className="fas fa-plus text-[9px]"></i>{t(' Agregar',' Add')}
+                          aria-label={t('Agregar ' + food.nombre, 'Add ' + food.nombre)}
+                          className={`flex-shrink-0 h-9 px-3 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer active:scale-95 ${darkMode ? 'bg-teal-900/40 text-teal-300 hover:bg-teal-800/60 hover:text-teal-200' : 'bg-teal-50 text-teal-700 hover:bg-teal-100'}`}>
+                          <i className="fas fa-plus text-[10px]"></i>{t('Agregar','Add')}
                         </button>
                       </div>
                     );
@@ -8978,7 +9026,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                         if (window._NP_toast) window._NP_toast(t('Marcado como comido','Marked as eaten'), 'success');
                       }}
                       title={t('Marcar como comido','Mark as eaten')}
-                      className={`flex-shrink-0 h-7 px-2 rounded-lg flex items-center gap-1 text-xs font-semibold transition-all cursor-pointer ${darkMode ? 'bg-green-900/50 text-green-400 hover:bg-green-800' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}>
+                      aria-label={t('Marcar como comido','Mark as eaten')}
+                      className={`flex-shrink-0 h-9 px-3 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer active:scale-95 ${darkMode ? 'bg-green-900/40 text-green-300 hover:bg-green-800/60 hover:text-green-200' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}>
                       <i className="fas fa-check text-[10px]"></i>{t('Comido','Eaten')}
                     </button>
                     {/* Eliminar */}
@@ -8989,7 +9038,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                         setRefresh(function(r) { return r + 1; });
                       }}
                       aria-label={t('Eliminar','Remove')}
-                      className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${darkMode ? 'text-gray-600 hover:text-red-400 hover:bg-gray-700' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'}`}>
+                      className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer active:scale-95 ${darkMode ? 'text-gray-500 hover:text-red-400 hover:bg-gray-700/60' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'}`}>
                       <i className="fas fa-trash text-xs"></i>
                     </button>
                   </div>
@@ -9000,8 +9049,10 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
 
           {comidasExtAdicional.length === 0 && comidasPendientes.length === 0 ? (
             <button onClick={function() { setShowModalExt(true); }}
-              className={`w-full px-5 py-4 text-center text-xs transition-colors cursor-pointer border-t ${darkMode ? 'text-gray-500 hover:bg-gray-700/50 border-gray-700' : 'text-gray-400 hover:bg-gray-50 border-gray-100'}`}>
-              <i className="fas fa-plus-circle mr-1.5"></i>{t('Registrar comida no planificada','Log an unplanned meal')}
+              className={`w-full px-5 py-5 flex flex-col items-center gap-1.5 transition-colors cursor-pointer border-t active:scale-[0.99] ${darkMode ? 'border-gray-700 text-gray-400 hover:bg-gray-700/40 hover:text-gray-200' : 'border-gray-100 text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`}>
+              <i className={`fas fa-plus-circle text-base ${darkMode ? 'text-teal-400' : 'text-teal-500'}`}></i>
+              <span className="text-xs font-semibold">{t('Registrar comida no planificada','Log an unplanned meal')}</span>
+              <span className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{t('Snack, fruta, café con leche…','Snack, fruit, coffee with milk…')}</span>
             </button>
           ) : (
             <div className={`divide-y border-t ${darkMode ? 'divide-gray-700 border-gray-700' : 'divide-gray-50 border-gray-100'}`}>
@@ -9035,14 +9086,14 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                         setRefresh(function(r) { return r + 1; });
                       }}
                       aria-label={t('Eliminar comida adicional','Remove extra meal')}
-                      className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${darkMode ? 'text-gray-600 hover:text-red-400 hover:bg-gray-700' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'}`}>
+                      className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer active:scale-95 ${darkMode ? 'text-gray-500 hover:text-red-400 hover:bg-gray-700/60' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'}`}>
                       <i className="fas fa-trash text-xs"></i>
                     </button>
                   </div>
                 );
               })}
               <button onClick={function() { setShowModalExt(true); }}
-                className={`w-full px-5 py-3 text-center text-xs transition-colors cursor-pointer ${darkMode ? 'text-gray-500 hover:bg-gray-700/50' : 'text-gray-400 hover:bg-gray-50'}`}>
+                className={`w-full px-5 py-3.5 text-center text-xs font-medium transition-colors cursor-pointer ${darkMode ? 'text-gray-400 hover:bg-gray-700/40 hover:text-gray-200' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`}>
                 <i className="fas fa-plus-circle mr-1.5"></i>{t('Agregar otra','Add another')}
               </button>
             </div>
