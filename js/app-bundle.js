@@ -8917,11 +8917,25 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                     {/* Confirmar consumida */}
                     <button
                       onClick={function() {
-                        var confirmada = Object.assign({}, c, { pendiente: undefined });
+                        // Crear copia limpia SIN el campo pendiente (delete > undefined para que no quede el key)
+                        var confirmada = Object.assign({}, c);
+                        delete confirmada.pendiente;
                         var nuevas = comidasExt.map(function(x) { return x.id === c.id ? confirmada : x; });
                         _guardarComidasExt(fechaHoyIso, nuevas);
                         _agregarAdherenciaExt(diaActual, confirmada);
+                        // Si la comida pendiente reemplazaba un slot, marcar adherencia del slot como comido
+                        if (confirmada.reemplaza && typeof window.adherencia !== 'undefined' && window.adherencia.marcar) {
+                          var planSlot = (comidasHoy && comidasHoy[confirmada.reemplaza]) || null;
+                          window.adherencia.marcar(diaActual, confirmada.reemplaza, true, {
+                            kcal_plan: planSlot ? (planSlot.calorias_escaladas || planSlot.calorias || 0) : confirmada.kcal,
+                            proteinas_plan: planSlot ? (planSlot.proteinas_escaladas || planSlot.proteinas || 0) : confirmada.proteinas_g,
+                            nombre: confirmada.nombre
+                          }, 1);
+                        }
+                        // Disparar evento global para que toda la UI re-lea localStorage (mismo flujo que ejecutarTool)
+                        window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
                         setRefresh(function(r) { return r + 1; });
+                        if (window._NP_toast) window._NP_toast(t('Marcado como comido','Marked as eaten'), 'success');
                       }}
                       title={t('Marcar como comido','Mark as eaten')}
                       className={`flex-shrink-0 h-7 px-2 rounded-lg flex items-center gap-1 text-xs font-semibold transition-all cursor-pointer ${darkMode ? 'bg-green-900/50 text-green-400 hover:bg-green-800' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}>

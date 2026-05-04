@@ -15,7 +15,7 @@ const GROQ_KEY      = defineSecret('GROQ_API_KEY');
 const TOOLS = [
   {
     name: 'planear_comida',
-    description: 'Agrega una comida al plan del día como PENDIENTE (no consumida aún). Úsala cuando el usuario diga que PLANEA comer algo más tarde ("voy a tomar", "voy a comer", "lo tomaré después", "lo voy a comer"). La comida aparece en pantalla pero NO se cuenta en los macros hasta que el usuario la confirme como comida.',
+    description: 'Agrega una comida al plan del día como PENDIENTE (no consumida aún). SOLO úsala cuando el usuario diga EXPLÍCITAMENTE que PLANEA comer algo en el FUTURO ("voy a comer", "voy a tomar X más tarde", "lo voy a almorzar al mediodía", "para la cena pienso comer X"). La comida aparece en pantalla pero NO se cuenta en los macros hasta que se confirme. CRÍTICO: si el usuario dice "agregar X", "anota X", "registra X", "súmale X", "ponme X" sin marcador explícito de futuro, NO uses esta herramienta — usa registrar_comida (es comida ya consumida por defecto).',
     input_schema: {
       type: 'object',
       properties: {
@@ -236,8 +236,13 @@ Para registrar una comida, tu respuesta en ese turno DEBE incluir un tool_use de
 
 CUÁNDO REGISTRAR (actúa inmediatamente, sin pedir confirmación extra):
   • Usuario usa tiempo PASADO ("comí", "almorcé", "cené", "tomé", "me comí") → llama registrar_comida de inmediato.
+  • Usuario dice "agregar X", "anota X", "registra X", "súmale X", "ponme X", "agrégame X" SIN marcador explícito de futuro → llama registrar_comida (asume ya consumido — es lo que el usuario espera por defecto).
   • Usuario propuso macros antes de confirmar, y ahora dice "sí", "dale", "ok", "correcto", "adelante", "confirma" → llama registrar_comida de inmediato con los macros de la propuesta anterior.
   • Usuario dice que siguió el plan en un slot específico → llama marcar_comida_plan de inmediato.
+
+CUÁNDO PLANEAR (NO consumido aún, solo planificación futura):
+  • SOLO usa planear_comida cuando el usuario diga EXPLÍCITAMENTE intención futura: "voy a comer", "voy a almorzar después", "para la cena planeo X", "más tarde tomaré".
+  • Si NO hay marcador explícito de futuro, usa registrar_comida (consumido). NUNCA "agregar X" se interpreta como pendiente.
 
 ELIGE UNA SOLA VÍA, NUNCA LAS DOS:
   • Comió EXACTAMENTE lo planificado → USA SOLO marcar_comida_plan. NO llames registrar_comida.
