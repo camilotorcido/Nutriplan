@@ -255,12 +255,27 @@ var _ALIMENTOS_RECOM = [
 ];
 // Devuelve hasta 3 alimentos que se acercan al gap calórico restante.
 // Prioriza proteína cuando gapProt > 20g.
-function _getRecomendaciones(gapKcal, gapProt) {
+// Excluye foods ya registrados hoy (para que el pool rote a medida que el usuario loguea).
+function _getRecomendaciones(gapKcal, gapProt, registradas) {
   if (!gapKcal || gapKcal <= 0) return [];
+  registradas = registradas || [];
+  // Normalizar nombres registrados para matching defensivo
+  var nombresReg = registradas.map(function(c) {
+    return ((c && c.nombre) || '').toLowerCase().trim();
+  }).filter(Boolean);
+
+  function _yaRegistrado(food) {
+    var fn = food.nombre.toLowerCase();
+    var firstWord = fn.split(/[\s(]/)[0]; // "Yogur griego natural (150g)" → "yogur"
+    return nombresReg.some(function(reg) {
+      return reg === fn || reg.includes(firstWord) || fn.includes(reg.split(/[\s(]/)[0]);
+    });
+  }
+
   var target = Math.max(60, Math.round(gapKcal / 3));
   var priorizaProt = (gapProt || 0) > 20;
   var scored = _ALIMENTOS_RECOM
-    .filter(function(f) { return f.kcal <= gapKcal * 1.08; })
+    .filter(function(f) { return f.kcal <= gapKcal * 1.08 && !_yaRegistrado(f); })
     .map(function(f) {
       var fit = 1 - Math.min(1, Math.abs(f.kcal - target) / Math.max(target, 1));
       var protBonus = priorizaProt ? (f.prot / Math.max(f.kcal, 1)) * 6 : 0;
@@ -8805,11 +8820,13 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           </div>
         </div>
 
-        {/* ── Sub-sección 1: Recomendadas para hoy ── */}
-        {(function() {
+        {/* ── Sub-sección 1: Recomendadas para hoy (solo en día actual) ── */}
+        {esHoy && (function() {
           var gapKcal = Math.round(metaKcalDia - consumidoHoy.calorias);
           var gapProt = Math.round(metaProtDia - consumidoHoy.proteinas);
-          var recom = (gapKcal >= 50) ? _getRecomendaciones(gapKcal, gapProt) : [];
+          // Pasar comidasExt para que las recomendaciones excluyan lo ya registrado
+          // → el pool rota naturalmente a medida que el usuario loguea comidas.
+          var recom = (gapKcal >= 50) ? _getRecomendaciones(gapKcal, gapProt, comidasExt) : [];
           return (
             <div className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
               {/* Sub-header */}
