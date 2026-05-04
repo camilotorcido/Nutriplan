@@ -8235,12 +8235,19 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         const headerGradient = OBJETIVO_GRADIENTS[obj] || OBJETIVO_GRADIENTS['default'];
         const objetivoLabel = { perdida: 'Pérdida de grasa', volumen: 'Ganancia muscular', mantenimiento: 'Mantenimiento' }[obj] || '';
         return (
-          <div className="rounded-2xl px-5 py-4 text-white shadow-md" style={{ background: headerGradient }}>
-            <p className="text-sm font-medium opacity-90">{fechaStr}{objetivoLabel ? ' · ' + objetivoLabel : ''}</p>
-            <h2 className="text-xl font-extrabold font-display mt-0.5">{saludo}{nombreCorto ? ', ' + nombreCorto : ''} 👋</h2>
-            {perfil && (
-              <p className="text-sm opacity-80 mt-1">{perfil.caloriasObjetivo} kcal · {perfil.numSemanas > 1 ? perfil.numSemanas + t(' semanas',' weeks') : t('1 semana','1 week')}</p>
-            )}
+          <div className="rounded-2xl px-5 py-4 text-white shadow-md relative overflow-hidden" style={{ background: headerGradient }}>
+            {/* Sutil overlay radial para reducir brillo del gradient */}
+            <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 100% 0%, rgba(255,255,255,0.08), transparent 60%)', pointerEvents: 'none' }} />
+            <div className="relative">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] opacity-80">{fechaStr}{objetivoLabel ? ' · ' + objetivoLabel : ''}</p>
+              <h2 className="font-display mt-1.5" style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.01em', lineHeight: 1.1 }}>
+                {saludo}{nombreCorto ? ', ' + nombreCorto : ''}
+              </h2>
+              {perfil && (
+                <p className="text-xs font-medium opacity-85 mt-1 tabular-nums">
+                  <span style={{ fontWeight: 700 }}>{perfil.caloriasObjetivo}</span> kcal · {perfil.numSemanas > 1 ? perfil.numSemanas + t(' semanas',' weeks') : t('1 semana','1 week')}
+                </p>
+              )}
             {/* Streak + training/rest day badges */}
             {(() => {
               var streak = calcularStreakAdherencia();
@@ -8277,6 +8284,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                 : t('¡Marca las comidas que ya tomaste para ver tu progreso!','Mark the meals you\'ve had to see your progress!');
               return <p style={{ fontSize: '12px', opacity: 0.82, marginTop: '6px', fontWeight: 500 }}>{_msg}</p>;
             })()}
+            </div>
           </div>
         );
       })()}
