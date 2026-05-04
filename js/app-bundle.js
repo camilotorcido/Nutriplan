@@ -8044,6 +8044,9 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
   const tiposReemplazados = comidasExt.filter(function(c) { return c.reemplaza; }).map(function(c) { return c.reemplaza; });
   const comidasExtAdicional = comidasExt.filter(function(c) { return !c.reemplaza && !c.pendiente; });
   const comidasPendientes   = comidasExt.filter(function(c) { return c.pendiente; });
+  // "Mis registros del día": TODOS los registros manuales del coach (adicionales + reemplazos, sin pendientes)
+  // Los reemplazos se muestran con etiqueta para que el usuario siempre vea todo lo que registró.
+  const todosLosRegistrosManuales = comidasExt.filter(function(c) { return !c.pendiente; });
   var resumenBase = resumenHoy;
   if (tiposReemplazados.length > 0) {
     var comidasHoyEfectivas = {};
@@ -8943,20 +8946,26 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             </div>
           )}
 
-          {comidasExtAdicional.length === 0 && comidasPendientes.length === 0 ? (
+          {todosLosRegistrosManuales.length === 0 && comidasPendientes.length === 0 ? (
             <button onClick={function() { setShowModalExt(true); }}
               className={`w-full px-5 py-4 text-center text-xs transition-colors cursor-pointer border-t ${darkMode ? 'text-gray-500 hover:bg-gray-700/50 border-gray-700' : 'text-gray-400 hover:bg-gray-50 border-gray-100'}`}>
               <i className="fas fa-plus-circle mr-1.5"></i>{t('Registrar comida no planificada','Log an unplanned meal')}
             </button>
           ) : (
             <div className={`divide-y border-t ${darkMode ? 'divide-gray-700 border-gray-700' : 'divide-gray-50 border-gray-100'}`}>
-              {comidasExtAdicional.map(function(c) {
+              {todosLosRegistrosManuales.map(function(c) {
+                var esReemplazo = !!c.reemplaza;
                 return (
                   <div key={c.id} className="px-5 py-2.5 flex items-center gap-3">
-                    <i className={`fas fa-utensils text-sm w-4 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}></i>
+                    <i className={`fas ${esReemplazo ? 'fa-arrows-rotate text-amber-400' : 'fa-utensils'} text-sm w-4 text-center ${!esReemplazo ? (darkMode ? 'text-gray-400' : 'text-gray-500') : ''}`}></i>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <div className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{c.nombre}</div>
+                        {esReemplazo && (
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold flex-shrink-0 ${darkMode ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-100 text-amber-700'}`}>
+                            {tComida(c.reemplaza)}
+                          </span>
+                        )}
                         {_horaComida(c) && (
                           <span className={`text-[10px] flex-shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                             <i className="fas fa-clock mr-0.5" style={{fontSize:'8px'}}></i>{_horaComida(c)}
@@ -8979,7 +8988,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                         _eliminarAdherenciaExt(diaActual, c.id);
                         setRefresh(function(r) { return r + 1; });
                       }}
-                      aria-label={t('Eliminar comida adicional','Remove extra meal')}
+                      aria-label={t('Eliminar registro','Remove entry')}
                       className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${darkMode ? 'text-gray-600 hover:text-red-400 hover:bg-gray-700' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'}`}>
                       <i className="fas fa-trash text-xs"></i>
                     </button>

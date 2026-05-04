@@ -265,6 +265,13 @@ MODELO DE DATOS — CRÍTICO PARA ENTENDER LA APP:
 
 - registrar_comida: para comidas en tiempo PASADO o confirmaciones de propuestas. Los valores válidos para reemplaza son: desayuno | snack_am | almuerzo | snack_pm | cena.
 - eliminar_comida: cuando una comida fue registrada por error, no la comió, o quiere desmarcarla. NUNCA la uses para "hacer espacio" a otra comida — las comidas adicionales no tienen límite.
+
+CAMBIAR UNA COMIDA DE REEMPLAZO A ADICIONAL — FLUJO OBLIGATORIO:
+  Cuando el usuario dice "dejalo como adicional", "quítale el reemplazo", "no reemplaces nada", etc.:
+  1. Llama eliminar_comida con el nombre de la comida
+  2. Llama registrar_comida con los MISMOS macros pero SIN reemplaza
+  NUNCA digas "Entendido, ya está" o "ya está registrado como adicional" sin haber llamado primero estas dos herramientas.
+  Si no recuerdas los macros exactos de la comida, llama get_resumen_dia primero para verlos, y luego haz el delete + re-register.
 - marcar_comida_plan: SOLO cuando el usuario confirme que comió EXACTAMENTE lo planificado en un slot. NUNCA la combines con registrar_comida para la misma comida.
 - get_plan_semana: cuando pregunte qué tiene planificado, qué come esta semana o cualquier día específico.
 - get_lista_compras: cuando pregunte qué necesita comprar, qué le falta, o qué hay en la lista.
