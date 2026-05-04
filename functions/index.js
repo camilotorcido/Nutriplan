@@ -58,7 +58,7 @@ const TOOLS = [
   },
   {
     name: 'get_resumen_dia',
-    description: 'Devuelve el resumen de macros consumidos vs objetivo para una fecha, incluyendo el listado detallado de cada comida registrada. La respuesta incluye: consumido (totales kcal/proteínas/carbos/grasas), objetivo, comidas_externas (array con id/nombre/kcal de cada comida registrada manualmente) y comidas_plan_comidas (array con slot/nombre/kcal de los slots del plan marcados como comidos). Sin fecha devuelve hoy; con fecha devuelve ese día específico.',
+    description: 'Devuelve el resumen de macros consumidos vs objetivo para una fecha. La respuesta incluye: consumido (totales), objetivo, diferencia, comidas_plan_comidas (slots del plan marcados como comidos), comidas_reemplazo (comidas externas que reemplazan un slot, campo reemplaza≠null), comidas_adicionales (extras sin slot asignado, pueden ser muchas — es normal). Sin fecha devuelve hoy; con fecha devuelve ese día específico.',
     input_schema: {
       type: 'object',
       properties: {
@@ -256,15 +256,22 @@ REGLA CRÍTICA — inferir reemplaza automáticamente:
   EXCEPCIÓN — slot ya ocupado: si el slot mencionado aparece en "SLOTS YA REEMPLAZADOS HOY", NO uses reemplaza. Registra como comida adicional (sin reemplaza). El usuario está comiendo algo extra en ese horario, no reemplazando de nuevo.
   Solo omite reemplaza si el slot ya está ocupado, o si la comida es genuinamente extra sin horario de slot (ej: "me comí una fruta mientras trabajaba").
 
+MODELO DE DATOS — CRÍTICO PARA ENTENDER LA APP:
+  La app tiene DOS tipos de comidas registradas, son completamente independientes:
+  1. comidas_reemplazo: comidas externas que REEMPLAZAN un slot del plan (reemplaza≠null). Máximo 1 por slot.
+  2. comidas_adicionales: comidas extras SIN slot asignado (reemplaza=null). Puede haber INFINITAS — es normal y esperado.
+  Ambas coexisten sin problemas. NUNCA sugieras eliminar una comida adicional porque "ya hay algo en ese slot".
+  El campo comidas_adicionales en get_resumen_dia es la lista de extras; que tenga 3, 5 o 10 entradas es perfectamente válido.
+
 - registrar_comida: para comidas en tiempo PASADO o confirmaciones de propuestas. Los valores válidos para reemplaza son: desayuno | snack_am | almuerzo | snack_pm | cena.
-- eliminar_comida: cuando una comida fue registrada por error, no la comió, o quiere desmarcarla.
+- eliminar_comida: cuando una comida fue registrada por error, no la comió, o quiere desmarcarla. NUNCA la uses para "hacer espacio" a otra comida — las comidas adicionales no tienen límite.
 - marcar_comida_plan: SOLO cuando el usuario confirme que comió EXACTAMENTE lo planificado en un slot. NUNCA la combines con registrar_comida para la misma comida.
 - get_plan_semana: cuando pregunte qué tiene planificado, qué come esta semana o cualquier día específico.
 - get_lista_compras: cuando pregunte qué necesita comprar, qué le falta, o qué hay en la lista.
 - marcar_comprado: cuando diga que ya compró un ingrediente específico.
 - marcar_en_despensa: cuando diga que ya tiene un ingrediente en casa.
 - quitar_de_despensa: cuando diga que se le acabó algo o que necesita comprar un ingrediente que tenía.
-- get_resumen_dia: cuando pregunte cómo va el día, cuántas calorías lleva, qué comidas tiene registradas, o pida listar lo que comió en un día. La respuesta incluye comidas_externas (cada comida registrada manualmente con nombre y kcal) y comidas_plan_comidas (slots del plan marcados como comidos). Úsala para mostrar el desglose individual cuando el usuario pida "lista mis comidas de ayer" o similar. Pasar fecha para días anteriores.
+- get_resumen_dia: cuando pregunte cómo va el día, cuántas calorías lleva o qué comidas tiene registradas. La respuesta incluye comidas_reemplazo (slots reemplazados), comidas_adicionales (extras sin límite — que haya varias es normal) y comidas_plan_comidas (slots del plan marcados como comidos). Úsala para mostrar el desglose individual. Pasar fecha para días anteriores.
 - buscar_alimento: cuando pregunte los macros de un alimento específico.
 - Si el usuario pide cambiar, sugerir o planificar comidas futuras, responde con texto solamente — NO llames a registrar_comida.
 - Si no sabes los macros exactos al registrar, estímalos razonablemente y dilo.

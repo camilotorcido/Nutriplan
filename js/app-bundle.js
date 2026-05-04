@@ -11930,11 +11930,15 @@ function ChatPanel({ darkMode }) {
       var _extMapR = {};
       try { _extMapR = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
       var _extFecha = _extMapR[resumenFecha] || [];
-      // Comidas externas del día
+      // Comidas externas: separar reemplazos de adicionales para que el coach entienda el modelo
       var detalleExternas = _extFecha.map(function(c) {
         return { id: c.id, nombre: c.nombre, kcal: c.kcal||0, proteinas_g: c.proteinas_g||0,
-                 carbohidratos_g: c.carbohidratos_g||0, grasas_g: c.grasas_g||0, reemplaza: c.reemplaza||null };
+                 carbohidratos_g: c.carbohidratos_g||0, grasas_g: c.grasas_g||0, reemplaza: c.reemplaza||null,
+                 tipo: c.reemplaza ? ('reemplazo_de_' + c.reemplaza) : 'adicional' };
       });
+      // Split explícito: el coach recibe listas separadas para evitar confusión
+      var _reemplazos  = detalleExternas.filter(function(c) { return c.reemplaza; });
+      var _adicionales = detalleExternas.filter(function(c) { return !c.reemplaza; });
       var totExt = _extFecha.reduce(function(acc, c) {
         return { kcal: acc.kcal+(c.kcal||0), proteinas: acc.proteinas+(c.proteinas_g||0),
                  carbohidratos: acc.carbohidratos+(c.carbohidratos_g||0), grasas: acc.grasas+(c.grasas_g||0) };
@@ -11965,6 +11969,11 @@ function ChatPanel({ darkMode }) {
           carbohidratos: ctx.macrosObjetivo.carbohidratos-consumidoFecha.carbohidratos,
           grasas: ctx.macrosObjetivo.grasas-consumidoFecha.grasas },
         comidas_plan_comidas: detallePlan,
+        // comidas_reemplazo: comidas externas que reemplazan un slot del plan (1 por slot máximo)
+        comidas_reemplazo: _reemplazos,
+        // comidas_adicionales: comidas extras SIN slot asignado (puede haber MUCHAS — es normal)
+        comidas_adicionales: _adicionales,
+        // backward compat — array completo
         comidas_externas: detalleExternas };
     }
 
