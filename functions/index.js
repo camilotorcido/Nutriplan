@@ -133,6 +133,44 @@ const TOOLS = [
       },
       required: ['dia', 'tipo']
     }
+  },
+  {
+    name: 'aplicar_cambios_perfil',
+    description: 'Modifica el perfil del usuario y opcionalmente regenera el plan semanal. TOOL DESTRUCTIVA — sobrescribe objetivo calórico, macros y/o plan completo. ANTES de llamarla, SIEMPRE resume en texto los cambios y pide confirmación explícita; solo llámala después de que el usuario confirme con "sí", "dale", "confirmo", "adelante" o equivalente. Si calorias_objetivo está fuera de [1200, 4000], requiere confirmar_fuera_de_rango=true (de lo contrario devuelve error). El campo nivel_actividad representa la rutina de ejercicios del usuario (sedentario | ligera | moderada | muy_activo | extremo). Cuando el cambio afecte kcal o macros, usa regenerar_plan=true para que el plan quede sincronizado.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        peso_kg:          { type: 'number', description: 'Peso en kg' },
+        altura_cm:        { type: 'number', description: 'Altura en cm' },
+        edad:             { type: 'number', description: 'Edad en años' },
+        genero:           { type: 'string', description: 'masculino | femenino' },
+        nivel_actividad:  { type: 'string', description: 'sedentario | ligera | moderada | muy_activo | extremo. Representa la rutina de ejercicios (frecuencia semanal).' },
+        objetivo:         { type: 'string', description: 'perdida | mantenimiento | volumen' },
+        calorias_objetivo: { type: 'number', description: 'Override manual de calorías diarias. Sobrescribe el cálculo automático del roadmap.' },
+        macros_porcentaje: {
+          type: 'object',
+          description: 'Distribución de macros como porcentajes (deben sumar 100). Override del cálculo automático.',
+          properties: {
+            proteinas:     { type: 'number' },
+            carbohidratos: { type: 'number' },
+            grasas:        { type: 'number' }
+          }
+        },
+        peso_target:                { type: 'number', description: 'Peso objetivo kg (solo objetivo=perdida)' },
+        bf_target:                  { type: 'number', description: '%BF objetivo (solo objetivo=perdida)' },
+        tasa_perdida:               { type: 'string', description: 'conservadora | moderada | agresiva (solo objetivo=perdida)' },
+        timeline_meses_deseado:     { type: 'number', description: 'Plazo en meses para target (solo objetivo=perdida)' },
+        tasa_ganancia:              { type: 'string', description: 'conservadora | moderada | agresiva (solo objetivo=volumen)' },
+        peso_objetivo_volumen:      { type: 'number', description: 'Peso objetivo (solo objetivo=volumen)' },
+        regenerar_plan:             { type: 'boolean', description: 'Si true, regenera el plan semanal con los nuevos parámetros. Recomendado cuando cambian kcal/macros.' },
+        confirmar_fuera_de_rango:   { type: 'boolean', description: 'Confirmación obligatoria si calorias_objetivo < 1200 o > 4000.' }
+      }
+    }
+  },
+  {
+    name: 'regenerar_plan_semanal',
+    description: 'Regenera el plan semanal con los parámetros actuales del perfil (sin modificar perfil). Útil cuando el usuario quiere "nuevas recetas" o "cambiar el plan" sin tocar objetivo/macros. TOOL DESTRUCTIVA — sobrescribe el plan actual. SIEMPRE pide confirmación antes de llamarla.',
+    input_schema: { type: 'object', properties: {} }
   }
 ];
 
@@ -289,6 +327,25 @@ CAMBIAR UNA COMIDA DE REEMPLAZO A ADICIONAL — FLUJO OBLIGATORIO:
 - Si no sabes los macros exactos al registrar, estímalos razonablemente y dilo.
 - Puedes encadenar múltiples tool calls en un mismo turno si la solicitud lo requiere.
 - NUNCA digas "registré" o "marqué" sin haber llamado efectivamente la herramienta en ese turno. Si el usuario confirma con "sí" o "dale" tras una propuesta de macros, llama la herramienta ANTES de confirmar. El total a reportar al usuario es SIEMPRE el campo "totalFecha" del tool result.
+
+MODIFICACIÓN DE PERFIL Y PLAN — REGLA CRÍTICA DE CONFIRMACIÓN:
+Las herramientas aplicar_cambios_perfil y regenerar_plan_semanal son DESTRUCTIVAS — sobrescriben objetivo calórico, macros, y/o el plan semanal completo (varios días de planificación). Reglas inviolables:
+1. NUNCA las llames en el mismo turno donde el usuario pide el cambio. PRIMERO responde con texto resumiendo qué vas a modificar (kcal, macros, plan, rutina) y pide confirmación explícita.
+2. Solo procede a llamar la tool cuando el usuario responda con "sí", "dale", "confirmo", "adelante", "ok", "hazlo" o equivalente.
+3. Si el usuario duda, ajusta tu propuesta y vuelve a pedir confirmación; nunca llames la tool con duda.
+4. Si nunca llamaste la tool, NO digas que modificaste algo — eso sería mentirle al usuario.
+
+TOPE SOFT DE CALORÍAS — RANGO SEGURO 1200–4000 KCAL/DÍA:
+- Si el usuario pide calorias_objetivo < 1200 o > 4000, advierte explícitamente que es un rango atípico y potencialmente peligroso (déficit/superávit muy agresivo). Pregunta si está seguro y si lo está acompañando con un profesional.
+- Si confirma con frases como "sé lo que estoy haciendo", "estoy seguro", "adelante igual" → recién entonces llama aplicar_cambios_perfil con confirmar_fuera_de_rango: true.
+- Sin esa confirmación adicional, la tool devuelve error.
+
+CUÁNDO USAR aplicar_cambios_perfil:
+- Cambios de objetivo calórico, macros, peso, altura, edad, género, rutina (nivel_actividad), tipo de objetivo (pérdida/mantenimiento/volumen), peso/BF target, tasas.
+- Si el cambio afecta kcal o macros, incluye regenerar_plan: true para que el plan semanal quede sincronizado con los nuevos números.
+
+CUÁNDO USAR regenerar_plan_semanal:
+- Solo si el usuario quiere "cambiar las recetas" o "regenerar el plan" sin modificar perfil/objetivo. Pide confirmación antes.
 
 FECHAS Y DÍAS ANTERIORES:
 - La fecha de hoy es ${contexto?.fechaHoy || ''}. Cualquier mención a "ayer" = ${contexto?.ayer || ''}, "anteayer" = ${contexto?.anteayer || ''}.

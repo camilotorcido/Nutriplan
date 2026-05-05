@@ -12235,6 +12235,166 @@ function ChatPanel({ darkMode }) {
       return resultado;
     }
 
+    // ── Modificar perfil (kcal, macros, datos, rutina) + opcional regenerar plan ──
+    if (name === 'aplicar_cambios_perfil') {
+      // Validación de tope soft de calorías
+      if (typeof input_.calorias_objetivo === 'number') {
+        if ((input_.calorias_objetivo < 1200 || input_.calorias_objetivo > 4000) && !input_.confirmar_fuera_de_rango) {
+          return {
+            ok: false,
+            error: 'calorias_objetivo (' + input_.calorias_objetivo + ') está fuera del rango seguro [1200, 4000]. Pide confirmación adicional al usuario y reintenta con confirmar_fuera_de_rango: true.'
+          };
+        }
+      }
+      var perfilActual = (typeof cargarPerfil === 'function') ? (cargarPerfil() || {}) : {};
+      var perfilNuevo  = Object.assign({}, perfilActual);
+
+      if (typeof input_.peso_kg   === 'number') perfilNuevo.peso   = input_.peso_kg;
+      if (typeof input_.altura_cm === 'number') perfilNuevo.altura = input_.altura_cm;
+      if (typeof input_.edad      === 'number') perfilNuevo.edad   = input_.edad;
+      if (input_.genero)          perfilNuevo.genero          = input_.genero;
+      if (input_.nivel_actividad) perfilNuevo.nivelActividad  = input_.nivel_actividad;
+      if (input_.objetivo)        perfilNuevo.objetivo        = input_.objetivo;
+      if (typeof input_.peso_target            === 'number') perfilNuevo.pesoTarget            = input_.peso_target;
+      if (typeof input_.bf_target              === 'number') perfilNuevo.bfTarget              = input_.bf_target;
+      if (input_.tasa_perdida)                                perfilNuevo.tasaPerdida           = input_.tasa_perdida;
+      if (typeof input_.timeline_meses_deseado === 'number') perfilNuevo.timelineMesesDeseado  = input_.timeline_meses_deseado;
+      if (input_.tasa_ganancia)                               perfilNuevo.tasaGanancia          = input_.tasa_ganancia;
+      if (typeof input_.peso_objetivo_volumen  === 'number') perfilNuevo.pesoObjetivoVol       = input_.peso_objetivo_volumen;
+
+      var afectaTDEE = (
+        typeof input_.peso_kg               === 'number' ||
+        typeof input_.altura_cm             === 'number' ||
+        typeof input_.edad                  === 'number' ||
+        !!input_.genero ||
+        !!input_.nivel_actividad ||
+        !!input_.objetivo ||
+        typeof input_.peso_target           === 'number' ||
+        typeof input_.bf_target             === 'number' ||
+        !!input_.tasa_perdida ||
+        typeof input_.timeline_meses_deseado === 'number' ||
+        !!input_.tasa_ganancia ||
+        typeof input_.peso_objetivo_volumen === 'number'
+      );
+
+      if (afectaTDEE && window.NP_FatLoss && perfilNuevo.peso && perfilNuevo.altura && perfilNuevo.edad) {
+        try {
+          var factorActiv = (FACTORES_ACTIVIDAD[perfilNuevo.nivelActividad] || {}).valor || 1.55;
+          var inputsBase = {
+            peso:    parseFloat(perfilNuevo.peso),
+            altura:  parseFloat(perfilNuevo.altura),
+            edad:    parseFloat(perfilNuevo.edad),
+            genero:  perfilNuevo.genero === 'femenino' ? 'F' : 'M',
+            cintura: perfilNuevo.cintura ? parseFloat(perfilNuevo.cintura) : null,
+            cuello:  perfilNuevo.cuello  ? parseFloat(perfilNuevo.cuello)  : null,
+            cadera:  perfilNuevo.cadera  ? parseFloat(perfilNuevo.cadera)  : null,
+            bfOverride: perfilNuevo.bfOverride || null,
+            factorActividad: factorActiv
+          };
+          // Persistir el perfil base antes de invocar activar* (algunos paths leen perfil de storage)
+          guardarPerfil(perfilNuevo);
+          if (perfilNuevo.objetivo === 'perdida') {
+            window.NP_FatLoss.activar(Object.assign({}, inputsBase, {
+              pesoTarget:           perfilNuevo.pesoTarget ? parseFloat(perfilNuevo.pesoTarget) : null,
+              bfTarget:             perfilNuevo.bfTarget   ? parseFloat(perfilNuevo.bfTarget)   : null,
+              tasaPerdida:          perfilNuevo.tasaPerdida || 'moderada',
+              timelineMesesDeseado: perfilNuevo.timelineMesesDeseado ? parseFloat(perfilNuevo.timelineMesesDeseado) : null,
+              complementoPreferido: perfilNuevo.complementoPreferido || 'whey'
+            }));
+            var p = cargarPerfil() || perfilNuevo;
+            p.caloriasObjetivo = (window.NP_FatLoss.caloriasEfectivas && window.NP_FatLoss.caloriasEfectivas())
+              || p.caloriasManual || perfilNuevo.caloriasObjetivo;
+            perfilNuevo = p;
+          } else if (perfilNuevo.objetivo === 'mantenimiento' && window.NP_FatLoss.activarMantenimiento) {
+            perfilNuevo = window.NP_FatLoss.activarMantenimiento(inputsBase) || perfilNuevo;
+          } else if (perfilNuevo.objetivo === 'volumen' && window.NP_FatLoss.activarVolumen) {
+            perfilNuevo = window.NP_FatLoss.activarVolumen(Object.assign({}, inputsBase, {
+              tasaGanancia: perfilNuevo.tasaGanancia || 'moderada',
+              pesoObjetivo: perfilNuevo.pesoObjetivoVol ? parseFloat(perfilNuevo.pesoObjetivoVol) : null
+            })) || perfilNuevo;
+          }
+        } catch (recErr) {
+          console.warn('[ChatPanel] Recálculo de roadmap falló:', recErr.message);
+        }
+      }
+
+      // Override directo de calorías (gana sobre cualquier cálculo automático)
+      if (typeof input_.calorias_objetivo === 'number') {
+        perfilNuevo.caloriasManual   = input_.calorias_objetivo;
+        perfilNuevo.caloriasObjetivo = input_.calorias_objetivo;
+      }
+
+      // Override de distribución de macros
+      if (input_.macros_porcentaje) {
+        var mp = input_.macros_porcentaje;
+        var sumPct = (mp.proteinas || 0) + (mp.carbohidratos || 0) + (mp.grasas || 0);
+        if (Math.abs(sumPct - 100) > 1) {
+          return { ok: false, error: 'macros_porcentaje debe sumar 100. Recibido: ' + sumPct };
+        }
+        perfilNuevo.macros = { proteinas: mp.proteinas, carbohidratos: mp.carbohidratos, grasas: mp.grasas };
+        if (typeof guardarMacrosCustom === 'function' && perfilNuevo.objetivo) {
+          var custom = {};
+          custom[perfilNuevo.objetivo] = perfilNuevo.macros;
+          guardarMacrosCustom(custom);
+        }
+      }
+
+      guardarPerfil(perfilNuevo);
+
+      var planRegen = false;
+      var planError = null;
+      if (input_.regenerar_plan && typeof generarPlanSemanal === 'function') {
+        try {
+          var kcalPlan = perfilNuevo.caloriasObjetivo || perfilNuevo.caloriasManual || 2000;
+          var nuevoPlan = generarPlanSemanal(perfilNuevo, kcalPlan);
+          if (nuevoPlan) {
+            guardarPlanSemanal(nuevoPlan);
+            planRegen = true;
+          } else {
+            planError = 'generarPlanSemanal devolvió null';
+          }
+        } catch (planErr) {
+          planError = planErr.message || String(planErr);
+          console.warn('[ChatPanel] Regeneración de plan falló:', planError);
+        }
+      }
+
+      _flushHoyView();
+
+      return {
+        ok: true,
+        perfil_actualizado: {
+          objetivo:         perfilNuevo.objetivo || null,
+          caloriasObjetivo: perfilNuevo.caloriasObjetivo || null,
+          macros:           perfilNuevo.macros || null,
+          peso:             perfilNuevo.peso || null,
+          altura:           perfilNuevo.altura || null,
+          edad:             perfilNuevo.edad || null,
+          nivelActividad:   perfilNuevo.nivelActividad || null
+        },
+        plan_regenerado: planRegen,
+        plan_error:      planError
+      };
+    }
+
+    if (name === 'regenerar_plan_semanal') {
+      var perfilP = (typeof cargarPerfil === 'function') ? cargarPerfil() : null;
+      if (!perfilP) return { ok: false, error: 'Sin perfil cargado' };
+      if (typeof generarPlanSemanal !== 'function') return { ok: false, error: 'Función generarPlanSemanal no disponible' };
+      try {
+        var kcalP = perfilP.caloriasObjetivo || perfilP.caloriasManual || 2000;
+        var planN = generarPlanSemanal(perfilP, kcalP);
+        if (planN) {
+          guardarPlanSemanal(planN);
+          _flushHoyView();
+          return { ok: true, plan_regenerado: true };
+        }
+        return { ok: false, error: 'generarPlanSemanal devolvió null' };
+      } catch (rpErr) {
+        return { ok: false, error: rpErr.message || String(rpErr) };
+      }
+    }
+
     return { error: 'tool desconocida: ' + name };
   }
 
