@@ -19,3 +19,12 @@
 .border-red-800{--tw-border-opacity:1;border-color:rgb(153 27 27 / var(--tw-border-opacity, 1))}
 /* ── CuentaModal additions ── */
 .rotate-180{--tw-rotate:180deg;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}
+/* Meal card dark backgrounds: opacidad 50% para que tonos blue/indigo/purple no se mimeticen con bg-gray-900 */
+.bg-amber-900\/50 { background-color: rgb(120 53 15 / 0.5); }
+.bg-green-900\/50 { background-color: rgb(20 83 45 / 0.5); }
+.bg-blue-900\/50 { background-color: rgb(30 58 138 / 0.5); }
+.bg-purple-900\/50 { background-color: rgb(88 28 135 / 0.5); }
+.bg-indigo-900\/50 { background-color: rgb(49 46 129 / 0.5); }
+.border-green-700 { --tw-border-opacity: 1; border-color: rgb(21 128 61 / var(--tw-border-opacity, 1)); }
+.border-blue-700 { --tw-border-opacity: 1; border-color: rgb(29 78 216 / var(--tw-border-opacity, 1)); }
+.border-purple-700 { --tw-border-opacity: 1; border-color: rgb(126 34 206 / var(--tw-border-opacity, 1)); }

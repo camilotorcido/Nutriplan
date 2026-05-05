@@ -4364,11 +4364,12 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
   const tiposComidaOrden = ["desayuno", "snack_am", "almuerzo", "snack_pm", "cena"];
   const iconosComida = { desayuno: "fa-sun", snack_am: "fa-apple-whole", almuerzo: "fa-utensils", snack_pm: "fa-cookie-bite", cena: "fa-moon" };
   const coloresComida = {
-    desayuno: { bg: "bg-amber-50", border: "border-amber-200", icon: "text-amber-500", badge: "bg-amber-100 text-amber-700", bgDark: "bg-amber-900/30", borderDark: "border-amber-800" },
-    snack_am: { bg: "bg-green-50", border: "border-green-200", icon: "text-green-500", badge: "bg-green-100 text-green-700", bgDark: "bg-green-900/30", borderDark: "border-green-800" },
-    almuerzo: { bg: "bg-blue-50", border: "border-blue-200", icon: "text-blue-500", badge: "bg-blue-100 text-blue-700", bgDark: "bg-blue-900/30", borderDark: "border-blue-800" },
-    snack_pm: { bg: "bg-purple-50", border: "border-purple-200", icon: "text-purple-500", badge: "bg-purple-100 text-purple-700", bgDark: "bg-purple-900/30", borderDark: "border-purple-800" },
-    cena: { bg: "bg-indigo-50", border: "border-indigo-200", icon: "text-indigo-500", badge: "bg-indigo-100 text-indigo-700", bgDark: "bg-indigo-900/30", borderDark: "border-indigo-800" }
+    // bgDark: opacidad 50% (no 30%) para que los azules e indigos no se confundan con bg-gray-900 del navbar
+    desayuno: { bg: "bg-amber-50", border: "border-amber-200", icon: "text-amber-500", badge: "bg-amber-100 text-amber-700", bgDark: "bg-amber-900/50", borderDark: "border-amber-700" },
+    snack_am: { bg: "bg-green-50", border: "border-green-200", icon: "text-green-500", badge: "bg-green-100 text-green-700", bgDark: "bg-green-900/50", borderDark: "border-green-700" },
+    almuerzo: { bg: "bg-blue-50", border: "border-blue-200", icon: "text-blue-500", badge: "bg-blue-100 text-blue-700", bgDark: "bg-blue-900/50", borderDark: "border-blue-700" },
+    snack_pm: { bg: "bg-purple-50", border: "border-purple-200", icon: "text-purple-500", badge: "bg-purple-100 text-purple-700", bgDark: "bg-purple-900/50", borderDark: "border-purple-700" },
+    cena: { bg: "bg-indigo-50", border: "border-indigo-200", icon: "text-indigo-500", badge: "bg-indigo-100 text-indigo-700", bgDark: "bg-indigo-900/50", borderDark: "border-indigo-700" }
   };
   const caloriasObj = perfil.caloriasObjetivo;
   // Macro targets: prefer scientific LBM-based grams from roadmap (same source as HoyView + metodología)
@@ -4437,35 +4438,37 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
               </p>
             </div>
 
-            {/* ── Métricas: jerarquía visual, calorías como hero y métricas secundarias en columna ── */}
+            {/* ── Métricas: hero (kcal) + fila de secundarias (pasos · días), separadas por línea horizontal ── */}
             <div className={`rounded-xl overflow-hidden ${darkMode ? 'bg-gray-700/60' : 'bg-amber-50'}`}>
-              <div className="px-5 py-5 flex items-end gap-5 flex-wrap min-w-0">
-                {/* Hero: calorías diarias */}
-                <div className="flex-1 min-w-[140px]">
-                  <div className={`text-[10px] font-bold uppercase tracking-widest mb-1.5 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>
-                    {t('Tu objetivo diario','Your daily goal')}
-                  </div>
-                  <div className="flex items-baseline gap-1.5 flex-wrap">
-                    <span className="text-5xl font-extrabold leading-none text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                      {faseInfo.calorias}
-                    </span>
-                    <span className={`text-sm font-medium ${darkMode ? 'text-amber-400/80' : 'text-amber-700/80'}`}>kcal</span>
-                  </div>
+              {/* Hero: calorías diarias */}
+              <div className="px-5 pt-4 pb-3">
+                <div className={`text-[10px] font-bold uppercase tracking-widest mb-1.5 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>
+                  {t('Tu objetivo diario','Your daily goal')}
                 </div>
-                {/* Secundarias: pasos + días restantes, alineados a la derecha */}
-                <div className={`flex flex-col gap-1.5 text-right border-l pl-5 ${darkMode ? 'border-gray-600' : 'border-amber-200/70'}`}>
-                  <div className="flex items-baseline justify-end gap-1.5">
-                    <span className="text-base font-bold text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                      {Math.round(faseInfo.targetPasos / 1000)}k
-                    </span>
-                    <span className={`text-[10px] font-medium uppercase tracking-wide whitespace-nowrap ${darkMode ? 'text-gray-500' : 'text-amber-700/70'}`}>{t('pasos/día','steps/day')}</span>
-                  </div>
-                  <div className="flex items-baseline justify-end gap-1.5">
-                    <span className="text-base font-bold text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                      {faseInfo.diasRestantesEnFase}
-                    </span>
-                    <span className={`text-[10px] font-medium uppercase tracking-wide whitespace-nowrap ${darkMode ? 'text-gray-500' : 'text-amber-700/70'}`}>{t('días restantes','days left')}</span>
-                  </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-extrabold leading-none text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                    {faseInfo.calorias}
+                  </span>
+                  <span className={`text-base font-medium ${darkMode ? 'text-amber-400/80' : 'text-amber-700/80'}`}>kcal/día</span>
+                </div>
+              </div>
+              {/* Divisor sutil */}
+              <div className={`h-px ${darkMode ? 'bg-gray-600/50' : 'bg-amber-200/60'}`} />
+              {/* Secundarias: pasos · días restantes en fila */}
+              <div className="px-5 py-3 flex items-baseline gap-4 flex-wrap">
+                <div className="flex items-baseline gap-1.5">
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${darkMode ? 'text-amber-400/70' : 'text-amber-700/70'}`}>{t('Pasos/día','Steps/day')}</span>
+                  <span className="text-xl font-bold leading-none text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                    {Math.round(faseInfo.targetPasos / 1000)}k
+                  </span>
+                </div>
+                <span className={`${darkMode ? 'text-gray-600' : 'text-amber-300'}`}>·</span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${darkMode ? 'text-amber-400/70' : 'text-amber-700/70'}`}>{t('Restantes','Left')}</span>
+                  <span className="text-xl font-bold leading-none text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                    {faseInfo.diasRestantesEnFase}
+                  </span>
+                  <span className={`text-[10px] font-medium ${darkMode ? 'text-amber-400/70' : 'text-amber-700/60'}`}>{t('días','days')}</span>
                 </div>
               </div>
             </div>
