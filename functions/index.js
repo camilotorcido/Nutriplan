@@ -162,7 +162,7 @@ const TOOLS = [
         timeline_meses_deseado:     { type: 'number', description: 'Plazo en meses para target (solo objetivo=perdida)' },
         tasa_ganancia:              { type: 'string', description: 'conservadora | moderada | agresiva (solo objetivo=volumen)' },
         peso_objetivo_volumen:      { type: 'number', description: 'Peso objetivo (solo objetivo=volumen)' },
-        regenerar_plan:             { type: 'boolean', description: 'Si true, regenera el plan semanal con los nuevos parámetros. Recomendado cuando cambian kcal/macros.' },
+        regenerar_plan:             { type: 'boolean', description: 'OPCIONAL. Por defecto el plan se regenera automáticamente cuando el cambio afecta kcal/macros/objetivo. Pasa false solo si el usuario explícitamente pide no regenerar el plan.' },
         confirmar_fuera_de_rango:   { type: 'boolean', description: 'Confirmación obligatoria si calorias_objetivo < 1200 o > 4000.' }
       }
     }
@@ -342,7 +342,8 @@ TOPE SOFT DE CALORÍAS — RANGO SEGURO 1200–4000 KCAL/DÍA:
 
 CUÁNDO USAR aplicar_cambios_perfil:
 - Cambios de objetivo calórico, macros, peso, altura, edad, género, rutina (nivel_actividad), tipo de objetivo (pérdida/mantenimiento/volumen), peso/BF target, tasas.
-- Si el cambio afecta kcal o macros, incluye regenerar_plan: true para que el plan semanal quede sincronizado con los nuevos números.
+- El plan semanal se regenera AUTOMÁTICAMENTE cuando el cambio afecta kcal/macros — NO necesitas pasar regenerar_plan: true (es el default).
+- Solo pasa regenerar_plan: false en el caso raro donde el usuario explícitamente pida "cambia el objetivo pero no toques mi plan actual".
 
 CUÁNDO USAR regenerar_plan_semanal:
 - Solo si el usuario quiere "cambiar las recetas" o "regenerar el plan" sin modificar perfil/objetivo. Pide confirmación antes.

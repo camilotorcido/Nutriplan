@@ -12302,8 +12302,11 @@ function ChatPanel({ darkMode }) {
               complementoPreferido: perfilNuevo.complementoPreferido || 'whey'
             }));
             var p = cargarPerfil() || perfilNuevo;
-            p.caloriasObjetivo = (window.NP_FatLoss.caloriasEfectivas && window.NP_FatLoss.caloriasEfectivas())
+            var kcalEfectivas = (window.NP_FatLoss.caloriasEfectivas && window.NP_FatLoss.caloriasEfectivas())
               || p.caloriasManual || perfilNuevo.caloriasObjetivo;
+            p.caloriasObjetivo = kcalEfectivas;
+            // Sincronizar caloriasManual con la fase recalculada (evita "Plan desincronizado")
+            p.caloriasManual = kcalEfectivas;
             perfilNuevo = p;
           } else if (perfilNuevo.objetivo === 'mantenimiento' && window.NP_FatLoss.activarMantenimiento) {
             perfilNuevo = window.NP_FatLoss.activarMantenimiento(inputsBase) || perfilNuevo;
@@ -12320,8 +12323,23 @@ function ChatPanel({ darkMode }) {
 
       // Override directo de calorías (gana sobre cualquier cálculo automático)
       if (typeof input_.calorias_objetivo === 'number') {
-        perfilNuevo.caloriasManual   = input_.calorias_objetivo;
-        perfilNuevo.caloriasObjetivo = input_.calorias_objetivo;
+        var kcalManual = input_.calorias_objetivo;
+        perfilNuevo.caloriasManual   = kcalManual;
+        perfilNuevo.caloriasObjetivo = kcalManual;
+        // También ajustar la fase activa del roadmap para que coincida — sin esto,
+        // planDesincronizado() compara fase.calorias vs caloriasManual y dispara la tarjeta.
+        if (perfilNuevo.roadmap && Array.isArray(perfilNuevo.roadmap.fases)
+            && window.NP_Roadmap && typeof window.NP_Roadmap.faseActual === 'function') {
+          try {
+            var fAct = window.NP_Roadmap.faseActual(perfilNuevo.roadmap);
+            if (fAct) {
+              var idxF = perfilNuevo.roadmap.fases.findIndex(function(f) {
+                return (f.id && f.id === fAct.id) || (f.nombre && f.nombre === fAct.nombre);
+              });
+              if (idxF >= 0) perfilNuevo.roadmap.fases[idxF].calorias = kcalManual;
+            }
+          } catch(_re) {}
+        }
       }
 
       // Override de distribución de macros
@@ -12341,9 +12359,16 @@ function ChatPanel({ darkMode }) {
 
       guardarPerfil(perfilNuevo);
 
+      // Por defecto: SIEMPRE regenerar el plan tras cambios que afecten kcal/macros/objetivo.
+      // El agente solo puede saltarlo con regenerar_plan: false explícito.
+      var afectaPlan = afectaTDEE
+        || typeof input_.calorias_objetivo === 'number'
+        || !!input_.macros_porcentaje;
+      var debeRegenerar = (input_.regenerar_plan === false) ? false : (input_.regenerar_plan === true || afectaPlan);
+
       var planRegen = false;
       var planError = null;
-      if (input_.regenerar_plan && typeof generarPlanSemanal === 'function') {
+      if (debeRegenerar && typeof generarPlanSemanal === 'function') {
         try {
           var kcalPlan = perfilNuevo.caloriasObjetivo || perfilNuevo.caloriasManual || 2000;
           var nuevoPlan = generarPlanSemanal(perfilNuevo, kcalPlan);
