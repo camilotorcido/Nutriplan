@@ -12326,16 +12326,28 @@ function ChatPanel({ darkMode }) {
         var kcalManual = input_.calorias_objetivo;
         perfilNuevo.caloriasManual   = kcalManual;
         perfilNuevo.caloriasObjetivo = kcalManual;
-        // También ajustar la fase activa del roadmap para que coincida — sin esto,
-        // planDesincronizado() compara fase.calorias vs caloriasManual y dispara la tarjeta.
+        // Sincronizar la fase activa del roadmap para que coincida con el override.
+        // Sin esto, planDesincronizado() compara fase.calorias vs caloriasManual y dispara
+        // la tarjeta "Plan desincronizado". faseActualFatLoss() lee de ajustesManuales[fase.numero]
+        // ANTES que fase.calorias — por eso hay que escribir en ajustesManuales.
         if (perfilNuevo.roadmap && Array.isArray(perfilNuevo.roadmap.fases)
             && window.NP_Roadmap && typeof window.NP_Roadmap.faseActual === 'function') {
           try {
             var fAct = window.NP_Roadmap.faseActual(perfilNuevo.roadmap);
-            if (fAct) {
-              var idxF = perfilNuevo.roadmap.fases.findIndex(function(f) {
-                return (f.id && f.id === fAct.id) || (f.nombre && f.nombre === fAct.nombre);
-              });
+            if (fAct && typeof fAct.numero !== 'undefined') {
+              perfilNuevo.roadmap.ajustesManuales = perfilNuevo.roadmap.ajustesManuales || {};
+              perfilNuevo.roadmap.ajustesManuales[fAct.numero] = Object.assign(
+                {},
+                perfilNuevo.roadmap.ajustesManuales[fAct.numero] || {},
+                { calorias: kcalManual }
+              );
+              // También actualizar fase.calorias por si algún consumer lee directo
+              var idxF = perfilNuevo.roadmap.fases.findIndex(function(f) { return f.numero === fAct.numero; });
+              if (idxF < 0) {
+                idxF = perfilNuevo.roadmap.fases.findIndex(function(f) {
+                  return (f.id && f.id === fAct.id) || (f.nombre && f.nombre === fAct.nombre);
+                });
+              }
               if (idxF >= 0) perfilNuevo.roadmap.fases[idxF].calorias = kcalManual;
             }
           } catch(_re) {}
