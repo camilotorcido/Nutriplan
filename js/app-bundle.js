@@ -12326,6 +12326,9 @@ function ChatPanel({ darkMode }) {
         var kcalManual = input_.calorias_objetivo;
         perfilNuevo.caloriasManual   = kcalManual;
         perfilNuevo.caloriasObjetivo = kcalManual;
+        // Modo manual: el plan se regenera con kcal fijos por día (sin nutrient timing por entreno).
+        // El usuario pidió un número específico; queremos respetarlo exactamente.
+        perfilNuevo._kcalManualMode  = true;
         // Sincronizar la fase activa del roadmap para que coincida con el override.
         // Sin esto, planDesincronizado() compara fase.calorias vs caloriasManual y dispara
         // la tarjeta "Plan desincronizado". faseActualFatLoss() lee de ajustesManuales[fase.numero]

@@ -66,7 +66,10 @@ var _DIAS_A_DOW = {
   Lunes: 1, Martes: 2, 'Miércoles': 3, Jueves: 4,
   Viernes: 5, 'Sábado': 6, Domingo: 0
 };
-function _multiplicadorDia(dia) {
+function _multiplicadorDia(dia, perfil) {
+  // Modo manual: el usuario fijó kcal/día explícitamente (vía agente IA u override).
+  // En ese caso queremos kcal fijos por día — no aplicar nutrient-timing por entreno.
+  if (perfil && perfil._kcalManualMode) return 1.0;
   var sch = (typeof window !== 'undefined' && window.NP_RoadmapData)
     ? (window.NP_RoadmapData.ENTRENO_PROTOCOLO || {}).scheduleDefault
     : null;
@@ -360,7 +363,7 @@ function generarPlanSemanal(perfil, caloriasObjetivo, preferencias) {
       planSemana[dia] = {};
       
       Object.keys(DISTRIBUCION_COMIDAS).forEach(tipoComida => {
-        const caloriasComida = Math.round(caloriasObjetivo * _multiplicadorDia(dia) * DISTRIBUCION_COMIDAS[tipoComida]);
+        const caloriasComida = Math.round(caloriasObjetivo * _multiplicadorDia(dia, perfil) * DISTRIBUCION_COMIDAS[tipoComida]);
         const recetasDisponibles = porTipo[tipoComida];
 
         if (recetasDisponibles.length > 0) {
@@ -1535,7 +1538,7 @@ async function generarPlanSemanalAsync(perfil, caloriasObjetivo, onProgreso, pre
       planSemana[dia] = {};
 
       Object.keys(DISTRIBUCION_COMIDAS).forEach(tipoComida => {
-        const caloriasComida = Math.round(caloriasObjetivo * _multiplicadorDia(dia) * DISTRIBUCION_COMIDAS[tipoComida]);
+        const caloriasComida = Math.round(caloriasObjetivo * _multiplicadorDia(dia, perfil) * DISTRIBUCION_COMIDAS[tipoComida]);
         const recetasDisponibles = porTipo[tipoComida];
 
         if (recetasDisponibles.length > 0) {
