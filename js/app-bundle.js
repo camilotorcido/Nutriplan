@@ -4437,28 +4437,36 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
               </p>
             </div>
 
-            {/* ── Métricas: calorías · pasos · días restantes ── */}
-            <div className={`grid grid-cols-3 rounded-xl overflow-hidden ${darkMode ? 'bg-gray-700/60' : 'bg-amber-50'}`}>
-              <div className="text-center px-3" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
-                <div className={`text-[10px] font-bold uppercase tracking-wide mb-2 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>{t('Objetivo','Goal')}</div>
-                <div className={`text-3xl font-extrabold leading-none text-ink`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                  {faseInfo.calorias}
+            {/* ── Métricas: jerarquía visual, calorías como hero y métricas secundarias en columna ── */}
+            <div className={`rounded-xl overflow-hidden ${darkMode ? 'bg-gray-700/60' : 'bg-amber-50'}`}>
+              <div className="px-5 py-5 flex items-end gap-5 flex-wrap min-w-0">
+                {/* Hero: calorías diarias */}
+                <div className="flex-1 min-w-[140px]">
+                  <div className={`text-[10px] font-bold uppercase tracking-widest mb-1.5 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>
+                    {t('Tu objetivo diario','Your daily goal')}
+                  </div>
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <span className="text-5xl font-extrabold leading-none text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                      {faseInfo.calorias}
+                    </span>
+                    <span className={`text-sm font-medium ${darkMode ? 'text-amber-400/80' : 'text-amber-700/80'}`}>kcal</span>
+                  </div>
                 </div>
-                <div className={`text-[10px] mt-2 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>{t('kcal/día','kcal/day')}</div>
-              </div>
-              <div className={`text-center px-3 border-x ${darkMode ? 'border-gray-600' : 'border-amber-200/60'}`} style={{ paddingTop: '20px', paddingBottom: '20px' }}>
-                <div className={`text-[10px] font-bold uppercase tracking-wide mb-2 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>{t('Pasos','Steps')}</div>
-                <div className={`text-3xl font-extrabold leading-none text-ink`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                  {Math.round(faseInfo.targetPasos / 1000)}k
+                {/* Secundarias: pasos + días restantes, alineados a la derecha */}
+                <div className={`flex flex-col gap-1.5 text-right border-l pl-5 ${darkMode ? 'border-gray-600' : 'border-amber-200/70'}`}>
+                  <div className="flex items-baseline justify-end gap-1.5">
+                    <span className="text-base font-bold text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                      {Math.round(faseInfo.targetPasos / 1000)}k
+                    </span>
+                    <span className={`text-[10px] font-medium uppercase tracking-wide whitespace-nowrap ${darkMode ? 'text-gray-500' : 'text-amber-700/70'}`}>{t('pasos/día','steps/day')}</span>
+                  </div>
+                  <div className="flex items-baseline justify-end gap-1.5">
+                    <span className="text-base font-bold text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                      {faseInfo.diasRestantesEnFase}
+                    </span>
+                    <span className={`text-[10px] font-medium uppercase tracking-wide whitespace-nowrap ${darkMode ? 'text-gray-500' : 'text-amber-700/70'}`}>{t('días restantes','days left')}</span>
+                  </div>
                 </div>
-                <div className={`text-[10px] mt-2 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>{t('diarios','daily')}</div>
-              </div>
-              <div className="text-center px-3" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
-                <div className={`text-[10px] font-bold uppercase tracking-wide mb-2 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>{t('Restantes','Remaining')}</div>
-                <div className={`text-3xl font-extrabold leading-none text-ink`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                  {faseInfo.diasRestantesEnFase}
-                </div>
-                <div className={`text-[10px] mt-2 ${darkMode ? 'text-gray-500' : 'text-amber-700/60'}`}>{t('días','days')}</div>
               </div>
             </div>
 
