@@ -57,6 +57,39 @@ html.dark body {
     }
 }
 
+/* Tokens de tipografía y superficie disponibles via class.
+   Uso preferido a Tailwind text-gray-X para que dark mode funcione
+   sin ternarios JSX. */
+.text-ink            { color: var(--color-ink); }
+.text-ink-muted      { color: var(--color-ink-muted); }
+.text-ink-faint      { color: var(--color-ink-faint); }
+.text-accent         { color: var(--color-accent); }
+.text-accent-dark    { color: var(--color-accent-dark); }
+.text-success        { color: var(--color-success); }
+.text-alert          { color: var(--color-alert); }
+.bg-base             { background-color: var(--color-base); }
+.bg-surface          { background-color: var(--color-surface); }
+.bg-accent           { background-color: var(--color-accent); }
+.bg-accent-light     { background-color: var(--color-accent-light); }
+.bg-success-light    { background-color: var(--color-success-light); }
+.bg-alert-light      { background-color: var(--color-alert-light); }
+.border-default      { border-color: var(--color-border); }
+
+html.dark .text-ink            { color: #E8E0D4; }
+html.dark .text-ink-muted      { color: #B8AB9C; }
+html.dark .text-ink-faint      { color: #6B6055; }
+html.dark .text-accent         { color: #E8C77A; }
+html.dark .text-accent-dark    { color: #C8A45A; }
+html.dark .text-success        { color: #8FAF94; }
+html.dark .text-alert          { color: #D87864; }
+html.dark .bg-base             { background-color: #1A1816; }
+html.dark .bg-surface          { background-color: #2A2622; }
+html.dark .bg-accent           { background-color: #C8943A; }
+html.dark .bg-accent-light     { background-color: #3A2E1F; }
+html.dark .bg-success-light    { background-color: #1F2E22; }
+html.dark .bg-alert-light      { background-color: #3A1F1B; }
+html.dark .border-default      { border-color: #3A352E; }
+
 /* Focus visible custom (a11y): contraste alto en ambos modos.
    Solo aparece cuando el usuario navega por teclado, no en clicks. */
 :focus-visible {
