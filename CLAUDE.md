@@ -2,17 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Brand
+
+Lee **`.impeccable.md`** y **`D:\Claude\04 - Outputs\Calibrate\brand-guidelines.md`** antes de hacer cualquier cambio visual. Brand premium agency-tier: Plus Jakarta Sans + JetBrains Mono, paleta cream/mostaza/sage, sombras soft difusas warm-tinted, double-bezel architecture, easings cubic-bezier custom, lenguaje natural sin acrónimos.
+
 ## Development
 
 ```powershell
 # Start local dev server (port 3000)
 npx serve .
 
-# Deploy to production (version bump + git push + Firebase Functions)
+# Deploy to production (esbuild compile + version bump + git push + Firebase Functions)
 .\deploy.ps1
 ```
 
-There is no build step. The app runs as plain JS/JSX source files served statically.
+`deploy.ps1` corre `npm run build` (esbuild) antes de versionar. Si esbuild falla, el deploy se aborta.
 
 ## Versioning (critical)
 
@@ -22,7 +26,9 @@ The version string format is in `index.html` as `?v=<hash>` query params on asse
 
 ## Architecture
 
-**No bundler, no TypeScript.** The app is a React 18 PWA written in JSX, compiled **at runtime in the browser** by Babel Standalone. On first load, compiled output is cached in IndexedDB (`nutriplan_bundle_cache`). Cache hits load in ~100ms.
+**Build step:** esbuild pre-compila `js/app-bundle.js` (JSX, ~830 KB) → `js/app-bundle.compiled.js` (~553 KB minificado, ES2020). Babel Standalone runtime fue eliminado.
+
+`index.html` carga el bundle compilado directamente: `<script src="js/app-bundle.compiled.js?v=...">`. React + ReactDOM siguen como UMD CDN globals.
 
 ### Key files
 
