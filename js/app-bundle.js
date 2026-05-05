@@ -4438,35 +4438,35 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
               </p>
             </div>
 
-            {/* ── Métricas: stack en mobile, fila en sm+. Sin colapsar en pantalla angosta ── */}
-            <div className={`rounded-xl px-5 py-4 ${darkMode ? 'bg-gray-700/60' : 'bg-amber-50'}`}>
-              {/* Hero: calorías diarias — fila completa */}
-              <div className="mb-4">
-                <div className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>
+            {/* ── Banner premium: doble-bezel + eyebrow + hairline divider + monospace metrics ── */}
+            <div className="banner-shell">
+              <div className="banner-core">
+                {/* Eyebrow tag: pill microscópica que precede al hero */}
+                <div className="banner-eyebrow mb-5">
                   {t('Tu objetivo diario','Your daily goal')}
                 </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-extrabold leading-none text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                    {faseInfo.calorias}
-                  </span>
-                  <span className={`text-base font-medium ${darkMode ? 'text-amber-400/80' : 'text-amber-700/80'}`}>kcal/día</span>
+                {/* Hero: calorías */}
+                <div className="flex items-baseline gap-3 mb-7">
+                  <span className="banner-hero-num">{faseInfo.calorias}</span>
+                  <span className="banner-hero-unit">kcal/día</span>
                 </div>
-              </div>
-              {/* Secundarias: dos columnas con gap garantizado por grid */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${darkMode ? 'text-amber-400/70' : 'text-amber-700/70'}`}>{t('Pasos/día','Steps/day')}</div>
-                  <div className="text-2xl font-bold leading-none text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                    {Math.round(faseInfo.targetPasos / 1000)}k
+                {/* Hairline divider sutil */}
+                <div className="banner-divider mb-5" />
+                {/* Métricas secundarias: 2 columnas con jerarquía sub-hero */}
+                <div className="grid grid-cols-2 gap-x-6">
+                  <div>
+                    <div className="banner-label mb-2">{t('Pasos / día','Steps / day')}</div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="banner-metric-num">{Math.round(faseInfo.targetPasos / 1000)}</span>
+                      <span className="banner-metric-unit">k</span>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${darkMode ? 'text-amber-400/70' : 'text-amber-700/70'}`}>{t('Restantes','Left')}</div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl font-bold leading-none text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                      {faseInfo.diasRestantesEnFase}
-                    </span>
-                    <span className={`text-sm font-medium ${darkMode ? 'text-amber-400/70' : 'text-amber-700/60'}`}>{t('días','days')}</span>
+                  <div>
+                    <div className="banner-label mb-2">{t('Restantes','Left')}</div>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="banner-metric-num">{faseInfo.diasRestantesEnFase}</span>
+                      <span className="banner-metric-unit">{t('días','days')}</span>
+                    </div>
                   </div>
                 </div>
               </div>
