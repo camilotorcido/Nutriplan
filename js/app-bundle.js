@@ -12372,6 +12372,26 @@ function ChatPanel({ darkMode }) {
         }
       }
 
+      // Recalcular perfil.macrosGramos para que coincida con caloriasObjetivo + macros %.
+      // _resolverProteinaTarget() lee macrosGramos.proteinas_g con prioridad — si queda
+      // con valores viejos, el plan se genera contra el target proteico antiguo.
+      try {
+        if (perfilNuevo.caloriasObjetivo && perfilNuevo.macros
+            && typeof calcularMacrosEnGramos === 'function') {
+          var mg = calcularMacrosEnGramos(perfilNuevo.caloriasObjetivo, perfilNuevo.macros);
+          // Forma esperada por _resolverProteinaTarget: { proteinas_g, carbohidratos_g, grasas_g }
+          perfilNuevo.macrosGramos = {
+            proteinas_g:     mg.proteinas_g,
+            carbohidratos_g: mg.carbohidratos_g,
+            grasas_g:        mg.grasas_g,
+            // Mantener la convención de roadmap-generator (proteina/carbohidratos/grasas)
+            proteina:        mg.proteinas_g,
+            carbohidratos:   mg.carbohidratos_g,
+            grasas:          mg.grasas_g
+          };
+        }
+      } catch(_mgErr) {}
+
       guardarPerfil(perfilNuevo);
 
       // Por defecto: SIEMPRE regenerar el plan tras cambios que afecten kcal/macros/objetivo.
