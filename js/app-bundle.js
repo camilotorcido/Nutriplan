@@ -12853,6 +12853,18 @@ function ChatPanel({ darkMode }) {
       // Mensaje actual siempre como texto (imagen ya fue procesada)
       apiHistory.push({ role: 'user', content: texto });
       var maxRondas = 5;
+      // Tools que mutan el estado del usuario. Si el coach afirma una acción en
+      // pasado pero NINGUNA de estas se ejecutó este turno → alucinación → nudge.
+      var TOOLS_MUTACION = [
+        'registrar_comida','marcar_comida_plan','planear_comida','eliminar_comida',
+        'marcar_comprado','marcar_en_despensa','quitar_de_despensa',
+        'aplicar_cambios_perfil','regenerar_plan_semanal'
+      ];
+      var toolsEjecutadasTurno = {};
+      // Verbos en pasado/participio específicos a una mutación. NO incluye "Listo"
+      // / "Hecho" / "Ya está" porque aparecen también en respuestas informativas.
+      var REGEX_AFIRMA_MUTACION = /\b(registr[ée]|registrad[ao]s?|anot[ée]|anotad[ao]s?|agregu[ée]|agregad[ao]s?|añad[ií]|añadid[ao]s?|sum[ée]|sumad[ao]s?|guard[ée]|guardad[ao]s?|elimin[ée]|eliminad[ao]s?|borr[ée]|borrad[ao]s?|quit[ée]|quitad[ao]s?|marqu[ée]|marcad[ao]s?)\b/i;
+      var nudgeAplicado = false;
 
       while (maxRondas-- > 0) {
         var result = await fn({ messages: apiHistory, contexto: contexto });
@@ -12865,14 +12877,26 @@ function ChatPanel({ darkMode }) {
           apiHistory = apiHistory.concat([{ role:'assistant', content: data.content }]);
           // Ejecutar tools y agregar tool_results
           var toolResults = toolBlocks.map(function(tb) {
+            toolsEjecutadasTurno[tb.name] = true;
             return { type:'tool_result', tool_use_id: tb.id, content: JSON.stringify(ejecutarTool(tb.name, tb.input)) };
           });
           apiHistory = apiHistory.concat([{ role:'user', content: toolResults }]);
           continue;
         }
 
-        // Respuesta final de texto
+        // Respuesta final de texto — verificar alucinación de registro
         var textoRespuesta = textBlocks.map(function(b) { return b.text; }).join('\n').trim();
+        var mutacionEjecutada = TOOLS_MUTACION.some(function(n) { return toolsEjecutadasTurno[n]; });
+        if (!nudgeAplicado && !mutacionEjecutada && textoRespuesta && REGEX_AFIRMA_MUTACION.test(textoRespuesta)) {
+          // El modelo afirma haber registrado/eliminado pero no llamó ninguna tool de registro.
+          // Inyectamos un nudge correctivo y reintentamos UNA vez.
+          nudgeAplicado = true;
+          apiHistory = apiHistory.concat([
+            { role: 'assistant', content: data.content },
+            { role: 'user', content: '[Sistema interno — el usuario NO ve este mensaje] Tu última respuesta dice que registraste/marcaste/eliminaste algo, pero NO incluiste ningún tool_use de registrar_comida, marcar_comida_plan, planear_comida ni eliminar_comida. La acción NO ocurrió en el sistema. Revisa el último mensaje del usuario y, si la acción procede, llama AHORA la herramienta correcta con los datos exactos. Si interpretaste mal la intención del usuario, responde con texto preguntando qué quería hacer (sin afirmar registros).' }
+          ]);
+          continue;
+        }
         if (textoRespuesta) {
           displayMsgs = displayMsgs.concat([{ role:'assistant', content: textoRespuesta }]);
         }
