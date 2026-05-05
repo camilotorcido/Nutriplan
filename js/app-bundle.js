@@ -12326,9 +12326,9 @@ function ChatPanel({ darkMode }) {
         var kcalManual = input_.calorias_objetivo;
         perfilNuevo.caloriasManual   = kcalManual;
         perfilNuevo.caloriasObjetivo = kcalManual;
-        // Modo manual: el plan se regenera con kcal fijos por día (sin nutrient timing por entreno).
-        // El usuario pidió un número específico; queremos respetarlo exactamente.
-        perfilNuevo._kcalManualMode  = true;
+        // Limpiar el flag legacy si quedó persistido — el sistema ahora respeta nutrient timing
+        // (días de entreno ×1.1, descanso ×0.9, promedio semanal = caloriasObjetivo).
+        delete perfilNuevo._kcalManualMode;
         // Sincronizar la fase activa del roadmap para que coincida con el override.
         // Sin esto, planDesincronizado() compara fase.calorias vs caloriasManual y dispara
         // la tarjeta "Plan desincronizado". faseActualFatLoss() lee de ajustesManuales[fase.numero]
@@ -12405,15 +12405,11 @@ function ChatPanel({ darkMode }) {
       var planError = null;
       if (debeRegenerar && typeof generarPlanSemanal === 'function') {
         try {
-          // Forzar _kcalManualMode antes de regenerar — garantiza que el plan
-          // se genere con kcal fijos por día (sin multiplicador 1.1/0.9 por entreno).
-          // Cualquier cambio del agente debe respetar el target uniforme.
-          perfilNuevo._kcalManualMode = true;
+          // Limpiar flag legacy si quedó persistido (mantenemos nutrient timing por entreno).
+          delete perfilNuevo._kcalManualMode;
           guardarPerfil(perfilNuevo);
           var kcalPlan = perfilNuevo.caloriasObjetivo || perfilNuevo.caloriasManual || 2000;
-          console.log('[CalibrateChat] Regenerando plan: kcal=' + kcalPlan
-            + ' manualMode=' + perfilNuevo._kcalManualMode
-            + ' multTest=' + (typeof _multiplicadorDia === 'function' ? _multiplicadorDia('Lunes', perfilNuevo) : '?'));
+          console.log('[CalibrateChat] Regenerando plan: kcal_promedio=' + kcalPlan);
           var nuevoPlan = generarPlanSemanal(perfilNuevo, kcalPlan);
           if (nuevoPlan) {
             guardarPlanSemanal(nuevoPlan);
@@ -12450,11 +12446,11 @@ function ChatPanel({ darkMode }) {
       if (!perfilP) return { ok: false, error: 'Sin perfil cargado' };
       if (typeof generarPlanSemanal !== 'function') return { ok: false, error: 'Función generarPlanSemanal no disponible' };
       try {
-        // Mismo principio que aplicar_cambios_perfil: kcal fijos por día.
-        perfilP._kcalManualMode = true;
+        // Limpiar flag legacy. El plan se regenera con nutrient timing normal (entreno ×1.1, descanso ×0.9).
+        delete perfilP._kcalManualMode;
         guardarPerfil(perfilP);
         var kcalP = perfilP.caloriasObjetivo || perfilP.caloriasManual || 2000;
-        console.log('[CalibrateChat] Regenerar simple: kcal=' + kcalP + ' manualMode=' + perfilP._kcalManualMode);
+        console.log('[CalibrateChat] Regenerar simple: kcal_promedio=' + kcalP);
         var planN = generarPlanSemanal(perfilP, kcalP);
         if (planN) {
           guardarPlanSemanal(planN);

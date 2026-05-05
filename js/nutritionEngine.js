@@ -67,9 +67,8 @@ var _DIAS_A_DOW = {
   Viernes: 5, 'Sábado': 6, Domingo: 0
 };
 function _multiplicadorDia(dia, perfil) {
-  // Modo manual: el usuario fijó kcal/día explícitamente (vía agente IA u override).
-  // En ese caso queremos kcal fijos por día — no aplicar nutrient-timing por entreno.
-  if (perfil && perfil._kcalManualMode) return 1.0;
+  // Nutrient timing por entreno: días de entreno suben kcal (×1.1), descanso bajan (×0.9).
+  // El target diario es el PROMEDIO semanal — los días individuales varían intencionalmente.
   var sch = (typeof window !== 'undefined' && window.NP_RoadmapData)
     ? (window.NP_RoadmapData.ENTRENO_PROTOCOLO || {}).scheduleDefault
     : null;
