@@ -76,21 +76,32 @@ function _bloqueFoco(indice, total) {
 //   Mikulic et al. (2021) — sRPE como métrica de fatiga (vs HR)
 //   Melin et al. — Energy Availability (umbrales LEA subclínica/clínica)
 function _prescripcionEntrenamiento(indice, total, esDietBreak) {
-  // factorVolumen: multiplicador aplicado a sets/ejercicio del protocolo.
-  //   1.0 = baseline (Fundación), 0.75 = taper Last Mile, 1.15 = diet break (más volumen con glucógeno lleno)
+  // Campos:
+  //   factorVolumen — multiplicador aplicado a sets del protocolo en el render
+  //   repRange      — rango de reps recomendado para la fase (se aplica al protocolo)
+  //   cardioMinSemana    — total objetivo (incluye lo del protocolo + extra)
+  //   cardioBaseProtocolo — minutos de cardio que el protocolo A/B/C/D ya entrega
+  //   cardioExtraNecesario — minutos extra a sumar fuera de las sesiones (LISS suelto)
+  //
+  // Protocolo concreto entrega ~45 min cardio/sem (rowing en C ≈ 12 min, intervalos D ≈ 8 min,
+  // treadmill plano D ≈ 25 min). En Last Mile reducimos el treadmill (factor 0.75 → ~30 min total).
+
   if (esDietBreak) {
     return {
       modalidad: 'CT',
       modalidadLabel: 'Mantenimiento (sin cut)',
-      volumenSets: '10-12 sets/grupo muscular/sesión',
+      volumenSets: '7-9 sets/grupo muscular/sesión',
       factorVolumen: 1.15,
+      repRange: '6-10',
       frecuenciaSemanal: 4,
-      intensidadPct1RM: '70-80%',
+      intensidadPct1RM: '70-85%',
       rpeObjetivo: '8-10',
-      cardioMinSemana: 60,
-      cardioTipo: 'Opcional · LISS preferente',
+      cardioMinSemana: 50,
+      cardioBaseProtocolo: 50,
+      cardioExtraNecesario: 0,
+      cardioTipo: 'Solo del protocolo · Glucógeno lleno permite cargas pesadas',
       eaMinKcalKgFFM: 45,
-      foco: 'Glucógeno lleno permite sesiones más pesadas. Aprovechar para acumular volumen sin fatiga del déficit.',
+      foco: 'Glucógeno lleno permite sesiones más pesadas y rep ranges más bajos (6-10). Acumular volumen sin fatiga del déficit. Si días de entreno coinciden con días de refeed alto en carbos, aprovechar.',
       redFlags: ['Subida de peso > 2 kg en 14 días (revisar superávit, no debería pasar de mantenimiento)']
     };
   }
@@ -104,13 +115,16 @@ function _prescripcionEntrenamiento(indice, total, esDietBreak) {
       modalidadLabel: 'Concurrente (fuerza + cardio)',
       volumenSets: '6-9 sets/grupo muscular/sesión',
       factorVolumen: 1.0,
+      repRange: '8-12',
       frecuenciaSemanal: 4,
       intensidadPct1RM: '70-80%',
       rpeObjetivo: '7-8',
       cardioMinSemana: 90,
-      cardioTipo: 'LISS o HIIT · igual eficacia si gasto se iguala',
+      cardioBaseProtocolo: 45,
+      cardioExtraNecesario: 45,
+      cardioTipo: 'LISS o HIIT · timing libre (mismo día o separado da igual)',
       eaMinKcalKgFFM: 40,
-      foco: 'CT maximiza pérdida de grasa sin canibalizar masa magra. Cardio: timing libre (mismo día o separado, da igual).',
+      foco: 'CT maximiza pérdida de grasa sin canibalizar masa magra. Cardio del protocolo (~45 min/sem) + 45 min extra de LISS (caminata inclinada, bici suave) durante la semana para llegar a 90 min objetivo.',
       redFlags: [
         'Caída > 5% en lifts clave en 2 semanas seguidas',
         'sRPE subiendo > 1 punto sin cambios en programa',
@@ -125,13 +139,16 @@ function _prescripcionEntrenamiento(indice, total, esDietBreak) {
       modalidadLabel: 'Concurrente (fuerza + cardio)',
       volumenSets: '6-9 sets/grupo muscular/sesión',
       factorVolumen: 1.0,
+      repRange: '8-12',
       frecuenciaSemanal: 4,
       intensidadPct1RM: '70-80%',
       rpeObjetivo: '7-8',
       cardioMinSemana: 90,
-      cardioTipo: 'LISS o HIIT · igual eficacia si gasto se iguala',
+      cardioBaseProtocolo: 45,
+      cardioExtraNecesario: 45,
+      cardioTipo: 'LISS o HIIT · timing libre (mismo día o separado da igual)',
       eaMinKcalKgFFM: 40,
-      foco: 'Establecer base. CT supera a RT puro en pérdida de grasa absoluta y mantiene FFM si el RT está bien programado.',
+      foco: 'Establecer base. CT supera a RT puro en pérdida de grasa absoluta y mantiene FFM. Cardio del protocolo (~45 min/sem) + 45 min extra fuera de las sesiones para llegar a 90 min objetivo.',
       redFlags: [
         'Caída > 5% en lifts clave en 2 semanas',
         'sRPE subiendo > 1 punto sin cambios',
@@ -146,13 +163,16 @@ function _prescripcionEntrenamiento(indice, total, esDietBreak) {
       modalidadLabel: 'Fuerza pura (RT prioritario)',
       volumenSets: '5-7 sets/grupo (taper −25 a −30%)',
       factorVolumen: 0.75,
+      repRange: '6-10',
       frecuenciaSemanal: 4,
       intensidadPct1RM: '70-80% (mantener cargas)',
       rpeObjetivo: '7-8 (evitar fallo crónico, controla cortisol)',
       cardioMinSemana: 30,
-      cardioTipo: 'Mínimo · solo LISS si peso se estanca',
+      cardioBaseProtocolo: 30,
+      cardioExtraNecesario: 0,
+      cardioTipo: 'Solo del protocolo (treadmill día D recortado) · Subir carbos antes que cardio',
       eaMinKcalKgFFM: 35,
-      foco: 'A baja grasa el AT canibaliza FFM. RT puro preserva masa magra. Antes de subir cardio: subir carbos para reducir el déficit.',
+      foco: 'A baja grasa el AT canibaliza FFM. RT puro con reps 6-10 preserva fuerza/masa magra mientras se estresa el cortisol mínimamente. Antes de subir cardio: subir carbos para reducir el déficit.',
       redFlags: [
         'EA estimada < 30 kcal/kg FFM (LEA clínica)',
         'Bradicardia, hipotensión, libido caída, sueño deteriorado',
@@ -161,18 +181,22 @@ function _prescripcionEntrenamiento(indice, total, esDietBreak) {
     };
   }
 
+  // Bloque intermedio
   return {
     modalidad: 'CT-RT',
     modalidadLabel: 'Concurrente con RT prioritario',
-    volumenSets: '6-9 sets/grupo (bajar 20-30% si sRPE sube)',
+    volumenSets: '6-8 sets/grupo (bajar 20-30% si sRPE sube)',
     factorVolumen: 0.9,
+    repRange: '8-12',
     frecuenciaSemanal: 4,
     intensidadPct1RM: '70-80%',
     rpeObjetivo: '7-8',
     cardioMinSemana: 60,
+    cardioBaseProtocolo: 45,
+    cardioExtraNecesario: 15,
     cardioTipo: 'LISS preferente (menos interference)',
     eaMinKcalKgFFM: 38,
-    foco: 'Migrar hacia RT-prioritario. Reducir cardio si fatiga sube. Aumentar minutos solo si peso se estanca.',
+    foco: 'Migrar hacia RT-prioritario. Cardio del protocolo (~45 min/sem) + 15 min extra LISS. Reducir cardio extra si fatiga sube; aumentar solo si peso se estanca.',
     redFlags: [
       'sRPE en aumento sostenido (fatiga acumulada)',
       'Pérdida de fuerza en lifts clave',

@@ -2142,11 +2142,13 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { l: 'Volumen', v: _ent.volumenSets },
+                    { l: 'Reps', v: _ent.repRange ? _ent.repRange + ' reps' : '—' },
                     { l: 'Frecuencia', v: _ent.frecuenciaSemanal + 'x/sem' },
                     { l: 'Intensidad', v: _ent.intensidadPct1RM + ' 1RM' },
                     { l: 'RPE objetivo', v: _ent.rpeObjetivo },
-                    { l: 'Cardio', v: _ent.cardioMinSemana + ' min/sem · ' + _ent.cardioTipo },
-                    { l: 'EA mínima', v: '≥ ' + _ent.eaMinKcalKgFFM + ' kcal/kg FFM' }
+                    { l: 'Cardio total', v: _ent.cardioMinSemana + ' min/sem' + (_ent.cardioBaseProtocolo ? ' (protocolo: ' + _ent.cardioBaseProtocolo + (_ent.cardioExtraNecesario ? ' + extra: ' + _ent.cardioExtraNecesario : '') + ')' : '') },
+                    { l: 'EA mínima', v: '≥ ' + _ent.eaMinKcalKgFFM + ' kcal/kg FFM' },
+                    { l: 'Factor volumen', v: (_ent.factorVolumen != null ? _ent.factorVolumen.toFixed(2) + '×' : '1.00×') + ' (sets escalados)' }
                   ].map(x => (
                     <div key={x.l}>
                       <div className={`text-[10px] uppercase ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{x.l}</div>
@@ -2194,10 +2196,11 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   { step: '04', t: 'Calorías objetivo', b: obj === 'perdida' ? 'TDEE − déficit por tasa de pérdida' : obj === 'mantenimiento' ? 'TDEE exacto (sin déficit)' : 'TDEE + superávit lean bulk', r: calc ? ((calc.caloriasCorte || calc.caloriasObjetivo) ? (calc.caloriasCorte || calc.caloriasObjetivo) + ' kcal/día' : null) : null },
                   { step: '05', t: 'Split de macros', b: obj === 'perdida' ? 'Remanente ÷ 57% carbohidratos + 43% grasa' : obj === 'mantenimiento' ? 'Remanente ÷ 45% carbohidratos + 55% grasa' : 'Remanente ÷ 60% carbohidratos + 40% grasa', r: null, isMacros: true },
                   ...(obj === 'perdida' ? [
-                    { step: '06', t: 'Modalidad de entrenamiento', b: 'F1 Fundación: CT concurrente — maximiza pérdida de grasa preservando FFM · Intermedia: CT con RT prioritario · Last Mile: RT puro (a baja grasa el AT canibaliza FFM) · Diet Break: CT con cargas pesadas (glucógeno lleno)', r: null },
-                    { step: '07', t: 'Volumen e intensidad', b: '6-9 sets/grupo muscular/sesión a 70-80% 1RM · RPE objetivo 7-8 · 4 sesiones/sem (split A/B/C/D) · Last Mile: taper −25 a −30% volumen, mantener intensidad', r: null },
-                    { step: '08', t: 'Cardio dose-response', b: 'LISS y HIIT equivalentes si se iguala gasto · Dosis por fase: F1 ~90 min/sem · Intermedia ~60 · Last Mile ~30 · Timing libre (mismo día o distinto al RT, indistinto)', r: null },
-                    { step: '09', t: 'Energy Availability (EA)', b: 'EA = (kcal − gasto del ejercicio) / kg FFM · ≥ 45 óptimo · 30-40 LEA subclínica · < 30 LEA clínica · Umbrales por fase: F1 ≥ 40 · Intermedia ≥ 38 · Last Mile ≥ 35', r: null },
+                    { step: '06', t: 'Modalidad por fase', b: 'F1 Fundación: CT (concurrente) factor volumen 1.0× · Intermedia: CT-RT factor 0.9× (sets bajan 10%) · Last Mile: RT puro factor 0.75× (taper −25%) · Diet Break: CT factor 1.15× (sets suben 15%, glucógeno lleno permite carga)', r: null },
+                    { step: '07', t: 'Volumen, reps e intensidad', b: 'Sets base: 6-9 sets/grupo/sesión a 70-80% 1RM · 4 sesiones/sem (split A/B/C/D) · Reps: F1/Intermedia 8-12 (hipertrofia) · Last Mile/Diet Break 6-10 (más fuerza, menos cortisol) · El protocolo escala sets automáticamente por fase', r: null },
+                    { step: '08', t: 'Cardio dose-response (gap explícito)', b: 'Protocolo entrega ~45 min/sem (rowing C + intervalos D + treadmill D) · Total objetivo por fase: F1 90 min (suma 45 extra LISS) · Intermedia 60 (suma 15) · Last Mile 30 (solo protocolo recortado) · Diet Break 50 (solo protocolo) · LISS y HIIT equivalentes si gasto se iguala', r: null },
+                    { step: '09', t: 'Energy Availability (EA)', b: 'EA = (kcal − gasto del ejercicio) / kg FFM · ≥ 45 óptimo · 30-40 LEA subclínica · < 30 LEA clínica · Umbrales por fase: F1 ≥ 40 · Intermedia ≥ 38 · Last Mile ≥ 35 · Diet Break ≥ 45 (target mantenimiento)', r: null },
+                    { step: '10', t: 'Conexión con plan nutricional', b: 'Multiplicador kcal por día: ×1.05 días de entreno (Lun/Mar/Jue/Sáb) · ×0.95 días de descanso (Mié/Vie/Dom) · Promedio semanal = caloriasObjetivo de la fase · Cuando cambia la fase, el plan nutricional debe regenerarse para reflejar la nueva base', r: null },
                   ] : []),
                 ].map(row => (
                   <div key={row.t} className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
@@ -4476,10 +4479,12 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   {[
                     { l: t('Volumen','Volume'), v: faseInfo.entrenamiento.volumenSets },
+                    { l: 'Reps', v: faseInfo.entrenamiento.repRange ? faseInfo.entrenamiento.repRange + ' reps' : '—' },
                     { l: t('Frecuencia','Frequency'), v: faseInfo.entrenamiento.frecuenciaSemanal + 'x ' + t('/sem','/wk') },
                     { l: t('Intensidad','Intensity'), v: faseInfo.entrenamiento.intensidadPct1RM + ' 1RM' },
                     { l: 'RPE', v: faseInfo.entrenamiento.rpeObjetivo },
-                    { l: 'Cardio', v: faseInfo.entrenamiento.cardioMinSemana + ' min/' + t('sem','wk') },
+                    { l: 'Cardio', v: faseInfo.entrenamiento.cardioMinSemana + ' min/' + t('sem','wk') + (faseInfo.entrenamiento.cardioExtraNecesario > 0 ? ' (+' + faseInfo.entrenamiento.cardioExtraNecesario + ' extra)' : '') },
+                    { l: t('Factor vol.','Vol. factor'), v: (faseInfo.entrenamiento.factorVolumen != null ? faseInfo.entrenamiento.factorVolumen.toFixed(2) + '×' : '1.00×') },
                     { l: t('EA mínima','Min EA'), v: '≥ ' + faseInfo.entrenamiento.eaMinKcalKgFFM + ' kcal/kg FFM' }
                   ].map(x => (
                     <div key={x.l} className={`rounded-lg px-2.5 py-1.5 ${darkMode ? 'bg-gray-800/60' : 'bg-white/70'}`}>
@@ -11134,23 +11139,33 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   let protocolo = (window.NP_RoadmapData && window.NP_RoadmapData.generarProtocoloDia)
     ? window.NP_RoadmapData.generarProtocoloDia(tipoDia, semanaNum, equiposDisp)
     : (window.NP_Training ? window.NP_Training.protocoloDia(tipoDia) : null);
-  // Ajustar volumen del protocolo según prescripción de la fase actual
-  // (Last Mile baja sets, Diet Break sube, Fundación queda igual)
-  const _factorFase = (() => {
+  // Ajustar protocolo según prescripción de la fase: factorVolumen escala sets,
+  // repRange override el rango de reps (solo para ejercicios con rango numérico tipo "X-Y").
+  // Last Mile baja sets y reps (más fuerza, menos volumen), Diet Break sube sets y mantiene reps bajas.
+  const _faseEntCfg = (() => {
     const _rmA = perfil && perfil.roadmap;
-    if (!_rmA || !window.NP_Roadmap || !window.NP_Roadmap.faseActual) return 1.0;
+    if (!_rmA || !window.NP_Roadmap || !window.NP_Roadmap.faseActual) return null;
     const _faA = window.NP_Roadmap.faseActual(_rmA);
-    return (_faA && _faA.entrenamiento && typeof _faA.entrenamiento.factorVolumen === 'number')
-      ? _faA.entrenamiento.factorVolumen
-      : 1.0;
+    return _faA && _faA.entrenamiento ? _faA.entrenamiento : null;
   })();
-  if (protocolo && Math.abs(_factorFase - 1.0) > 0.01) {
+  const _factorFase = (_faseEntCfg && typeof _faseEntCfg.factorVolumen === 'number') ? _faseEntCfg.factorVolumen : 1.0;
+  const _repRangeFase = _faseEntCfg && _faseEntCfg.repRange;
+  const _ajusteActivo = Math.abs(_factorFase - 1.0) > 0.01 || !!_repRangeFase;
+  if (protocolo && _ajusteActivo) {
     protocolo = Object.assign({}, protocolo, {
       ejercicios: protocolo.ejercicios.map(ej => {
-        const numSets = (typeof ej.sets === 'number') ? ej.sets : null;
-        if (numSets == null) return ej;
-        const ajustados = Math.max(1, Math.round(numSets * _factorFase));
-        return Object.assign({}, ej, { sets: ajustados, _setsOriginal: numSets });
+        const out = Object.assign({}, ej);
+        // Sets
+        if (typeof ej.sets === 'number' && Math.abs(_factorFase - 1.0) > 0.01) {
+          out._setsOriginal = ej.sets;
+          out.sets = Math.max(1, Math.round(ej.sets * _factorFase));
+        }
+        // Reps: solo overridear cuando el rango actual es numérico simple (e.g. "8-12", no "máx" ni "30 seg")
+        if (_repRangeFase && typeof ej.reps === 'string' && /^\d+-\d+$/.test(ej.reps) && ej.reps !== _repRangeFase) {
+          out._repsOriginal = ej.reps;
+          out.reps = _repRangeFase;
+        }
+        return out;
       })
     });
   }
@@ -11230,12 +11245,24 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   const diaSemana = t('Dom,Lun,Mar,Mié,Jue,Vie,Sáb', 'Sun,Mon,Tue,Wed,Thu,Fri,Sat').split(',')[new Date(hoy + 'T12:00:00').getDay()];
 
   // ── Prescripción de la fase actual (fat-loss roadmap con .entrenamiento) ──
-  // Conecta el target del roadmap con la vista de entrenamiento concreta.
+  // Conecta el target del roadmap con la vista de entrenamiento concreta + plan nutricional.
   const _faseEnt = (() => {
     const _rm = perfil && perfil.roadmap;
     if (!_rm || !window.NP_Roadmap || !window.NP_Roadmap.faseActual) return null;
     const _fa = window.NP_Roadmap.faseActual(_rm);
-    return _fa && _fa.entrenamiento ? { ent: _fa.entrenamiento, nombre: _fa.nombre } : null;
+    return _fa && _fa.entrenamiento ? { ent: _fa.entrenamiento, fase: _fa, nombre: _fa.nombre, kcal: _fa.calorias } : null;
+  })();
+  // Días de entreno de la semana (del schedule del protocolo) — para conectar con nutritionEngine ×1.05
+  const _diasEntreno = (() => {
+    if (!window.NP_RoadmapData || !window.NP_RoadmapData.ENTRENO_PROTOCOLO) return null;
+    const sch = window.NP_RoadmapData.ENTRENO_PROTOCOLO.scheduleDefault || {};
+    const labels = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const entreno = [], descanso = [];
+    for (let dow = 0; dow < 7; dow++) {
+      if (sch[dow] && sch[dow] !== 'descanso') entreno.push(labels[dow]);
+      else descanso.push(labels[dow]);
+    }
+    return { entreno, descanso };
   })();
 
   return (
@@ -11250,12 +11277,13 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             </div>
             <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${darkMode ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>{_faseEnt.ent.modalidad}</span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {/* Métricas del entrenamiento */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
             {[
               { l: t('Volumen','Volume'), v: _faseEnt.ent.volumenSets.split(' ').slice(0,2).join(' ') },
               { l: 'RPE', v: _faseEnt.ent.rpeObjetivo.split(' ')[0] },
-              { l: t('Intensidad','Intensity'), v: _faseEnt.ent.intensidadPct1RM.split(' ')[0] + ' 1RM' },
-              { l: 'Cardio', v: _faseEnt.ent.cardioMinSemana + ' min/' + t('sem','wk') }
+              { l: 'Reps', v: _faseEnt.ent.repRange || '—' },
+              { l: t('Intensidad','Intensity'), v: _faseEnt.ent.intensidadPct1RM.split(' ')[0] + ' 1RM' }
             ].map(x => (
               <div key={x.l} className={`rounded-lg px-2.5 py-1.5 ${darkMode ? 'bg-gray-800/50' : 'bg-white/70'}`}>
                 <div className={`text-[10px] uppercase ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{x.l}</div>
@@ -11263,6 +11291,56 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
               </div>
             ))}
           </div>
+          {/* Cardio gap: cuánto da el protocolo + cuánto sumar fuera */}
+          <div className={`rounded-lg px-3 py-2 mb-2 ${darkMode ? 'bg-gray-800/40' : 'bg-white/60'}`}>
+            <div className="flex items-center justify-between mb-1">
+              <div className={`text-[10px] uppercase tracking-wide font-bold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                <i className="fas fa-heart-pulse mr-1 opacity-70"></i>{t('Cardio semanal','Weekly cardio')}
+              </div>
+              <div className={`text-xs font-bold ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>{_faseEnt.ent.cardioMinSemana} min</div>
+            </div>
+            <div className="flex items-center gap-2 text-[11px]">
+              <span className={`px-1.5 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+                {_faseEnt.ent.cardioBaseProtocolo || '~45'} min {t('en sesiones C+D','in C+D sessions')}
+              </span>
+              {(_faseEnt.ent.cardioExtraNecesario > 0) && (
+                <>
+                  <span className={`${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>+</span>
+                  <span className={`px-1.5 py-0.5 rounded font-semibold ${darkMode ? 'bg-amber-900/40 text-amber-300' : 'bg-amber-100 text-amber-700'}`}>
+                    {_faseEnt.ent.cardioExtraNecesario} min {t('LISS extra/sem','LISS extra/wk')}
+                  </span>
+                </>
+              )}
+            </div>
+            {_faseEnt.ent.cardioTipo && (
+              <div className={`text-[10px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{_faseEnt.ent.cardioTipo}</div>
+            )}
+          </div>
+          {/* Conexión con plan nutricional */}
+          {_faseEnt.kcal && _diasEntreno && (
+            <div className={`rounded-lg px-3 py-2 mb-2 ${darkMode ? 'bg-gray-800/40' : 'bg-white/60'}`}>
+              <div className={`text-[10px] uppercase tracking-wide font-bold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                <i className="fas fa-link mr-1 opacity-70"></i>{t('Plan nutricional','Nutrition plan')}
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{t('Promedio diario','Daily avg')}</span>
+                <span className={`font-bold ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>{_faseEnt.kcal} kcal</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{t('Días entreno','Training days')} <span className="text-[10px] opacity-70">(×1.05)</span></span>
+                <span className={`font-mono ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{_diasEntreno.entreno.join('·') || '—'}</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{t('Días descanso','Rest days')} <span className="text-[10px] opacity-70">(×0.95)</span></span>
+                <span className={`font-mono ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{_diasEntreno.descanso.join('·') || '—'}</span>
+              </div>
+            </div>
+          )}
+          {/* Foco de la fase */}
+          <p className={`text-[11px] leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            <i className="fas fa-info-circle mr-1.5 opacity-70"></i>
+            {tData(_faseEnt.ent.foco)}
+          </p>
         </div>
       )}
       {/* Resumen semana */}
