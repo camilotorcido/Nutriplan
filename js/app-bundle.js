@@ -926,7 +926,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
 
             {/* ── Units ── */}
-            <div className={`mb-6 pt-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <div className={`mb-6 pt-4 border-t border-default`}>
               <p className={`text-xs font-semibold uppercase tracking-wide mb-3 text-center text-ink-faint`}>
                 {t('Unidades de medida','Units of measurement')}
               </p>
@@ -1128,7 +1128,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
         return (
           <div className="space-y-3">
             <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
-              <p className={`text-sm font-semibold mb-1 ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>Tu plan de volumen muscular</p>
+              <p className={`text-sm font-semibold mb-1 text-info`}>Tu plan de volumen muscular</p>
               <p className={`text-xs leading-relaxed text-ink-muted`}>
                 Calculamos tu gasto energético total y le sumamos un superávit controlado para que tu cuerpo tenga los recursos para construir músculo. Con proteína muy alta basada en masa muscular real, minimizamos la grasa ganada durante el proceso.
               </p>
@@ -1178,8 +1178,8 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
         return (
           <div className="space-y-3">
             {/* 01 BMR */}
-            <div className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
-              <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <div className={`rounded-2xl overflow-hidden border surface-card-shadow`}>
+              <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b border-default`}>
                 <span className="font-display text-[11px] font-bold tracking-widest" style={{color:'var(--color-accent)'}}>01</span>
                 <span className={`text-xs font-semibold text-ink`}>BMR — Mifflin-St Jeor</span>
               </div>
@@ -1190,7 +1190,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                     : `(10×${pfl.peso}) + (6.25×${pfl.altura}) − (5×${pfl.edad}) + 5`}
                 </p>
                 {bmr && (
-                  <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                  <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 border-default`}>
                     <span className={`text-[10px] uppercase tracking-wider text-ink-faint`}>resultado</span>
                     <span className="font-display text-xl font-bold" style={{color:'var(--color-accent)'}}>{bmr} kcal/día</span>
                   </div>
@@ -1198,15 +1198,15 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               </div>
             </div>
             {/* 02 TDEE */}
-            <div className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
-              <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <div className={`rounded-2xl overflow-hidden border surface-card-shadow`}>
+              <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b border-default`}>
                 <span className="font-display text-[11px] font-bold tracking-widest" style={{color:'var(--color-accent)'}}>02</span>
                 <span className={`text-xs font-semibold text-ink`}>TDEE — Gasto total diario</span>
               </div>
               <div className="px-4 py-3">
                 <p className={`font-mono text-[11px] leading-relaxed text-ink-faint`}>BMR × factor actividad ({pfl.nivelActividad || 'moderada'})</p>
                 {tdee && (
-                  <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                  <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 border-default`}>
                     <span className={`text-[10px] uppercase tracking-wider text-ink-faint`}>resultado</span>
                     <span className="font-display text-xl font-bold" style={{color:'var(--color-accent)'}}>{tdee} kcal/día</span>
                   </div>
@@ -1215,14 +1215,14 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
             {/* 03 LBM (condicional) */}
             {lbm && (
-              <div className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
-                <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+              <div className={`rounded-2xl overflow-hidden border surface-card-shadow`}>
+                <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b border-default`}>
                   <span className="font-display text-[11px] font-bold tracking-widest" style={{color:'var(--color-accent)'}}>03</span>
                   <span className={`text-xs font-semibold text-ink`}>Masa magra (LBM)</span>
                 </div>
                 <div className="px-4 py-3">
                   {bf && <p className={`font-mono text-[11px] leading-relaxed text-ink-faint`}>BF% Navy = {bf}%  →  {pfl.peso} × (1 − {bf}/100)</p>}
-                  <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                  <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 border-default`}>
                     <span className={`text-[10px] uppercase tracking-wider text-ink-faint`}>resultado</span>
                     <span className="font-display text-xl font-bold" style={{color:'var(--color-accent)'}}>{lbm} kg LBM</span>
                   </div>
@@ -1230,8 +1230,8 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               </div>
             )}
             {/* 04 Proteína */}
-            <div className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
-              <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <div className={`rounded-2xl overflow-hidden border surface-card-shadow`}>
+              <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b border-default`}>
                 <span className="font-display text-[11px] font-bold tracking-widest" style={{color:'var(--color-accent)'}}>04</span>
                 <span className={`text-xs font-semibold text-ink`}>Proteína target</span>
               </div>
@@ -1240,7 +1240,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   {obj === 'perdida' ? 'LBM × 2.63 g/kg  (mín: peso × 1.6)' : obj === 'mantenimiento' ? 'LBM × 2.0 g/kg  (mín: peso × 1.6)' : 'LBM × 2.4 g/kg  (mín: peso × 1.8)'}
                 </p>
                 {calc.proteinaTarget && (
-                  <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                  <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 border-default`}>
                     <span className={`text-[10px] uppercase tracking-wider text-ink-faint`}>resultado</span>
                     <span className="font-display text-xl font-bold" style={{color:'var(--color-accent)'}}>{calc.proteinaTarget} g/día</span>
                   </div>
@@ -1248,8 +1248,8 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               </div>
             </div>
             {/* 05 Calorías objetivo */}
-            <div className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
-              <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <div className={`rounded-2xl overflow-hidden border surface-card-shadow`}>
+              <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b border-default`}>
                 <span className="font-display text-[11px] font-bold tracking-widest" style={{color:'var(--color-accent)'}}>05</span>
                 <span className={`text-xs font-semibold text-ink`}>Calorías objetivo</span>
               </div>
@@ -1258,7 +1258,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   {obj === 'perdida' ? 'TDEE − déficit por tasa de pérdida seleccionada' : obj === 'mantenimiento' ? 'TDEE exacto (sin déficit ni superávit)' : 'TDEE + superávit lean bulk'}
                 </p>
                 {(calc.caloriasCorte || calc.caloriasObjetivo) && (
-                  <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                  <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 border-default`}>
                     <span className={`text-[10px] uppercase tracking-wider text-ink-faint`}>resultado</span>
                     <span className="font-display text-xl font-bold" style={{color:'var(--color-accent)'}}>{calc.caloriasCorte || calc.caloriasObjetivo} kcal/día</span>
                   </div>
@@ -1267,8 +1267,8 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
             {/* 06 Split macros */}
             {calc.macrosGramos && (
-              <div className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
-                <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+              <div className={`rounded-2xl overflow-hidden border surface-card-shadow`}>
+                <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b border-default`}>
                   <span className="font-display text-[11px] font-bold tracking-widest" style={{color:'var(--color-accent)'}}>06</span>
                   <span className={`text-xs font-semibold text-ink`}>Split de macros</span>
                 </div>
@@ -1276,7 +1276,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   <p className={`font-mono text-[11px] leading-relaxed mb-2.5 text-ink-faint`}>
                     {obj === 'perdida' ? 'Remanente ÷ 57% carbohidratos + 43% grasa' : obj === 'mantenimiento' ? 'Remanente ÷ 45% carbohidratos + 55% grasa' : 'Remanente ÷ 60% carbohidratos + 40% grasa'}
                   </p>
-                  <div className={`pt-2.5 border-t flex items-center gap-4 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                  <div className={`pt-2.5 border-t flex items-center gap-4 border-default`}>
                     <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
                       <span className="font-display text-base font-bold text-blue-400">{calc.macrosGramos.proteina}g</span>
@@ -1304,14 +1304,14 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
       const nivelC = () => (
         <div className="space-y-3">
           <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
-            <p className={`text-xs font-bold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Ecuación BMR: Mifflin-St Jeor (1990)</p>
+            <p className={`text-xs font-bold mb-2 text-ink`}>Ecuación BMR: Mifflin-St Jeor (1990)</p>
             <p className={`text-[11px] leading-relaxed text-ink-muted`}>
               Considerada la fórmula más precisa para población general moderna. Error típico ±10% vs calorimetría indirecta. Superior a Harris-Benedict en individuos con sobrepeso.
             </p>
             <p className={`text-[10px] mt-1.5 text-ink-faint`}>Mifflin MD et al. Am J Clin Nutr. 1990;51(2):241-7.</p>
           </div>
           <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
-            <p className={`text-xs font-bold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Proteína alta en déficit: Helms et al. (2014)</p>
+            <p className={`text-xs font-bold mb-2 text-ink`}>Proteína alta en déficit: Helms et al. (2014)</p>
             <p className={`text-[11px] leading-relaxed text-ink-muted`}>
               En contexto de déficit calórico, 2.3–3.1 g/kg de LBM minimiza pérdida de masa magra. El punto de 2.63 g/kg representa el centro del rango recomendado para atletas naturales.
             </p>
@@ -1319,7 +1319,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           </div>
           {obj === 'perdida' && (
             <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
-              <p className={`text-xs font-bold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Diet breaks: Peos et al. (2019)</p>
+              <p className={`text-xs font-bold mb-2 text-ink`}>Diet breaks: Peos et al. (2019)</p>
               <p className={`text-[11px] leading-relaxed text-ink-muted`}>
                 Pausas de 2 semanas a TDEE cada 10 semanas de déficit restauran leptina, cortisol y T3. El grupo con diet breaks perdió igual grasa que el continuo pero preservó más masa magra y tuvo mejor adherencia a 6 meses.
               </p>
@@ -1327,7 +1327,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </div>
           )}
           <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
-            <p className={`text-xs font-bold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>BF% método Navy (Hodgdon & Beckett, 1984)</p>
+            <p className={`text-xs font-bold mb-2 text-ink`}>BF% método Navy (Hodgdon & Beckett, 1984)</p>
             <p className={`text-[11px] leading-relaxed text-ink-muted`}>
               Correlación r=0.89 con DEXA en hombres, r=0.84 en mujeres. Equivalente a bioimpedancia de consumo en precisión. El error típico es ±3–4% de BF absoluto.
             </p>
@@ -1335,7 +1335,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           </div>
           {obj === 'volumen' && (
             <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
-              <p className={`text-xs font-bold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Lean bulk — límite de ganancia muscular (Lyle McDonald)</p>
+              <p className={`text-xs font-bold mb-2 text-ink`}>Lean bulk — límite de ganancia muscular (Lyle McDonald)</p>
               <p className={`text-[11px] leading-relaxed text-ink-muted`}>
                 Un hombre principiante puede ganar ~0.9 kg/mes de músculo real; un intermedio ~0.45 kg. Superávits &gt;500 kcal aumentan grasa sin acelerar la síntesis proteica. El rango 200–400 kcal optimiza la ratio músculo/grasa.
               </p>
@@ -1439,7 +1439,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           </div>
 
           {/* ── Step card ── */}
-          <div className={`rounded-2xl shadow-sm border p-6 mb-4 animate-fadeIn ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+          <div className={`rounded-2xl shadow-sm border p-6 mb-4 animate-fadeIn surface-card`}>
             <div className="flex items-center gap-3 mb-5">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${darkMode ? 'bg-green-900/50' : 'bg-green-100'}`}>
                 <i className={`fas ${meta.icono} ${darkMode ? 'text-green-400' : 'text-green-600'}`}></i>
@@ -1751,7 +1751,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             {pasoWizard === 4 && perfil.objetivo === 'volumen' && (
               <div className="space-y-4">
                 <div className={`p-3 rounded-xl border ${darkMode ? 'bg-blue-900/20 border-blue-800/40' : 'bg-blue-50 border-blue-100'}`}>
-                  <p className={`text-xs font-medium ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                  <p className={`text-xs font-medium text-info`}>
                     <i className="fas fa-flask mr-1.5"></i>
                     Lean bulk científico: superávit controlado (200–400 kcal) + proteína LBM × 2.4 g/kg. Minimiza grasa ganada mientras maximiza masa muscular.
                   </p>
@@ -2203,21 +2203,21 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                     { step: '10', t: 'Conexión con tu plan nutricional', b: 'Las calorías del día varían según si entrenas o descansas: días de entreno (Lun/Mar/Jue/Sáb) tienen +5% extra · días de descanso (Mié/Vie/Dom) tienen −5% · El promedio semanal coincide con la meta calórica de tu fase · Si cambias de fase, el plan nutricional debe regenerarse para reflejar la nueva meta', r: null },
                   ] : []),
                 ].map(row => (
-                  <div key={row.t} className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
-                    <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                  <div key={row.t} className={`rounded-2xl overflow-hidden border surface-card-shadow`}>
+                    <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b border-default`}>
                       <span className="font-display text-[11px] font-bold tracking-widest" style={{color:'var(--color-accent)'}}>{row.step}</span>
                       <span className={`text-xs font-semibold text-ink`}>{row.t}</span>
                     </div>
                     <div className="px-4 py-3">
                       <p className={`font-mono text-[11px] leading-relaxed text-ink-faint`}>{row.b}</p>
                       {row.r && (
-                        <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                        <div className={`mt-2.5 pt-2.5 border-t flex items-baseline gap-2 border-default`}>
                           <span className={`text-[10px] uppercase tracking-wider text-ink-faint`}>resultado</span>
                           <span className="font-display text-xl font-bold" style={{color:'var(--color-accent)'}}>{row.r}</span>
                         </div>
                       )}
                       {row.isMacros && calc && calc.macrosGramos && (
-                        <div className={`mt-2.5 pt-2.5 border-t flex items-center gap-4 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                        <div className={`mt-2.5 pt-2.5 border-t flex items-center gap-4 border-default`}>
                           <div className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
                             <span className="font-display text-base font-bold text-blue-400">{calc.macrosGramos.proteina}g</span>
@@ -2255,7 +2255,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   { t: 'Hodgdon & Beckett (1984) — Navy BF%', b: 'Correlación r=0.89 con DEXA en hombres. Error típico ±3–4% de BF absoluto. Equivalente a bioimpedancia de consumo.', ref: 'Hodgdon JA, Beckett MB. Naval Health Research Center. 1984.' },
                 ].map(row => (
                   <div key={row.t} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
-                    <p className={`text-xs font-bold mb-1 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{row.t}</p>
+                    <p className={`text-xs font-bold mb-1 text-ink`}>{row.t}</p>
                     <p className={`text-[11px] leading-relaxed text-ink-muted`}>{row.b}</p>
                     <p className={`text-[10px] mt-1.5 text-ink-faint`}>{row.ref}</p>
                   </div>
@@ -2320,7 +2320,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           )}
 
           {/* Datos Personales */}
-          <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+          <div className={`rounded-2xl shadow-sm border p-6 surface-card`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 text-ink`}>
               <i className="fas fa-user-circle text-green-500"></i>
               Datos Personales
@@ -2359,7 +2359,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           </div>
 
           {/* Nivel de Actividad */}
-          <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+          <div className={`rounded-2xl shadow-sm border p-6 surface-card`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 text-ink`}>
               <i className="fas fa-running text-green-500"></i>
               Nivel de Actividad
@@ -2388,7 +2388,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           </div>
 
           {/* Objetivo — v20260428ai: goal cards unificados, sin kcal subtitles */}
-          <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+          <div className={`rounded-2xl shadow-sm border p-6 surface-card`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 text-ink`}>
               <i className="fas fa-bullseye text-green-500"></i>
               Objetivo
@@ -2423,7 +2423,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
           {/* ── Configuración: Pérdida de peso ── */}
           {perfil.objetivo === 'perdida' && (
-          <div className={`rounded-2xl shadow-sm border p-6 animate-fadeIn ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+          <div className={`rounded-2xl shadow-sm border p-6 animate-fadeIn surface-card`}>
             <h2 className={`text-base font-semibold mb-4 flex items-center gap-2 text-ink`}>
               <i className="fas fa-fire text-orange-500"></i>
               Configuración de pérdida de peso
@@ -2602,7 +2602,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
           {/* ── Configuración: Mantenimiento ── */}
           {perfil.objetivo === 'mantenimiento' && (
-          <div className={`rounded-2xl shadow-sm border p-6 animate-fadeIn ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+          <div className={`rounded-2xl shadow-sm border p-6 animate-fadeIn surface-card`}>
             <h2 className={`text-base font-semibold mb-3 flex items-center gap-2 text-ink`}>
               <i className="fas fa-scale-balanced text-green-500"></i>
               Configuración de mantenimiento
@@ -2685,13 +2685,13 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
           {/* ── Configuración: Volumen ── */}
           {perfil.objetivo === 'volumen' && (
-          <div className={`rounded-2xl shadow-sm border p-6 animate-fadeIn ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+          <div className={`rounded-2xl shadow-sm border p-6 animate-fadeIn surface-card`}>
             <h2 className={`text-base font-semibold mb-3 flex items-center gap-2 text-ink`}>
               <i className="fas fa-arrow-trend-up text-blue-500"></i>
               Configuración de volumen muscular
             </h2>
             <div className={`p-3 rounded-xl mb-4 ${darkMode ? 'bg-blue-900/20 border border-blue-800/40' : 'bg-blue-50 border border-blue-100'}`}>
-              <p className={`text-xs ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+              <p className={`text-xs text-info`}>
                 <i className="fas fa-flask mr-1.5"></i>Lean bulk científico: superávit 200–400 kcal + proteína LBM × 2.4 g/kg. Minimiza grasa ganada.
               </p>
             </div>
@@ -2797,7 +2797,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
           {/* Calorías Objetivo Manual - oculto cuando objetivo científico (lo define el roadmap) */}
           {!perfil.fatLossMode && perfil.objetivo !== 'mantenimiento' && perfil.objetivo !== 'volumen' && (
-          <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+          <div className={`rounded-2xl shadow-sm border p-6 surface-card`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 text-ink`}>
               <i className="fas fa-fire-flame-curved text-green-500"></i>
               Calorías Objetivo
@@ -2849,7 +2849,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
           {/* Macros Editables - oculto cuando objetivo científico, los fija automáticamente */}
           {!perfil.fatLossMode && perfil.objetivo !== 'mantenimiento' && perfil.objetivo !== 'volumen' && (
-          <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+          <div className={`rounded-2xl shadow-sm border p-6 surface-card`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 text-ink`}>
               <i className="fas fa-chart-pie text-green-500"></i>
               Distribución de Macros
@@ -2899,7 +2899,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           )}
 
           {/* Restricciones */}
-          <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+          <div className={`rounded-2xl shadow-sm border p-6 surface-card`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 text-ink`}>
               <i className="fas fa-shield-alt text-green-500"></i>
               Restricciones Alimentarias
@@ -3002,7 +3002,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           </div>
 
           {/* Selector de semanas */}
-          <div className={`rounded-2xl shadow-sm border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+          <div className={`rounded-2xl shadow-sm border p-6 surface-card`}>
             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 text-ink`}>
               <i className="fas fa-calendar-week text-green-500"></i>
               Duración del Plan
@@ -3156,15 +3156,15 @@ function BatchCookingView({ plan, darkMode }) {
         )}
 
         <div className="grid grid-cols-3 gap-2">
-          <div className={`rounded-lg p-2 text-center ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <div className={`rounded-lg p-2 text-center bg-surface`}>
             <div className={`text-xl font-bold text-ink`}>{resultado.total_bases}</div>
             <div className="text-[11px] text-gray-500">bases en lote</div>
           </div>
-          <div className={`rounded-lg p-2 text-center ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <div className={`rounded-lg p-2 text-center bg-surface`}>
             <div className="text-xl font-bold text-amber-600">{resultado.tiempo_batch_min} min</div>
             <div className="text-[11px] text-gray-500">domingo en cocina</div>
           </div>
-          <div className={`rounded-lg p-2 text-center ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <div className={`rounded-lg p-2 text-center bg-surface`}>
             <div className="text-xl font-bold text-emerald-600">-{resultado.ahorro_porcentaje}%</div>
             <div className="text-[11px] text-gray-500">ahorro semanal</div>
           </div>
@@ -3188,7 +3188,7 @@ function BatchCookingView({ plan, darkMode }) {
             {resultado.bases.map((base, idx) => {
               const color = coloresCat[base.categoria] || { bg: 'bg-gray-100', text: 'text-gray-700', icon: 'fa-circle' };
               return (
-                <div key={idx} className={`rounded-xl border p-4 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+                <div key={idx} className={`rounded-xl border p-4 surface-card`}>
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -3211,7 +3211,7 @@ function BatchCookingView({ plan, darkMode }) {
                   </div>
 
                   {base.instrucciones_batch && base.instrucciones_batch.length > 0 && (
-                    <details className={`mt-2 rounded-lg p-2 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                    <details className={`mt-2 rounded-lg p-2 surface-subtle`}>
                       <summary className={`text-xs font-medium cursor-pointer text-ink-muted`}>
                         <i className="fas fa-book-open mr-1"></i>Pasos para batch
                       </summary>
@@ -3304,7 +3304,7 @@ function ComensalesPanel({ darkMode, onChange }) {
       </button>
 
       {expandido && (
-        <div className={`px-3 pb-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+        <div className={`px-3 pb-3 border-t border-default`}>
           <div className={`text-[11px] uppercase font-semibold my-2 text-ink-faint`}>{t('Presets rápidos','Quick presets')}</div>
           <div className="grid grid-cols-4 gap-1 mb-3">
             {[
@@ -3332,7 +3332,7 @@ function ComensalesPanel({ darkMode, onChange }) {
                   {c.activo !== false && <i className="fas fa-check text-white text-[11px]"></i>}
                 </button>
                 <div className="flex-1 min-w-0">
-                  <div className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{c.nombre}</div>
+                  <div className={`text-sm text-ink`}>{c.nombre}</div>
                   <div className="text-[11px] text-gray-400">{c.tipo === 'nino' ? t('Niño/a','Child') : t('Adulto','Adult')} · ×{c.factor}</div>
                 </div>
                 {c.id !== 'camilo' && (
@@ -3443,13 +3443,13 @@ function BatchCookingPanel({ planSemanal, semanaActiva, darkMode, factorComensal
       </button>
 
       {expandido && (
-        <div className={`px-4 pb-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+        <div className={`px-4 pb-4 border-t border-default`}>
           <div className={`grid grid-cols-3 gap-2 my-3 text-center text-[11px] text-ink-faint`}>
-            <div className={`rounded-lg p-2 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+            <div className={`rounded-lg p-2 surface-subtle`}>
               <div className="font-bold text-base text-orange-500">{plan.tiempo_batch_min}′</div>
               <div>Prep domingo</div>
             </div>
-            <div className={`rounded-lg p-2 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+            <div className={`rounded-lg p-2 surface-subtle`}>
               <div className="font-bold text-base text-gray-500 line-through">{plan.tiempo_sin_batch_min}′</div>
               <div>Sin batch</div>
             </div>
@@ -3573,7 +3573,7 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
 
   return (
     <div className="animate-fadeIn">
-      <div className={`rounded-2xl p-5 border mb-4 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+      <div className={`rounded-2xl p-5 border mb-4 surface-card`}>
         <h3 className={`font-semibold text-lg mb-1 text-ink`}>
           <i className="fas fa-wand-magic-sparkles text-purple-500 mr-2"></i>{t('Generador de recetas','Recipe Generator')}
         </h3>
@@ -3656,7 +3656,7 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
             const cocina = gen.catalogos.cocinas[r._metadata.cocina];
             const tecnica = gen.catalogos.tecnicas[r._metadata.tecnica];
             return (
-              <div key={idx} className={`rounded-xl p-3 border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+              <div key={idx} className={`rounded-xl p-3 border surface-card`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0 cursor-pointer" role="button" tabIndex={0}
                     onClick={() => onRecipeClick(recetaConEscala)}
@@ -3844,7 +3844,7 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
 
   return (
     <div className="animate-fadeIn">
-      <div className={`rounded-2xl p-5 border mb-4 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+      <div className={`rounded-2xl p-5 border mb-4 surface-card`}>
         <h3 className={`font-semibold text-lg mb-1 text-ink`}>
           <i className="fas fa-magnifying-glass text-green-500 mr-2"></i>{t('¿Qué cocino con lo que tengo?','What can I cook with what I have?')}
         </h3>
@@ -3938,7 +3938,7 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
               const slotPickerOpen = expandedIdx === idx;
               return (
                 <div key={idx}
-                  className={`rounded-xl border transition overflow-hidden ${slotPickerOpen ? 'shadow-md' : 'hover:shadow-md'} ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+                  className={`rounded-xl border transition overflow-hidden ${slotPickerOpen ? 'shadow-md' : 'hover:shadow-md'} surface-card`}>
                   {/* Fila principal — clic abre modal de receta */}
                   <div role="button" tabIndex={0}
                     onClick={() => onRecipeClick(recetaConEscala)}
@@ -3975,7 +3975,7 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
 
                   {/* Botón "Usar en mi plan" — solo si hay slots hoy */}
                   {slotsHoy.length > 0 && (
-                    <div className={`px-3 pb-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                    <div className={`px-3 pb-3 border-t border-default`}>
                       {!slotPickerOpen ? (
                         <button
                           onClick={(e) => { e.stopPropagation(); setExpandedIdx(idx); }}
@@ -4476,7 +4476,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <i className={`fas fa-dumbbell ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}></i>
-                    <span className={`text-xs font-bold uppercase tracking-wide ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>{t('Entrenamiento de la fase','Phase training')}</span>
+                    <span className={`text-xs font-bold uppercase tracking-wide text-info`}>{t('Entrenamiento de la fase','Phase training')}</span>
                   </div>
                   <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${darkMode ? 'bg-blue-900/40 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>{faseInfo.entrenamiento.modalidad}</span>
                 </div>
@@ -4616,7 +4616,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
       </div>
 
       {/* Resumen diario */}
-      <div className={`rounded-2xl shadow-sm border p-5 mb-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+      <div className={`rounded-2xl shadow-sm border p-5 mb-6 surface-card`}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <h3 className={`font-semibold text-lg text-ink`}>{t(diaSeleccionado, {Lunes:'Monday',Martes:'Tuesday','Miércoles':'Wednesday',Jueves:'Thursday',Viernes:'Friday','Sábado':'Saturday',Domingo:'Sunday'}[diaSeleccionado] || diaSeleccionado)}</h3>
@@ -4646,8 +4646,8 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
           </div>
         </div>
         {/* Tiempo y costo del día */}
-        <div className={`grid grid-cols-2 gap-3 mb-4 pb-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+        <div className={`grid grid-cols-2 gap-3 mb-4 pb-3 border-b border-default`}>
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg surface-subtle`}>
             <i className="fas fa-clock text-indigo-400"></i>
             <div className="flex-1">
               <div className={`text-sm font-semibold text-ink`}>
@@ -4658,7 +4658,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
               </div>
             </div>
           </div>
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg surface-subtle`}>
             <i className="fas fa-coins text-amber-500"></i>
             <div className="flex-1">
               <div className={`text-sm font-semibold text-ink`}>
@@ -4683,7 +4683,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                 <span className={`text-${macro.color}-600 font-medium`}>{macro.label}</span>
                 <span className="text-gray-500">{macro.actual}g / {macro.objetivo}g</span>
               </div>
-              <div className={`h-2 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+              <div className={`h-2 rounded-full overflow-hidden surface-secondary`}>
                 <div className={`macro-bar h-full bg-${macro.color}-500 rounded-full`}
                   style={{ width: `${Math.min(100, (macro.actual / macro.objetivo) * 100)}%` }}></div>
               </div>
@@ -4838,14 +4838,14 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
 
       {/* Comidas externas adicionales del día (no reemplazan slot) */}
       {comidasExtDia.filter(function(c) { return !c.reemplaza; }).length > 0 && (
-        <div className={`rounded-2xl p-4 border mt-4 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+        <div className={`rounded-2xl p-4 border mt-4 surface-card`}>
           <div className={`text-xs font-semibold uppercase tracking-wide mb-3 text-ink-faint`}>
             <i className="fas fa-utensils mr-1.5 text-emerald-500"></i>Comidas adicionales
           </div>
           <div className="space-y-2">
             {comidasExtDia.filter(function(c) { return !c.reemplaza; }).map(function(c) {
               return (
-                <div key={c.id} className={`flex items-center justify-between gap-3 px-3 py-2 rounded-xl ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                <div key={c.id} className={`flex items-center justify-between gap-3 px-3 py-2 rounded-xl surface-subtle`}>
                   <div className="flex-1 min-w-0">
                     <div className={`text-sm font-medium truncate text-ink`}>{c.nombre}</div>
                     <div className="flex flex-wrap gap-2 mt-0.5">
@@ -5400,7 +5400,7 @@ function ModalPreferenciasGeneracion({ onConfirm, onCancel, darkMode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}
       onClick={onCancel}>
-      <div className={`w-full max-w-xs rounded-2xl p-6 shadow-2xl animate-slideUp ${darkMode ? 'bg-gray-800' : 'bg-white'}`}
+      <div className={`w-full max-w-xs rounded-2xl p-6 shadow-2xl animate-slideUp bg-surface`}
         onClick={e => e.stopPropagation()}>
         <h3 className={`text-base font-bold mb-1 text-ink`}>
           <i className="fas fa-sliders mr-2 text-green-500"></i>Preferencias del plan
@@ -5510,7 +5510,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-overlay animate-overlayFadeIn" onClick={onClose}>
-      <div className={`w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[92vh] overflow-hidden flex flex-col animate-slideUp shadow-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}
+      <div className={`w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[92vh] overflow-hidden flex flex-col animate-slideUp shadow-2xl bg-surface`}
         onClick={(e) => e.stopPropagation()}>
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-5 text-white flex-shrink-0">
           <div className="flex items-start justify-between">
@@ -5615,7 +5615,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
             </div>
           )}
-          <div className={`p-5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+          <div className={`p-5 border-b border-default`}>
             <h3 className={`font-semibold mb-3 flex items-center gap-2 text-ink`}>
               <i className="fas fa-list-check text-green-500"></i>Ingredientes
               <span className="text-xs font-normal text-gray-400">
@@ -5660,11 +5660,11 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
                             const calc = window.calcularMacrosTrasSustitucion
                               ? window.calcularMacrosTrasSustitucion(receta, ing.nombre_normalizado, s.id) : null;
                             return (
-                              <div key={s.id} className={`p-2 rounded-md text-xs ${darkMode ? 'bg-gray-800' : 'bg-white'} border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                              <div key={s.id} className={`p-2 rounded-md text-xs bg-surface border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex-1 min-w-0">
                                     {/* L2: truncate para evitar overflow en pantallas angostas */}
-                                    <div className={`font-semibold capitalize truncate ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                    <div className={`font-semibold capitalize truncate text-ink`}>
                                       {s.id.replace(/_/g, ' ')}
                                     </div>
                                     <div className={`text-[11px] mt-0.5 text-ink-faint`}>{s.nota}</div>
@@ -5932,7 +5932,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
 
   return (
     <div className="animate-fadeIn">
-      <div className={`rounded-2xl shadow-sm border p-5 mb-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+      <div className={`rounded-2xl shadow-sm border p-5 mb-6 surface-card`}>
         <div className="flex items-center justify-between mb-4">
           <h3 className={`font-semibold text-lg flex items-center gap-2 text-ink`}>
             <i className="fas fa-warehouse text-green-500"></i>{t('Tu Despensa','Your Pantry')}
@@ -5952,7 +5952,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
             <div className="text-xs text-amber-600">{t('Me faltan',"I'm missing")}</div>
           </div>
         </div>
-        <div className={`h-2.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+        <div className={`h-2.5 rounded-full overflow-hidden surface-secondary`}>
           <div className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition duration-500"
             style={{ width: `${totalIngredientes > 0 ? (enDespensa / totalIngredientes) * 100 : 0}%` }}></div>
         </div>
@@ -5962,7 +5962,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
       </div>
 
       {diasRestantes.length > 0 && (
-        <div className={`rounded-2xl shadow-sm border p-4 mb-4 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+        <div className={`rounded-2xl shadow-sm border p-4 mb-4 surface-card`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <i className={`fas fa-calendar-alt text-sm ${soloRestantes ? 'text-blue-500' : 'text-gray-400'}`}></i>
@@ -6017,7 +6017,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
       </div>
 
       {/* Agregar ingrediente manual */}
-      <div className={`rounded-2xl shadow-sm border p-4 mb-4 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+      <div className={`rounded-2xl shadow-sm border p-4 mb-4 surface-card`}>
         <button onClick={() => setMostrarAgregar(!mostrarAgregar)}
           className={`flex items-center gap-2 text-sm font-medium w-full text-ink-muted`}>
           <i className={`fas ${mostrarAgregar ? 'fa-chevron-down' : 'fa-plus-circle'} text-green-500`}></i>
@@ -6034,7 +6034,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
           </div>
         )}
         {ingredientesManual.length > 0 && (
-          <div className={`mt-3 pt-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+          <div className={`mt-3 pt-3 border-t border-default`}>
             <div className={`text-xs mb-2 text-ink-faint`}>{t('Mis ingredientes', 'My ingredients')} ({ingredientesManual.length})</div>
             {ingredientesManual.map(ing => (
               <div key={ing.id} className={`flex items-center justify-between py-1.5 text-ink-muted`}>
@@ -6055,7 +6055,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
         )}
       </div>
 
-      <div className={`rounded-2xl shadow-sm border overflow-hidden ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+      <div className={`rounded-2xl shadow-sm border overflow-hidden surface-card`}>
         <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
           {ingredientesFiltrados.map(ing => (
             <div key={ing.id}
@@ -6164,7 +6164,7 @@ function EsencialesRecurrentes({ darkMode }) {
   const desmarcarTodos = () => setItems(prev => prev.map(i => ({ ...i, activo: false })));
 
   return (
-    <div className={`rounded-2xl shadow-sm border overflow-hidden mb-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+    <div className={`rounded-2xl shadow-sm border overflow-hidden mb-6 surface-card`}>
       <button
         onClick={() => setExpandido(!expandido)}
         className={`w-full px-4 py-3 flex items-center justify-between ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'}`}>
@@ -6179,7 +6179,7 @@ function EsencialesRecurrentes({ darkMode }) {
       </button>
 
       {expandido && (
-        <div className={`px-4 py-3 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+        <div className={`px-4 py-3 bg-surface`}>
           <p className={`text-xs mb-3 text-ink-faint`}>
             {t('Items que siempre compras. Marca los que necesites esta semana y se sumarán al texto de la lista.', 'Items you always buy. Check the ones you need this week and they\'ll be added to the list.')}
           </p>
@@ -6407,7 +6407,7 @@ function ShoppingList({ plan, darkMode }) {
 
   return (
     <div className="animate-fadeIn">
-      <div className={`rounded-2xl shadow-sm border p-5 mb-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+      <div className={`rounded-2xl shadow-sm border p-5 mb-6 surface-card`}>
         <div className="flex items-center justify-between mb-3">
           <h3 className={`font-semibold text-lg flex items-center gap-2 text-ink`}>
             <i className="fas fa-shopping-cart text-amber-500"></i>{t('Lista de Compras','Shopping List')}
@@ -6463,7 +6463,7 @@ function ShoppingList({ plan, darkMode }) {
         </div>
       )}
 
-      <div className={`rounded-2xl shadow-sm border overflow-hidden mb-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+      <div className={`rounded-2xl shadow-sm border overflow-hidden mb-6 surface-card`}>
         {agrupado ? (
           <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
             {/* ST1: FA icons en lugar de emojis para cabeceras de categoría */}
@@ -7361,7 +7361,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
         style={{ maxHeight:'90vh', display:'flex', flexDirection:'column', paddingBottom:'env(safe-area-inset-bottom, 16px)' }}>
 
         {/* Header */}
-        <div className={`flex-shrink-0 flex items-center justify-between px-5 py-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+        <div className={`flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-default`}>
           <h3 className={`text-base font-bold text-ink`}>
             <i className="fas fa-circle-plus text-green-500 mr-2"></i>
             {t('Armar comida','Build a meal')}
@@ -7815,7 +7815,7 @@ function EveningRatingCard({ semanaData, diaActual, numSemanaActual, darkMode, r
     <div className={`rounded-2xl border overflow-hidden ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}
       style={{ animation: 'fadeUp 0.35s ease both' }}>
       {/* Header */}
-      <div className={`flex items-center justify-between px-4 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+      <div className={`flex items-center justify-between px-4 py-3 border-b border-default`}>
         <div className="flex items-center gap-2.5">
           <span style={{ fontSize: 17 }}>🌙</span>
           <span className={`text-sm font-semibold text-ink`}>
@@ -7848,7 +7848,7 @@ function EveningRatingCard({ semanaData, diaActual, numSemanaActual, darkMode, r
             );
           }
           return (
-            <div key={m.id} className={`flex items-center justify-between gap-3 px-3 py-2 rounded-xl ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+            <div key={m.id} className={`flex items-center justify-between gap-3 px-3 py-2 rounded-xl surface-subtle`}>
               <div className="flex-1 min-w-0">
                 <div className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 text-ink-faint`}>
                   {m.label}
@@ -8474,7 +8474,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         if (!hayDatos) return null;
 
         return (
-          <div className={`rounded-2xl px-5 py-3 flex items-center justify-between ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+          <div className={`rounded-2xl px-5 py-3 flex items-center justify-between surface-card-shadow`}>
             <span className={`text-xs font-semibold uppercase tracking-wider flex-shrink-0 text-ink-faint`}>
               <i className="fas fa-calendar-check mr-1.5"></i>{t('Esta semana','This week')}
             </span>
@@ -8510,7 +8510,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
 
       {/* ── Coach card (último tip proactivo del agente) ────────────────── */}
       {coachTip && !coachDismissed && (
-        <div className={`rounded-2xl ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}
+        <div className={`rounded-2xl surface-card-shadow`}
           style={{ borderLeft: '4px solid #22c55e', animation: 'fadeIn 0.3s ease both' }}>
           <div className="px-5 py-4">
             <div className="flex items-start gap-3">
@@ -8552,7 +8552,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
 
       {/* ── Peso de hoy: aparece solo si no hay comidas marcadas y no hay peso registrado hoy ── */}
       {!pesoHoyYaRegistrado && !pesoGuardado && consumidoHoy.calorias === 0 && window.NP_BodyComp && (
-        <div className={`rounded-2xl p-5 border animate-fadeIn ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
+        <div className={`rounded-2xl p-5 border animate-fadeIn surface-card-shadow`}>
           <div className="flex items-center gap-3 mb-3">
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${darkMode ? 'bg-orange-900/30' : 'bg-orange-50'}`}>
               <i className="fas fa-weight-scale text-orange-500"></i>
@@ -8590,8 +8590,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             ? (darkMode ? '#4ADE80' : '#16A34A')
             : (darkMode ? '#34D399' : '#0D9488');
         return (
-        <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <div className={`px-5 py-3 flex items-center justify-between border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+        <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
+          <div className={`px-5 py-3 flex items-center justify-between border-b border-default`}>
             <h3 className={`text-[11px] font-bold uppercase tracking-[0.12em] text-ink-faint`}>
               {t('Resumen de hoy','Today\'s summary')}
             </h3>
@@ -8713,7 +8713,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                 )}
               </div>
               {metaKcalDia > 0 && (
-                <div className={`w-full h-3 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                <div className={`w-full h-3 rounded-full overflow-hidden surface-secondary`}>
                   <div className="h-full rounded-full transition duration-500 bg-gradient-to-r from-teal-500 to-cyan-400"
                     style={{ width: Math.min(100, consumidoHoy.calorias > 0 ? Math.round((consumidoHoy.calorias / metaKcalDia) * 100) : 0) + '%' }}>
                   </div>
@@ -8777,8 +8777,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           </div>
         </div>
       ) : planSemanal ? (
-        <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <div className={`px-5 py-3 flex items-center justify-between border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+        <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
+          <div className={`px-5 py-3 flex items-center justify-between border-b border-default`}>
             <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>
               <i className="fas fa-utensils mr-2"></i>{t('Comidas de hoy','Today\'s meals')}
             </h3>
@@ -8915,7 +8915,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         </div>
       ) : (
         /* ── Guía visual 3 pasos cuando no hay plan ── */
-        <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
           <div className="px-5 pt-5 pb-5">
             <p className={`text-xs font-bold uppercase tracking-wider mb-5 text-ink-faint`}>
               <i className="fas fa-map mr-1.5"></i>{t('Primeros pasos','Getting started')}
@@ -8968,10 +8968,10 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
       )}
 
       {/* ── Comidas adicionales ── */}
-      <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+      <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
 
         {/* Header */}
-        <div className={`px-5 py-3 flex items-center justify-between border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+        <div className={`px-5 py-3 flex items-center justify-between border-b border-default`}>
           <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>
             <i className="fas fa-circle-plus mr-2"></i>{t('Comidas adicionales','Extra meals')}
           </h3>
@@ -8997,7 +8997,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           // → el pool rota naturalmente a medida que el usuario loguea comidas.
           var recom = (gapKcal >= 50) ? _getRecomendaciones(gapKcal, gapProt, comidasExt) : [];
           return (
-            <div className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <div className={`border-b border-default`}>
               {/* Sub-header */}
               <div className={`px-5 py-2 flex items-center justify-between ${darkMode ? 'bg-teal-900/10' : 'bg-teal-50/50'}`}>
                 <span className={`text-[10px] font-bold uppercase tracking-wider ${darkMode ? 'text-teal-400' : 'text-teal-600'}`}>
@@ -9082,7 +9082,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
 
           {/* Comidas pendientes (planeadas pero no comidas aún) */}
           {comidasPendientes.length > 0 && (
-            <div className={`border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <div className={`border-t border-default`}>
               {comidasPendientes.map(function(c) {
                 return (
                   <div key={c.id} className={`px-5 py-2.5 flex items-center gap-3 ${darkMode ? 'bg-amber-900/10' : 'bg-amber-50/70'}`}>
@@ -9204,8 +9204,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
       {tieneEntrenamiento && (
         <div className="space-y-3">
           {entrenoHoy && (
-            <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-              <div className={`px-5 py-3 flex items-center justify-between border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
+              <div className={`px-5 py-3 flex items-center justify-between border-b border-default`}>
                 <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>
                   <i className="fas fa-dumbbell mr-2"></i>{t('Entreno de hoy',"Today's workout")}
                 </h3>
@@ -9251,7 +9251,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           )}
 
           {pasosHoy != null && (
-            <div className={`rounded-2xl px-5 py-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+            <div className={`rounded-2xl px-5 py-3 surface-card-shadow`}>
               <div className="flex items-center justify-between mb-2">
                 <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>
                   <i className="fas fa-person-walking mr-2"></i>{t('Pasos hoy','Steps today')}
@@ -9260,7 +9260,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                   {(pasosHoy.pasos || 0).toLocaleString()} / {(pasosHoy.target || 8000).toLocaleString()}
                 </span>
               </div>
-              <div className={`w-full h-2 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+              <div className={`w-full h-2 rounded-full overflow-hidden surface-secondary`}>
                 <div className={`h-full rounded-full ${(pasosHoy.pasos || 0) >= (pasosHoy.target || 8000) ? 'bg-green-500' : 'bg-orange-500'}`}
                   style={{ width: Math.min(100, Math.round(((pasosHoy.pasos || 0) / (pasosHoy.target || 8000)) * 100)) + '%' }}></div>
               </div>
@@ -9550,7 +9550,7 @@ function NutricionLogView({ perfil, darkMode }) {
             </div>
           ))}
         </div>
-        <div className={`flex items-center gap-2 pt-2.5 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+        <div className={`flex items-center gap-2 pt-2.5 border-t border-default`}>
           <span className={`text-[11px] flex-shrink-0 text-ink-faint`}>{t('Adherencia período', 'Period adherence')}</span>
           <div className="flex-1 h-2 rounded-full overflow-hidden" style={{background: darkMode ? '#374151' : '#e5e7eb'}}>
             <div className="h-full rounded-full transition duration-700" style={{width: datos.avgAdher + '%', backgroundColor: 'var(--color-accent)'}}></div>
@@ -9791,7 +9791,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
     <div className="space-y-4">
 
       {/* Dashboard semanal */}
-      <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+      <div className={`rounded-2xl p-5 surface-card-shadow`}>
         <h3 className={`text-sm font-bold uppercase tracking-wider mb-3 text-ink-faint`}>{t('Esta semana','This week')}</h3>
         <div className="grid grid-cols-3 gap-3">
           {/* Entrenamiento */}
@@ -9865,7 +9865,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
 
       {/* Progreso global */}
       {progreso && (
-        <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <div className={`rounded-2xl p-5 surface-card-shadow`}>
           <h3 className={`text-sm font-bold uppercase tracking-wider mb-3 text-ink-faint`}>{t('Progreso global','Overall progress')}</h3>
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div>
@@ -9884,7 +9884,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
               {progreso.bfTarget != null && <div className="text-xs text-gray-400">{progreso.bfTarget}% BF</div>}
             </div>
           </div>
-          <div className={`w-full h-3 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+          <div className={`w-full h-3 rounded-full overflow-hidden surface-secondary`}>
             <div className="h-full transition"
               style={{ width: progreso.pctPeso + '%', backgroundImage: 'linear-gradient(to right, #f97316, #ef4444)' }}></div>
           </div>
@@ -9911,8 +9911,8 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
       )}
 
       {/* Fases del plan */}
-      <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-        <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+      <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
+        <div className={`px-5 py-3 border-b border-default`}>
           <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>{t('Fases del plan','Plan phases')}</h3>
           <p className={`text-xs mt-0.5 text-ink-faint`}>{roadmap.calculados.semanasTotales} {t('semanas totales','total weeks')} · {roadmap.calculados.cantDietBreaks} diet breaks · ~{roadmap.calculados.mesesTotales} {t('meses','months')}</p>
         </div>
@@ -9946,7 +9946,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
                     </div>
                     <div className={`text-xs text-ink-faint`}>{f.foco}</div>
                     {f.entrenamiento && (
-                      <div className={`text-[11px] mt-1.5 flex items-center gap-1.5 flex-wrap ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                      <div className={`text-[11px] mt-1.5 flex items-center gap-1.5 flex-wrap text-info`}>
                         <i className="fas fa-dumbbell text-[10px] opacity-70"></i>
                         <span className="font-semibold">{f.entrenamiento.modalidad}</span>
                         <span className="opacity-60">·</span>
@@ -10147,7 +10147,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
       <PlateauCard darkMode={darkMode} refresh={refresh} onRefresh={onRefresh} />
 
       {/* Registro rápido de peso */}
-      <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+      <div className={`rounded-2xl p-5 surface-card-shadow`}>
         <h3 className={`text-sm font-bold uppercase tracking-wider mb-3 text-ink-faint`}>{t('Peso de hoy', "Today's weight")}</h3>
         {entradaHoy && entradaHoy.peso != null ? (
           <div className="flex items-center justify-between">
@@ -10174,11 +10174,11 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
 
       {/* Promedio + tendencia */}
       <div className="grid grid-cols-2 gap-3">
-        <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <div className={`rounded-xl p-4 surface-card-shadow`}>
           <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Promedio 7 días', '7-day avg')}</div>
           <div className={`text-2xl font-extrabold text-ink`}>{promedio7 != null ? promedio7 + ' kg' : '—'}</div>
         </div>
-        <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <div className={`rounded-xl p-4 surface-card-shadow`}>
           <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Tendencia 14d', '14d trend')}</div>
           <div className={`text-2xl font-extrabold ${tendencia && tendencia.deltaSemanal != null ? (tendencia.deltaSemanal < 0 ? 'text-green-500' : tendencia.deltaSemanal > 0 ? 'text-red-500' : 'text-gray-400') : 'text-gray-400'}`}>
             {tendencia && tendencia.deltaSemanal != null ? (tendencia.deltaSemanal > 0 ? '+' : '') + tendencia.deltaSemanal + ' kg/sem' : '—'}
@@ -10188,7 +10188,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
 
       {/* Gráfico tendencia peso */}
       {entries.filter(e => e.peso != null).length >= 2 && (
-        <div className={`rounded-2xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <div className={`rounded-2xl p-4 surface-card-shadow`}>
           <h3 className={`text-sm font-bold uppercase tracking-wider mb-2 text-ink-faint`}>{t('Tendencia de peso', 'Weight trend')}</h3>
           <WeightChart perfil={perfil} entries={entries} darkMode={darkMode} />
           {/* TY4: #6b7280 (gray-500) en lugar de #9ca3af (gray-400, contraste insuficiente), 11px mínimo */}
@@ -10207,7 +10207,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
       )}
 
       {/* Medidas + BF */}
-      <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+      <div className={`rounded-2xl p-5 surface-card-shadow`}>
         <div className="flex items-center justify-between mb-3">
           <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>{t('Medidas (semanal)', 'Measurements (weekly)')}</h3>
           <button onClick={() => setMostrarMedidas(!mostrarMedidas)}
@@ -10257,7 +10257,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
               const last = window.NP_BodyComp.ultima(entries, campo);
               if (perfil.genero !== 'femenino' && campo === 'cadera') return null;
               return (
-                <div key={campo} className={`rounded-lg p-2 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                <div key={campo} className={`rounded-lg p-2 surface-subtle`}>
                   <div className="text-[11px] text-gray-400 uppercase">{{ cintura: t('Cintura','Waist'), cuello: t('Cuello','Neck'), cadera: t('Cadera','Hip'), muslo: t('Muslo','Thigh') }[campo] || campo}</div>
                   <div className={`font-bold text-ink`}>{last && last[campo] != null ? last[campo] + ' cm' : '—'}</div>
                 </div>
@@ -10266,7 +10266,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
             {(() => {
               const lastBF = window.NP_BodyComp.ultima(entries, 'bf');
               return (
-                <div className={`col-span-2 rounded-lg p-2 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                <div className={`col-span-2 rounded-lg p-2 surface-subtle`}>
                   <div className="text-[11px] text-gray-400 uppercase">BF%</div>
                   <div className={`font-bold text-ink`}>
                     {lastBF && lastBF.bf != null ? lastBF.bf + '%' : '—'}
@@ -10286,8 +10286,8 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
 
       {/* Historial */}
       {ultimas14.length > 0 && (
-        <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+        <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
+          <div className={`px-5 py-3 border-b border-default`}>
             <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>{t('Últimas 14 entradas', 'Last 14 entries')}</h3>
           </div>
           <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
@@ -10388,7 +10388,7 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
           <i className={`fas fa-radar ${iconCls}`}></i>
           <span className={`text-sm font-bold uppercase tracking-wider text-ink-muted`}>{t('Detector de meseta', 'Plateau detector')}</span>
         </div>
-        <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${iconCls} ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>{ribbon}</span>
+        <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${iconCls} bg-surface`}>{ribbon}</span>
       </div>
 
       {/* Stats de detección */}
@@ -10591,10 +10591,10 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
 
   // AN1: animate-fadeIn en el panel expandido para evitar el salto brusco
   return (
-    <div className={`rounded-2xl overflow-hidden animate-fadeIn ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+    <div className={`rounded-2xl overflow-hidden animate-fadeIn surface-card-shadow`}>
 
       {/* Header */}
-      <div className={`px-5 py-3 border-b flex items-center justify-between ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+      <div className={`px-5 py-3 border-b flex items-center justify-between border-default`}>
         <div className="flex items-center gap-2">
           <i className={`fas fa-wine-glass text-ink-faint`}></i>
           <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>{t('Alcohol · últimos 7 días', 'Alcohol · last 7 days')}</h3>
@@ -10629,12 +10629,12 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
           <div className={`rounded-xl p-4 space-y-3 ${darkMode ? 'bg-gray-700/40' : 'bg-gray-50'}`}>
             <div className={`text-sm font-semibold text-ink`}>{impacto.escenario}</div>
             <div className="grid grid-cols-2 gap-2">
-              <div className={`rounded-lg p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+              <div className={`rounded-lg p-3 surface-card-shadow`}>
                 <div className={`text-[11px] uppercase tracking-wide text-ink-faint`}>{t('Oxidación grasa', 'Fat oxidation')}</div>
                 <div className={`text-base font-bold text-ink`}>{t('pausada', 'paused')} {impacto.horasPausaOxidacion}h</div>
                 {pausaH > 0 && <div className={`text-xs mt-0.5 text-ink-faint`}>{pausaH}h {t('restantes', 'remaining')}</div>}
               </div>
-              <div className={`rounded-lg p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+              <div className={`rounded-lg p-3 surface-card-shadow`}>
                 <div className={`text-[11px] uppercase tracking-wide text-ink-faint`}>{t('Síntesis proteica', 'Protein synthesis')}</div>
                 <div className={`text-base font-bold text-ink`}>{impacto.impactoSintesisProteica}</div>
               </div>
@@ -10720,7 +10720,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
 
         {/* Log 7d */}
         {resumen.entries.length > 0 && (
-          <div className={`rounded-xl overflow-hidden border ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+          <div className={`rounded-xl overflow-hidden border border-default`}>
             <div className={`px-4 py-2 border-b text-xs uppercase font-bold tracking-wider ${darkMode ? 'bg-gray-700/30 border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>
               {t('Log 7d', 'Log 7d')}
             </div>
@@ -10781,7 +10781,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
   return (
     <div className="space-y-4">
       {/* Hoy */}
-      <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+      <div className={`rounded-2xl p-5 surface-card-shadow`}>
         <div className="flex items-center justify-between mb-3">
           <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>{t('Hoy', 'Today')}</h3>
           <span className="text-xs text-gray-400">Target: <b className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{target ? target.toLocaleString() : '—'}</b></span>
@@ -10791,7 +10791,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
         </div>
         {target > 0 && (
           <>
-            <div className={`w-full h-3 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+            <div className={`w-full h-3 rounded-full overflow-hidden surface-secondary`}>
               <div className="h-full transition"
                 style={{
                   width: pct + '%',
@@ -10825,11 +10825,11 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
-        <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <div className={`rounded-xl p-4 surface-card-shadow`}>
           <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Promedio 7 días', '7-day avg')}</div>
           <div className={`text-2xl font-extrabold text-ink`}>{prom7.toLocaleString()}</div>
         </div>
-        <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <div className={`rounded-xl p-4 surface-card-shadow`}>
           <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Racha actual', 'Current streak')}</div>
           <div className={`text-2xl font-extrabold ${racha > 0 ? 'text-orange-500' : darkMode ? 'text-white' : 'text-gray-800'}`}>
             {racha} {racha === 1 ? t('día', 'day') : t('días', 'days')}{racha >= 3 ? <i className="fas fa-fire text-orange-400 ml-1 text-lg"></i> : null}
@@ -10845,8 +10845,8 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
         </div>
       )}
       {ultimos.length > 0 && (
-        <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+        <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
+          <div className={`px-5 py-3 border-b border-default`}>
             <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>{t('Últimos 14 días', 'Last 14 days')}</h3>
           </div>
           <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
@@ -10862,7 +10862,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
                       {e.pasos.toLocaleString()} {cumplido && '✓'}
                     </span>
                   </div>
-                  <div className={`w-full h-1.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  <div className={`w-full h-1.5 rounded-full overflow-hidden surface-secondary`}>
                     <div className={`h-full ${cumplido ? 'bg-green-500' : 'bg-orange-500'}`} style={{ width: pctDia + '%' }}></div>
                   </div>
                 </div>
@@ -10924,7 +10924,7 @@ function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
   };
 
   return (
-    <div className={`rounded-xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+    <div className={`rounded-xl overflow-hidden surface-card-shadow`}>
       <button
         onClick={() => setAbierto(!abierto)}
         className={`w-full flex items-center justify-between px-4 py-3 text-sm font-bold uppercase tracking-wider text-ink-faint`}>
@@ -10932,7 +10932,7 @@ function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
         <i className={`fas fa-chevron-${abierto ? 'up' : 'down'} text-xs`}></i>
       </button>
       {abierto && (
-        <div className={`px-4 pb-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+        <div className={`px-4 pb-4 border-t border-default`}>
           <p className={`text-xs mt-2 mb-3 text-ink-faint`}>Marca lo que tienes. Los ejercicios muestran aviso si falta equipo.</p>
           <div className="flex flex-wrap gap-2">
             {equipos.map(eq => {
@@ -11263,7 +11263,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
           <div className="flex items-center justify-between mb-2.5">
             <div className="flex items-center gap-2">
               <i className={`fas fa-bullseye ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}></i>
-              <span className={`text-xs font-bold uppercase tracking-wide ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>{t('Prescripción · ','Prescription · ')}{_faseEnt.nombre}</span>
+              <span className={`text-xs font-bold uppercase tracking-wide text-info`}>{t('Prescripción · ','Prescription · ')}{_faseEnt.nombre}</span>
             </div>
             <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${darkMode ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>{_faseEnt.ent.modalidad}</span>
           </div>
@@ -11287,7 +11287,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
               <div className={`text-[10px] uppercase tracking-wide font-bold text-ink-faint`}>
                 <i className="fas fa-heart-pulse mr-1 opacity-70"></i>{t('Cardio total / semana','Total cardio / week')}
               </div>
-              <div className={`text-xs font-bold ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>{_faseEnt.ent.cardioMinSemana} min</div>
+              <div className={`text-xs font-bold text-info`}>{_faseEnt.ent.cardioMinSemana} min</div>
             </div>
             <div className="flex items-center gap-2 text-[11px] flex-wrap">
               <span className={`px-1.5 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
@@ -11314,7 +11314,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
               </div>
               <div className="flex items-center justify-between text-[11px]">
                 <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{t('Promedio diario','Daily avg')}</span>
-                <span className={`font-bold ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>{_faseEnt.kcal} kcal</span>
+                <span className={`font-bold text-info`}>{_faseEnt.kcal} kcal</span>
               </div>
               <div className="flex items-center justify-between text-[11px]">
                 <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{t('Días que entrenas','Training days')} <span className="text-[10px] opacity-70">(+5% kcal)</span></span>
@@ -11335,22 +11335,22 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
       )}
       {/* Resumen semana */}
       <div className="grid grid-cols-3 gap-2">
-        <div className={`rounded-xl p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <div className={`rounded-xl p-3 surface-card-shadow`}>
           <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Entrenos 7d', 'Workouts 7d')}</div>
           <div className={`text-2xl font-extrabold text-ink`}>{resumen.entrenos}</div>
         </div>
-        <div className={`rounded-xl p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <div className={`rounded-xl p-3 surface-card-shadow`}>
           <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Completados', 'Completed')}</div>
           <div className={`text-2xl font-extrabold text-ink`}>{resumen.completados}<span className="text-sm text-gray-400">/{resumen.entrenos || 0}</span></div>
         </div>
-        <div className={`rounded-xl p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <div className={`rounded-xl p-3 surface-card-shadow`}>
           <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Cumplimiento', 'Adherence')}</div>
           <div className={`text-2xl font-extrabold ${resumen.cumplimiento >= 80 ? 'text-green-500' : resumen.cumplimiento >= 50 ? 'text-orange-500' : darkMode ? 'text-white' : 'text-gray-800'}`}>{resumen.cumplimiento}%</div>
         </div>
       </div>
 
       {/* Selector de día */}
-      <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+      <div className={`rounded-xl p-4 surface-card-shadow`}>
         <div className="flex items-center justify-between mb-2">
           <div className={`text-xs uppercase font-bold tracking-wider text-ink-faint`}>
             {t('Día a registrar · hoy', 'Day to log · today')} ({diaSemana})
@@ -11419,7 +11419,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
 
       {/* Card del día seleccionado */}
       {protocolo && (
-        <div className={`rounded-2xl p-5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <div className={`rounded-2xl p-5 surface-card-shadow`}>
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
@@ -11438,7 +11438,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
               <div className="text-xs text-gray-400">{completados}/{total}</div>
             </div>
           </div>
-          <div className={`w-full h-2 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+          <div className={`w-full h-2 rounded-full overflow-hidden surface-secondary`}>
             <div className="h-full transition"
               style={{
                 width: pct + '%',
@@ -11514,13 +11514,13 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
 
       {/* Principios */}
       {window.NP_RoadmapData && window.NP_RoadmapData.ENTRENO_PROTOCOLO && window.NP_RoadmapData.ENTRENO_PROTOCOLO.principios && (
-        <details className={`rounded-xl ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
+        <details className={`rounded-xl surface-card-shadow`}>
           <summary className={`px-5 py-3 cursor-pointer text-sm font-bold uppercase tracking-wider text-ink-faint`}>
             <i className="fas fa-lightbulb mr-2"></i>{t('Principios del método', 'Method principles')}
           </summary>
           <div className={`px-5 pb-4 space-y-2 text-sm text-ink-muted`}>
             {window.NP_RoadmapData.ENTRENO_PROTOCOLO.principios.map((p, i) => (
-              <div key={i} className={`rounded-lg p-3 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+              <div key={i} className={`rounded-lg p-3 surface-subtle`}>
                 <div className={`font-semibold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{p.titulo}</div>
                 <div className="mt-1 leading-relaxed">{p.texto}</div>
               </div>
@@ -11531,8 +11531,8 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
 
       {/* Historial últimas sesiones */}
       {ultimas.length > 0 && (
-        <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
-          <div className={`px-5 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+        <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
+          <div className={`px-5 py-3 border-b border-default`}>
             <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>{t('Últimas sesiones', 'Recent sessions')}</h3>
           </div>
           <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
@@ -11550,7 +11550,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                     <span className={`text-sm font-semibold ${s.completado ? 'text-green-500' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       {hechos}/{tot} {s.completado && '✓'}
                     </span>
-                    <div className={`w-16 h-1.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                    <div className={`w-16 h-1.5 rounded-full overflow-hidden surface-secondary`}>
                       <div className={`h-full ${s.completado ? 'bg-green-500' : 'bg-orange-500'}`} style={{ width: pctS + '%' }}></div>
                     </div>
                   </div>
@@ -11573,7 +11573,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
 function LoadingOverlay({ mensaje, darkMode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay">
-      <div className={`rounded-2xl p-8 shadow-2xl max-w-sm mx-4 text-center ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <div className={`rounded-2xl p-8 shadow-2xl max-w-sm mx-4 text-center bg-surface`}>
         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl mb-4 shadow-lg">
           <i className="fas fa-globe text-white text-2xl loading-spin"></i>
         </div>
@@ -11704,7 +11704,7 @@ function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange, units, o
 
             {/* ── Language selector ── */}
             {onLangChange && (
-              <div className={`mt-4 pt-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+              <div className={`mt-4 pt-4 border-t border-default`}>
                 <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${mutedCls}`}>{t('Idioma','Language')}</p>
                 <div className="flex gap-2">
                   {[
@@ -11726,7 +11726,7 @@ function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange, units, o
 
             {/* ── Units selector ── */}
             {onUnitsChange && (
-              <div className={`mt-4 pt-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+              <div className={`mt-4 pt-4 border-t border-default`}>
                 <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${mutedCls}`}>{t('Unidades','Units')}</p>
                 <div className="flex gap-2">
                   {[
@@ -11747,7 +11747,7 @@ function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange, units, o
               </div>
             )}
 
-            <div className={`mt-4 pt-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <div className={`mt-4 pt-4 border-t border-default`}>
               <button onClick={() => { setView('deleteConfirm'); setError(''); }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors cursor-pointer ${darkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-500 hover:bg-red-50'}`}>
                 <i className="fas fa-user-xmark w-4 text-center"></i>
@@ -13930,7 +13930,7 @@ function App() {
 
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <header className={`sticky top-0 z-40 shadow-sm border-b ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+      <header className={`sticky top-0 z-40 shadow-sm border-b surface-card`}>
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 brand-icon-bg rounded-lg flex items-center justify-center">
@@ -13978,7 +13978,7 @@ function App() {
         </div>
       </header>
 
-      <nav className={`border-b no-print ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+      <nav className={`border-b no-print surface-card`}>
         <div className="max-w-3xl mx-auto px-4 overflow-x-auto">
           <div className="flex gap-1 py-2 min-w-max sm:min-w-0">
             {[

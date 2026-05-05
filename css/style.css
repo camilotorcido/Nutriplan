@@ -74,6 +74,12 @@ html.dark body {
 .bg-success-light    { background-color: var(--color-success-light); }
 .bg-alert-light      { background-color: var(--color-alert-light); }
 .border-default      { border-color: var(--color-border); }
+/* Card surfaces (combinaciones bg + border que se repiten 100+ veces) */
+.surface-card        { background-color: var(--color-surface); border: 1px solid var(--color-border); }
+.surface-card-shadow { background-color: var(--color-surface); border: 1px solid var(--color-border); box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
+.surface-subtle      { background-color: #FAF6EE; }   /* cream tint, para fondos secundarios */
+.surface-secondary   { background-color: #EDE7DA; }   /* cream más oscuro */
+.text-info           { color: #2563EB; }              /* azul accent (info) */
 
 html.dark .text-ink            { color: #E8E0D4; }
 html.dark .text-ink-muted      { color: #B8AB9C; }
@@ -89,6 +95,11 @@ html.dark .bg-accent-light     { background-color: #3A2E1F; }
 html.dark .bg-success-light    { background-color: #1F2E22; }
 html.dark .bg-alert-light      { background-color: #3A1F1B; }
 html.dark .border-default      { border-color: #3A352E; }
+html.dark .surface-card        { background-color: #2A2622; border-color: #3A352E; }
+html.dark .surface-card-shadow { background-color: #2A2622; border-color: #3A352E; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.3); }
+html.dark .surface-subtle      { background-color: #25211E; }
+html.dark .surface-secondary   { background-color: #322D28; }
+html.dark .text-info           { color: #93C5FD; }
 
 /* Focus visible custom (a11y): contraste alto en ambos modos.
    Solo aparece cuando el usuario navega por teclado, no en clicks. */
