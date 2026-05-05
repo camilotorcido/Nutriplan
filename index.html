@@ -11,7 +11,7 @@
     <meta http-equiv="Expires" content="0">
     <!-- Tailwind CSS pre-compilado (38 KB, vs 300 KB del CDN JIT).
          Contiene solo las ~655 clases que realmente usa el proyecto. -->
-    <link rel="stylesheet" href="css/tailwind-compiled.css?v=9c9b94c6">
+    <link rel="stylesheet" href="css/tailwind-compiled.css?v=e5454c51">
     <!-- TipografÃ­a: Inter (body/UI) + JetBrains Mono (mÃ©tricas/datos) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
@@ -24,10 +24,10 @@
     <meta name="apple-mobile-web-app-title" content="Calibrate">
     <link rel="apple-touch-icon" href="icons/icon.svg">
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
-    <link rel="stylesheet" href="css/style.css?v=9c9b94c6">
+    <link rel="stylesheet" href="css/style.css?v=e5454c51">
     <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.6/babel.min.js"></script>
+    <!-- Babel Standalone removido: el bundle se pre-compila con esbuild en deploy.ps1 → js/app-bundle.compiled.js -->
     <style>
         #app-loader {
             display: flex;
@@ -65,155 +65,81 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
     <!-- Auth + core modules (cargados antes que cualquier otro mÃ³dulo) -->
     <!-- Version timestamp for cache-busting: 20260428ce -->
-    <script src="js/firebase-config.js?v=9c9b94c6"></script>
-    <script src="js/auth.js?v=9c9b94c6"></script>
-    <script src="js/cloud-storage.js?v=9c9b94c6"></script>
-    <script src="js/precios-clp.js?v=9c9b94c6"></script>
-    <script src="js/recipes.js?v=9c9b94c6"></script>
+    <script src="js/firebase-config.js?v=e5454c51"></script>
+    <script src="js/auth.js?v=e5454c51"></script>
+    <script src="js/cloud-storage.js?v=e5454c51"></script>
+    <script src="js/precios-clp.js?v=e5454c51"></script>
+    <script src="js/recipes.js?v=e5454c51"></script>
     <!-- Fase 6.2: recipes-extra y upgrades se cargan lazy al primer uso (ahorro ~224 KB en first paint) -->
-    <script src="js/nutritionEngine.js?v=9c9b94c6"></script>
-    <script src="js/storage.js?v=9c9b94c6"></script>
+    <script src="js/nutritionEngine.js?v=e5454c51"></script>
+    <script src="js/storage.js?v=e5454c51"></script>
     <!-- Calibrate â€” Fat Loss roadmap engine -->
-    <script src="js/roadmap-data.js?v=9c9b94c6"></script>
-    <script src="js/roadmap-generator.js?v=9c9b94c6"></script>
-    <script src="js/protein-complement.js?v=9c9b94c6"></script>
-    <script src="js/fat-loss-integration.js?v=9c9b94c6"></script>
-    <script src="js/body-comp.js?v=9c9b94c6"></script>
-    <script src="js/steps.js?v=9c9b94c6"></script>
-    <script src="js/entrenamiento.js?v=9c9b94c6"></script>
-    <script src="js/plateau-detector.js?v=9c9b94c6"></script>
-    <script src="js/alcohol-calc.js?v=9c9b94c6"></script>
-    <script src="js/recipeAPI.js?v=9c9b94c6"></script>
-    <script src="js/recipes-thermomix-upgrade.js?v=9c9b94c6"></script>
-    <script src="js/recipe-translations.js?v=9c9b94c6"></script>
-    <script src="js/foods-db.js?v=9c9b94c6"></script>
-    <script src="js/lazy-recipes-loader.js?v=9c9b94c6"></script>
-    <script src="js/equivalencias-ingredientes.js?v=9c9b94c6"></script>
-    <script src="js/adherencia.js?v=9c9b94c6"></script>
-    <script src="js/busqueda-inversa.js?v=9c9b94c6"></script>
-    <script src="js/generador-recetas.js?v=9c9b94c6"></script>
-    <script src="js/batch-cooking.js?v=9c9b94c6"></script>
-    <script src="js/perfiles.js?v=9c9b94c6"></script>
-    <script src="js/exports.js?v=9c9b94c6"></script>
-    <script src="js/recetas-guardadas-loader.js?v=9c9b94c6"></script>
+    <script src="js/roadmap-data.js?v=e5454c51"></script>
+    <script src="js/roadmap-generator.js?v=e5454c51"></script>
+    <script src="js/protein-complement.js?v=e5454c51"></script>
+    <script src="js/fat-loss-integration.js?v=e5454c51"></script>
+    <script src="js/body-comp.js?v=e5454c51"></script>
+    <script src="js/steps.js?v=e5454c51"></script>
+    <script src="js/entrenamiento.js?v=e5454c51"></script>
+    <script src="js/plateau-detector.js?v=e5454c51"></script>
+    <script src="js/alcohol-calc.js?v=e5454c51"></script>
+    <script src="js/recipeAPI.js?v=e5454c51"></script>
+    <script src="js/recipes-thermomix-upgrade.js?v=e5454c51"></script>
+    <script src="js/recipe-translations.js?v=e5454c51"></script>
+    <script src="js/foods-db.js?v=e5454c51"></script>
+    <script src="js/lazy-recipes-loader.js?v=e5454c51"></script>
+    <script src="js/equivalencias-ingredientes.js?v=e5454c51"></script>
+    <script src="js/adherencia.js?v=e5454c51"></script>
+    <script src="js/busqueda-inversa.js?v=e5454c51"></script>
+    <script src="js/generador-recetas.js?v=e5454c51"></script>
+    <script src="js/batch-cooking.js?v=e5454c51"></script>
+    <script src="js/perfiles.js?v=e5454c51"></script>
+    <script src="js/exports.js?v=e5454c51"></script>
+    <script src="js/recetas-guardadas-loader.js?v=e5454c51"></script>
     <script>
     (function() {
-        var APP_VERSION = '9c9b94c6';
-        var CACHE_DB = 'calibrate_bundle_cache';
-        var CACHE_STORE = 'compiled';
-
-        // â”€â”€â”€ IndexedDB helpers (Fase 4.3: cachÃ© de bundle compilado) â”€â”€â”€
-        function openDB() {
-            return new Promise(function(resolve, reject) {
-                var req = indexedDB.open(CACHE_DB, 1);
-                req.onupgradeneeded = function(e) {
-                    e.target.result.createObjectStore(CACHE_STORE);
-                };
-                req.onsuccess = function(e) { resolve(e.target.result); };
-                req.onerror = function(e) { reject(e); };
-            });
-        }
-
-        function getCompiledFromCache(version) {
-            return openDB().then(function(db) {
-                return new Promise(function(resolve) {
-                    var tx = db.transaction(CACHE_STORE, 'readonly');
-                    var req = tx.objectStore(CACHE_STORE).get(version);
-                    req.onsuccess = function() { resolve(req.result || null); };
-                    req.onerror = function() { resolve(null); };
-                });
-            }).catch(function() { return null; });
-        }
-
-        function saveCompiledToCache(version, compiled) {
-            return openDB().then(function(db) {
-                return new Promise(function(resolve) {
-                    var tx = db.transaction(CACHE_STORE, 'readwrite');
-                    var store = tx.objectStore(CACHE_STORE);
-                    // Limpiar versiones antiguas
-                    store.clear();
-                    store.put(compiled, version);
-                    tx.oncomplete = function() { resolve(true); };
-                    tx.onerror = function() { resolve(false); };
-                });
-            }).catch(function() { return false; });
-        }
+        var APP_VERSION = 'e5454c51';
 
         function checkDeps() {
-            return typeof React !== 'undefined' 
-                && typeof ReactDOM !== 'undefined' 
-                && typeof Babel !== 'undefined'
+            return typeof React !== 'undefined'
+                && typeof ReactDOM !== 'undefined'
                 && typeof RECETAS_DB !== 'undefined'
                 && typeof escalarReceta !== 'undefined';
         }
 
-        function runCompiledCode(compiled) {
-            var script = document.createElement('script');
-            script.textContent = compiled;
-            document.body.appendChild(script);
-        }
-
-        function compileAndRun() {
+        function loadCompiledBundle() {
             var t0 = performance.now();
-            // 1) Intentar usar cachÃ© compilado
-            getCompiledFromCache(APP_VERSION).then(function(cached) {
-                if (cached) {
-                    console.log('[Bundle Cache] HIT v=' + APP_VERSION + ' Â· ' + Math.round(performance.now() - t0) + 'ms');
-                    runCompiledCode(cached);
+            var script = document.createElement('script');
+            script.src = 'js/app-bundle.compiled.js?v=' + APP_VERSION;
+            script.onload = function() {
+                console.log('[Bundle] cargado en ' + Math.round(performance.now() - t0) + 'ms');
+                // Migración: limpiar IndexedDB del cache viejo (Babel runtime ya no se usa)
+                try { indexedDB.deleteDatabase('calibrate_bundle_cache'); } catch(e) {}
+                try { indexedDB.deleteDatabase('nutriplan_bundle_cache'); } catch(e) {}
+            };
+            script.onerror = function() {
+                console.error('Failed to load app-bundle.compiled.js');
+                if (!sessionStorage.getItem('sw_cleanup_done')) {
+                    sessionStorage.setItem('sw_cleanup_done', '1');
+                    Promise.all([
+                        navigator.serviceWorker ? navigator.serviceWorker.getRegistrations().then(function(rs) { return Promise.all(rs.map(function(r) { return r.unregister(); })); }) : Promise.resolve(),
+                        'caches' in window ? caches.keys().then(function(ks) { return Promise.all(ks.map(function(k) { return caches.delete(k); })); }) : Promise.resolve()
+                    ]).finally(function() {
+                        setTimeout(function() { window.location.reload(true); }, 300);
+                    });
                     return;
                 }
-                console.log('[Bundle Cache] MISS v=' + APP_VERSION + ' Â· compilando...');
-                // 2) Fetch + compile + cache
-                fetch('js/app-bundle.js?v=' + APP_VERSION)
-                    .then(function(res) { 
-                        if (!res.ok) throw new Error('Failed to fetch app-bundle.js: ' + res.status);
-                        return res.text(); 
-                    })
-                    .then(function(jsxCode) {
-                        try {
-                            var tCompile = performance.now();
-                            var compiled = Babel.transform(jsxCode, { 
-                                presets: ['react'],
-                                filename: 'app-bundle.js'
-                            }).code;
-                            console.log('[Bundle Cache] Compilado en ' + Math.round(performance.now() - tCompile) + 'ms');
-                            // Guardar en IndexedDB (async, no bloqueante)
-                            saveCompiledToCache(APP_VERSION, compiled).then(function(ok) {
-                                console.log('[Bundle Cache] Guardado: ' + (ok ? 'OK' : 'FAIL'));
-                            });
-                            runCompiledCode(compiled);
-                        } catch(e) {
-                            console.error('Babel compilation error:', e);
-                            showError('Error al compilar la aplicaciÃ³n: ' + e.message);
-                        }
-                    })
-                    .catch(function(e) {
-                        console.error('Failed to load app:', e);
-                        // Auto-recovery: si el bundle da 404, el SW estÃ¡ sirviendo basura.
-                        // Desregistrarlo y recargar una vez.
-                        if (String(e.message).indexOf('404') !== -1 && !sessionStorage.getItem('sw_cleanup_done')) {
-                            sessionStorage.setItem('sw_cleanup_done', '1');
-                            console.warn('[Auto-recovery] 404 detectado, limpiando SW y cachÃ©s...');
-                            Promise.all([
-                                navigator.serviceWorker ? navigator.serviceWorker.getRegistrations().then(function(rs) { return Promise.all(rs.map(function(r) { return r.unregister(); })); }) : Promise.resolve(),
-                                'caches' in window ? caches.keys().then(function(ks) { return Promise.all(ks.map(function(k) { return caches.delete(k); })); }) : Promise.resolve(),
-                                new Promise(function(resolve) { try { indexedDB.deleteDatabase('nutriplan_bundle_cache'); } catch(e){} resolve(); })
-                            ]).finally(function() {
-                                setTimeout(function() { window.location.reload(true); }, 300);
-                            });
-                            return;
-                        }
-                        showError('Error al cargar la aplicaciÃ³n: ' + e.message + ' (recarga la pÃ¡gina)');
-                    });
-            });
+                showError('Error al cargar la aplicación (recarga la página)');
+            };
+            document.body.appendChild(script);
         }
 
         function showError(msg) {
             var loader = document.getElementById('app-loader');
             if (loader) {
                 loader.innerHTML = '<div style="text-align:center;padding:20px;">'
-                    + '<p style="color:#ef4444;font-weight:600;margin-bottom:8px;">âš ï¸ ' + msg + '</p>'
-                    + '<p style="font-size:14px;">Intenta recargar la pÃ¡gina</p>'
+                    + '<p style="color:#ef4444;font-weight:600;margin-bottom:8px;">⚠️ ' + msg + '</p>'
+                    + '<p style="font-size:14px;">Intenta recargar la página</p>'
                     + '<button onclick="location.reload(true)" style="margin-top:12px;padding:8px 24px;background:#22c55e;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;">Recargar</button>'
                     + '</div>';
             }
@@ -225,14 +151,10 @@
             attempts++;
             if (checkDeps()) {
                 clearInterval(interval);
-                compileAndRun();
+                loadCompiledBundle();
             } else if (attempts >= maxAttempts) {
                 clearInterval(interval);
-                if (typeof Babel !== 'undefined') {
-                    compileAndRun();
-                } else {
-                    showError('Las dependencias no se cargaron correctamente');
-                }
+                showError('Las dependencias no se cargaron correctamente');
             }
         }, 100);
     })();

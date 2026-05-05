@@ -1,7 +1,24 @@
 param([string]$message = "")
 Set-Location $PSScriptRoot
 
-$archivos = @("js\app-bundle.js","js\storage.js","js\cloud-storage.js","js\nutritionEngine.js","js\recipes.js","js\auth.js","css\style.css","css\tailwind-compiled.css") | Where-Object { Test-Path $_ }
+# Pre-compilar bundle JSX → JS plano con esbuild (~250 KB minificado vs ~830 KB JSX runtime)
+# Elimina la dependencia de Babel Standalone en runtime → cold load 50-70% más rápido.
+Write-Host 'Compilando app-bundle con esbuild...' -ForegroundColor Cyan
+if (-not (Test-Path 'node_modules\.bin\esbuild.cmd')) {
+    Write-Host 'esbuild no encontrado, instalando...' -ForegroundColor Yellow
+    npm install --silent
+    if ($LASTEXITCODE -ne 0) { Write-Host 'ERROR npm install' -ForegroundColor Red; exit 1 }
+}
+npm run build
+if ($LASTEXITCODE -ne 0) {
+    Write-Host 'ERROR esbuild compile' -ForegroundColor Red
+    exit 1
+}
+$compiledSize = (Get-Item 'js\app-bundle.compiled.js').Length
+Write-Host ('Bundle compilado: ' + [math]::Round($compiledSize/1024,1) + ' KB') -ForegroundColor Green
+
+# Hash de versión: incluye bundle COMPILADO (lo que sirve a producción)
+$archivos = @("js\app-bundle.compiled.js","js\storage.js","js\cloud-storage.js","js\nutritionEngine.js","js\recipes.js","js\auth.js","css\style.css","css\tailwind-compiled.css") | Where-Object { Test-Path $_ }
 $contenido = ($archivos | ForEach-Object { Get-Content $_ -Raw }) -join "|"
 $bytes   = [System.Text.Encoding]::UTF8.GetBytes($contenido)
 $hash    = [System.Security.Cryptography.MD5]::Create().ComputeHash($bytes)

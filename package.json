@@ -1,0 +1,13 @@
+{
+  "name": "calibrate",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Calibrate (NutriPlan) — React PWA. Build: esbuild compiles js/app-bundle.js (JSX) → js/app-bundle.compiled.js (ES2020).",
+  "scripts": {
+    "build": "esbuild js/app-bundle.js --loader:.js=jsx --jsx=transform --jsx-factory=React.createElement --jsx-fragment=React.Fragment --minify --target=es2020 --outfile=js/app-bundle.compiled.js --log-level=warning",
+    "build:debug": "esbuild js/app-bundle.js --loader:.js=jsx --jsx=transform --jsx-factory=React.createElement --jsx-fragment=React.Fragment --target=es2020 --sourcemap --outfile=js/app-bundle.compiled.js --log-level=info"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}

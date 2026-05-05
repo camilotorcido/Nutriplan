@@ -51,7 +51,7 @@ const PRECACHE_URLS = [
   './js/perfiles.js',
   './js/exports.js',
   './js/recetas-guardadas-loader.js',
-  './js/app-bundle.js'
+  './js/app-bundle.compiled.js'
 ];
 
 // --- Install ---
