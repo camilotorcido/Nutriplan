@@ -4438,34 +4438,32 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
               </p>
             </div>
 
-            {/* ── Banner premium: doble-bezel + eyebrow + hairline divider + monospace metrics ── */}
-            <div className="banner-shell">
-              <div className="banner-core">
-                {/* Eyebrow tag: pill microscópica que precede al hero */}
-                <div className="banner-eyebrow mb-5">
-                  {t('Tu objetivo diario','Your daily goal')}
-                </div>
-                {/* Hero: calorías */}
-                <div className="flex items-baseline gap-3 mb-7">
-                  <span className="banner-hero-num">{faseInfo.calorias}</span>
-                  <span className="banner-hero-unit">kcal/día</span>
-                </div>
-                {/* Hairline divider sutil */}
-                <div className="banner-divider mb-5" />
-                {/* Métricas secundarias: 2 columnas con jerarquía sub-hero */}
-                <div className="grid grid-cols-2 gap-x-6">
-                  <div>
-                    <div className="banner-label mb-2">{t('Pasos / día','Steps / day')}</div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="banner-metric-num">{Math.round(faseInfo.targetPasos / 1000)}</span>
-                      <span className="banner-metric-unit">k</span>
-                    </div>
+            {/* ── Banner premium agency-tier: Soft Structuralism + Asymmetrical Bento ── */}
+            <div className="banner-premium-shell">
+              <div className="banner-premium-bento">
+                {/* Hero tile — calorías, ocupa más espacio en el bento */}
+                <div className="banner-premium-hero">
+                  <div className="banner-premium-eyebrow">
+                    <span className="banner-premium-pulse-dot" />
+                    {t('Tu objetivo diario','Your daily goal')}
                   </div>
                   <div>
-                    <div className="banner-label mb-2">{t('Restantes','Left')}</div>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="banner-metric-num">{faseInfo.diasRestantesEnFase}</span>
-                      <span className="banner-metric-unit">{t('días','days')}</span>
+                    <span className="banner-premium-hero-num">{faseInfo.calorias}</span>
+                    <span className="banner-premium-hero-unit">kcal por día</span>
+                  </div>
+                </div>
+                {/* Aside: pasos + restantes apilados (2 mini-tiles) */}
+                <div className="banner-premium-aside">
+                  <div className="banner-premium-mini-tile">
+                    <div className="banner-premium-mini-label">{t('Pasos / día','Steps / day')}</div>
+                    <div className="banner-premium-mini-num">
+                      {Math.round(faseInfo.targetPasos / 1000)}<span className="banner-premium-mini-unit">k</span>
+                    </div>
+                  </div>
+                  <div className="banner-premium-mini-tile">
+                    <div className="banner-premium-mini-label">{t('Restantes','Left')}</div>
+                    <div className="banner-premium-mini-num">
+                      {faseInfo.diasRestantesEnFase}<span className="banner-premium-mini-unit">d</span>
                     </div>
                   </div>
                 </div>
