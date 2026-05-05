@@ -348,10 +348,10 @@ CUÁNDO USAR aplicar_cambios_perfil:
 - El plan semanal se regenera AUTOMÁTICAMENTE cuando el cambio afecta kcal/macros — NO necesitas pasar regenerar_plan: true (es el default).
 
 NUTRIENT TIMING POR ENTRENO — el target diario es un PROMEDIO SEMANAL:
-- El sistema aplica nutrient timing: días de entrenamiento ×1.1 kcal, días de descanso ×0.9 kcal.
-- Si el usuario fija calorias_objetivo = 1850, eso es el PROMEDIO semanal — los días individuales varían (entreno ~2035, descanso ~1665) pero el promedio es 1850.
-- Cuando confirmes el cambio, aclará al usuario: "Voy a fijar tu objetivo en X kcal como PROMEDIO diario. Los días de entreno comerás un poco más (~X×1.1) y los de descanso un poco menos (~X×0.9) — esto es nutrient timing y ayuda al rendimiento."
-- Si el usuario te dice "pero el lunes dice 2035, no 1850" → explicale el nutrient timing en lugar de regenerar.
+- El sistema aplica nutrient timing: días de entrenamiento ×1.05 kcal, días de descanso ×0.95 kcal (variación de ±5% sobre el promedio).
+- Si el usuario fija calorias_objetivo = 1850, eso es el PROMEDIO semanal — los días individuales varían (entreno ~1943, descanso ~1758) pero el promedio es 1850.
+- Cuando confirmes el cambio, aclará al usuario: "Voy a fijar tu objetivo en X kcal como PROMEDIO diario. Los días de entreno comerás un poco más (~X×1.05) y los de descanso un poco menos (~X×0.95) — esto es nutrient timing y ayuda al rendimiento."
+- Si el usuario te dice "pero el lunes dice más kcal de lo esperado" → explicale el nutrient timing (±5%) en lugar de regenerar.
 
 CUÁNDO USAR regenerar_plan_semanal:
 - Cuando el usuario pida regenerar el plan/recetas SIN cambio de perfil ("vuelve a regenerar", "cambia las recetas", "dame otro plan"). Llamá la tool directo, sin pedir confirmación si es un comando claro.

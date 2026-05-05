@@ -67,14 +67,14 @@ var _DIAS_A_DOW = {
   Viernes: 5, 'Sábado': 6, Domingo: 0
 };
 function _multiplicadorDia(dia, perfil) {
-  // Nutrient timing por entreno: días de entreno suben kcal (×1.1), descanso bajan (×0.9).
+  // Nutrient timing por entreno: días de entreno suben kcal (×1.05), descanso bajan (×0.95).
   // El target diario es el PROMEDIO semanal — los días individuales varían intencionalmente.
   var sch = (typeof window !== 'undefined' && window.NP_RoadmapData)
     ? (window.NP_RoadmapData.ENTRENO_PROTOCOLO || {}).scheduleDefault
     : null;
   if (!sch) return 1.0;
   var dow = _DIAS_A_DOW[dia];
-  return (sch[dow] && sch[dow] !== 'descanso') ? 1.1 : 0.9;
+  return (sch[dow] && sch[dow] !== 'descanso') ? 1.05 : 0.95;
 }
 
 // ─── Preferencias de generación: filtro por tipo de cocina ───
