@@ -404,9 +404,31 @@ function generarRoadmapFatLoss(input) {
   };
 }
 
+// ─── Migración retroactiva: agrega .entrenamiento a fases viejas ───────────
+// Roadmaps generados antes del shipping del módulo de entrenamiento (v bcde3a11)
+// no tienen el campo .entrenamiento en sus fases. Esta función lo parchea
+// in-memory cada vez que se accede al roadmap (idempotente y barata: O(n) con
+// n pequeño). No persiste; si quieres persistir, regenera el roadmap.
+function _migrarRoadmapEntrenamiento(roadmap) {
+  if (!roadmap || !Array.isArray(roadmap.fases)) return roadmap;
+  const totalCortes = roadmap.fases.filter(f => f.tipo === 'corte').length || 1;
+  let idxCorte = -1;
+  for (const f of roadmap.fases) {
+    if (f.tipo === 'corte') idxCorte++;
+    if (f.entrenamiento) continue;
+    if (f.tipo === 'corte') {
+      f.entrenamiento = _prescripcionEntrenamiento(idxCorte, totalCortes, false);
+    } else if (f.tipo === 'dietBreak') {
+      f.entrenamiento = _prescripcionEntrenamiento(Math.max(0, idxCorte), totalCortes, true);
+    }
+  }
+  return roadmap;
+}
+
 // ─── Fase actual según fecha de hoy ───
 function faseActualFatLoss(roadmap, fechaHoy) {
   if (!roadmap || !roadmap.fases || !roadmap.fechaInicio) return null;
+  _migrarRoadmapEntrenamiento(roadmap);
 
   const inicio = new Date(roadmap.fechaInicio + 'T00:00:00');
   const hoy = fechaHoy ? new Date(fechaHoy) : new Date();
@@ -616,6 +638,7 @@ if (typeof window !== 'undefined') {
     generarVolumen: generarRoadmapVolumen,
     faseActual: faseActualFatLoss,
     progreso: progresoRoadmap,
+    migrarEntrenamiento: _migrarRoadmapEntrenamiento,
     calcularBMR: calcularBMRFatLoss,
     calcularTDEE: calcularTDEEFatLoss,
     calcularBFNavy: calcularBFNavy,

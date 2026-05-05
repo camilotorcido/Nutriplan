@@ -9914,6 +9914,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
           <p className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{roadmap.calculados.semanasTotales} {t('semanas totales','total weeks')} · {roadmap.calculados.cantDietBreaks} diet breaks · ~{roadmap.calculados.mesesTotales} {t('meses','months')}</p>
         </div>
         <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
+          {(window.NP_Roadmap && window.NP_Roadmap.migrarEntrenamiento) ? window.NP_Roadmap.migrarEntrenamiento(roadmap) : null}
           {roadmap.fases.map((f, idx) => {
             const esActiva = faseInfo && faseInfo.numeroFase === f.numero;
             const esCompletada = faseInfo && f.numero < faseInfo.numeroFase;
