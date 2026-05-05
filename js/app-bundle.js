@@ -4395,7 +4395,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
     ? window.NP_FatLoss.banner()
     : null;
   const desincronizacion = (window.NP_FatLoss && perfil && perfil.fatLossMode)
-    ? window.NP_FatLoss.desincronizado()
+    ? window.NP_FatLoss.desincronizado(plan)
     : null;
 
   return (
@@ -11131,9 +11131,29 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   const semanaNum = window.NP_RoadmapData ? window.NP_RoadmapData.semanaActual(hoy) : 0;
   // equiposDisp como estado: permite re-render inmediato al cambiar equipamiento
   const [equiposDisp, setEquiposDisp] = React.useState(leerEquipos);
-  const protocolo = (window.NP_RoadmapData && window.NP_RoadmapData.generarProtocoloDia)
+  let protocolo = (window.NP_RoadmapData && window.NP_RoadmapData.generarProtocoloDia)
     ? window.NP_RoadmapData.generarProtocoloDia(tipoDia, semanaNum, equiposDisp)
     : (window.NP_Training ? window.NP_Training.protocoloDia(tipoDia) : null);
+  // Ajustar volumen del protocolo según prescripción de la fase actual
+  // (Last Mile baja sets, Diet Break sube, Fundación queda igual)
+  const _factorFase = (() => {
+    const _rmA = perfil && perfil.roadmap;
+    if (!_rmA || !window.NP_Roadmap || !window.NP_Roadmap.faseActual) return 1.0;
+    const _faA = window.NP_Roadmap.faseActual(_rmA);
+    return (_faA && _faA.entrenamiento && typeof _faA.entrenamiento.factorVolumen === 'number')
+      ? _faA.entrenamiento.factorVolumen
+      : 1.0;
+  })();
+  if (protocolo && Math.abs(_factorFase - 1.0) > 0.01) {
+    protocolo = Object.assign({}, protocolo, {
+      ejercicios: protocolo.ejercicios.map(ej => {
+        const numSets = (typeof ej.sets === 'number') ? ej.sets : null;
+        if (numSets == null) return ej;
+        const ajustados = Math.max(1, Math.round(numSets * _factorFase));
+        return Object.assign({}, ej, { sets: ajustados, _setsOriginal: numSets });
+      })
+    });
+  }
 
   // ── Sesión del día: siempre refleja el protocolo dinámico actual ──
   // Los datos ya logueados se preservan por nombre de ejercicio.

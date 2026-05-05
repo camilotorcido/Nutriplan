@@ -163,8 +163,13 @@ function informacionBanner() {
 }
 
 // ─── Detectar si el plan actual está desincronizado con la fase ───
-// (ej: usuario entró en diet break pero el plan sigue a calorías de corte)
-function planDesincronizado() {
+// (ej: usuario entró en diet break pero el plan sigue a calorías de corte,
+//      o el plan se generó con un kcal target distinto al actual)
+//
+// `planSemanal` opcional: si se pasa, valida también la suma real de kcal
+// del plan vs el target esperado (detecta plans "stale" generados con base
+// distinta a la actual).
+function planDesincronizado(planSemanal) {
   if (typeof cargarPerfil !== 'function') return false;
   const perfil = cargarPerfil();
   if (!perfil || !perfil.fatLossMode || !perfil.roadmap) return false;
@@ -175,15 +180,54 @@ function planDesincronizado() {
   const caloriasFase = fase.calorias;
   const caloriasPerfil = perfil.caloriasManual;
 
-  // Tolerancia de ±50 kcal para no disparar por rounding
+  // Check 1: metadata desync (caloriasManual ≠ fase.calorias)
   if (Math.abs(caloriasFase - caloriasPerfil) > 50) {
     return {
       desincronizado: true,
+      razon: 'metadata',
       caloriasActuales: caloriasPerfil,
       caloriasNuevaFase: caloriasFase,
       nombreFase: fase.nombre
     };
   }
+
+  // Check 2: plan real desync (suma de recetas ≠ target esperado)
+  if (planSemanal && typeof planSemanal === 'object') {
+    const semanaKey = Object.keys(planSemanal).filter(k => k.startsWith('semana_')).sort()[0];
+    const semana = semanaKey ? planSemanal[semanaKey] : null;
+    if (semana && typeof semana === 'object') {
+      const dias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+      const slots = ['desayuno','snack_am','almuerzo','snack_pm','cena'];
+      let totalKcal = 0;
+      let count = 0;
+      dias.forEach(d => {
+        const dataDia = semana[d];
+        if (!dataDia || typeof dataDia !== 'object') return;
+        let kcalDia = 0;
+        slots.forEach(s => {
+          const r = dataDia[s];
+          if (r) kcalDia += (r.calorias_escaladas || r.calorias || 0);
+        });
+        if (kcalDia > 0) { totalKcal += kcalDia; count++; }
+      });
+      if (count >= 3) {
+        // promedio diario del plan vs caloriasFase
+        const promedio = totalKcal / count;
+        // El plan tiene multiplicador ~1.0 promedio (1.05 entreno, 0.95 descanso),
+        // así que promedio ≈ caloriasFase. Tolerancia 80 kcal por redondeos.
+        if (Math.abs(promedio - caloriasFase) > 80) {
+          return {
+            desincronizado: true,
+            razon: 'plan_real',
+            caloriasActuales: Math.round(promedio),
+            caloriasNuevaFase: caloriasFase,
+            nombreFase: fase.nombre
+          };
+        }
+      }
+    }
+  }
+
   return { desincronizado: false };
 }
 

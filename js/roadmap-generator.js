@@ -76,11 +76,14 @@ function _bloqueFoco(indice, total) {
 //   Mikulic et al. (2021) — sRPE como métrica de fatiga (vs HR)
 //   Melin et al. — Energy Availability (umbrales LEA subclínica/clínica)
 function _prescripcionEntrenamiento(indice, total, esDietBreak) {
+  // factorVolumen: multiplicador aplicado a sets/ejercicio del protocolo.
+  //   1.0 = baseline (Fundación), 0.75 = taper Last Mile, 1.15 = diet break (más volumen con glucógeno lleno)
   if (esDietBreak) {
     return {
       modalidad: 'CT',
       modalidadLabel: 'Mantenimiento (sin cut)',
       volumenSets: '10-12 sets/grupo muscular/sesión',
+      factorVolumen: 1.15,
       frecuenciaSemanal: 4,
       intensidadPct1RM: '70-80%',
       rpeObjetivo: '8-10',
@@ -96,11 +99,11 @@ function _prescripcionEntrenamiento(indice, total, esDietBreak) {
   const esLastMile = total > 1 && indice === total - 1;
 
   if (esFundacion && total === 1) {
-    // Fase única — balance entre los tres extremos
     return {
       modalidad: 'CT',
       modalidadLabel: 'Concurrente (fuerza + cardio)',
       volumenSets: '6-9 sets/grupo muscular/sesión',
+      factorVolumen: 1.0,
       frecuenciaSemanal: 4,
       intensidadPct1RM: '70-80%',
       rpeObjetivo: '7-8',
@@ -121,6 +124,7 @@ function _prescripcionEntrenamiento(indice, total, esDietBreak) {
       modalidad: 'CT',
       modalidadLabel: 'Concurrente (fuerza + cardio)',
       volumenSets: '6-9 sets/grupo muscular/sesión',
+      factorVolumen: 1.0,
       frecuenciaSemanal: 4,
       intensidadPct1RM: '70-80%',
       rpeObjetivo: '7-8',
@@ -141,6 +145,7 @@ function _prescripcionEntrenamiento(indice, total, esDietBreak) {
       modalidad: 'RT',
       modalidadLabel: 'Fuerza pura (RT prioritario)',
       volumenSets: '5-7 sets/grupo (taper −25 a −30%)',
+      factorVolumen: 0.75,
       frecuenciaSemanal: 4,
       intensidadPct1RM: '70-80% (mantener cargas)',
       rpeObjetivo: '7-8 (evitar fallo crónico, controla cortisol)',
@@ -156,11 +161,11 @@ function _prescripcionEntrenamiento(indice, total, esDietBreak) {
     };
   }
 
-  // Bloque intermedio — déficit más profundo
   return {
     modalidad: 'CT-RT',
     modalidadLabel: 'Concurrente con RT prioritario',
     volumenSets: '6-9 sets/grupo (bajar 20-30% si sRPE sube)',
+    factorVolumen: 0.9,
     frecuenciaSemanal: 4,
     intensidadPct1RM: '70-80%',
     rpeObjetivo: '7-8',
@@ -415,11 +420,19 @@ function _migrarRoadmapEntrenamiento(roadmap) {
   let idxCorte = -1;
   for (const f of roadmap.fases) {
     if (f.tipo === 'corte') idxCorte++;
-    if (f.entrenamiento) continue;
-    if (f.tipo === 'corte') {
-      f.entrenamiento = _prescripcionEntrenamiento(idxCorte, totalCortes, false);
-    } else if (f.tipo === 'dietBreak') {
-      f.entrenamiento = _prescripcionEntrenamiento(Math.max(0, idxCorte), totalCortes, true);
+    const fresh = (f.tipo === 'corte')
+      ? _prescripcionEntrenamiento(idxCorte, totalCortes, false)
+      : (f.tipo === 'dietBreak')
+        ? _prescripcionEntrenamiento(Math.max(0, idxCorte), totalCortes, true)
+        : null;
+    if (!fresh) continue;
+    if (!f.entrenamiento) {
+      f.entrenamiento = fresh;
+    } else {
+      // Fase con entrenamiento viejo: rellenar campos nuevos sin pisar overrides
+      for (const k of Object.keys(fresh)) {
+        if (f.entrenamiento[k] == null) f.entrenamiento[k] = fresh[k];
+      }
     }
   }
   return roadmap;
