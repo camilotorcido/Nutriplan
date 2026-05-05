@@ -2142,13 +2142,13 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { l: 'Volumen', v: _ent.volumenSets },
-                    { l: 'Reps', v: _ent.repRange ? _ent.repRange + ' reps' : '—' },
-                    { l: 'Frecuencia', v: _ent.frecuenciaSemanal + 'x/sem' },
-                    { l: 'Intensidad', v: _ent.intensidadPct1RM + ' 1RM' },
-                    { l: 'RPE objetivo', v: _ent.rpeObjetivo },
-                    { l: 'Cardio total', v: _ent.cardioMinSemana + ' min/sem' + (_ent.cardioBaseProtocolo ? ' (protocolo: ' + _ent.cardioBaseProtocolo + (_ent.cardioExtraNecesario ? ' + extra: ' + _ent.cardioExtraNecesario : '') + ')' : '') },
-                    { l: 'EA mínima', v: '≥ ' + _ent.eaMinKcalKgFFM + ' kcal/kg FFM' },
-                    { l: 'Factor volumen', v: (_ent.factorVolumen != null ? _ent.factorVolumen.toFixed(2) + '×' : '1.00×') + ' (sets escalados)' }
+                    { l: 'Reps por serie', v: _ent.repRange ? _ent.repRange + ' reps' : '—' },
+                    { l: 'Frecuencia', v: _ent.frecuenciaSemanal + ' días por semana' },
+                    { l: 'Peso (% del máximo)', v: _ent.intensidadPct1RM },
+                    { l: 'Esfuerzo objetivo (1-10)', v: _ent.rpeObjetivo },
+                    { l: 'Cardio total', v: _ent.cardioMinSemana + ' min/sem' + (_ent.cardioBaseProtocolo ? ' (en sesiones: ' + _ent.cardioBaseProtocolo + (_ent.cardioExtraNecesario ? ' + caminata extra: ' + _ent.cardioExtraNecesario : '') + ')' : '') },
+                    { l: 'Energía mínima', v: '≥ ' + _ent.eaMinKcalKgFFM + ' kcal/kg masa magra' },
+                    { l: 'Ajuste de volumen', v: (_ent.factorVolumen != null ? _ent.factorVolumen.toFixed(2) + '×' : '1.00×') + ' (escala las series)' }
                   ].map(x => (
                     <div key={x.l}>
                       <div className={`text-[10px] uppercase ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{x.l}</div>
@@ -2196,11 +2196,11 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   { step: '04', t: 'Calorías objetivo', b: obj === 'perdida' ? 'TDEE − déficit por tasa de pérdida' : obj === 'mantenimiento' ? 'TDEE exacto (sin déficit)' : 'TDEE + superávit lean bulk', r: calc ? ((calc.caloriasCorte || calc.caloriasObjetivo) ? (calc.caloriasCorte || calc.caloriasObjetivo) + ' kcal/día' : null) : null },
                   { step: '05', t: 'Split de macros', b: obj === 'perdida' ? 'Remanente ÷ 57% carbohidratos + 43% grasa' : obj === 'mantenimiento' ? 'Remanente ÷ 45% carbohidratos + 55% grasa' : 'Remanente ÷ 60% carbohidratos + 40% grasa', r: null, isMacros: true },
                   ...(obj === 'perdida' ? [
-                    { step: '06', t: 'Modalidad por fase', b: 'F1 Fundación: CT (concurrente) factor volumen 1.0× · Intermedia: CT-RT factor 0.9× (sets bajan 10%) · Last Mile: RT puro factor 0.75× (taper −25%) · Diet Break: CT factor 1.15× (sets suben 15%, glucógeno lleno permite carga)', r: null },
-                    { step: '07', t: 'Volumen, reps e intensidad', b: 'Sets base: 6-9 sets/grupo/sesión a 70-80% 1RM · 4 sesiones/sem (split A/B/C/D) · Reps: F1/Intermedia 8-12 (hipertrofia) · Last Mile/Diet Break 6-10 (más fuerza, menos cortisol) · El protocolo escala sets automáticamente por fase', r: null },
-                    { step: '08', t: 'Cardio dose-response (gap explícito)', b: 'Protocolo entrega ~45 min/sem (rowing C + intervalos D + treadmill D) · Total objetivo por fase: F1 90 min (suma 45 extra LISS) · Intermedia 60 (suma 15) · Last Mile 30 (solo protocolo recortado) · Diet Break 50 (solo protocolo) · LISS y HIIT equivalentes si gasto se iguala', r: null },
-                    { step: '09', t: 'Energy Availability (EA)', b: 'EA = (kcal − gasto del ejercicio) / kg FFM · ≥ 45 óptimo · 30-40 LEA subclínica · < 30 LEA clínica · Umbrales por fase: F1 ≥ 40 · Intermedia ≥ 38 · Last Mile ≥ 35 · Diet Break ≥ 45 (target mantenimiento)', r: null },
-                    { step: '10', t: 'Conexión con plan nutricional', b: 'Multiplicador kcal por día: ×1.05 días de entreno (Lun/Mar/Jue/Sáb) · ×0.95 días de descanso (Mié/Vie/Dom) · Promedio semanal = caloriasObjetivo de la fase · Cuando cambia la fase, el plan nutricional debe regenerarse para reflejar la nueva base', r: null },
+                    { step: '06', t: 'Tipo de entrenamiento por fase', b: 'Fase 1 (Fundación): pesas + cardio combinados (volumen normal) · Fase intermedia: pesas con cardio ligero (10% menos series) · Last Mile (último tramo): solo pesas (25% menos series, prioridad fuerza) · Diet Break: pesas + cardio mantenimiento (15% más series porque tienes carbos llenos)', r: null },
+                    { step: '07', t: 'Series, repeticiones e intensidad', b: 'Series base: 6 a 9 por grupo muscular en cada sesión, al 70-80% de tu peso máximo · 4 días por semana (rutina A/B/C/D) · Repeticiones: 8-12 en Fundación e Intermedia (más hipertrofia) · 6-10 en Last Mile y Diet Break (más fuerza, menos estrés del cortisol) · El protocolo escala las series automáticamente según la fase', r: null },
+                    { step: '08', t: 'Cuánto cardio hacer (y de dónde sale)', b: 'El protocolo te da ~45 min de cardio por semana (rowing del día C + intervalos del día D + treadmill del día D) · Totales objetivo por fase: Fundación 90 min/sem (suma 45 min extra de caminata) · Intermedia 60 min/sem (suma 15) · Last Mile 30 min/sem (solo el protocolo recortado) · Diet Break 50 min/sem (solo protocolo) · Cardio suave o intervalos cortos: ambos funcionan igual si gastas las mismas calorías', r: null },
+                    { step: '09', t: 'Energía mínima disponible', b: 'Energía disponible = (calorías − calorías quemadas en ejercicio) / kg de masa magra · ≥ 45 kcal/kg = óptimo · 30 a 40 = aceptable solo en períodos cortos · Bajo 30 = zona de riesgo (afecta hormonas, sueño, libido) · Mínimos por fase: Fundación ≥ 40 · Intermedia ≥ 38 · Last Mile ≥ 35 · Diet Break ≥ 45 (estás a mantenimiento)', r: null },
+                    { step: '10', t: 'Conexión con tu plan nutricional', b: 'Las calorías del día varían según si entrenas o descansas: días de entreno (Lun/Mar/Jue/Sáb) tienen +5% extra · días de descanso (Mié/Vie/Dom) tienen −5% · El promedio semanal coincide con la meta calórica de tu fase · Si cambias de fase, el plan nutricional debe regenerarse para reflejar la nueva meta', r: null },
                   ] : []),
                 ].map(row => (
                   <div key={row.t} className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
@@ -4479,13 +4479,13 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   {[
                     { l: t('Volumen','Volume'), v: faseInfo.entrenamiento.volumenSets },
-                    { l: 'Reps', v: faseInfo.entrenamiento.repRange ? faseInfo.entrenamiento.repRange + ' reps' : '—' },
-                    { l: t('Frecuencia','Frequency'), v: faseInfo.entrenamiento.frecuenciaSemanal + 'x ' + t('/sem','/wk') },
-                    { l: t('Intensidad','Intensity'), v: faseInfo.entrenamiento.intensidadPct1RM + ' 1RM' },
-                    { l: 'RPE', v: faseInfo.entrenamiento.rpeObjetivo },
+                    { l: t('Reps por serie','Reps per set'), v: faseInfo.entrenamiento.repRange ? faseInfo.entrenamiento.repRange + ' reps' : '—' },
+                    { l: t('Frecuencia','Frequency'), v: faseInfo.entrenamiento.frecuenciaSemanal + ' ' + t('días por semana','days per week') },
+                    { l: t('Peso (% de tu máx.)','Weight (% of your max)'), v: faseInfo.entrenamiento.intensidadPct1RM },
+                    { l: t('Esfuerzo (1-10)','Effort (1-10)'), v: faseInfo.entrenamiento.rpeObjetivo },
                     { l: 'Cardio', v: faseInfo.entrenamiento.cardioMinSemana + ' min/' + t('sem','wk') + (faseInfo.entrenamiento.cardioExtraNecesario > 0 ? ' (+' + faseInfo.entrenamiento.cardioExtraNecesario + ' extra)' : '') },
-                    { l: t('Factor vol.','Vol. factor'), v: (faseInfo.entrenamiento.factorVolumen != null ? faseInfo.entrenamiento.factorVolumen.toFixed(2) + '×' : '1.00×') },
-                    { l: t('EA mínima','Min EA'), v: '≥ ' + faseInfo.entrenamiento.eaMinKcalKgFFM + ' kcal/kg FFM' }
+                    { l: t('Ajuste de volumen','Volume adjustment'), v: (faseInfo.entrenamiento.factorVolumen != null ? faseInfo.entrenamiento.factorVolumen.toFixed(2) + '×' : '1.00×') },
+                    { l: t('Energía mínima','Min energy'), v: '≥ ' + faseInfo.entrenamiento.eaMinKcalKgFFM + ' ' + t('kcal/kg masa magra','kcal/kg lean mass') }
                   ].map(x => (
                     <div key={x.l} className={`rounded-lg px-2.5 py-1.5 ${darkMode ? 'bg-gray-800/60' : 'bg-white/70'}`}>
                       <div className={`text-[10px] uppercase ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{x.l}</div>
@@ -11280,10 +11280,10 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
           {/* Métricas del entrenamiento */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
             {[
-              { l: t('Volumen','Volume'), v: _faseEnt.ent.volumenSets.split(' ').slice(0,2).join(' ') },
-              { l: 'RPE', v: _faseEnt.ent.rpeObjetivo.split(' ')[0] },
-              { l: 'Reps', v: _faseEnt.ent.repRange || '—' },
-              { l: t('Intensidad','Intensity'), v: _faseEnt.ent.intensidadPct1RM.split(' ')[0] + ' 1RM' }
+              { l: t('Series por grupo','Sets per group'), v: _faseEnt.ent.volumenSets.split(' ').slice(0,2).join(' ') },
+              { l: t('Reps por serie','Reps per set'), v: _faseEnt.ent.repRange || '—' },
+              { l: t('Esfuerzo (1-10)','Effort (1-10)'), v: _faseEnt.ent.rpeObjetivo.split(' ')[0] },
+              { l: t('Peso (% de tu máx.)','Weight (% of your max)'), v: _faseEnt.ent.intensidadPct1RM.split(' ')[0] }
             ].map(x => (
               <div key={x.l} className={`rounded-lg px-2.5 py-1.5 ${darkMode ? 'bg-gray-800/50' : 'bg-white/70'}`}>
                 <div className={`text-[10px] uppercase ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{x.l}</div>
@@ -11291,47 +11291,47 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
               </div>
             ))}
           </div>
-          {/* Cardio gap: cuánto da el protocolo + cuánto sumar fuera */}
+          {/* Cardio total: cuánto del protocolo + cuánto sumar fuera */}
           <div className={`rounded-lg px-3 py-2 mb-2 ${darkMode ? 'bg-gray-800/40' : 'bg-white/60'}`}>
             <div className="flex items-center justify-between mb-1">
               <div className={`text-[10px] uppercase tracking-wide font-bold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                <i className="fas fa-heart-pulse mr-1 opacity-70"></i>{t('Cardio semanal','Weekly cardio')}
+                <i className="fas fa-heart-pulse mr-1 opacity-70"></i>{t('Cardio total / semana','Total cardio / week')}
               </div>
               <div className={`text-xs font-bold ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>{_faseEnt.ent.cardioMinSemana} min</div>
             </div>
-            <div className="flex items-center gap-2 text-[11px]">
+            <div className="flex items-center gap-2 text-[11px] flex-wrap">
               <span className={`px-1.5 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
-                {_faseEnt.ent.cardioBaseProtocolo || '~45'} min {t('en sesiones C+D','in C+D sessions')}
+                {_faseEnt.ent.cardioBaseProtocolo || '~45'} min {t('dentro de tus sesiones','within your sessions')}
               </span>
               {(_faseEnt.ent.cardioExtraNecesario > 0) && (
                 <>
                   <span className={`${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>+</span>
                   <span className={`px-1.5 py-0.5 rounded font-semibold ${darkMode ? 'bg-amber-900/40 text-amber-300' : 'bg-amber-100 text-amber-700'}`}>
-                    {_faseEnt.ent.cardioExtraNecesario} min {t('LISS extra/sem','LISS extra/wk')}
+                    {_faseEnt.ent.cardioExtraNecesario} min {t('caminata extra / semana','extra walking / week')}
                   </span>
                 </>
               )}
             </div>
-            {_faseEnt.ent.cardioTipo && (
-              <div className={`text-[10px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{_faseEnt.ent.cardioTipo}</div>
+            {_faseEnt.ent.cardioTipoSimple && (
+              <div className={`text-[10px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{_faseEnt.ent.cardioTipoSimple}</div>
             )}
           </div>
           {/* Conexión con plan nutricional */}
           {_faseEnt.kcal && _diasEntreno && (
             <div className={`rounded-lg px-3 py-2 mb-2 ${darkMode ? 'bg-gray-800/40' : 'bg-white/60'}`}>
               <div className={`text-[10px] uppercase tracking-wide font-bold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                <i className="fas fa-link mr-1 opacity-70"></i>{t('Plan nutricional','Nutrition plan')}
+                <i className="fas fa-link mr-1 opacity-70"></i>{t('Tu plan de comidas','Your meal plan')}
               </div>
               <div className="flex items-center justify-between text-[11px]">
                 <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{t('Promedio diario','Daily avg')}</span>
                 <span className={`font-bold ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>{_faseEnt.kcal} kcal</span>
               </div>
               <div className="flex items-center justify-between text-[11px]">
-                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{t('Días entreno','Training days')} <span className="text-[10px] opacity-70">(×1.05)</span></span>
+                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{t('Días que entrenas','Training days')} <span className="text-[10px] opacity-70">(+5% kcal)</span></span>
                 <span className={`font-mono ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{_diasEntreno.entreno.join('·') || '—'}</span>
               </div>
               <div className="flex items-center justify-between text-[11px]">
-                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{t('Días descanso','Rest days')} <span className="text-[10px] opacity-70">(×0.95)</span></span>
+                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{t('Días de descanso','Rest days')} <span className="text-[10px] opacity-70">(−5% kcal)</span></span>
                 <span className={`font-mono ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{_diasEntreno.descanso.join('·') || '—'}</span>
               </div>
             </div>
@@ -11496,6 +11496,31 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
           );
         })}
       </div>
+
+      {/* Cardio extra del día (suma fuera de los ejercicios para llegar al total semanal de la fase) */}
+      {_faseEnt && _faseEnt.ent && _faseEnt.ent.cardioPorSesionExtra > 0 && !esDescanso && (
+        <div className={`rounded-xl p-4 ${darkMode ? 'bg-amber-900/20 border border-amber-800/40' : 'bg-amber-50 border border-amber-100'}`}>
+          <div className="flex items-start gap-3">
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${darkMode ? 'bg-amber-800/40' : 'bg-amber-100'}`}>
+              <i className={`fas fa-person-walking ${darkMode ? 'text-amber-300' : 'text-amber-700'}`}></i>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className={`text-sm font-bold ${darkMode ? 'text-amber-200' : 'text-amber-800'}`}>
+                {t('Después de la sesión: ','After this session: ')}+{_faseEnt.ent.cardioPorSesionExtra} {t('min de caminata','min of walking')}
+              </div>
+              <p className={`text-[11px] mt-1 leading-relaxed ${darkMode ? 'text-amber-300/80' : 'text-amber-700/90'}`}>
+                {t('Tu fase ','Your phase ')}<b>{_faseEnt.nombre}</b>{t(' pide ','requires ')}{_faseEnt.ent.cardioMinSemana}{t(' min de cardio por semana. El protocolo te da ','min of cardio per week. The protocol gives you ')}{_faseEnt.ent.cardioBaseProtocolo}{t(' min en las sesiones. Te faltan ','min in sessions. You need ')}{_faseEnt.ent.cardioExtraNecesario}{t(' min/semana extra: distribuye ~','min/week extra: distribute ~')}{_faseEnt.ent.cardioPorSesionExtra}{t(' min al final de cada día A/B/C/D (caminata inclinada en treadmill, bici suave o paseo).','min at the end of each A/B/C/D day (inclined walk on treadmill, easy bike, or walk).')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      {_faseEnt && _faseEnt.ent && _faseEnt.ent.cardioPorSesionExtra === 0 && _faseEnt.ent.cardioMinSemana < 50 && !esDescanso && (
+        <div className={`rounded-xl p-3 text-[11px] ${darkMode ? 'bg-gray-800/40 border border-gray-700 text-gray-400' : 'bg-gray-50 border border-gray-100 text-gray-600'}`}>
+          <i className="fas fa-info-circle mr-1.5 opacity-70"></i>
+          {t('Estás en ','You are in ')}<b>{_faseEnt.nombre}</b>{t('. No agregues cardio extra: tu fase prioriza preservar masa magra. El cardio del protocolo (~','. Don\'t add extra cardio: your phase prioritizes preserving lean mass. Protocol cardio (~')}{_faseEnt.ent.cardioBaseProtocolo}{t(' min/semana) es suficiente.',' min/week) is enough.')}
+        </div>
+      )}
 
       {/* Principios */}
       {window.NP_RoadmapData && window.NP_RoadmapData.ENTRENO_PROTOCOLO && window.NP_RoadmapData.ENTRENO_PROTOCOLO.principios && (

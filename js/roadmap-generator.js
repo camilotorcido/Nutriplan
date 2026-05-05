@@ -77,32 +77,37 @@ function _bloqueFoco(indice, total) {
 //   Melin et al. — Energy Availability (umbrales LEA subclínica/clínica)
 function _prescripcionEntrenamiento(indice, total, esDietBreak) {
   // Campos:
-  //   factorVolumen — multiplicador aplicado a sets del protocolo en el render
-  //   repRange      — rango de reps recomendado para la fase (se aplica al protocolo)
-  //   cardioMinSemana    — total objetivo (incluye lo del protocolo + extra)
-  //   cardioBaseProtocolo — minutos de cardio que el protocolo A/B/C/D ya entrega
-  //   cardioExtraNecesario — minutos extra a sumar fuera de las sesiones (LISS suelto)
+  //   modalidad          — etiqueta corta para badge ("Pesas+Cardio", "Solo pesas", etc.)
+  //   modalidadLabel     — descripción larga
+  //   factorVolumen      — multiplicador aplicado a sets del protocolo en el render
+  //   repRange           — rango de reps recomendado para la fase (override en el protocolo)
+  //   cardioMinSemana    — total objetivo (lo del protocolo + extra)
+  //   cardioBaseProtocolo — minutos de cardio que entrega el protocolo A/B/C/D
+  //   cardioExtraNecesario — minutos extra que el usuario debe sumar fuera del protocolo
+  //   cardioPorSesionExtra — minutos a agregar al FINAL de cada día A/B/C/D para llegar al total
+  //   cardioTipoSimple   — descripción humana del tipo de cardio sugerido
   //
   // Protocolo concreto entrega ~45 min cardio/sem (rowing en C ≈ 12 min, intervalos D ≈ 8 min,
-  // treadmill plano D ≈ 25 min). En Last Mile reducimos el treadmill (factor 0.75 → ~30 min total).
+  // treadmill plano D ≈ 25 min). cardioPorSesionExtra = ceil(cardioExtraNecesario / 4 sesiones).
 
   if (esDietBreak) {
     return {
-      modalidad: 'CT',
-      modalidadLabel: 'Mantenimiento (sin cut)',
-      volumenSets: '7-9 sets/grupo muscular/sesión',
+      modalidad: 'Pesas+Cardio',
+      modalidadLabel: 'Pesas con cardio · mantenimiento (sin déficit)',
+      volumenSets: '7-9 series por grupo muscular en cada sesión',
       factorVolumen: 1.15,
       repRange: '6-10',
       frecuenciaSemanal: 4,
-      intensidadPct1RM: '70-85%',
-      rpeObjetivo: '8-10',
+      intensidadPct1RM: '70-85% de tu peso máximo',
+      rpeObjetivo: '8-10 (esfuerzo de 1 a 10)',
       cardioMinSemana: 50,
       cardioBaseProtocolo: 50,
       cardioExtraNecesario: 0,
-      cardioTipo: 'Solo del protocolo · Glucógeno lleno permite cargas pesadas',
+      cardioPorSesionExtra: 0,
+      cardioTipoSimple: 'Solo el cardio del protocolo. Aprovecha los carbos del refeed para levantar más pesado.',
       eaMinKcalKgFFM: 45,
-      foco: 'Glucógeno lleno permite sesiones más pesadas y rep ranges más bajos (6-10). Acumular volumen sin fatiga del déficit. Si días de entreno coinciden con días de refeed alto en carbos, aprovechar.',
-      redFlags: ['Subida de peso > 2 kg en 14 días (revisar superávit, no debería pasar de mantenimiento)']
+      foco: 'Tu glucógeno está lleno (carbos suficientes) — esto te permite levantar más peso y subir el volumen 15%. Es el momento ideal para acumular fuerza y volumen sin la fatiga del déficit.',
+      redFlags: ['Subes más de 2 kg en 14 días (revisar comidas, no debería superar mantenimiento)']
     };
   }
 
@@ -111,96 +116,100 @@ function _prescripcionEntrenamiento(indice, total, esDietBreak) {
 
   if (esFundacion && total === 1) {
     return {
-      modalidad: 'CT',
-      modalidadLabel: 'Concurrente (fuerza + cardio)',
-      volumenSets: '6-9 sets/grupo muscular/sesión',
+      modalidad: 'Pesas+Cardio',
+      modalidadLabel: 'Pesas combinadas con cardio',
+      volumenSets: '6-9 series por grupo muscular en cada sesión',
       factorVolumen: 1.0,
       repRange: '8-12',
       frecuenciaSemanal: 4,
-      intensidadPct1RM: '70-80%',
-      rpeObjetivo: '7-8',
+      intensidadPct1RM: '70-80% de tu peso máximo',
+      rpeObjetivo: '7-8 (esfuerzo de 1 a 10)',
       cardioMinSemana: 90,
       cardioBaseProtocolo: 45,
       cardioExtraNecesario: 45,
-      cardioTipo: 'LISS o HIIT · timing libre (mismo día o separado da igual)',
+      cardioPorSesionExtra: 12,
+      cardioTipoSimple: 'Cardio suave (caminata inclinada, bici suave) o intervalos cortos. Da igual si lo haces el mismo día que las pesas o aparte.',
       eaMinKcalKgFFM: 40,
-      foco: 'CT maximiza pérdida de grasa sin canibalizar masa magra. Cardio del protocolo (~45 min/sem) + 45 min extra de LISS (caminata inclinada, bici suave) durante la semana para llegar a 90 min objetivo.',
+      foco: 'Combinar pesas con cardio quema más grasa que solo pesas, sin perder masa magra. Suma 12 min extra de caminata o bici al final de cada sesión para llegar al objetivo de 90 min/semana.',
       redFlags: [
-        'Caída > 5% en lifts clave en 2 semanas seguidas',
-        'sRPE subiendo > 1 punto sin cambios en programa',
-        'Pasos diarios cayendo > 20% sin razón (NEAT crashing)'
+        'Tus pesos clave bajan más de 5% en 2 semanas seguidas',
+        'Las sesiones se sienten cada vez más duras sin haber subido cargas',
+        'Caminas mucho menos que antes sin razón (señal de que el cuerpo se está apagando)'
       ]
     };
   }
 
   if (esFundacion) {
     return {
-      modalidad: 'CT',
-      modalidadLabel: 'Concurrente (fuerza + cardio)',
-      volumenSets: '6-9 sets/grupo muscular/sesión',
+      modalidad: 'Pesas+Cardio',
+      modalidadLabel: 'Pesas combinadas con cardio',
+      volumenSets: '6-9 series por grupo muscular en cada sesión',
       factorVolumen: 1.0,
       repRange: '8-12',
       frecuenciaSemanal: 4,
-      intensidadPct1RM: '70-80%',
-      rpeObjetivo: '7-8',
+      intensidadPct1RM: '70-80% de tu peso máximo',
+      rpeObjetivo: '7-8 (esfuerzo de 1 a 10)',
       cardioMinSemana: 90,
       cardioBaseProtocolo: 45,
       cardioExtraNecesario: 45,
-      cardioTipo: 'LISS o HIIT · timing libre (mismo día o separado da igual)',
+      cardioPorSesionExtra: 12,
+      cardioTipoSimple: 'Cardio suave (caminata inclinada, bici suave) o intervalos cortos. Da igual si lo haces el mismo día que las pesas o aparte.',
       eaMinKcalKgFFM: 40,
-      foco: 'Establecer base. CT supera a RT puro en pérdida de grasa absoluta y mantiene FFM. Cardio del protocolo (~45 min/sem) + 45 min extra fuera de las sesiones para llegar a 90 min objetivo.',
+      foco: 'Establecer la base. Pesas + cardio quema más grasa que solo pesas y mantiene la masa magra. Suma 12 min extra de caminata o bici al final de cada día A/B/C/D para llegar al objetivo de 90 min/semana.',
       redFlags: [
-        'Caída > 5% en lifts clave en 2 semanas',
-        'sRPE subiendo > 1 punto sin cambios',
-        'Pasos diarios cayendo > 20% (NEAT crashing)'
+        'Tus pesos clave bajan más de 5% en 2 semanas',
+        'El esfuerzo subjetivo aumenta sin haber subido cargas',
+        'Caminas un 20% menos que antes (el cuerpo se está apagando)'
       ]
     };
   }
 
   if (esLastMile) {
     return {
-      modalidad: 'RT',
-      modalidadLabel: 'Fuerza pura (RT prioritario)',
-      volumenSets: '5-7 sets/grupo (taper −25 a −30%)',
+      modalidad: 'Solo pesas',
+      modalidadLabel: 'Solo pesas (último tramo, prioridad fuerza)',
+      volumenSets: '5-7 series por grupo muscular (volumen reducido 25%)',
       factorVolumen: 0.75,
       repRange: '6-10',
       frecuenciaSemanal: 4,
-      intensidadPct1RM: '70-80% (mantener cargas)',
-      rpeObjetivo: '7-8 (evitar fallo crónico, controla cortisol)',
+      intensidadPct1RM: '70-80% de tu peso máximo (mantener cargas)',
+      rpeObjetivo: '7-8 (evitar llegar al fallo, controla el cortisol)',
       cardioMinSemana: 30,
       cardioBaseProtocolo: 30,
       cardioExtraNecesario: 0,
-      cardioTipo: 'Solo del protocolo (treadmill día D recortado) · Subir carbos antes que cardio',
+      cardioPorSesionExtra: 0,
+      cardioTipoSimple: 'Mínimo cardio: solo lo que viene en el día D (recortado). Si el peso se estanca, sube los carbos antes de añadir cardio.',
       eaMinKcalKgFFM: 35,
-      foco: 'A baja grasa el AT canibaliza FFM. RT puro con reps 6-10 preserva fuerza/masa magra mientras se estresa el cortisol mínimamente. Antes de subir cardio: subir carbos para reducir el déficit.',
+      foco: 'Cuando ya estás magro, el cardio quema masa magra junto con la grasa. Mejor solo pesas con menos volumen (25% menos) y reps más bajas (6-10) para preservar la fuerza con menos estrés. Antes de añadir cardio para destrabar peso, prueba subir carbos.',
       redFlags: [
-        'EA estimada < 30 kcal/kg FFM (LEA clínica)',
-        'Bradicardia, hipotensión, libido caída, sueño deteriorado',
-        'Caída > 10% en lifts → forzar diet break o pausar fase'
+        'Energía disponible bajo 30 kcal/kg de masa magra (zona de riesgo)',
+        'Pulso muy bajo, presión baja, libido caída, mal dormir',
+        'Tus pesos clave bajan más de 10% → forzar diet break o pausar la fase'
       ]
     };
   }
 
   // Bloque intermedio
   return {
-    modalidad: 'CT-RT',
-    modalidadLabel: 'Concurrente con RT prioritario',
-    volumenSets: '6-8 sets/grupo (bajar 20-30% si sRPE sube)',
+    modalidad: 'Pesas (cardio ligero)',
+    modalidadLabel: 'Pesas con cardio ligero (transición)',
+    volumenSets: '6-8 series por grupo muscular (bajar 20-30% si te cuesta más recuperar)',
     factorVolumen: 0.9,
     repRange: '8-12',
     frecuenciaSemanal: 4,
-    intensidadPct1RM: '70-80%',
-    rpeObjetivo: '7-8',
+    intensidadPct1RM: '70-80% de tu peso máximo',
+    rpeObjetivo: '7-8 (esfuerzo de 1 a 10)',
     cardioMinSemana: 60,
     cardioBaseProtocolo: 45,
     cardioExtraNecesario: 15,
-    cardioTipo: 'LISS preferente (menos interference)',
+    cardioPorSesionExtra: 4,
+    cardioTipoSimple: 'Cardio suave preferente (interfiere menos con la recuperación de fuerza).',
     eaMinKcalKgFFM: 38,
-    foco: 'Migrar hacia RT-prioritario. Cardio del protocolo (~45 min/sem) + 15 min extra LISS. Reducir cardio extra si fatiga sube; aumentar solo si peso se estanca.',
+    foco: 'Estás en transición hacia priorizar pesas. El cardio del protocolo (45 min/sem) + 4 min extra al final de cada sesión = 60 min/sem total. Si la fatiga sube, baja primero el cardio extra antes que el volumen de pesas.',
     redFlags: [
-      'sRPE en aumento sostenido (fatiga acumulada)',
-      'Pérdida de fuerza en lifts clave',
-      'Pasos diarios cayendo > 20%'
+      'Las sesiones se sienten cada vez más duras (fatiga acumulada)',
+      'Pierdes fuerza en pesos clave',
+      'Caminas un 20% menos que antes'
     ]
   };
 }
@@ -450,14 +459,10 @@ function _migrarRoadmapEntrenamiento(roadmap) {
         ? _prescripcionEntrenamiento(Math.max(0, idxCorte), totalCortes, true)
         : null;
     if (!fresh) continue;
-    if (!f.entrenamiento) {
-      f.entrenamiento = fresh;
-    } else {
-      // Fase con entrenamiento viejo: rellenar campos nuevos sin pisar overrides
-      for (const k of Object.keys(fresh)) {
-        if (f.entrenamiento[k] == null) f.entrenamiento[k] = fresh[k];
-      }
-    }
+    // Refrescar entrenamiento siempre con la versión más reciente:
+    // el roadmap nunca se persiste entrenamiento custom (no hay UI de edición),
+    // así que pisar es seguro y garantiza que cambios en labels/cifras lleguen al usuario.
+    f.entrenamiento = fresh;
   }
   return roadmap;
 }
