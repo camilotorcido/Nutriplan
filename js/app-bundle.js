@@ -12481,6 +12481,111 @@ function ChatPanel({ darkMode }) {
     };
   }, []);
 
+  // ── Resize y arrastre del panel (solo desktop / pointer fino) ─────────────
+  const isDesktop = (typeof window !== 'undefined') && window.matchMedia
+    && window.matchMedia('(pointer: fine) and (min-width: 768px)').matches;
+  const [panelSize, setPanelSize] = React.useState(function() {
+    try {
+      var raw = localStorage.getItem('nutriplan_chat_panel_size');
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && Number.isFinite(s.w) && Number.isFinite(s.h)) return { w: s.w, h: s.h };
+      }
+    } catch(_) {}
+    return { w: 380, h: 520 };
+  });
+  const [panelPos, setPanelPos] = React.useState(function() {
+    try {
+      var raw = localStorage.getItem('nutriplan_chat_panel_pos');
+      if (raw) {
+        var p = JSON.parse(raw);
+        if (p && Number.isFinite(p.right) && Number.isFinite(p.bottom)) return { right: p.right, bottom: p.bottom };
+      }
+    } catch(_) {}
+    return { right: 16, bottom: 88 };
+  });
+  // Reclamp si la ventana del navegador cambia de tamaño y el panel queda fuera
+  React.useEffect(function() {
+    if (!isDesktop) return;
+    function onResize() {
+      setPanelSize(function(s) {
+        var maxW = window.innerWidth - 16;
+        var maxH = window.innerHeight - 16;
+        if (s.w <= maxW && s.h <= maxH) return s;
+        var clamped = { w: Math.min(s.w, maxW), h: Math.min(s.h, maxH) };
+        try { localStorage.setItem('nutriplan_chat_panel_size', JSON.stringify(clamped)); } catch(_) {}
+        return clamped;
+      });
+      setPanelPos(function(p) {
+        var maxRight  = Math.max(8, window.innerWidth - 340);
+        var maxBottom = Math.max(8, window.innerHeight - 80);
+        if (p.right <= maxRight && p.bottom <= maxBottom) return p;
+        var clamped = { right: Math.min(p.right, maxRight), bottom: Math.min(p.bottom, maxBottom) };
+        try { localStorage.setItem('nutriplan_chat_panel_pos', JSON.stringify(clamped)); } catch(_) {}
+        return clamped;
+      });
+    }
+    window.addEventListener('resize', onResize);
+    return function() { window.removeEventListener('resize', onResize); };
+  }, [isDesktop]);
+  function startResize(e) {
+    if (!isDesktop) return;
+    e.preventDefault(); e.stopPropagation();
+    var startX = e.clientX, startY = e.clientY;
+    var startW = panelSize.w, startH = panelSize.h;
+    function onMove(ev) {
+      // Anclado a bottom-right: mover el handle hacia arriba/izquierda agranda el panel
+      var dx = startX - ev.clientX;
+      var dy = startY - ev.clientY;
+      var maxW = window.innerWidth - 16;
+      var maxH = window.innerHeight - 16;
+      var newW = Math.max(320, Math.min(maxW, startW + dx));
+      var newH = Math.max(380, Math.min(maxH, startH + dy));
+      setPanelSize({ w: newW, h: newH });
+    }
+    function onUp() {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      document.body.style.userSelect = '';
+      setPanelSize(function(s) {
+        try { localStorage.setItem('nutriplan_chat_panel_size', JSON.stringify(s)); } catch(_) {}
+        return s;
+      });
+    }
+    document.body.style.userSelect = 'none';
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
+  function startDrag(e) {
+    if (!isDesktop) return;
+    // No iniciar drag si el click fue sobre un botón/control del header
+    if (e.target && e.target.closest && e.target.closest('button')) return;
+    e.preventDefault();
+    var startX = e.clientX, startY = e.clientY;
+    var startRight = panelPos.right, startBottom = panelPos.bottom;
+    function onMove(ev) {
+      var dx = startX - ev.clientX;  // mover izquierda → aumenta right
+      var dy = startY - ev.clientY;  // mover arriba    → aumenta bottom
+      var maxRight  = Math.max(8, window.innerWidth - panelSize.w - 8);
+      var maxBottom = Math.max(8, window.innerHeight - 60);
+      var newRight  = Math.max(8, Math.min(maxRight,  startRight  + dx));
+      var newBottom = Math.max(8, Math.min(maxBottom, startBottom + dy));
+      setPanelPos({ right: newRight, bottom: newBottom });
+    }
+    function onUp() {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      document.body.style.userSelect = '';
+      setPanelPos(function(p) {
+        try { localStorage.setItem('nutriplan_chat_panel_pos', JSON.stringify(p)); } catch(_) {}
+        return p;
+      });
+    }
+    document.body.style.userSelect = 'none';
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
+
   var borderColor = darkMode ? '#374151' : '#e5e7eb';
   var bgPanel     = darkMode ? '#111827' : '#ffffff';
   var bgMsg       = darkMode ? '#1f2937' : '#f3f4f6';
@@ -12522,23 +12627,61 @@ function ChatPanel({ darkMode }) {
 
     /* ── Panel ── */
     open && React.createElement('div', {
-      style: {
-        position:'fixed',
-        bottom:'calc(88px + env(safe-area-inset-bottom, 0px))',
-        right:'calc(16px + env(safe-area-inset-right, 0px))',
-        zIndex:999,
-        width: Math.min(380, window.innerWidth - 32),
-        height: Math.min(520, window.innerHeight - 150),
-        borderRadius:20, background:bgPanel,
-        border:'1px solid '+borderColor,
-        boxShadow:'0 20px 60px rgba(0,0,0,0.25)',
-        display:'flex', flexDirection:'column', overflow:'hidden'
-      }
+      style: (function() {
+        var base = {
+          position:'fixed',
+          zIndex:999,
+          borderRadius:20, background:bgPanel,
+          border:'1px solid '+borderColor,
+          boxShadow:'0 20px 60px rgba(0,0,0,0.25)',
+          display:'flex', flexDirection:'column', overflow:'hidden'
+        };
+        if (isDesktop) {
+          var maxW = window.innerWidth  - 16;
+          var maxH = window.innerHeight - 16;
+          base.width  = Math.min(panelSize.w, maxW);
+          base.height = Math.min(panelSize.h, maxH);
+          base.right  = panelPos.right  + 'px';
+          base.bottom = panelPos.bottom + 'px';
+        } else {
+          base.bottom = 'calc(88px + env(safe-area-inset-bottom, 0px))';
+          base.right  = 'calc(16px + env(safe-area-inset-right, 0px))';
+          base.width  = Math.min(380, window.innerWidth - 32);
+          base.height = Math.min(520, window.innerHeight - 150);
+        }
+        return base;
+      })()
     },
+      /* Handle de resize (esquina superior izquierda, solo desktop) */
+      isDesktop && React.createElement('div', {
+        onMouseDown: startResize,
+        title: t('Redimensionar', 'Resize'),
+        style: {
+          position:'absolute', top:0, left:0,
+          width:18, height:18,
+          cursor:'nwse-resize',
+          zIndex:10,
+          display:'flex', alignItems:'flex-start', justifyContent:'flex-start',
+          padding:'5px 0 0 5px'
+        }
+      },
+        React.createElement('div', {
+          style:{
+            width:8, height:8,
+            borderTop:'2px solid '+colorMuted,
+            borderLeft:'2px solid '+colorMuted,
+            borderTopLeftRadius:2,
+            opacity:0.7
+          }
+        })
+      ),
       /* Header */
       React.createElement('div', {
+        onMouseDown: isDesktop ? startDrag : undefined,
         style:{ padding:'13px 16px', borderBottom:'1px solid '+borderColor,
-          display:'flex', alignItems:'center', gap:10, flexShrink:0 }
+          display:'flex', alignItems:'center', gap:10, flexShrink:0,
+          cursor: isDesktop ? 'move' : 'default',
+          userSelect: 'none' }
       },
         React.createElement('div', {
           style:{ width:34, height:34, borderRadius:'50%',
