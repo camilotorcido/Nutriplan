@@ -4438,37 +4438,38 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
               </p>
             </div>
 
-            {/* ── Métricas: hero (kcal) + fila de secundarias (pasos · días), separadas por línea horizontal ── */}
+            {/* ── Métricas: hero (kcal) + secundarias alineadas a la derecha en una sola fila ── */}
             <div className={`rounded-xl overflow-hidden ${darkMode ? 'bg-gray-700/60' : 'bg-amber-50'}`}>
-              {/* Hero: calorías diarias */}
-              <div className="px-5 pt-4 pb-3">
-                <div className={`text-[10px] font-bold uppercase tracking-widest mb-1.5 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>
-                  {t('Tu objetivo diario','Your daily goal')}
+              <div className="px-5 py-4 flex items-end justify-between gap-6 flex-wrap">
+                {/* Hero: calorías diarias */}
+                <div className="min-w-0">
+                  <div className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>
+                    {t('Tu objetivo diario','Your daily goal')}
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-extrabold leading-none text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                      {faseInfo.calorias}
+                    </span>
+                    <span className={`text-base font-medium ${darkMode ? 'text-amber-400/80' : 'text-amber-700/80'}`}>kcal/día</span>
+                  </div>
                 </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-extrabold leading-none text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                    {faseInfo.calorias}
-                  </span>
-                  <span className={`text-base font-medium ${darkMode ? 'text-amber-400/80' : 'text-amber-700/80'}`}>kcal/día</span>
-                </div>
-              </div>
-              {/* Divisor sutil */}
-              <div className={`h-px ${darkMode ? 'bg-gray-600/50' : 'bg-amber-200/60'}`} />
-              {/* Secundarias: pasos · días restantes en fila */}
-              <div className="px-5 py-3 flex items-baseline gap-4 flex-wrap">
-                <div className="flex items-baseline gap-1.5">
-                  <span className={`text-[10px] font-bold uppercase tracking-wider ${darkMode ? 'text-amber-400/70' : 'text-amber-700/70'}`}>{t('Pasos/día','Steps/day')}</span>
-                  <span className="text-xl font-bold leading-none text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                    {Math.round(faseInfo.targetPasos / 1000)}k
-                  </span>
-                </div>
-                <span className={`${darkMode ? 'text-gray-600' : 'text-amber-300'}`}>·</span>
-                <div className="flex items-baseline gap-1.5">
-                  <span className={`text-[10px] font-bold uppercase tracking-wider ${darkMode ? 'text-amber-400/70' : 'text-amber-700/70'}`}>{t('Restantes','Left')}</span>
-                  <span className="text-xl font-bold leading-none text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                    {faseInfo.diasRestantesEnFase}
-                  </span>
-                  <span className={`text-[10px] font-medium ${darkMode ? 'text-amber-400/70' : 'text-amber-700/60'}`}>{t('días','days')}</span>
+                {/* Secundarias: pasos y días en una sola línea, alineados a la derecha */}
+                <div className="flex items-end gap-5">
+                  <div className="text-right">
+                    <div className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${darkMode ? 'text-amber-400/70' : 'text-amber-700/70'}`}>{t('Pasos/día','Steps/day')}</div>
+                    <div className="text-xl font-bold leading-none text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                      {Math.round(faseInfo.targetPasos / 1000)}k
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${darkMode ? 'text-amber-400/70' : 'text-amber-700/70'}`}>{t('Restantes','Left')}</div>
+                    <div className="flex items-baseline gap-1 justify-end">
+                      <span className="text-xl font-bold leading-none text-ink" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                        {faseInfo.diasRestantesEnFase}
+                      </span>
+                      <span className={`text-xs font-medium ${darkMode ? 'text-amber-400/70' : 'text-amber-700/60'}`}>{t('días','days')}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -4763,7 +4764,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
             <div key={tipo} className={`meal-card rounded-xl p-4 border relative ${
               yaComido ? (darkMode ? 'bg-emerald-900/30 border-emerald-700' : 'bg-emerald-50 border-emerald-300')
               : yaMarcadoNo ? (darkMode ? 'bg-gray-800/50 border-gray-600 opacity-60' : 'bg-gray-100 border-gray-300 opacity-70')
-              : (darkMode ? colores.bgDark + ' ' + colores.borderDark : colores.bg + ' ' + colores.border)
+              : 'surface-card'
             }`}>
               <div className="flex items-start justify-between">
                 <div className="flex-1" role="button" tabIndex={0}
