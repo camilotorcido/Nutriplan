@@ -67,6 +67,115 @@ function _bloqueFoco(indice, total) {
   return focos[Math.min(indice, focos.length - 1)];
 }
 
+// ─── Prescripción de entrenamiento por fase (basada en evidencia) ─────────
+// Investigación: D:\Claude\04 - Outputs\Calibrate\investigacion_ejercicio_deficit_calorico.md
+// Fuentes:
+//   Lafontant et al. (2025) — modalidad RT/AT/CT, meta-análisis 36 RCTs
+//   Helms, Aragon & Fitschen (2014) — volumen/intensidad/tasa pérdida atletas naturales
+//   Trexler, Smith-Ryan & Norton (2014) — adaptación metabólica, NEAT, refeeds
+//   Mikulic et al. (2021) — sRPE como métrica de fatiga (vs HR)
+//   Melin et al. — Energy Availability (umbrales LEA subclínica/clínica)
+function _prescripcionEntrenamiento(indice, total, esDietBreak) {
+  if (esDietBreak) {
+    return {
+      modalidad: 'CT',
+      modalidadLabel: 'Mantenimiento (sin cut)',
+      volumenSets: '10-12 sets/grupo muscular/sesión',
+      frecuenciaSemanal: 4,
+      intensidadPct1RM: '70-80%',
+      rpeObjetivo: '8-10',
+      cardioMinSemana: 60,
+      cardioTipo: 'Opcional · LISS preferente',
+      eaMinKcalKgFFM: 45,
+      foco: 'Glucógeno lleno permite sesiones más pesadas. Aprovechar para acumular volumen sin fatiga del déficit.',
+      redFlags: ['Subida de peso > 2 kg en 14 días (revisar superávit, no debería pasar de mantenimiento)']
+    };
+  }
+
+  const esFundacion = indice === 0;
+  const esLastMile = total > 1 && indice === total - 1;
+
+  if (esFundacion && total === 1) {
+    // Fase única — balance entre los tres extremos
+    return {
+      modalidad: 'CT',
+      modalidadLabel: 'Concurrente (fuerza + cardio)',
+      volumenSets: '6-9 sets/grupo muscular/sesión',
+      frecuenciaSemanal: 4,
+      intensidadPct1RM: '70-80%',
+      rpeObjetivo: '7-8',
+      cardioMinSemana: 90,
+      cardioTipo: 'LISS o HIIT · igual eficacia si gasto se iguala',
+      eaMinKcalKgFFM: 40,
+      foco: 'CT maximiza pérdida de grasa sin canibalizar masa magra. Cardio: timing libre (mismo día o separado, da igual).',
+      redFlags: [
+        'Caída > 5% en lifts clave en 2 semanas seguidas',
+        'sRPE subiendo > 1 punto sin cambios en programa',
+        'Pasos diarios cayendo > 20% sin razón (NEAT crashing)'
+      ]
+    };
+  }
+
+  if (esFundacion) {
+    return {
+      modalidad: 'CT',
+      modalidadLabel: 'Concurrente (fuerza + cardio)',
+      volumenSets: '6-9 sets/grupo muscular/sesión',
+      frecuenciaSemanal: 4,
+      intensidadPct1RM: '70-80%',
+      rpeObjetivo: '7-8',
+      cardioMinSemana: 90,
+      cardioTipo: 'LISS o HIIT · igual eficacia si gasto se iguala',
+      eaMinKcalKgFFM: 40,
+      foco: 'Establecer base. CT supera a RT puro en pérdida de grasa absoluta y mantiene FFM si el RT está bien programado.',
+      redFlags: [
+        'Caída > 5% en lifts clave en 2 semanas',
+        'sRPE subiendo > 1 punto sin cambios',
+        'Pasos diarios cayendo > 20% (NEAT crashing)'
+      ]
+    };
+  }
+
+  if (esLastMile) {
+    return {
+      modalidad: 'RT',
+      modalidadLabel: 'Fuerza pura (RT prioritario)',
+      volumenSets: '5-7 sets/grupo (taper −25 a −30%)',
+      frecuenciaSemanal: 4,
+      intensidadPct1RM: '70-80% (mantener cargas)',
+      rpeObjetivo: '7-8 (evitar fallo crónico, controla cortisol)',
+      cardioMinSemana: 30,
+      cardioTipo: 'Mínimo · solo LISS si peso se estanca',
+      eaMinKcalKgFFM: 35,
+      foco: 'A baja grasa el AT canibaliza FFM. RT puro preserva masa magra. Antes de subir cardio: subir carbos para reducir el déficit.',
+      redFlags: [
+        'EA estimada < 30 kcal/kg FFM (LEA clínica)',
+        'Bradicardia, hipotensión, libido caída, sueño deteriorado',
+        'Caída > 10% en lifts → forzar diet break o pausar fase'
+      ]
+    };
+  }
+
+  // Bloque intermedio — déficit más profundo
+  return {
+    modalidad: 'CT-RT',
+    modalidadLabel: 'Concurrente con RT prioritario',
+    volumenSets: '6-9 sets/grupo (bajar 20-30% si sRPE sube)',
+    frecuenciaSemanal: 4,
+    intensidadPct1RM: '70-80%',
+    rpeObjetivo: '7-8',
+    cardioMinSemana: 60,
+    cardioTipo: 'LISS preferente (menos interference)',
+    eaMinKcalKgFFM: 38,
+    foco: 'Migrar hacia RT-prioritario. Reducir cardio si fatiga sube. Aumentar minutos solo si peso se estanca.',
+    redFlags: [
+      'sRPE en aumento sostenido (fatiga acumulada)',
+      'Pérdida de fuerza en lifts clave',
+      'Pasos diarios cayendo > 20%'
+    ]
+  };
+}
+
 // ─── Construir array de fases (cortes + diet breaks intercalados) ───
 function _construirFases(params) {
   const {
@@ -116,7 +225,8 @@ function _construirFases(params) {
       bfFin: Math.round((bfActualFase - puntosBFPorBloque) * 10) / 10,
       targetPasos: pasosPorBloque[Math.min(b, pasosPorBloque.length - 1)],
       cardioFormal: cardioPorBloque[Math.min(b, cardioPorBloque.length - 1)],
-      foco: _bloqueFoco(b, bloques)
+      foco: _bloqueFoco(b, bloques),
+      entrenamiento: _prescripcionEntrenamiento(b, bloques, false)
     });
 
     mesActual += mesesBloque;
@@ -140,7 +250,8 @@ function _construirFases(params) {
         bfFin: Math.round(bfActualFase * 10) / 10,
         targetPasos: pasosPorBloque[Math.min(b, pasosPorBloque.length - 1)],
         cardioFormal: 'no',
-        foco: 'Restaurar leptina y adherencia. 2 semanas exactas a mantenimiento. Subida de peso esperada 0.5-1.5 kg (glucógeno + agua, NO grasa).'
+        foco: 'Restaurar leptina y adherencia. 2 semanas exactas a mantenimiento. Subida de peso esperada 0.5-1.5 kg (glucógeno + agua, NO grasa).',
+        entrenamiento: _prescripcionEntrenamiento(b, bloques, true)
       });
       mesActual += 1;
     }

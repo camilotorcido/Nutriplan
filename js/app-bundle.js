@@ -2126,6 +2126,37 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               </div>
             </div>
           ); })()}
+          {/* Entrenamiento de la fase actual (solo fat-loss roadmap con prescripción) */}
+          {obj === 'perdida' && rm && rm.fases && (() => {
+            const _fa = (window.NP_Roadmap && window.NP_Roadmap.faseActual) ? window.NP_Roadmap.faseActual(rm) : null;
+            const _ent = _fa && _fa.entrenamiento;
+            if (!_ent) return null;
+            return (
+              <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className={`text-xs font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <i className="fas fa-dumbbell mr-1.5 opacity-70"></i>Entrenamiento — {_fa.nombre || 'fase actual'}
+                  </p>
+                  <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${darkMode ? 'bg-blue-900/40 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>{_ent.modalidad}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { l: 'Volumen', v: _ent.volumenSets },
+                    { l: 'Frecuencia', v: _ent.frecuenciaSemanal + 'x/sem' },
+                    { l: 'Intensidad', v: _ent.intensidadPct1RM + ' 1RM' },
+                    { l: 'RPE objetivo', v: _ent.rpeObjetivo },
+                    { l: 'Cardio', v: _ent.cardioMinSemana + ' min/sem · ' + _ent.cardioTipo },
+                    { l: 'EA mínima', v: '≥ ' + _ent.eaMinKcalKgFFM + ' kcal/kg FFM' }
+                  ].map(x => (
+                    <div key={x.l}>
+                      <div className={`text-[10px] uppercase ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{x.l}</div>
+                      <div className={`text-[11px] font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{x.v}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       );
     };
@@ -2162,6 +2193,12 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   { step: '03', t: 'Proteína target', b: obj === 'volumen' ? 'LBM × 2.4 g/kg  (mín: peso × 1.8)' : obj === 'mantenimiento' ? 'LBM × 2.0 g/kg  (mín: peso × 1.6)' : 'LBM × 2.63 g/kg  (mín: peso × 1.6)', r: calc && calc.proteinaTarget ? calc.proteinaTarget + ' g/día' : null },
                   { step: '04', t: 'Calorías objetivo', b: obj === 'perdida' ? 'TDEE − déficit por tasa de pérdida' : obj === 'mantenimiento' ? 'TDEE exacto (sin déficit)' : 'TDEE + superávit lean bulk', r: calc ? ((calc.caloriasCorte || calc.caloriasObjetivo) ? (calc.caloriasCorte || calc.caloriasObjetivo) + ' kcal/día' : null) : null },
                   { step: '05', t: 'Split de macros', b: obj === 'perdida' ? 'Remanente ÷ 57% carbohidratos + 43% grasa' : obj === 'mantenimiento' ? 'Remanente ÷ 45% carbohidratos + 55% grasa' : 'Remanente ÷ 60% carbohidratos + 40% grasa', r: null, isMacros: true },
+                  ...(obj === 'perdida' ? [
+                    { step: '06', t: 'Modalidad de entrenamiento', b: 'F1 Fundación: CT concurrente — maximiza pérdida de grasa preservando FFM · Intermedia: CT con RT prioritario · Last Mile: RT puro (a baja grasa el AT canibaliza FFM) · Diet Break: CT con cargas pesadas (glucógeno lleno)', r: null },
+                    { step: '07', t: 'Volumen e intensidad', b: '6-9 sets/grupo muscular/sesión a 70-80% 1RM · RPE objetivo 7-8 · 4 sesiones/sem (split A/B/C/D) · Last Mile: taper −25 a −30% volumen, mantener intensidad', r: null },
+                    { step: '08', t: 'Cardio dose-response', b: 'LISS y HIIT equivalentes si se iguala gasto · Dosis por fase: F1 ~90 min/sem · Intermedia ~60 · Last Mile ~30 · Timing libre (mismo día o distinto al RT, indistinto)', r: null },
+                    { step: '09', t: 'Energy Availability (EA)', b: 'EA = (kcal − gasto del ejercicio) / kg FFM · ≥ 45 óptimo · 30-40 LEA subclínica · < 30 LEA clínica · Umbrales por fase: F1 ≥ 40 · Intermedia ≥ 38 · Last Mile ≥ 35', r: null },
+                  ] : []),
                 ].map(row => (
                   <div key={row.t} className={`rounded-2xl overflow-hidden border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 shadow-sm'}`}>
                     <div className={`px-4 py-2.5 flex items-center gap-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
@@ -2204,8 +2241,14 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               <div className="space-y-3">
                 {[
                   { t: 'Mifflin-St Jeor (1990)', b: 'Fórmula BMR más precisa para población moderna. Error ±10% vs calorimetría indirecta. Superior a Harris-Benedict en personas con sobrepeso.', ref: 'Mifflin MD et al. Am J Clin Nutr. 1990;51(2):241-7.' },
-                  { t: 'Helms et al. (2014) — Proteína en déficit', b: 'En déficit calórico, 2.3–3.1 g/kg LBM minimiza pérdida de masa magra. El punto 2.63 g/kg es el centro del rango recomendado para atletas naturales.', ref: 'Helms ER et al. Int J Sport Nutr Exerc Metab. 2014;24(2):127-38.' },
+                  { t: 'Helms et al. (2014) — Proteína y déficit en atletas naturales', b: 'Paper madre del cut natural: déficit 0.5-1% peso/sem, proteína 2.3-3.1 g/kg LBM, RT estructurado. Volumen sugerido 6-9 sets/grupo a 70-80% 1RM. Conforme el sujeto se pone más magro, bajar tasa hacia 0.5%/sem.', ref: 'Helms ER, Aragon AA, Fitschen PJ. JISSN. 2014;11:20.' },
                   ...(obj === 'perdida' ? [{ t: 'Peos et al. (2019) — Diet breaks', b: 'Pausas de 2 semanas a TDEE cada 10 semanas restauran leptina, cortisol y T3. Igual pérdida de grasa, más masa magra preservada y mejor adherencia a 6 meses.', ref: 'Peos JJ et al. Int J Obes. 2019;43(10):2017-2026.' }] : []),
+                  ...(obj === 'perdida' ? [
+                    { t: 'Lafontant et al. (2025) — Modalidad: RT vs AT vs CT', b: 'Meta-análisis de 36 RCTs / 1564 participantes. AT y CT superan a RT en pérdida de grasa absoluta (-1.06 kg fat mass), pero RT preserva más FFM (+0.88 kg). CT es el "punto medio" óptimo. Timing del cardio (mismo día vs distinto) no afecta resultados.', ref: 'Lafontant K et al. JISSN. 2025. PMID disponible en Open Access.' },
+                    { t: 'Trexler, Smith-Ryan & Norton (2014) — Adaptación metabólica', b: 'En déficit prolongado, el gasto basal cae hasta 40% (de los cuales 15% es adaptación pura, no atribuible a pérdida de peso). NEAT decrece y permanece suprimido tras volver a comer ad libitum. Refeeds elevan TDEE un ~7% agudo. Justifica diet breaks y reverse dieting.', ref: 'Trexler ET, Smith-Ryan AE, Norton LE. JISSN. 2014;11:7.' },
+                    { t: 'Mikulic et al. (2021) — sRPE como métrica de fatiga', b: 'En periodos de carga creciente, el sRPE (RPE × duración) detecta acumulación de fatiga 2-3 semanas antes que las métricas de frecuencia cardiaca. Recomendación: trackear sRPE semanalmente en cut para autorregular volumen e intensidad.', ref: 'Mikulic P et al. Front Physiol. 2021;12:735565.' },
+                    { t: 'Melin et al. — Energy Availability (EA)', b: 'EA = (kcal − gasto del ejercicio) / kg FFM. Umbrales: ≥45 óptimo, 30-40 LEA subclínica (tolerable corto plazo), <30 LEA clínica (compromete entrenamiento, hormonas, sueño, libido). Por eso cada fase tiene un "EA mínima" como red flag.', ref: 'Melin AK, Heikura IA, Tenforde A, Mountjoy M. World Athletics consensus.' },
+                  ] : []),
                   { t: 'Hodgdon & Beckett (1984) — Navy BF%', b: 'Correlación r=0.89 con DEXA en hombres. Error típico ±3–4% de BF absoluto. Equivalente a bioimpedancia de consumo.', ref: 'Hodgdon JA, Beckett MB. Naval Health Research Center. 1984.' },
                 ].map(row => (
                   <div key={row.t} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
@@ -4417,6 +4460,53 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
               <div className="flex items-start gap-3 min-w-0">
                 <i className="fas fa-bullseye text-amber-500 mt-1 flex-shrink-0"></i>
                 <p className={`text-sm leading-relaxed min-w-0 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{tData(faseInfo.foco)}</p>
+              </div>
+            )}
+
+            {/* ── Prescripción de entrenamiento (basada en evidencia científica) ── */}
+            {faseInfo.entrenamiento && (
+              <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-700/40 border border-gray-700' : 'bg-blue-50/60 border border-blue-100'}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <i className={`fas fa-dumbbell ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}></i>
+                    <span className={`text-xs font-bold uppercase tracking-wide ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>{t('Entrenamiento de la fase','Phase training')}</span>
+                  </div>
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${darkMode ? 'bg-blue-900/40 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>{faseInfo.entrenamiento.modalidad}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {[
+                    { l: t('Volumen','Volume'), v: faseInfo.entrenamiento.volumenSets },
+                    { l: t('Frecuencia','Frequency'), v: faseInfo.entrenamiento.frecuenciaSemanal + 'x ' + t('/sem','/wk') },
+                    { l: t('Intensidad','Intensity'), v: faseInfo.entrenamiento.intensidadPct1RM + ' 1RM' },
+                    { l: 'RPE', v: faseInfo.entrenamiento.rpeObjetivo },
+                    { l: 'Cardio', v: faseInfo.entrenamiento.cardioMinSemana + ' min/' + t('sem','wk') },
+                    { l: t('EA mínima','Min EA'), v: '≥ ' + faseInfo.entrenamiento.eaMinKcalKgFFM + ' kcal/kg FFM' }
+                  ].map(x => (
+                    <div key={x.l} className={`rounded-lg px-2.5 py-1.5 ${darkMode ? 'bg-gray-800/60' : 'bg-white/70'}`}>
+                      <div className={`text-[10px] uppercase ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{x.l}</div>
+                      <div className={`text-xs font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{x.v}</div>
+                    </div>
+                  ))}
+                </div>
+                <p className={`text-[11px] leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <i className="fas fa-info-circle mr-1.5 opacity-70"></i>
+                  {tData(faseInfo.entrenamiento.foco)}
+                </p>
+                {faseInfo.entrenamiento.redFlags && faseInfo.entrenamiento.redFlags.length > 0 && (
+                  <div className={`mt-2.5 pt-2.5 border-t ${darkMode ? 'border-gray-700' : 'border-blue-100'}`}>
+                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-amber-400' : 'text-amber-700'}`}>
+                      <i className="fas fa-flag mr-1"></i>{t('Red flags','Red flags')}
+                    </div>
+                    <ul className={`text-[11px] space-y-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {faseInfo.entrenamiento.redFlags.map((rf, i) => (
+                        <li key={i} className="flex items-start gap-1.5">
+                          <span className="opacity-60">·</span>
+                          <span>{tData(rf)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
 
@@ -9852,6 +9942,18 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
                       {esDietBreak && <i className="fas fa-pause-circle text-purple-500 text-xs"></i>}
                     </div>
                     <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{f.foco}</div>
+                    {f.entrenamiento && (
+                      <div className={`text-[11px] mt-1.5 flex items-center gap-1.5 flex-wrap ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                        <i className="fas fa-dumbbell text-[10px] opacity-70"></i>
+                        <span className="font-semibold">{f.entrenamiento.modalidad}</span>
+                        <span className="opacity-60">·</span>
+                        <span>{f.entrenamiento.volumenSets.split(' ')[0]} sets</span>
+                        <span className="opacity-60">·</span>
+                        <span>RPE {f.entrenamiento.rpeObjetivo}</span>
+                        <span className="opacity-60">·</span>
+                        <span>{f.entrenamiento.cardioMinSemana} min cardio/sem</span>
+                      </div>
+                    )}
                   </div>
                   <div className="text-right flex-shrink-0">
                     <div className={`text-lg font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{f.calorias}</div>
