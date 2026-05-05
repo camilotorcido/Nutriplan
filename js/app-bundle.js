@@ -440,7 +440,7 @@ function LoginScreen({ darkMode, onToggleDark }) {
           )}
 
           <button onClick={handleSubmit} disabled={loading}
-            className={`w-full py-3 rounded-xl font-semibold text-sm text-white transition-all ${loading ? 'bg-green-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 active:scale-[0.98] shadow-md shadow-green-200'}`}>
+            className={`w-full py-3 rounded-xl font-semibold text-sm text-white transition ${loading ? 'bg-green-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 active:scale-[0.98] shadow-md shadow-green-200'}`}>
             {loading
               ? <span className="flex items-center justify-center gap-2"><i className="fas fa-circle-notch fa-spin"></i>Procesando…</span>
               : btnLabels[mode]
@@ -458,7 +458,7 @@ function LoginScreen({ darkMode, onToggleDark }) {
             </div>
 
             <button onClick={handleGoogle} disabled={googleLoading}
-              className={`w-full py-3 rounded-xl border font-medium text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${googleLoading ? 'opacity-60 cursor-not-allowed' : ''} ${darkMode ? 'bg-gray-700 border-gray-600 text-white hover:bg-gray-600' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm'}`}>
+              className={`w-full py-3 rounded-xl border font-medium text-sm flex items-center justify-center gap-3 transition active:scale-[0.98] ${googleLoading ? 'opacity-60 cursor-not-allowed' : ''} ${darkMode ? 'bg-gray-700 border-gray-600 text-white hover:bg-gray-600' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm'}`}>
               {googleLoading
                 ? <i className="fas fa-circle-notch fa-spin text-gray-400"></i>
                 : (
@@ -903,7 +903,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               <p className={`text-xs font-semibold uppercase tracking-wide mb-3 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Choose your language · Elige tu idioma</p>
               <div className="space-y-3">
                 <button onClick={() => _selectLang('es')}
-                  className={`w-full py-3.5 rounded-2xl font-semibold text-base transition-all flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] ${
+                  className={`w-full py-3.5 rounded-2xl font-semibold text-base transition flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] ${
                     (lang || 'es') === 'es'
                       ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200'
                       : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
@@ -913,7 +913,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   {(lang || 'es') === 'es' && <i className="fas fa-check text-sm ml-auto"></i>}
                 </button>
                 <button onClick={() => _selectLang('en')}
-                  className={`w-full py-3.5 rounded-2xl font-semibold text-base transition-all flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] ${
+                  className={`w-full py-3.5 rounded-2xl font-semibold text-base transition flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] ${
                     lang === 'en'
                       ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200'
                       : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
@@ -936,7 +936,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   { code: 'imperial', icon: 'fa-ruler',        label: t('Imperiales','Imperial'), sub: 'lb · in' }
                 ].map(({ code, icon, label, sub }) => (
                   <button key={code} onClick={() => _selectUnits(code)}
-                    className={`flex-1 py-3 rounded-2xl font-semibold text-sm transition-all flex flex-col items-center gap-1 cursor-pointer active:scale-[0.98] ${
+                    className={`flex-1 py-3 rounded-2xl font-semibold text-sm transition flex flex-col items-center gap-1 cursor-pointer active:scale-[0.98] ${
                       _currentUnits === code
                         ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200'
                         : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
@@ -951,7 +951,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
             {/* ── Continuar ── */}
             <button onClick={_continuar}
-              className="w-full py-4 rounded-2xl font-bold text-base bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200 transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
+              className="w-full py-4 rounded-2xl font-bold text-base bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
               {t('Continuar','Continue')} <i className="fas fa-arrow-right text-sm"></i>
             </button>
           </div>
@@ -1366,7 +1366,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 { k: 'c', l: 'Evidencia' },
               ].map(nv => (
                 <button key={nv.k} type="button" onClick={() => setNivelExplicacion(nv.k)}
-                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition cursor-pointer ${
                     nivelExplicacion === nv.k
                       ? `${darkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-800 shadow-sm'}`
                       : `${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`
@@ -1385,7 +1385,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
             {/* CTA */}
             <button type="button" onClick={() => onComplete(perfilParaExplicar)}
-              className={`w-full py-4 rounded-2xl text-white font-bold text-base transition-all active:scale-[0.98] shadow-lg cursor-pointer bg-gradient-to-r ${objColor.from} ${objColor.to}`}>
+              className={`w-full py-4 rounded-2xl text-white font-bold text-base transition active:scale-[0.98] shadow-lg cursor-pointer bg-gradient-to-r ${objColor.from} ${objColor.to}`}>
               <i className="fas fa-check mr-2"></i>Comenzar mi plan
             </button>
             <p className={`text-[11px] text-center mt-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
@@ -1424,12 +1424,12 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{Math.round((pasoWizard / TOTAL_PASOS) * 100)}%</span>
             </div>
             <div className={`h-2 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-              <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-500"
+              <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition duration-500"
                 style={{ width: `${(pasoWizard / TOTAL_PASOS) * 100}%` }}></div>
             </div>
             <div className="flex justify-between mt-2 px-0.5">
               {PASOS_META.map((_, i) => (
-                <div key={i} className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                <div key={i} className={`w-2 h-2 rounded-full transition duration-300 ${
                   i + 1 < pasoWizard  ? 'bg-green-500' :
                   i + 1 === pasoWizard ? 'bg-green-500 ring-2 ring-green-200 ring-offset-1' :
                   darkMode ? 'bg-gray-600' : 'bg-gray-300'
@@ -1501,7 +1501,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             {pasoWizard === 2 && (
               <div className="space-y-2">
                 {Object.entries(FACTORES_ACTIVIDAD).map(([key, info]) => (
-                  <label key={key} className={`flex items-center p-3 rounded-xl cursor-pointer transition-all ${
+                  <label key={key} className={`flex items-center p-3 rounded-xl cursor-pointer transition ${
                     perfil.nivelActividad === key
                       ? 'bg-green-50 border-2 border-green-400'
                       : darkMode ? 'bg-gray-700 border-2 border-transparent hover:bg-gray-600' : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'
@@ -1535,7 +1535,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                     const colorMap = { orange: activo ? 'bg-orange-500 text-white shadow-lg' : '', green: activo ? 'bg-green-500 text-white shadow-lg shadow-green-200' : '', blue: activo ? 'bg-blue-500 text-white shadow-lg' : '' };
                     return (
                       <button key={key} type="button" onClick={() => handleObjetivoChange(key)}
-                        className={`py-4 px-2 rounded-xl text-center transition-all cursor-pointer ${
+                        className={`py-4 px-2 rounded-xl text-center transition cursor-pointer ${
                           activo ? colorMap[color] : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                         }`}>
                         <i className={`fas ${icono} text-xl mb-2 block`}></i>
@@ -1900,7 +1900,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                             return (
                               <button key={eq.id} type="button" onClick={() => toggleEq(eq.id)}
                                 disabled={!!eq.siempre}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition ${
                                   activo
                                     ? eq.siempre
                                       ? `${darkMode ? 'bg-green-900/40 border-green-700 text-green-400' : 'bg-green-100 border-green-400 text-green-700'} cursor-default`
@@ -1935,7 +1935,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                       {key: 'sinLactosa',  label: 'Sin lactosa',   icon: '🥛'},
                       {key: 'vegetariano', label: 'Vegetariano',   icon: '🥬'},
                     ].map(({key, label, icon}) => (
-                      <label key={key} className={`flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all ${
+                      <label key={key} className={`flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition ${
                         perfil[key] ? 'bg-green-100 border-2 border-green-400 text-green-800'
                           : darkMode ? 'bg-gray-700 border-2 border-transparent text-gray-300 hover:bg-gray-600' : 'bg-gray-50 border-2 border-transparent text-gray-600 hover:bg-gray-100'
                       }`}>
@@ -1956,7 +1956,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 <div>
                   <div className={`text-xs font-semibold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ritmo de cocina</div>
                   <div className="space-y-2">
-                    <label className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${
+                    <label className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${
                       perfil.soloRapidas ? 'bg-amber-100 border-2 border-amber-400 text-amber-900'
                         : darkMode ? 'bg-gray-700 border-2 border-transparent text-gray-300 hover:bg-gray-600' : 'bg-gray-50 border-2 border-transparent text-gray-600 hover:bg-gray-100'
                     }`}>
@@ -1973,7 +1973,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                         <span className={`text-xs flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Máx:</span>
                         {[15, 20, 25, 30, 40].map(min => (
                           <button key={min} type="button" onClick={() => handleChange('maxTiempoMin', min)}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
                               (perfil.maxTiempoMin || 25) === min
                                 ? 'bg-amber-500 text-white shadow-sm'
                                 : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1981,7 +1981,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                         ))}
                       </div>
                     )}
-                    <label className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${
+                    <label className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${
                       perfil.modoSobras ? 'bg-indigo-100 border-2 border-indigo-400 text-indigo-900'
                         : darkMode ? 'bg-gray-700 border-2 border-transparent text-gray-300 hover:bg-gray-600' : 'bg-gray-50 border-2 border-transparent text-gray-600 hover:bg-gray-100'
                     }`}>
@@ -1993,7 +1993,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                       </div>
                       {perfil.modoSobras && <i className="fas fa-check text-indigo-700"></i>}
                     </label>
-                    <label className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${
+                    <label className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${
                       perfil.usaThermomix ? 'bg-indigo-50 border-2 border-indigo-300 text-indigo-900'
                         : darkMode ? 'bg-gray-700 border-2 border-transparent text-gray-300 hover:bg-gray-600' : 'bg-gray-50 border-2 border-transparent text-gray-600 hover:bg-gray-100'
                     }`}>
@@ -2013,7 +2013,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   <div className="grid grid-cols-4 gap-2">
                     {[1, 2, 3, 4].map(n => (
                       <button key={n} type="button" onClick={() => handleChange('numSemanas', n)}
-                        className={`py-3 rounded-xl font-medium text-sm transition-all ${
+                        className={`py-3 rounded-xl font-medium text-sm transition ${
                           perfil.numSemanas === n
                             ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
                             : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
@@ -2041,7 +2041,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             )}
             <button type="button" onClick={avanzar} disabled={!!btnFinalDisabled}
               style={pasoWizard > 1 ? { flex: 2 } : {}}
-              className={`${pasoWizard > 1 ? '' : 'w-full'} py-3.5 rounded-2xl font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              className={`${pasoWizard > 1 ? '' : 'w-full'} py-3.5 rounded-2xl font-semibold transition flex items-center justify-center gap-2 cursor-pointer ${
                 btnFinalDisabled
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   : pasoWizard === TOTAL_PASOS
@@ -2180,7 +2180,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           <div className={`flex rounded-xl p-1 mb-5 gap-1 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
             {[{ k: 'a', l: 'Resultados' }, { k: 'b', l: 'Fórmulas' }, { k: 'c', l: 'Evidencia' }].map(nv => (
               <button key={nv.k} type="button" onClick={() => setNivelExplicacion(nv.k)}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${nivelExplicacion === nv.k ? darkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-800 shadow-sm' : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition cursor-pointer ${nivelExplicacion === nv.k ? darkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-800 shadow-sm' : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
                 {nv.l}
               </button>
             ))}
@@ -2295,7 +2295,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           {/* ── Mi metodología (visible si hay roadmap/plan científico) ── */}
           {perfilInicial && (perfilInicial.roadmap || perfilInicial.roadmapMantenimiento || perfilInicial.roadmapVolumen || perfilInicial.fatLossMode) && (
             <button type="button" onClick={() => { setVerMetodologia(true); setNivelExplicacion('a'); }}
-              className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border transition-all cursor-pointer ${
+              className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border transition cursor-pointer ${
                 darkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' : 'bg-white border-gray-100 hover:bg-gray-50 shadow-sm'
               }`}>
               <div className="flex items-center gap-3">
@@ -2366,7 +2366,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </h2>
             <div className="space-y-2">
               {Object.entries(FACTORES_ACTIVIDAD).map(([key, info]) => (
-                <label key={key} className={`flex items-center p-3 rounded-xl cursor-pointer transition-all ${
+                <label key={key} className={`flex items-center p-3 rounded-xl cursor-pointer transition ${
                   perfil.nivelActividad === key
                     ? 'bg-green-50 border-2 border-green-400'
                     : darkMode ? 'bg-gray-700 border-2 border-transparent hover:bg-gray-600' : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'
@@ -2402,7 +2402,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 const activo = perfil.objetivo === key;
                 return (
                   <button key={key} type="button" onClick={() => handleObjetivoChange(key)}
-                    className={`p-3 rounded-xl text-center transition-all border cursor-pointer ${
+                    className={`p-3 rounded-xl text-center transition border cursor-pointer ${
                       activo ? activeClasses
                       : darkMode ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
                     }`}>
@@ -2805,7 +2805,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             <div className="flex flex-col gap-4">
               <div className="flex gap-3">
                 <button type="button" onClick={() => setUsarCaloriasManual(false)}
-                  className={`flex-1 p-3 rounded-xl text-center text-sm font-medium transition-all ${
+                  className={`flex-1 p-3 rounded-xl text-center text-sm font-medium transition ${
                     !usarCaloriasManual
                       ? 'bg-green-500 text-white shadow-lg shadow-green-200'
                       : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
@@ -2813,7 +2813,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   <i className="fas fa-calculator mr-1.5"></i>Calcular automáticamente
                 </button>
                 <button type="button" onClick={() => setUsarCaloriasManual(true)}
-                  className={`flex-1 p-3 rounded-xl text-center text-sm font-medium transition-all ${
+                  className={`flex-1 p-3 rounded-xl text-center text-sm font-medium transition ${
                     usarCaloriasManual
                       ? 'bg-green-500 text-white shadow-lg shadow-green-200'
                       : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
@@ -2881,9 +2881,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             {/* A12: role+aria-label — no usar solo color para identificar macros */}
             <div className="mt-4 h-4 rounded-full overflow-hidden flex bg-gray-200"
               role="img" aria-label={`Distribución: Proteínas ${perfil.macros.proteinas}%, Carbohidratos ${perfil.macros.carbohidratos}%, Grasas ${perfil.macros.grasas}%`}>
-              <div className="bg-blue-500 transition-all" aria-hidden="true" style={{ width: `${perfil.macros.proteinas}%` }}></div>
-              <div className="bg-amber-500 transition-all" aria-hidden="true" style={{ width: `${perfil.macros.carbohidratos}%` }}></div>
-              <div className="bg-rose-500 transition-all" aria-hidden="true" style={{ width: `${perfil.macros.grasas}%` }}></div>
+              <div className="bg-blue-500 transition" aria-hidden="true" style={{ width: `${perfil.macros.proteinas}%` }}></div>
+              <div className="bg-amber-500 transition" aria-hidden="true" style={{ width: `${perfil.macros.carbohidratos}%` }}></div>
+              <div className="bg-rose-500 transition" aria-hidden="true" style={{ width: `${perfil.macros.grasas}%` }}></div>
             </div>
             <div className="flex justify-between text-xs text-gray-400 mt-1">
               <span>Prot. {perfil.macros.proteinas}%</span>
@@ -2910,7 +2910,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 { key: "sinLactosa", label: "Sin lactosa", icon: "🥛" },
                 { key: "vegetariano", label: "Vegetariano", icon: "🥬" }
               ].map(({ key, label, icon }) => (
-                <label key={key} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all ${
+                <label key={key} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition ${
                   perfil[key] ? 'bg-green-100 border-2 border-green-400 text-green-800'
                     : darkMode ? 'bg-gray-700 border-2 border-transparent text-gray-300 hover:bg-gray-600' : 'bg-gray-50 border-2 border-transparent text-gray-600 hover:bg-gray-100'
                 }`}>
@@ -2937,7 +2937,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 <i className="fas fa-bolt text-amber-500"></i>
                 Ritmo de Cocina
               </h3>
-              <label className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${
+              <label className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${
                 perfil.soloRapidas ? 'bg-amber-100 border-2 border-amber-400 text-amber-900'
                   : darkMode ? 'bg-gray-700 border-2 border-transparent text-gray-300 hover:bg-gray-600' : 'bg-gray-50 border-2 border-transparent text-gray-600 hover:bg-gray-100'
               }`}>
@@ -2958,7 +2958,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   <div className="flex gap-2">
                     {[15, 20, 25, 30, 40].map(min => (
                       <button key={min} type="button" onClick={() => handleChange("maxTiempoMin", min)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
                           (perfil.maxTiempoMin || 25) === min
                             ? 'bg-amber-500 text-white shadow-md'
                             : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -2971,7 +2971,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               )}
 
               {/* Fase 4 - Punto 16: modo sobras */}
-              <label className={`mt-3 flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${
+              <label className={`mt-3 flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${
                 perfil.modoSobras ? 'bg-indigo-100 border-2 border-indigo-400 text-indigo-900'
                   : darkMode ? 'bg-gray-700 border-2 border-transparent text-gray-300 hover:bg-gray-600' : 'bg-gray-50 border-2 border-transparent text-gray-600 hover:bg-gray-100'
               }`}>
@@ -2986,7 +2986,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               </label>
 
               {/* Toggle Thermomix */}
-              <label className={`mt-3 flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${
+              <label className={`mt-3 flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${
                 perfil.usaThermomix ? 'bg-indigo-50 border-2 border-indigo-300 text-indigo-900'
                   : darkMode ? 'bg-gray-700 border-2 border-transparent text-gray-300 hover:bg-gray-600' : 'bg-gray-50 border-2 border-transparent text-gray-600 hover:bg-gray-100'
               }`}>
@@ -3010,7 +3010,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             <div className="flex gap-2">
               {[1, 2, 3, 4].map(n => (
                 <button key={n} type="button" onClick={() => handleChange("numSemanas", n)}
-                  className={`flex-1 py-3 rounded-xl font-medium text-sm transition-all ${
+                  className={`flex-1 py-3 rounded-xl font-medium text-sm transition ${
                     perfil.numSemanas === n
                       ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
                       : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
@@ -3034,24 +3034,24 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               </h2>
               {!usarCaloriasManual && tdeeInfo.bmr != null ? (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="bg-white/20 rounded-xl p-3 text-center backdrop-blur-sm">
+                  <div className="bg-white/15 rounded-xl p-3 text-center">
                     <div className="text-xs opacity-80">BMR</div>
                     <div className="text-xl font-bold">{tdeeInfo.bmr}</div>
                     <div className="text-xs opacity-80">kcal</div>
                   </div>
-                  <div className="bg-white/20 rounded-xl p-3 text-center backdrop-blur-sm">
+                  <div className="bg-white/15 rounded-xl p-3 text-center">
                     <div className="text-xs opacity-80">TDEE</div>
                     <div className="text-xl font-bold">{tdeeInfo.tdee}</div>
                     <div className="text-xs opacity-80">kcal</div>
                   </div>
-                  <div className="bg-white/30 rounded-xl p-3 text-center backdrop-blur-sm col-span-2 sm:col-span-2">
+                  <div className="bg-white/25 rounded-xl p-3 text-center col-span-2 sm:col-span-2">
                     <div className="text-xs opacity-80">Calorías Objetivo</div>
                     <div className="text-3xl font-extrabold font-display">{tdeeInfo.caloriasObjetivo}</div>
                     <div className="text-xs opacity-80">kcal/día</div>
                   </div>
                 </div>
               ) : (
-                <div className="bg-white/30 rounded-xl p-4 text-center backdrop-blur-sm">
+                <div className="bg-white/25 rounded-xl p-4 text-center">
                   <div className="text-xs opacity-80">Calorías Objetivo (manual)</div>
                   <div className="text-4xl font-extrabold font-display mt-1">{tdeeInfo.caloriasObjetivo}</div>
                   <div className="text-xs opacity-80 mt-1">kcal/día</div>
@@ -3083,7 +3083,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             : perfil.objetivo === 'volumen' ? !roadmapVolPreview
             : (!tdeeInfo || macroError)
           }
-            className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all ${
+            className={`w-full py-4 rounded-2xl font-semibold text-lg transition ${
               (perfil.objetivo === 'perdida' ? !!roadmapPreview
                 : perfil.objetivo === 'mantenimiento' ? !!roadmapMantPreview
                 : perfil.objetivo === 'volumen' ? !!roadmapVolPreview
@@ -3626,7 +3626,7 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
         </div>
 
         <button onClick={generar}
-          className="w-full py-3 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-lg transition-all">
+          className="w-full py-3 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-lg transition">
           <i className="fas fa-wand-magic-sparkles mr-2"></i>{t(`Generar ${cantidad} receta${cantidad !== 1 ? 's' : ''}`,`Generate ${cantidad} recipe${cantidad !== 1 ? 's' : ''}`)}
         </button>
       </div>
@@ -3658,7 +3658,9 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
             return (
               <div key={idx} className={`rounded-xl p-3 border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onRecipeClick(recetaConEscala)}>
+                  <div className="flex-1 min-w-0 cursor-pointer" role="button" tabIndex={0}
+                    onClick={() => onRecipeClick(recetaConEscala)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRecipeClick(recetaConEscala); } }}>
                     <div className="flex flex-wrap items-center gap-1 mb-1">
                       <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-purple-100 text-purple-700">
                         <i className="fas fa-wand-magic-sparkles mr-1"></i>{cocina?.display}
@@ -3936,9 +3938,11 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
               const slotPickerOpen = expandedIdx === idx;
               return (
                 <div key={idx}
-                  className={`rounded-xl border transition-all overflow-hidden ${slotPickerOpen ? 'shadow-md' : 'hover:shadow-md'} ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+                  className={`rounded-xl border transition overflow-hidden ${slotPickerOpen ? 'shadow-md' : 'hover:shadow-md'} ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
                   {/* Fila principal — clic abre modal de receta */}
-                  <div onClick={() => onRecipeClick(recetaConEscala)}
+                  <div role="button" tabIndex={0}
+                    onClick={() => onRecipeClick(recetaConEscala)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRecipeClick(recetaConEscala); } }}
                     className={`cursor-pointer p-3 ${slotPickerOpen ? '' : (darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50')}`}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
@@ -3988,7 +3992,7 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
                             {slotsHoy.map(slot => (
                               <button key={slot.tipo}
                                 onClick={(e) => { e.stopPropagation(); usarEnPlan(recetaConEscala, slot.tipo); }}
-                                className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-all cursor-pointer ${
+                                className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition cursor-pointer ${
                                   darkMode
                                     ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-amber-900/40 hover:border-amber-600 hover:text-amber-300'
                                     : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-amber-50 hover:border-amber-400 hover:text-amber-700'
@@ -4094,7 +4098,7 @@ function SlotAcciones({
           onClick={(e) => { e.stopPropagation(); onMarcarComido(!yaComido); }}
           title={yaComido ? 'Marcado como comido' : 'Marcar como comido'}
           style={{ width: 32, height: 32, minWidth: 32 }}
-          className={`flex items-center justify-center rounded-lg transition-all ${
+          className={`flex items-center justify-center rounded-lg transition ${
             yaComido
               ? 'bg-emerald-500/20 text-emerald-500'
               : darkMode ? 'text-gray-600 hover:text-emerald-400 hover:bg-gray-700' : 'text-gray-300 hover:text-emerald-500 hover:bg-emerald-50'
@@ -4114,7 +4118,7 @@ function SlotAcciones({
             }}
             aria-label="Ver alternativas anteriores"
             style={{ width: 32, height: 32, minWidth: 32 }}
-            className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+            className={`flex items-center justify-center rounded-lg transition cursor-pointer ${
               showHist
                 ? (darkMode ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600')
                 : (darkMode ? 'text-gray-500 hover:text-indigo-400 hover:bg-gray-700' : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50')
@@ -4159,7 +4163,7 @@ function SlotAcciones({
             }}
             aria-label="Usar sobra de días anteriores"
             style={{ width: 32, height: 32, minWidth: 32 }}
-            className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+            className={`flex items-center justify-center rounded-lg transition cursor-pointer ${
               showSobras
                 ? (darkMode ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-50 text-amber-600')
                 : (darkMode ? 'text-gray-500 hover:text-amber-400 hover:bg-gray-700' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50')
@@ -4205,7 +4209,7 @@ function SlotAcciones({
         disabled={!!isSwappingThis}
         aria-label={`${t('Cambiar receta de','Change recipe for')} ${tComida(tipo)}`}
         style={{ width: 32, height: 32, minWidth: 32 }}
-        className={`flex items-center justify-center rounded-lg transition-all ${
+        className={`flex items-center justify-center rounded-lg transition ${
           isSwappingThis
             ? 'text-green-500 cursor-wait'
             : darkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-400 hover:text-green-600 hover:bg-white'
@@ -4217,7 +4221,7 @@ function SlotAcciones({
         onClick={(e) => { e.stopPropagation(); if (window.confirm(`¿Vetar "${getNombreReceta(comida)}"? No volverá a aparecer en tu plan.`)) { onVetoRecipe(); } }}
         aria-label={`Vetar receta ${getNombreReceta(comida)}`}
         style={{ width: 32, height: 32, minWidth: 32 }}
-        className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+        className={`flex items-center justify-center rounded-lg transition cursor-pointer ${
           darkMode ? 'text-gray-600 hover:text-red-400 hover:bg-gray-700' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'
         }`}>
         <i className="fas fa-ban text-xs"></i>
@@ -4567,7 +4571,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
           <div className="flex gap-2">
             {Array.from({length: numSemanas}, (_, i) => i + 1).map(n => (
               <button key={n} onClick={() => setSemanaActiva(n)}
-                className={`flex-1 py-2.5 rounded-xl font-medium text-sm transition-all ${
+                className={`flex-1 py-2.5 rounded-xl font-medium text-sm transition ${
                   semanaActiva === n
                     ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
                     : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
@@ -4587,7 +4591,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
             const resumenDia = calcularResumenDiario(semanaData[dia] || {});
             return (
               <button key={dia} onClick={() => setDiaSeleccionado(dia)}
-                className={`day-tab flex-shrink-0 px-4 py-3 rounded-xl font-medium text-sm transition-all relative ${
+                className={`day-tab flex-shrink-0 px-4 py-3 rounded-xl font-medium text-sm transition relative ${
                   diaSeleccionado === dia
                     ? 'active'
                     : esHoy
@@ -4618,12 +4622,12 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
             <h3 className={`font-semibold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>{t(diaSeleccionado, {Lunes:'Monday',Martes:'Tuesday','Miércoles':'Wednesday',Jueves:'Thursday',Viernes:'Friday','Sábado':'Saturday',Domingo:'Sunday'}[diaSeleccionado] || diaSeleccionado)}</h3>
             {onRegenDay && (
               <button onClick={() => onRegenDay(diaSeleccionado, semanaActiva)} title="Regenerar 5 comidas de este día"
-                className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all cursor-pointer ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-gray-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-400 hover:text-gray-600'}`}>
+                className={`w-7 h-7 flex items-center justify-center rounded-lg transition cursor-pointer ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-gray-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-400 hover:text-gray-600'}`}>
                 <i className="fas fa-arrows-rotate text-xs"></i>
               </button>
             )}
             <button onClick={() => setShowModalExtPlan(true)} title="Agregar comida externa"
-              className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all cursor-pointer ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-emerald-400 hover:text-emerald-300' : 'bg-gray-100 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600'}`}>
+              className={`w-7 h-7 flex items-center justify-center rounded-lg transition cursor-pointer ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-emerald-400 hover:text-emerald-300' : 'bg-gray-100 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600'}`}>
               <i className="fas fa-plus text-xs"></i>
             </button>
           </div>
@@ -4751,7 +4755,9 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
               : (darkMode ? colores.bgDark + ' ' + colores.borderDark : colores.bg + ' ' + colores.border)
             }`}>
               <div className="flex items-start justify-between">
-                <div className="flex-1" onClick={() => onRecipeClick(comida)}>
+                <div className="flex-1" role="button" tabIndex={0}
+                  onClick={() => onRecipeClick(comida)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRecipeClick(comida); } }}>
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`${colores.badge} px-2 py-0.5 rounded-lg text-xs font-medium`}>
                       <i className={`fas ${iconosComida[tipo]} mr-1`}></i>{tComida(tipo)}
@@ -4911,14 +4917,14 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
       <div className="mt-6 text-center space-y-3">
         <div className="flex flex-wrap justify-center gap-2">
           <button onClick={onRegenerate}
-            className={`inline-flex items-center gap-2 px-6 py-3 border rounded-xl transition-all text-sm font-medium ${
+            className={`inline-flex items-center gap-2 px-6 py-3 border rounded-xl transition text-sm font-medium ${
               darkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
             }`}>
             <i className="fas fa-shuffle"></i>{t('Regenerar Plan','Regenerate Plan')}
           </button>
           {onCompartir && (
             <button onClick={onCompartir}
-              className={`inline-flex items-center gap-2 px-6 py-3 border rounded-xl transition-all text-sm font-medium ${
+              className={`inline-flex items-center gap-2 px-6 py-3 border rounded-xl transition text-sm font-medium ${
                 darkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}>
               <i className="fas fa-share-nodes" style={{ color: '#22C55E' }}></i>{t('Compartir','Share')}
@@ -4942,7 +4948,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                   setExportandoPDF(false);
                 }
               }}
-              className={`inline-flex items-center gap-2 px-6 py-3 border rounded-xl transition-all text-sm font-medium ${
+              className={`inline-flex items-center gap-2 px-6 py-3 border rounded-xl transition text-sm font-medium ${
                 exportandoPDF ? 'opacity-60 cursor-not-allowed' : ''
               } ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
               {exportandoPDF
@@ -4959,7 +4965,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                   const menu = e.currentTarget.nextElementSibling;
                   menu.classList.toggle('hidden');
                 }}
-                className={`inline-flex items-center gap-2 px-6 py-3 border rounded-xl transition-all text-sm font-medium ${
+                className={`inline-flex items-center gap-2 px-6 py-3 border rounded-xl transition text-sm font-medium ${
                   darkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                 }`}>
                 <i className="fas fa-calendar-plus text-indigo-500"></i>Exportar a Calendar
@@ -4992,7 +4998,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
             <div className="relative inline-block">
               <button
                 onClick={(e) => { e.currentTarget.nextElementSibling.classList.toggle('hidden'); }}
-                className={`inline-flex items-center gap-2 px-6 py-3 border rounded-xl transition-all text-sm font-medium cursor-pointer ${
+                className={`inline-flex items-center gap-2 px-6 py-3 border rounded-xl transition text-sm font-medium cursor-pointer ${
                   darkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                 }`}>
                 <i className="fas fa-table-list" style={{color:'var(--color-accent)'}}></i>Log de comidas
@@ -5405,7 +5411,7 @@ function ModalPreferenciasGeneracion({ onConfirm, onCancel, darkMode }) {
           <div className="flex flex-wrap gap-1.5">
             {cocinas.map(c => (
               <button key={c.v} onClick={() => setCocina(c.v)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
                   cocina === c.v ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}>{c.l}</button>
             ))}
@@ -5431,11 +5437,11 @@ function ModalPreferenciasGeneracion({ onConfirm, onCancel, darkMode }) {
         </div>
         <div className="flex gap-2">
           <button onClick={onCancel}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             {t('Cancelar','Cancel')}
           </button>
           <button onClick={() => onConfirm({ cocina, altaProteina, rapido })}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 transition-all">
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 transition">
             <i className="fas fa-shuffle mr-1.5"></i>{t('Regenerar','Regenerate')}
           </button>
         </div>
@@ -5510,11 +5516,11 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
           <div className="flex items-start justify-between">
             <div className="flex-1 pr-4">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <span className="bg-white/20 px-2 py-0.5 rounded-lg text-xs font-medium backdrop-blur-sm">
+                <span className="bg-white/15 px-2 py-0.5 rounded-lg text-xs font-medium">
                   {tComida(receta.tipo_comida)}
                 </span>
                 {receta._fuente === 'online' && (
-                  <span className="bg-blue-400/40 px-2 py-0.5 rounded-lg text-xs font-medium backdrop-blur-sm">
+                  <span className="bg-blue-400/30 px-2 py-0.5 rounded-lg text-xs font-medium">
                     <i className="fas fa-globe mr-1"></i>Receta de Internet
                   </span>
                 )}
@@ -5530,19 +5536,19 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
           </div>
           {/* N18 + A9: macro totals adjusted; aria-live anuncia cambios por sustitución */}
           <div className="grid grid-cols-4 gap-2 mt-4" aria-live="polite" aria-atomic="true">
-            <div className="bg-white/15 rounded-xl p-2 text-center backdrop-blur-sm">
+            <div className="bg-white/12 rounded-xl p-2 text-center">
               <div className="text-lg font-bold">{Math.round(receta.calorias_escaladas + macroAjustes.kcal)}</div>
               <div className="text-xs opacity-80">kcal{macroAjustes.kcal !== 0 && <span className="text-white/70"> *</span>}</div>
             </div>
-            <div className="bg-blue-400/30 rounded-xl p-2 text-center backdrop-blur-sm">
+            <div className="bg-blue-400/25 rounded-xl p-2 text-center">
               <div className="text-lg font-bold">{Math.round(receta.proteinas_escaladas + macroAjustes.proteinas)}</div>
               <div className="text-xs opacity-80">Prot. (g){macroAjustes.proteinas !== 0 && <span className="text-white/70"> *</span>}</div>
             </div>
-            <div className="bg-amber-400/30 rounded-xl p-2 text-center backdrop-blur-sm">
+            <div className="bg-amber-400/30 rounded-xl p-2 text-center">
               <div className="text-lg font-bold">{Math.round(receta.carbohidratos_escalados + macroAjustes.carbohidratos)}</div>
               <div className="text-xs opacity-80">Carb. (g){macroAjustes.carbohidratos !== 0 && <span className="text-white/70"> *</span>}</div>
             </div>
-            <div className="bg-rose-400/30 rounded-xl p-2 text-center backdrop-blur-sm">
+            <div className="bg-rose-400/30 rounded-xl p-2 text-center">
               <div className="text-lg font-bold">{Math.round(receta.grasas_escaladas + macroAjustes.grasas)}</div>
               <div className="text-xs opacity-80">Grasas (g){macroAjustes.grasas !== 0 && <span className="text-white/70"> *</span>}</div>
             </div>
@@ -5561,19 +5567,19 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
           {(receta.tiempo_total_min || receta.costo_clp) && (
             <div className="grid grid-cols-3 gap-2 mt-3">
               {receta.tiempo_prep_min != null && (
-                <div className="bg-white/15 rounded-lg p-2 text-center backdrop-blur-sm">
+                <div className="bg-white/15 rounded-lg p-2 text-center">
                   <div className="text-sm font-bold"><i className="fas fa-knife-kitchen mr-1 text-xs"></i>{receta.tiempo_prep_min}′</div>
                   <div className="text-[11px] opacity-80">Preparación</div>
                 </div>
               )}
               {receta.tiempo_coccion_min != null && (
-                <div className="bg-white/15 rounded-lg p-2 text-center backdrop-blur-sm">
+                <div className="bg-white/15 rounded-lg p-2 text-center">
                   <div className="text-sm font-bold"><i className="fas fa-fire mr-1 text-xs"></i>{receta.tiempo_coccion_min}′</div>
                   <div className="text-[11px] opacity-80">Cocción</div>
                 </div>
               )}
               {receta.costo_clp > 0 && (
-                <div className="bg-white/15 rounded-lg p-2 text-center backdrop-blur-sm">
+                <div className="bg-white/15 rounded-lg p-2 text-center">
                   <div className="text-sm font-bold">${(Math.ceil((receta.costo_clp || 0) * (receta.factor_escala || 1) * factor / 100) * 100).toLocaleString('es-CL')}</div>
                   <div className="text-[11px] opacity-80">CLP{factor !== 1 ? ` · ×${factor.toFixed(2)}` : ''}</div>
                 </div>
@@ -5581,7 +5587,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
             </div>
           )}
           {factor !== 1 && (
-            <div className="mt-2 p-2 bg-white/15 rounded-lg text-center text-[11px] backdrop-blur-sm">
+            <div className="mt-2 p-2 bg-white/15 rounded-lg text-center text-[11px]">
               <i className="fas fa-users mr-1"></i>
               Cantidades e ingredientes escalados para <strong>{factor.toFixed(2)} porciones</strong> · kcal/macros siguen siendo tu porción individual
             </div>
@@ -5645,7 +5651,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
                       </span>
                     </div>
                     {estaAbierto && tieneSustitutos && (
-                      <div className={`ml-3 mt-1 mb-2 p-3 rounded-lg border-l-2 border-indigo-400 min-w-0 ${darkMode ? 'bg-indigo-950/30' : 'bg-indigo-50/70'}`}>
+                      <div className={`ml-3 mt-1 mb-2 p-3 rounded-lg min-w-0 ${darkMode ? 'bg-indigo-950/40' : 'bg-indigo-50'}`}>
                         <div className="text-[11px] uppercase tracking-wide font-semibold text-indigo-500 mb-2">
                           Sustituir por ({sustitutos[0]?.categoria || 'similar'})
                         </div>
@@ -5742,13 +5748,13 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
           {tieneThermomix && (
             <div className="px-5 pt-4 flex gap-2">
               <button onClick={() => setTabActiva("normal")}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${
                   tabActiva === "normal" ? 'bg-green-500 text-white shadow-md' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}>
                 <i className="fas fa-fire-burner mr-1"></i>Cocina Normal
               </button>
               <button onClick={() => setTabActiva("thermomix")}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${
                   tabActiva === "thermomix" ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}>
                 <i className="fas fa-blender mr-1"></i>Thermomix TM6
@@ -5839,7 +5845,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
                 else alert('No se pudo abrir WhatsApp. Copia el texto manualmente.');
               }
             }}
-              className={`block w-full py-3 rounded-xl font-medium text-sm text-center no-underline transition-all ${darkMode ? 'bg-green-700 hover:bg-green-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}`}>
+              className={`block w-full py-3 rounded-xl font-medium text-sm text-center no-underline transition ${darkMode ? 'bg-green-700 hover:bg-green-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}`}>
               <i className="fab fa-whatsapp text-lg mr-2"></i>{t('Compartir por WhatsApp','Share via WhatsApp')}
             </a>
           </div>
@@ -5947,7 +5953,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
           </div>
         </div>
         <div className={`h-2.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-          <div className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500"
+          <div className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition duration-500"
             style={{ width: `${totalIngredientes > 0 ? (enDespensa / totalIngredientes) * 100 : 0}%` }}></div>
         </div>
         <div className="text-xs text-gray-400 mt-1 text-right">
@@ -6023,10 +6029,8 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
               onKeyDown={(e) => e.key === 'Enter' && agregarIngredienteManual()}
               className={`flex-1 px-3 py-2 rounded-xl border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} focus:border-green-500`}
               placeholder={t('Ej: Pan, Mantequilla, etc.', 'E.g. Bread, Butter, etc.')} />
-            <button onClick={agregarIngredienteManual}
-              className="px-4 py-2 bg-green-500 text-white rounded-xl text-sm font-medium hover:bg-green-600 transition-colors">
-              <i className="fas fa-plus"></i>
-            </button>
+            <button aria-label="Agregar" onClick={agregarIngredienteManual}
+              className="px-4 py-2 bg-green-500 text-white rounded-xl text-sm font-medium hover:bg-green-600 transition-colors"><i className="fas fa-plus"></i></button>
           </div>
         )}
         {ingredientesManual.length > 0 && (
@@ -6055,7 +6059,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
         <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
           {ingredientesFiltrados.map(ing => (
             <div key={ing.id}
-              className={`flex items-center justify-between p-4 transition-all ${
+              className={`flex items-center justify-between p-4 transition ${
                 despensa[ing.id]
                   ? (darkMode ? 'bg-green-900/20' : 'bg-green-50/50')
                   : darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
@@ -6064,7 +6068,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
               <button onClick={() => toggleDespensa(ing.id)}
                 aria-label={`${despensa[ing.id] ? 'Quitar de despensa' : 'Tengo en despensa'}: ${ing.nombre}`}
                 className="flex items-center gap-3 flex-1 cursor-pointer text-left">
-                <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+                <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center transition flex-shrink-0 ${
                   despensa[ing.id] ? 'bg-green-500 border-green-500' : darkMode ? 'border-gray-500 hover:border-green-400' : 'border-gray-300 hover:border-green-400'}`}>
                   {despensa[ing.id] && <i className="fas fa-check text-white text-xs"></i>}
                 </div>
@@ -6092,7 +6096,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
 
       <div className="mt-6">
         <button onClick={onNavigateToShopping}
-          className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl font-semibold text-lg shadow-lg shadow-amber-200 hover:shadow-xl transition-all active:scale-[0.98]">
+          className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl font-semibold text-lg shadow-lg shadow-amber-200 hover:shadow-xl transition active:scale-[0.98]">
           <i className="fas fa-shopping-cart mr-2"></i>Ver Lista de Compras ({faltantes} items)
         </button>
       </div>
@@ -6188,10 +6192,8 @@ function EsencialesRecurrentes({ darkMode }) {
               placeholder={t('Agregar item (ej: servilletas)', 'Add item (e.g. napkins)')}
               className={`flex-1 px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-200 text-gray-800'}`}
             />
-            <button onClick={agregar}
-              className="px-3 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium">
-              <i className="fas fa-plus"></i>
-            </button>
+            <button aria-label="Agregar" onClick={agregar}
+              className="px-3 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium"><i className="fas fa-plus"></i></button>
           </div>
           <div className="grid grid-cols-2 gap-2 mb-2">
             {items.map(item => (
@@ -6414,11 +6416,11 @@ function ShoppingList({ plan, darkMode }) {
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => setAgrupado(true)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${agrupado ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${agrupado ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
             <i className="fas fa-layer-group mr-1"></i>{t('Agrupado','Grouped')}
           </button>
           <button onClick={() => setAgrupado(false)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${!agrupado ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${!agrupado ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
             <i className="fas fa-list mr-1"></i>{t('Lista simple','Simple list')}
           </button>
         </div>
@@ -6481,14 +6483,14 @@ function ShoppingList({ plan, darkMode }) {
                 </div>
                 <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
                   {items.map(ing => (
-                    <div key={ing.id} className={`flex items-center justify-between px-4 py-3 transition-all ${
+                    <div key={ing.id} className={`flex items-center justify-between px-4 py-3 transition ${
                       comprados[ing.id] ? (darkMode ? 'bg-green-900/20 opacity-60' : 'bg-green-50/50 opacity-60') : (darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50')
                     }`}>
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         {/* T2: mínimo 32×32px touch target (era 20×20px) */}
                         <button onClick={(e) => toggleComprado(e, ing.id)}
                           aria-label={`${comprados[ing.id] ? 'Desmarcar' : 'Marcar como comprado'}: ${ing.nombre}`}
-                          className={`w-8 h-8 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all cursor-pointer ${
+                          className={`w-8 h-8 rounded border-2 flex items-center justify-center flex-shrink-0 transition cursor-pointer ${
                             comprados[ing.id] ? 'bg-green-500 border-green-500' : darkMode ? 'border-gray-500 hover:border-green-400' : 'border-gray-300 hover:border-green-400'
                           }`}>
                           {comprados[ing.id] && <i className="fas fa-check text-white text-xs"></i>}
@@ -6514,14 +6516,14 @@ function ShoppingList({ plan, darkMode }) {
         ) : (
           <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
             {ingredientesFaltantes.map(ing => (
-              <div key={ing.id} className={`flex items-center justify-between px-4 py-3 transition-all ${
+              <div key={ing.id} className={`flex items-center justify-between px-4 py-3 transition ${
                 comprados[ing.id] ? (darkMode ? 'bg-green-900/20 opacity-60' : 'bg-green-50/50 opacity-60') : (darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50')
               }`}>
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   {/* T2: mínimo 32×32px también en vista sin agrupar */}
                   <button onClick={(e) => toggleComprado(e, ing.id)}
                     aria-label={`${comprados[ing.id] ? 'Desmarcar' : 'Marcar como comprado'}: ${ing.nombre}`}
-                    className={`w-8 h-8 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all cursor-pointer ${
+                    className={`w-8 h-8 rounded border-2 flex items-center justify-center flex-shrink-0 transition cursor-pointer ${
                       comprados[ing.id] ? 'bg-green-500 border-green-500' : darkMode ? 'border-gray-500 hover:border-green-400' : 'border-gray-300 hover:border-green-400'
                     }`}>
                     {comprados[ing.id] && <i className="fas fa-check text-white text-xs"></i>}
@@ -6546,7 +6548,7 @@ function ShoppingList({ plan, darkMode }) {
       <EsencialesRecurrentes darkMode={darkMode} />
 
       <button onClick={copiarAlPortapapeles}
-        className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all active:scale-[0.98] ${
+        className={`w-full py-4 rounded-2xl font-semibold text-lg transition active:scale-[0.98] ${
           copiado ? 'bg-green-500 text-white shadow-lg shadow-green-200' : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-200 hover:shadow-xl'
         }`}>
         {copiado
@@ -6572,7 +6574,7 @@ function ShoppingList({ plan, darkMode }) {
                 })));
                 console.log('[Export CSV]', result);
               }}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition-all active:scale-[0.98] ${
+              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition active:scale-[0.98] ${
                 darkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}>
               <i className="fas fa-file-csv text-emerald-500"></i>{t('Descargar CSV','Download CSV')}
@@ -6593,7 +6595,7 @@ function ShoppingList({ plan, darkMode }) {
                   alert('✓ Lista copiada');
                 }
               }}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition-all active:scale-[0.98] ${
+              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition active:scale-[0.98] ${
                 darkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}>
               <i className="fas fa-cart-shopping text-blue-500"></i>Formato Jumbo/Líder
@@ -7022,7 +7024,7 @@ function BarcodeScannerModal({ darkMode, onAdd, onClose }) {
                 </button>
                 <button onClick={confirmarAgregarManual}
                   disabled={!macrosManual.kcal || parseFloat(macrosManual.kcal) <= 0}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 transition-all cursor-pointer shadow-md disabled:opacity-40 disabled:cursor-not-allowed">
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 transition cursor-pointer shadow-md disabled:opacity-40 disabled:cursor-not-allowed">
                   <i className="fas fa-plus mr-2"></i>Agregar {gramos}g
                 </button>
               </div>
@@ -7110,7 +7112,7 @@ function BarcodeScannerModal({ darkMode, onAdd, onClose }) {
                   <i className="fas fa-redo text-xs mr-1.5"></i>Otro
                 </button>
                 <button onClick={confirmarAgregar}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 transition-all cursor-pointer shadow-md">
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 transition cursor-pointer shadow-md">
                   <i className="fas fa-plus mr-2"></i>Agregar {gramos}g
                 </button>
               </div>
@@ -7585,10 +7587,8 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
                     style={{ background:'transparent', color:inputColor, caretColor:'#10b981',
                       flex:1, fontSize:'14px', outline:'none', border:'none' }} />
                   {busqueda && (
-                    <button onClick={function() { setBusqueda(''); setSugerencias([]); }}
-                      style={{ color:'#6b7280', cursor:'pointer', padding:0, background:'none', border:'none' }}>
-                      <i className="fas fa-times text-xs"></i>
-                    </button>
+                    <button aria-label="Cerrar" onClick={function() { setBusqueda(''); setSugerencias([]); }}
+                      style={{ color:'#6b7280', cursor:'pointer', padding:0, background:'none', border:'none' }}><i className="fas fa-times text-xs"></i></button>
                   )}
                 </div>
                 {sugerencias.length > 0 && (
@@ -7634,11 +7634,9 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
                               backgroundColor: darkMode ? '#374151' : '#e5e7eb', color: darkMode ? '#d1d5db' : '#374151' }}>+</button>
                         </div>
                         <span style={{ fontSize:11, fontWeight:'bold', color:'#6b7280', minWidth:52, textAlign:'right', flexShrink:0 }}>{subKcal} kcal</span>
-                        <button onClick={function() { quitarIngrediente(idx); }}
+                        <button aria-label="Cerrar" onClick={function() { quitarIngrediente(idx); }}
                           style={{ color: darkMode ? '#4b5563' : '#d1d5db', cursor:'pointer', border:'none', background:'none', padding:0, flexShrink:0 }}
-                          className="hover:text-red-500">
-                          <i className="fas fa-times text-xs"></i>
-                        </button>
+                          className="hover:text-red-500"><i className="fas fa-times text-xs"></i></button>
                       </div>
                     );
                   })}
@@ -7827,11 +7825,9 @@ function EveningRatingCard({ semanaData, diaActual, numSemanaActual, darkMode, r
             {unratedEaten.length} {t('sin calificar','unrated')}
           </span>
         </div>
-        <button onClick={handleDismiss} title={t('Omitir por hoy','Skip for today')}
+        <button aria-label="Cerrar" onClick={handleDismiss} title={t('Omitir por hoy','Skip for today')}
           className={`w-7 h-7 flex items-center justify-center rounded-full cursor-pointer border-0 transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-          style={{ background: 'none' }}>
-          <i className="fas fa-times" style={{ fontSize: 11 }}></i>
-        </button>
+          style={{ background: 'none' }}><i className="fas fa-times" style={{ fontSize: 11 }}></i></button>
       </div>
       {/* Bajada */}
       <div className={`px-4 pt-3 pb-1 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -8575,10 +8571,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               placeholder={t('Ej: 78.5','E.g. 78.5')}
               className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-semibold ${pesoError ? 'border-red-400' : ''} ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-200 text-gray-800 placeholder-gray-400'}`}
             />
-            <button onClick={guardarPeso} disabled={!pesoInput}
-              className={`px-5 py-2.5 rounded-xl font-bold transition-all ${pesoInput ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-              <i className="fas fa-check"></i>
-            </button>
+            <button aria-label="Confirmar" onClick={guardarPeso} disabled={!pesoInput}
+              className={`px-5 py-2.5 rounded-xl font-bold transition ${pesoInput ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}><i className="fas fa-check"></i></button>
           </div>
           {pesoError && <p className="text-red-500 text-xs mt-2">{pesoError}</p>}
         </div>
@@ -8640,7 +8634,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               </div>
               <div className={`w-full h-2.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700/60' : 'bg-gray-100'}`}>
                 <div
-                  className="h-full rounded-full transition-all"
+                  className="h-full rounded-full transition"
                   style={{
                     width: pctClamped + '%',
                     background: barColor,
@@ -8720,7 +8714,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               </div>
               {metaKcalDia > 0 && (
                 <div className={`w-full h-3 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                  <div className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-teal-500 to-cyan-400"
+                  <div className="h-full rounded-full transition duration-500 bg-gradient-to-r from-teal-500 to-cyan-400"
                     style={{ width: Math.min(100, consumidoHoy.calorias > 0 ? Math.round((consumidoHoy.calorias / metaKcalDia) * 100) : 0) + '%' }}>
                   </div>
                 </div>
@@ -8807,7 +8801,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               </div>
               {pctKcal > 0 && (
                 <div className={`w-full h-1.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                  <div className="h-full bg-green-500 transition-all" style={{ width: pctKcal + '%' }}></div>
+                  <div className="h-full bg-green-500 transition" style={{ width: pctKcal + '%' }}></div>
                 </div>
               )}
             </div>
@@ -8908,7 +8902,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                   {typeof window.adherencia !== 'undefined' && (
                     <button onClick={toggleAdh}
                       aria-label={yaComido ? t(`Marcar ${nombresComida[tipo]} como no comido`,`Mark ${nombresComida[tipo]} as not eaten`) : t(`Marcar ${nombresComida[tipo]} como comido`,`Mark ${nombresComida[tipo]} as eaten`)}
-                      className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                      className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition ${
                         yaComido ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700 text-gray-500 hover:bg-gray-600' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                       }`}>
                       <i className={`fas ${yaComido ? 'fa-check' : 'fa-circle'} text-xs`}></i>
@@ -8965,7 +8959,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             </div>
             <button
               onClick={() => onNavigate('plan')}
-              className="w-full py-3 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90 cursor-pointer"
+              className="w-full py-3 rounded-xl font-semibold text-sm text-white transition hover:opacity-90 cursor-pointer"
               style={{ background: 'linear-gradient(135deg,#22c55e,#10b981)' }}>
               <i className="fas fa-plus mr-2"></i>{t('Crear mi plan ahora','Create my plan now')}
             </button>
@@ -9064,7 +9058,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                             setRefresh(function(r) { return r + 1; });
                           }}
                           aria-label={t('Agregar ' + food.nombre, 'Add ' + food.nombre)}
-                          className={`flex-shrink-0 h-9 px-3 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer active:scale-95 ${darkMode ? 'bg-teal-900/40 text-teal-300 hover:bg-teal-800/60 hover:text-teal-200' : 'bg-teal-50 text-teal-700 hover:bg-teal-100'}`}>
+                          className={`flex-shrink-0 h-9 px-3 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition cursor-pointer active:scale-95 ${darkMode ? 'bg-teal-900/40 text-teal-300 hover:bg-teal-800/60 hover:text-teal-200' : 'bg-teal-50 text-teal-700 hover:bg-teal-100'}`}>
                           <i className="fas fa-plus text-[10px]"></i>{t('Agregar','Add')}
                         </button>
                       </div>
@@ -9132,7 +9126,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                       }}
                       title={t('Marcar como comido','Mark as eaten')}
                       aria-label={t('Marcar como comido','Mark as eaten')}
-                      className={`flex-shrink-0 h-9 px-3 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer active:scale-95 ${darkMode ? 'bg-green-900/40 text-green-300 hover:bg-green-800/60 hover:text-green-200' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}>
+                      className={`flex-shrink-0 h-9 px-3 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition cursor-pointer active:scale-95 ${darkMode ? 'bg-green-900/40 text-green-300 hover:bg-green-800/60 hover:text-green-200' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}>
                       <i className="fas fa-check text-[10px]"></i>{t('Comido','Eaten')}
                     </button>
                     {/* Eliminar */}
@@ -9143,7 +9137,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                         setRefresh(function(r) { return r + 1; });
                       }}
                       aria-label={t('Eliminar','Remove')}
-                      className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer active:scale-95 ${darkMode ? 'text-gray-500 hover:text-red-400 hover:bg-gray-700/60' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'}`}>
+                      className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer active:scale-95 ${darkMode ? 'text-gray-500 hover:text-red-400 hover:bg-gray-700/60' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'}`}>
                       <i className="fas fa-trash text-xs"></i>
                     </button>
                   </div>
@@ -9191,7 +9185,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                         setRefresh(function(r) { return r + 1; });
                       }}
                       aria-label={t('Eliminar comida adicional','Remove extra meal')}
-                      className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer active:scale-95 ${darkMode ? 'text-gray-500 hover:text-red-400 hover:bg-gray-700/60' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'}`}>
+                      className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer active:scale-95 ${darkMode ? 'text-gray-500 hover:text-red-400 hover:bg-gray-700/60' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'}`}>
                       <i className="fas fa-trash text-xs"></i>
                     </button>
                   </div>
@@ -9503,7 +9497,7 @@ function NutricionLogView({ perfil, darkMode }) {
         <div className={`flex flex-1 rounded-xl p-1 gap-1 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
           {[{d:7,l:t('7 días','7 days')},{d:14,l:t('2 semanas','2 weeks')},{d:30,l:t('30 días','30 days')}].map(opt => (
             <button key={opt.d} onClick={() => setDias(opt.d)}
-              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition cursor-pointer ${
                 dias === opt.d
                   ? darkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-800 shadow-sm'
                   : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
@@ -9521,7 +9515,7 @@ function NutricionLogView({ perfil, darkMode }) {
             }
           }}
           title="Exportar log como CSV"
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all flex-shrink-0 ${darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition flex-shrink-0 ${darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
           <i className="fas fa-download text-xs"></i>
           CSV
         </button>
@@ -9559,7 +9553,7 @@ function NutricionLogView({ perfil, darkMode }) {
         <div className={`flex items-center gap-2 pt-2.5 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
           <span className={`text-[11px] flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('Adherencia período', 'Period adherence')}</span>
           <div className="flex-1 h-2 rounded-full overflow-hidden" style={{background: darkMode ? '#374151' : '#e5e7eb'}}>
-            <div className="h-full rounded-full transition-all duration-700" style={{width: datos.avgAdher + '%', backgroundColor: 'var(--color-accent)'}}></div>
+            <div className="h-full rounded-full transition duration-700" style={{width: datos.avgAdher + '%', backgroundColor: 'var(--color-accent)'}}></div>
           </div>
           <span className="font-display text-sm font-bold flex-shrink-0" style={{color: 'var(--color-accent)'}}>{datos.avgAdher}%</span>
         </div>
@@ -9618,7 +9612,7 @@ function NutricionLogView({ perfil, darkMode }) {
               <div key={d.fecha} className="flex items-center gap-2">
                 <span className={`text-[11px] w-12 flex-shrink-0 tabular-nums ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{d.label} {d.dia}</span>
                 <div className="flex-1 h-4 rounded-full overflow-hidden" style={{background: darkMode ? '#374151' : '#f3f4f6'}}>
-                  <div className="h-full rounded-full transition-all duration-500" style={{width: pct + '%', backgroundColor: barColor}}></div>
+                  <div className="h-full rounded-full transition duration-500" style={{width: pct + '%', backgroundColor: barColor}}></div>
                 </div>
                 <span className={`font-display text-[11px] font-semibold w-20 text-right flex-shrink-0 tabular-nums ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                   {d.kcal.toLocaleString('es-CL')} kcal
@@ -9684,7 +9678,7 @@ function FitnessTab({ perfil, darkMode }) {
       <div className={`flex gap-1.5 mb-4 p-1 rounded-xl overflow-x-auto ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
         {subs.map(s => (
           <button key={s.k} onClick={() => cambiarSub(s.k)}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition whitespace-nowrap ${
               subVista === s.k
                 ? 'nav-pill-active'
                 : darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-white'
@@ -9720,7 +9714,7 @@ function CocinarTab({ darkMode, onRecipeClick, plan, factorComensales }) {
       <div className={`grid ${cols} gap-2 mb-4`}>
         {subs.map(s => (
           <button key={s.k} onClick={() => setSubVista(s.k)}
-            className={`py-2.5 px-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${
+            className={`py-2.5 px-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition ${
               subVista === s.k
                 ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
                 : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
@@ -9891,7 +9885,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
             </div>
           </div>
           <div className={`w-full h-3 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-            <div className="h-full transition-all"
+            <div className="h-full transition"
               style={{ width: progreso.pctPeso + '%', backgroundImage: 'linear-gradient(to right, #f97316, #ef4444)' }}></div>
           </div>
           <div className="flex justify-between text-xs mt-1">
@@ -9910,7 +9904,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
             {t('Registra tu primer peso para ver tu avance real contra el plan.','Log your first weight to see your real progress against the plan.')}
           </p>
           <button onClick={onGoToRegistros}
-            className="w-full py-2 rounded-lg text-xs font-semibold bg-orange-500 text-white hover:bg-orange-600 active:scale-[0.98] transition-all">
+            className="w-full py-2 rounded-lg text-xs font-semibold bg-orange-500 text-white hover:bg-orange-600 active:scale-[0.98] transition">
             <i className="fas fa-plus mr-1.5"></i>{t('Registrar peso ahora','Log weight now')}
           </button>
         </div>
@@ -9930,7 +9924,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
             return (
               <div key={idx} className={`px-5 py-3 transition-colors ${
                 esActiva
-                  ? darkMode ? 'bg-orange-900/30 border-l-4 border-orange-500' : 'bg-orange-50 border-l-4 border-orange-500'
+                  ? darkMode ? 'bg-orange-900/40' : 'bg-orange-100/80'
                   : esCompletada
                     ? darkMode ? 'opacity-50' : 'opacity-40'
                     : esDietBreak
@@ -10172,10 +10166,8 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
               onKeyDown={e => { if (e.key === 'Enter') registrarPeso(); }}
               className={`flex-1 px-4 py-3 rounded-xl border text-lg font-semibold ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
               placeholder={t('Ej: 82.3', 'E.g. 82.3')} />
-            <button onClick={registrarPeso} disabled={!pesoInput}
-              className={`px-5 py-3 rounded-xl font-semibold ${pesoInput ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-              <i className="fas fa-check"></i>
-            </button>
+            <button aria-label="Confirmar" onClick={registrarPeso} disabled={!pesoInput}
+              className={`px-5 py-3 rounded-xl font-semibold ${pesoInput ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}><i className="fas fa-check"></i></button>
           </div>
         )}
       </div>
@@ -10460,10 +10452,8 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
                 <i className="fas fa-forward mr-1"></i>{t('Paso', 'Step')} {est.pasoActual + 1}
               </button>
             )}
-            <button onClick={cancelar}
-              className={`px-3 py-2 rounded-lg text-sm ${darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-              <i className="fas fa-times"></i>
-            </button>
+            <button aria-label="Cerrar" onClick={cancelar}
+              className={`px-3 py-2 rounded-lg text-sm ${darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}><i className="fas fa-times"></i></button>
           </div>
         </div>
       )}
@@ -10649,7 +10639,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
                 <div className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{impacto.impactoSintesisProteica}</div>
               </div>
             </div>
-            <div className={`text-sm border-l-2 pl-3 ${darkMode ? 'text-gray-300 border-gray-600' : 'text-gray-600 border-gray-300'}`}>
+            <div className={`text-sm rounded-lg p-3 ${darkMode ? 'text-gray-300 bg-gray-800/60' : 'text-gray-700 bg-gray-50'}`}>
               {impacto.estrategia}
             </div>
           </div>
@@ -10802,7 +10792,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
         {target > 0 && (
           <>
             <div className={`w-full h-3 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-              <div className="h-full transition-all"
+              <div className="h-full transition"
                 style={{
                   width: pct + '%',
                   backgroundImage: pct >= 100
@@ -10952,7 +10942,7 @@ function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
                   key={eq.id}
                   onClick={() => toggle(eq.id)}
                   disabled={eq.siempre}
-                  className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-all border ${
+                  className={`px-3 py-1.5 rounded-full text-sm font-semibold transition border ${
                     activo
                       ? eq.siempre
                         ? 'bg-green-500 text-white border-green-500 opacity-70 cursor-default'
@@ -11022,7 +11012,7 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
           )}
         </div>
         <button onClick={() => onToggle(i)}
-          className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all ${
+          className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${
             e.done
               ? 'bg-green-500 text-white shadow-md'
               : darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
@@ -11449,7 +11439,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             </div>
           </div>
           <div className={`w-full h-2 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-            <div className="h-full transition-all"
+            <div className="h-full transition"
               style={{
                 width: pct + '%',
                 backgroundImage: pct === 100
@@ -11722,7 +11712,7 @@ function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange, units, o
                     { code: 'en', flag: '🇺🇸', label: 'English' }
                   ].map(({ code, flag, label }) => (
                     <button key={code} onClick={() => { if (onLangChange) onLangChange(code); }}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-sm font-medium transition cursor-pointer ${
                         (lang || 'es') === code
                           ? 'bg-green-500 text-white shadow-sm'
                           : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
@@ -11744,7 +11734,7 @@ function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange, units, o
                     { code: 'imperial', icon: 'fa-ruler',        label: t('Imperiales','Imperial'), sub: 'lb · in · °F' }
                   ].map(({ code, icon, label, sub }) => (
                     <button key={code} onClick={() => { if (onUnitsChange) onUnitsChange(code); }}
-                      className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 px-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                      className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 px-3 rounded-xl text-sm font-medium transition cursor-pointer ${
                         (units || 'metric') === code
                           ? 'bg-green-500 text-white shadow-sm'
                           : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
@@ -11808,7 +11798,7 @@ function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange, units, o
                 </div>
               </div>
               <button onClick={handleChangePassword} disabled={loading}
-                className={`w-full py-3 rounded-xl font-semibold text-sm text-white transition-all ${loading ? 'bg-green-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 active:scale-[0.98]'}`}>
+                className={`w-full py-3 rounded-xl font-semibold text-sm text-white transition ${loading ? 'bg-green-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 active:scale-[0.98]'}`}>
                 {loading
                   ? <span className="flex items-center justify-center gap-2"><i className="fas fa-circle-notch fa-spin"></i>{t('Guardando…','Saving…')}</span>
                   : t('Guardar contraseña','Save password')}
@@ -11839,7 +11829,7 @@ function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange, units, o
               </div>
             )}
             <button onClick={handleDeleteAccount} disabled={loading}
-              className={`w-full py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.98] ${loading ? 'bg-red-300 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}>
+              className={`w-full py-3 rounded-xl font-semibold text-sm text-white transition active:scale-[0.98] ${loading ? 'bg-red-300 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}>
               {loading
                 ? <span className="flex items-center justify-center gap-2"><i className="fas fa-circle-notch fa-spin"></i>{t('Eliminando…','Deleting…')}</span>
                 : t('Sí, eliminar mi cuenta','Yes, delete my account')}
@@ -13358,7 +13348,17 @@ function App() {
     try {
       // 'calibrate_dark_mode' no empieza con 'nutriplan_' → el proxy de cloud-storage no lo toca
       // → se lee antes de que Firebase autentique, sin problema de scoping por userId
-      return localStorage.getItem('calibrate_dark_mode') === 'true';
+      const stored = localStorage.getItem('calibrate_dark_mode');
+      if (stored !== null) {
+        // Preferencia explícita — marcar para que el CSS no aplique prefers-color-scheme
+        try { document.documentElement.classList.add('theme-set'); } catch(e) {}
+        return stored === 'true';
+      }
+      // Sin preferencia: respetar prefers-color-scheme del SO
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return true;
+      }
+      return false;
     } catch(e) { return false; }
   });
   const [cargando, setCargando] = React.useState(false);
@@ -13462,6 +13462,8 @@ function App() {
     setDarkMode(prev => {
       const next = !prev;
       try { localStorage.setItem('calibrate_dark_mode', String(next)); } catch(e) {}
+      // Marcar que la preferencia es explícita → desactivar prefers-color-scheme auto
+      try { document.documentElement.classList.add('theme-set'); } catch(e) {}
       return next;
     });
   };
@@ -13989,7 +13991,7 @@ function App() {
               { id: "tienda",   label: t("Compras","Shopping"),      short: t("Compras","Shopping"),  icon: "fa-cart-shopping" }
             ].map(tab => (
               <button key={tab.id} onClick={() => navegarA(tab.id)}
-                className={`nav-pill flex-shrink-0 sm:flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                className={`nav-pill flex-shrink-0 sm:flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition ${
                   pantalla === tab.id || (tab.id === 'tienda' && (pantalla === 'despensa' || pantalla === 'compras'))
                     ? 'nav-pill-active'
                     : darkMode
@@ -14050,7 +14052,7 @@ function App() {
               <div className={`flex gap-2 mb-4 p-1 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
                 <button
                   onClick={() => navegarA('despensa')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition ${
                     tiendaSub === 'despensa'
                       ? 'nav-pill-active'
                       : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
@@ -14060,7 +14062,7 @@ function App() {
                 </button>
                 <button
                   onClick={() => navegarA('compras')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition ${
                     tiendaSub === 'compras'
                       ? 'nav-pill-active'
                       : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'

@@ -47,6 +47,35 @@ html.dark body {
     color: #E8E0D4;
 }
 
+/* Auto-detect dark mode si el usuario nunca ha tocado el toggle.
+   El JS marca html.theme-set cuando hay preferencia explícita; sin esa marca,
+   respetamos prefers-color-scheme del SO. */
+@media (prefers-color-scheme: dark) {
+    html:not(.theme-set):not(.dark) body {
+        background: #1A1816;
+        color: #E8E0D4;
+    }
+}
+
+/* Focus visible custom (a11y): contraste alto en ambos modos.
+   Solo aparece cuando el usuario navega por teclado, no en clicks. */
+:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+html.dark :focus-visible {
+    outline-color: #E8C77A; /* mostaza más clara en dark */
+    outline-offset: 2px;
+}
+button:focus-visible, [role="button"]:focus-visible, a:focus-visible {
+    outline-width: 3px;
+}
+/* Inputs: el outline ya viene del focus normal, evitamos doble */
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+    outline-width: 2px;
+}
+
 /* Scrollbar personalizado */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
