@@ -19,18 +19,50 @@
     --color-success-light:  #D0E4D2;   /* fondo de éxito */
     --color-surface:        #FFFFFF;   /* cards, modales, sobre fondo cream */
     --color-border:         #E0D9CC;   /* bordes de cards, separadores */
+
+    /* Premium agency-tier foundation tokens */
+    --radius-premium-xl:    1.75rem;
+    --radius-premium-lg:    1.4rem;
+    --radius-premium-md:    1.125rem;
+    --radius-premium-sm:    0.75rem;
+    --shadow-soft-xl:       0 28px 50px -22px rgba(120, 53, 15, 0.16), 0 8px 16px -10px rgba(120, 53, 15, 0.08);
+    --shadow-soft-lg:       0 18px 32px -16px rgba(120, 53, 15, 0.12), 0 4px 8px -4px rgba(120, 53, 15, 0.05);
+    --shadow-soft-md:       0 8px 16px -8px rgba(120, 53, 15, 0.08), 0 2px 4px rgba(120, 53, 15, 0.03);
+    --shadow-soft-sm:       0 2px 6px -2px rgba(120, 53, 15, 0.05), 0 1px 2px rgba(120, 53, 15, 0.03);
+    --inset-highlight:      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    --easing-premium:       cubic-bezier(0.32, 0.72, 0, 1);
+    --easing-out-quart:     cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+html.dark {
+    --shadow-soft-xl:       0 30px 60px -25px rgba(0, 0, 0, 0.55), 0 10px 20px -8px rgba(0, 0, 0, 0.3);
+    --shadow-soft-lg:       0 18px 36px -18px rgba(0, 0, 0, 0.5), 0 4px 10px -4px rgba(0, 0, 0, 0.2);
+    --shadow-soft-md:       0 8px 18px -8px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.15);
+    --shadow-soft-sm:       0 2px 6px -2px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.12);
+    --inset-highlight:      inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    /* Plus Jakarta Sans (premium Grotesk) reemplaza a Inter como font primaria */
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     background: var(--color-base);
     color: var(--color-ink);
     min-height: 100vh;
     line-height: 1.6;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.3s var(--easing-premium), color 0.3s var(--easing-premium);
+    letter-spacing: -0.005em;
 }
+
+/* Headings: tracking más tight para sensación premium */
+h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.02em;
+}
+h1, h2 { letter-spacing: -0.03em; }
+
+/* Tabular nums globalmente para números — alineación correcta de dígitos */
+.font-display, [data-num], code, pre, kbd { font-variant-numeric: tabular-nums; }
 
 /* font-display: JetBrains Mono para métricas y números de tracking
    (calorías, macros, peso, TDEE, KPIs de dashboard)
@@ -74,12 +106,58 @@ html.dark body {
 .bg-success-light    { background-color: var(--color-success-light); }
 .bg-alert-light      { background-color: var(--color-alert-light); }
 .border-default      { border-color: var(--color-border); }
-/* Card surfaces (combinaciones bg + border que se repiten 100+ veces) */
-.surface-card        { background-color: var(--color-surface); border: 1px solid var(--color-border); }
-.surface-card-shadow { background-color: var(--color-surface); border: 1px solid var(--color-border); box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
-.surface-subtle      { background-color: #FAF6EE; }   /* cream tint, para fondos secundarios */
-.surface-secondary   { background-color: #EDE7DA; }   /* cream más oscuro */
-.text-info           { color: #2563EB; }              /* azul accent (info) */
+/* Card surfaces — premium agency-tier:
+   border-less, soft diffused shadow, inset highlight, premium radius */
+.surface-card {
+    background: var(--color-surface);
+    border-radius: var(--radius-premium-md);
+    box-shadow: var(--inset-highlight), var(--shadow-soft-sm);
+    border: 0;
+}
+.surface-card-shadow {
+    background: var(--color-surface);
+    border-radius: var(--radius-premium-md);
+    box-shadow: var(--inset-highlight), var(--shadow-soft-md);
+    border: 0;
+}
+.surface-subtle      { background-color: #FAF6EE; }
+.surface-secondary   { background-color: #EDE7DA; }
+.text-info           { color: #2563EB; }
+/* Premium reusable: shell que enmarca cards con efecto bezel */
+.premium-shell {
+    border-radius: var(--radius-premium-xl);
+    padding: 0.5rem;
+    background: linear-gradient(145deg, rgba(245, 240, 232, 0.55), rgba(255, 255, 255, 0.85));
+    box-shadow: var(--inset-highlight), inset 0 0 0 1px rgba(120, 53, 15, 0.04), var(--shadow-soft-lg);
+}
+html.dark .premium-shell {
+    background: linear-gradient(145deg, rgba(60, 55, 48, 0.5), rgba(40, 35, 30, 0.4));
+    box-shadow: var(--inset-highlight), inset 0 0 0 1px rgba(255, 255, 255, 0.04), var(--shadow-soft-lg);
+}
+.premium-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--color-accent-dark);
+    width: fit-content;
+}
+html.dark .premium-eyebrow { color: #E8C77A; }
+.premium-num-display {
+    font-weight: 800;
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+    font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+.premium-num-mini {
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
 
 html.dark .text-ink            { color: #E8E0D4; }
 html.dark .text-ink-muted      { color: #B8AB9C; }
@@ -964,3 +1042,43 @@ textarea {
 .overflow-y-scroll {
     -webkit-overflow-scrolling: touch;
 }
+
+/* ─── Premium overrides: shadows hard de Tailwind reemplazadas por soft diffused ─── */
+/* Estas clases ya están en tailwind-compiled.css con sombras hard. Override con specificity. */
+.shadow-sm  { box-shadow: var(--inset-highlight), var(--shadow-soft-sm) !important; }
+.shadow-md  { box-shadow: var(--inset-highlight), var(--shadow-soft-md) !important; }
+.shadow-lg  { box-shadow: var(--inset-highlight), var(--shadow-soft-lg) !important; }
+.shadow-xl  { box-shadow: var(--inset-highlight), var(--shadow-soft-xl) !important; }
+.shadow-2xl { box-shadow: var(--inset-highlight), var(--shadow-soft-xl) !important; }
+
+/* Premium: rounded-xl/2xl reciben radius más generoso */
+.rounded-xl  { border-radius: var(--radius-premium-md) !important; }
+.rounded-2xl { border-radius: var(--radius-premium-lg) !important; }
+
+/* Buttons con magnetic hover físico */
+button, [role="button"], a[href] {
+    transition: transform 0.4s var(--easing-premium), background-color 0.25s var(--easing-out-quart), box-shadow 0.4s var(--easing-premium), color 0.25s var(--easing-out-quart) !important;
+}
+button:active, [role="button"]:active {
+    transform: scale(0.98);
+}
+
+/* Cards interactivas con lift suave en hover (solo en pointer fine, no en touch) */
+@media (pointer: fine) {
+    .surface-card-shadow:hover, .meal-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--inset-highlight), var(--shadow-soft-lg) !important;
+    }
+}
+
+/* Scroll entry: elementos animan al aparecer */
+@keyframes premiumFadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+    animation: premiumFadeUp 0.6s var(--easing-premium) both !important;
+}
+
+/* Override Tailwind .font-sans para usar Plus Jakarta Sans (no DM Sans) */
+.font-sans { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important; }
