@@ -9960,9 +9960,19 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
                     )}
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className={`text-lg font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{f.calorias}</div>
-                    <div className={`text-[11px] uppercase ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>kcal · {f.targetPasos.toLocaleString()} {t('pasos','steps')}</div>
-                    <div className={`text-[11px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{f.pesoInicio}→{f.pesoFin} kg</div>
+                    {(() => {
+                      // Aplicar ajustesManuales (fuente de verdad para kcal/pasos del plan)
+                      const _ov = roadmap.ajustesManuales && roadmap.ajustesManuales[f.numero];
+                      const _kcal = (_ov && _ov.calorias != null) ? _ov.calorias : f.calorias;
+                      const _pasos = (_ov && _ov.targetPasos != null) ? _ov.targetPasos : f.targetPasos;
+                      return (
+                        <>
+                          <div className={`text-lg font-extrabold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{_kcal}</div>
+                          <div className={`text-[11px] uppercase ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>kcal · {_pasos.toLocaleString()} {t('pasos','steps')}</div>
+                          <div className={`text-[11px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{f.pesoInicio}→{f.pesoFin} kg</div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -11199,8 +11209,42 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   const gridCols = tipos.length <= 4 ? tipos.length : 3; // 5-6 días → 2 filas de 3
   const diaSemana = t('Dom,Lun,Mar,Mié,Jue,Vie,Sáb', 'Sun,Mon,Tue,Wed,Thu,Fri,Sat').split(',')[new Date(hoy + 'T12:00:00').getDay()];
 
+  // ── Prescripción de la fase actual (fat-loss roadmap con .entrenamiento) ──
+  // Conecta el target del roadmap con la vista de entrenamiento concreta.
+  const _faseEnt = (() => {
+    const _rm = perfil && perfil.roadmap;
+    if (!_rm || !window.NP_Roadmap || !window.NP_Roadmap.faseActual) return null;
+    const _fa = window.NP_Roadmap.faseActual(_rm);
+    return _fa && _fa.entrenamiento ? { ent: _fa.entrenamiento, nombre: _fa.nombre } : null;
+  })();
+
   return (
     <div className="space-y-4">
+      {/* Prescripción de la fase actual (basada en evidencia) */}
+      {_faseEnt && (
+        <div className={`rounded-xl p-4 ${darkMode ? 'bg-blue-900/20 border border-blue-800/40' : 'bg-blue-50/70 border border-blue-100'}`}>
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-2">
+              <i className={`fas fa-bullseye ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}></i>
+              <span className={`text-xs font-bold uppercase tracking-wide ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>{t('Prescripción · ','Prescription · ')}{_faseEnt.nombre}</span>
+            </div>
+            <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${darkMode ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>{_faseEnt.ent.modalidad}</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { l: t('Volumen','Volume'), v: _faseEnt.ent.volumenSets.split(' ').slice(0,2).join(' ') },
+              { l: 'RPE', v: _faseEnt.ent.rpeObjetivo.split(' ')[0] },
+              { l: t('Intensidad','Intensity'), v: _faseEnt.ent.intensidadPct1RM.split(' ')[0] + ' 1RM' },
+              { l: 'Cardio', v: _faseEnt.ent.cardioMinSemana + ' min/' + t('sem','wk') }
+            ].map(x => (
+              <div key={x.l} className={`rounded-lg px-2.5 py-1.5 ${darkMode ? 'bg-gray-800/50' : 'bg-white/70'}`}>
+                <div className={`text-[10px] uppercase ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{x.l}</div>
+                <div className={`text-xs font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{x.v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {/* Resumen semana */}
       <div className="grid grid-cols-3 gap-2">
         <div className={`rounded-xl p-3 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'}`}>
