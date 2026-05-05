@@ -12405,7 +12405,15 @@ function ChatPanel({ darkMode }) {
       var planError = null;
       if (debeRegenerar && typeof generarPlanSemanal === 'function') {
         try {
+          // Forzar _kcalManualMode antes de regenerar — garantiza que el plan
+          // se genere con kcal fijos por día (sin multiplicador 1.1/0.9 por entreno).
+          // Cualquier cambio del agente debe respetar el target uniforme.
+          perfilNuevo._kcalManualMode = true;
+          guardarPerfil(perfilNuevo);
           var kcalPlan = perfilNuevo.caloriasObjetivo || perfilNuevo.caloriasManual || 2000;
+          console.log('[CalibrateChat] Regenerando plan: kcal=' + kcalPlan
+            + ' manualMode=' + perfilNuevo._kcalManualMode
+            + ' multTest=' + (typeof _multiplicadorDia === 'function' ? _multiplicadorDia('Lunes', perfilNuevo) : '?'));
           var nuevoPlan = generarPlanSemanal(perfilNuevo, kcalPlan);
           if (nuevoPlan) {
             guardarPlanSemanal(nuevoPlan);
@@ -12442,7 +12450,11 @@ function ChatPanel({ darkMode }) {
       if (!perfilP) return { ok: false, error: 'Sin perfil cargado' };
       if (typeof generarPlanSemanal !== 'function') return { ok: false, error: 'Función generarPlanSemanal no disponible' };
       try {
+        // Mismo principio que aplicar_cambios_perfil: kcal fijos por día.
+        perfilP._kcalManualMode = true;
+        guardarPerfil(perfilP);
         var kcalP = perfilP.caloriasObjetivo || perfilP.caloriasManual || 2000;
+        console.log('[CalibrateChat] Regenerar simple: kcal=' + kcalP + ' manualMode=' + perfilP._kcalManualMode);
         var planN = generarPlanSemanal(perfilP, kcalP);
         if (planN) {
           guardarPlanSemanal(planN);
