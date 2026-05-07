@@ -5,11 +5,24 @@
    ============================================ */
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onSchedule }         = require('firebase-functions/v2/scheduler');
 const { defineSecret }       = require('firebase-functions/params');
 const https                  = require('https');
+const admin                  = require('firebase-admin');
+const webpush                = require('web-push');
 
-const ANTHROPIC_KEY = defineSecret('ANTHROPIC_API_KEY');
-const GROQ_KEY      = defineSecret('GROQ_API_KEY');
+const ANTHROPIC_KEY     = defineSecret('ANTHROPIC_API_KEY');
+const GROQ_KEY          = defineSecret('GROQ_API_KEY');
+const VAPID_PRIVATE_KEY = defineSecret('VAPID_PRIVATE_KEY');
+
+// Public VAPID key — embedded in client also (safe to expose)
+const VAPID_PUBLIC_KEY = 'BHaa4Gkl2iQ_qrIFze1YaKqkqy2DGdH2Ae4wivJGvR3kgn8ng3qbK_AS9Mu0o1uxzmFDIZIw7QJvTIK_iCdzeGU';
+const VAPID_SUBJECT    = 'mailto:crespo.camilo@gmail.com';
+
+// Init Firebase Admin (idempotente)
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
 // ── Herramientas ────────────────────────────────────────────────────────────
 const TOOLS = [
@@ -544,5 +557,245 @@ exports.calibrateTranscribe = onCall(
       console.error('[calibrateTranscribe] ERROR:', err.message);
       throw new HttpsError('internal', err.message || String(err));
     }
+  }
+);
+
+// ============================================================================
+// PUSH NOTIFICATIONS — VAPID-based web push
+// Schema: users/{uid}/pushSubscriptions/{subId} { endpoint, keys, userAgent, createdAt }
+// ============================================================================
+
+function _setupWebPush() {
+  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY.value());
+}
+
+// Hash simple para usar como subId estable basado en endpoint
+function _hashEndpoint(endpoint) {
+  let h = 0;
+  for (let i = 0; i < endpoint.length; i++) {
+    h = ((h << 5) - h + endpoint.charCodeAt(i)) | 0;
+  }
+  return 'sub_' + Math.abs(h).toString(36);
+}
+
+// ── pushSubscribe: cliente envía la subscripción para almacenar en Firestore ──
+exports.pushSubscribe = onCall(
+  {
+    region: 'us-central1',
+    cors: ['https://camilotorcido.github.io', 'http://localhost:5000', 'http://localhost:3000'],
+    invoker: 'public'
+  },
+  async (request) => {
+    if (!request.auth || !request.auth.uid) {
+      throw new HttpsError('unauthenticated', 'Requiere autenticación');
+    }
+    const uid = request.auth.uid;
+    const sub = request.data && request.data.subscription;
+    if (!sub || !sub.endpoint) {
+      throw new HttpsError('invalid-argument', 'subscription.endpoint requerido');
+    }
+    const subId = _hashEndpoint(sub.endpoint);
+    try {
+      await admin.firestore()
+        .collection('users').doc(uid)
+        .collection('pushSubscriptions').doc(subId)
+        .set({
+          endpoint:  sub.endpoint,
+          keys:      sub.keys || {},
+          userAgent: request.data.userAgent || null,
+          tz:        request.data.tz || 'America/Santiago',
+          createdAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      console.log('[pushSubscribe] uid:', uid, 'subId:', subId);
+      return { ok: true, subId, vapidPublicKey: VAPID_PUBLIC_KEY };
+    } catch (err) {
+      console.error('[pushSubscribe] ERROR:', err.message);
+      throw new HttpsError('internal', err.message);
+    }
+  }
+);
+
+// ── pushUnsubscribe ──
+exports.pushUnsubscribe = onCall(
+  {
+    region: 'us-central1',
+    cors: ['https://camilotorcido.github.io', 'http://localhost:5000', 'http://localhost:3000'],
+    invoker: 'public'
+  },
+  async (request) => {
+    if (!request.auth || !request.auth.uid) {
+      throw new HttpsError('unauthenticated', 'Requiere autenticación');
+    }
+    const uid = request.auth.uid;
+    const endpoint = request.data && request.data.endpoint;
+    if (!endpoint) throw new HttpsError('invalid-argument', 'endpoint requerido');
+    const subId = _hashEndpoint(endpoint);
+    try {
+      await admin.firestore()
+        .collection('users').doc(uid)
+        .collection('pushSubscriptions').doc(subId)
+        .delete();
+      return { ok: true };
+    } catch (err) {
+      throw new HttpsError('internal', err.message);
+    }
+  }
+);
+
+// ── Helper: leer un key del cloud-storage de un usuario ──
+async function _readUserData(uid, key) {
+  try {
+    const snap = await admin.firestore()
+      .collection('users').doc(uid)
+      .collection('data').doc(key)
+      .get();
+    if (!snap.exists) return null;
+    const v = snap.data().v;
+    if (typeof v === 'string') {
+      try { return JSON.parse(v); } catch (_) { return v; }
+    }
+    return v;
+  } catch (e) {
+    return null;
+  }
+}
+
+// ── Helper: enviar push a todas las subs de un usuario, limpiando endpoints stale ──
+async function _sendPushToUser(uid, payload) {
+  const subsSnap = await admin.firestore()
+    .collection('users').doc(uid)
+    .collection('pushSubscriptions').get();
+  const promises = [];
+  subsSnap.forEach((doc) => {
+    const sub = doc.data();
+    if (!sub.endpoint || !sub.keys) return;
+    const pushSub = { endpoint: sub.endpoint, keys: sub.keys };
+    promises.push(
+      webpush.sendNotification(pushSub, JSON.stringify(payload), { TTL: 6 * 3600 })
+        .catch(async (err) => {
+          if (err.statusCode === 404 || err.statusCode === 410) {
+            // Stale endpoint — limpiar
+            await doc.ref.delete().catch(() => {});
+            console.log('[push] subscription stale removida:', doc.id);
+          } else {
+            console.warn('[push] error enviando a', doc.id, err.statusCode || err.message);
+          }
+        })
+    );
+  });
+  return Promise.all(promises);
+}
+
+// ── Helper: dia local del usuario en formato YYYY-MM-DD ──
+function _localDateForTz(tz) {
+  try {
+    const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' });
+    return fmt.format(new Date());
+  } catch (_) {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
+
+// ── Scheduled: Cierre del día (19:00 Chile) — recordatorio para calificar comidas ──
+exports.sendEveningPush = onSchedule(
+  {
+    schedule: '0 19 * * *',
+    timeZone: 'America/Santiago',
+    secrets: [VAPID_PRIVATE_KEY],
+    region: 'us-central1'
+  },
+  async () => {
+    _setupWebPush();
+    const usersSnap = await admin.firestore().collection('users').get();
+    let sent = 0;
+    for (const userDoc of usersSnap.docs) {
+      const uid = userDoc.id;
+      const subsSnap = await admin.firestore()
+        .collection('users').doc(uid)
+        .collection('pushSubscriptions').limit(1).get();
+      if (subsSnap.empty) continue;
+      try {
+        const adher  = await _readUserData(uid, 'nutriplan_adherencia') || {};
+        const ratings = await _readUserData(uid, 'nutriplan_ratings') || {};
+        const tz = (subsSnap.docs[0].data().tz) || 'America/Santiago';
+        const fechaHoy = _localDateForTz(tz);
+        const adhHoy = adher[fechaHoy] || {};
+        let unrated = 0;
+        Object.keys(adhHoy).forEach((slotKey) => {
+          const e = adhHoy[slotKey];
+          if (!e || !e.comido) return;
+          const comidaId = e.id || e.recetaId;
+          if (!comidaId) return;
+          if ((ratings[comidaId] || 0) === 0) unrated++;
+        });
+        if (unrated === 0) continue;
+        await _sendPushToUser(uid, {
+          title: 'Cierre del día — Calibrate',
+          body: '¿Cómo estuvieron tus ' + unrated + ' comidas de hoy? Toca para calificar.',
+          tag:  'calibrate-evening-' + fechaHoy,
+          icon: 'icons/icon.svg',
+          url:  './',
+          nav:  'hoy'
+        });
+        sent++;
+      } catch (e) {
+        console.warn('[sendEveningPush] uid:', uid, 'error:', e.message);
+      }
+    }
+    console.log('[sendEveningPush] sent:', sent, 'of', usersSnap.size);
+    return null;
+  }
+);
+
+// ── Scheduled: Meseta detectada (08:00 Chile) — aviso matutino ──
+exports.sendPlateauPush = onSchedule(
+  {
+    schedule: '0 8 * * *',
+    timeZone: 'America/Santiago',
+    secrets: [VAPID_PRIVATE_KEY],
+    region: 'us-central1'
+  },
+  async () => {
+    _setupWebPush();
+    const usersSnap = await admin.firestore().collection('users').get();
+    let sent = 0;
+    for (const userDoc of usersSnap.docs) {
+      const uid = userDoc.id;
+      const subsSnap = await admin.firestore()
+        .collection('users').doc(uid)
+        .collection('pushSubscriptions').limit(1).get();
+      if (subsSnap.empty) continue;
+      try {
+        // Plateau heuristic simple: leer body_comp, calcular delta semanal últimos 14 días
+        const bc = await _readUserData(uid, 'nutriplan_body_comp') || [];
+        if (!Array.isArray(bc) || bc.length < 14) continue;
+        const sorted = bc.filter((e) => e && e.peso != null && e.fecha).sort((a, b) => a.fecha < b.fecha ? -1 : 1);
+        if (sorted.length < 14) continue;
+        const ultimos14 = sorted.slice(-14);
+        const primero = ultimos14[0].peso;
+        const ultimo  = ultimos14[ultimos14.length - 1].peso;
+        const deltaSemanal = ((ultimo - primero) / 14) * 7;
+        const enPlateau = Math.abs(deltaSemanal) < 0.25;
+        // Verificar que no haya un protocolo activo
+        const plateauState = await _readUserData(uid, 'nutriplan_plateau_state');
+        const pasoActivo = plateauState && plateauState.pasoActual && plateauState.pasoActual > 0;
+        if (!enPlateau || pasoActivo) continue;
+        const tz = (subsSnap.docs[0].data().tz) || 'America/Santiago';
+        const fechaHoy = _localDateForTz(tz);
+        await _sendPushToUser(uid, {
+          title: 'Meseta detectada — Calibrate',
+          body:  'Tu peso no baja hace 14 días. Hay un protocolo de 6 pasos para romperla.',
+          tag:   'calibrate-plateau-' + fechaHoy,
+          icon:  'icons/icon.svg',
+          url:   './',
+          nav:   'progreso'
+        });
+        sent++;
+      } catch (e) {
+        console.warn('[sendPlateauPush] uid:', uid, 'error:', e.message);
+      }
+    }
+    console.log('[sendPlateauPush] sent:', sent, 'of', usersSnap.size);
+    return null;
   }
 );

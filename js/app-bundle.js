@@ -14079,11 +14079,48 @@ function NotificationSetupModal({ darkMode }) {
   const cardBase = darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200';
   const mutedCls = darkMode ? 'text-gray-400' : 'text-gray-600';
 
+  // VAPID public key — debe coincidir con functions/index.js
+  const VAPID_PUBLIC = 'BHaa4Gkl2iQ_qrIFze1YaKqkqy2DGdH2Ae4wivJGvR3kgn8ng3qbK_AS9Mu0o1uxzmFDIZIw7QJvTIK_iCdzeGU';
+
+  function urlBase64ToUint8Array(base64) {
+    const padding = '='.repeat((4 - base64.length % 4) % 4);
+    const b64 = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(b64);
+    const out = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+
+  async function subscribeToPush() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC)
+        });
+      }
+      // Enviar al backend
+      if (typeof firebase !== 'undefined' && firebase.functions) {
+        const fn = firebase.functions().httpsCallable('pushSubscribe');
+        const tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || 'America/Santiago';
+        await fn({ subscription: sub.toJSON(), userAgent: navigator.userAgent, tz });
+      }
+      return sub;
+    } catch (e) {
+      console.warn('[push] subscribe falló:', e.message);
+      return null;
+    }
+  }
+
   function requestPerm() {
     if (!('Notification' in window)) return;
-    Notification.requestPermission().then(function(p) {
+    Notification.requestPermission().then(async function(p) {
       setPermState(p);
       if (p === 'granted') {
+        await subscribeToPush();
         try {
           new Notification('Calibrate', {
             body: t('Notificaciones activadas. Te avisaremos al cierre del día y si detectamos una meseta.','Notifications enabled. We\'ll notify you at day-end and if we detect a plateau.'),
@@ -14093,6 +14130,32 @@ function NotificationSetupModal({ darkMode }) {
       }
     });
   }
+
+  // Auto-subscribe si ya tenemos permiso pero no enviamos sub al backend (caso post-login)
+  React.useEffect(function() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    if (!('serviceWorker' in navigator)) return;
+    let cancelled = false;
+    navigator.serviceWorker.ready.then(async (reg) => {
+      const existing = await reg.pushManager.getSubscription();
+      if (cancelled) return;
+      if (existing) {
+        // Re-enviar al backend por si cambió de dispositivo o limpieza Firestore
+        try {
+          if (typeof firebase !== 'undefined' && firebase.functions) {
+            const fn = firebase.functions().httpsCallable('pushSubscribe');
+            const tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || 'America/Santiago';
+            await fn({ subscription: existing.toJSON(), userAgent: navigator.userAgent, tz });
+          }
+        } catch (_) {}
+      } else {
+        // Permission granted pero sin sub local → suscribir
+        await subscribeToPush();
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center backdrop-blur-sm animate-fadeIn"
@@ -14708,6 +14771,19 @@ function App() {
   window._NP_nav = navegarA;
   window._NP_toast = mostrarToast;
   window._NP_setPlan = setPlanSemanal;
+
+  // Listener para mensajes del SW (push notification navigation)
+  React.useEffect(function() {
+    if (!('serviceWorker' in navigator)) return;
+    function onSWMessage(event) {
+      const data = event.data || {};
+      if (data.type === 'NAVIGATE' && data.dest) {
+        navegarA(data.dest);
+      }
+    }
+    navigator.serviceWorker.addEventListener('message', onSWMessage);
+    return function() { navigator.serviceWorker.removeEventListener('message', onSWMessage); };
+  }, []);
 
   // ── Herramienta para el coach: agregar comida planificada (pendiente) ──
   // La agente llama: window._NP_addPendiente({ nombre, kcal, proteinas_g, carbohidratos_g, grasas_g })
