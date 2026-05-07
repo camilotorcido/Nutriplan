@@ -4270,6 +4270,9 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
   const planNorm = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(plan) : plan;
   const numSemanas = planNorm._numSemanas || 1;
   const [semanaActiva, setSemanaActiva] = React.useState(1);
+  // IA redesign: toggle Comidas/Entrenos en vista semanal
+  const tieneEntrenamientoSemanal = !!(perfil && (perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen));
+  const [vistaSemanal, setVistaSemanal] = React.useState('comidas');
   const [forceUpdate, setForceUpdate] = React.useState(0);
   // T9: estado React para el spinner del PDF (evita mutación directa del DOM)
   const [exportandoPDF, setExportandoPDF] = React.useState(false);
@@ -4590,6 +4593,160 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
           </div>
         </div>
       )}
+
+      {/* IA redesign: toggle Comidas/Entrenos */}
+      {tieneEntrenamientoSemanal && (
+        <div className={`flex gap-1.5 mb-4 p-1 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+          <button onClick={() => setVistaSemanal('comidas')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition ${
+              vistaSemanal === 'comidas' ? 'nav-pill-active'
+                : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+            }`}>
+            <i className="fas fa-utensils text-xs"></i>
+            {t('Comidas','Meals')}
+          </button>
+          <button onClick={() => setVistaSemanal('entrenos')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition ${
+              vistaSemanal === 'entrenos' ? 'nav-pill-active'
+                : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+            }`}>
+            <i className="fas fa-dumbbell text-xs"></i>
+            {t('Entrenos','Workouts')}
+          </button>
+        </div>
+      )}
+
+      {/* IA redesign: Vista semanal de entrenos */}
+      {vistaSemanal === 'entrenos' && (() => {
+        const diasSemana = parseInt(localStorage.getItem('nutriplan_dias_semana') || '4', 10);
+        const planEntreno = window.NP_RoadmapData && window.NP_RoadmapData.SCHEDULES_POR_DIAS
+          ? (window.NP_RoadmapData.SCHEDULES_POR_DIAS[diasSemana] || window.NP_RoadmapData.SCHEDULES_POR_DIAS[4])
+          : null;
+        if (!planEntreno) {
+          return (
+            <div className="cal-empty-state">
+              <div className="cal-empty-state__icon"><i className="fas fa-dumbbell"></i></div>
+              <p className="cal-empty-state__title">{t('Plan de entrenamiento no configurado','Training plan not configured')}</p>
+              <p className="cal-empty-state__desc">{t('Activa tu roadmap para ver el split semanal acá.','Activate your roadmap to see the weekly split here.')}</p>
+            </div>
+          );
+        }
+        const dowMap = { Lunes: 1, Martes: 2, 'Miércoles': 3, Jueves: 4, Viernes: 5, 'Sábado': 6, Domingo: 0 };
+        const labels = { Lunes: 'L', Martes: 'M', 'Miércoles': 'X', Jueves: 'J', Viernes: 'V', 'Sábado': 'S', Domingo: 'D' };
+        const cortoMap = { Empuje: t('Empuje','Push'), Piernas: t('Piernas','Legs'), Jalar: t('Jalar','Pull'), Circuito: t('Circuito','Circuit'), 'Empuje+': t('Empuje+','Push+'), 'Piernas+': t('Piernas+','Legs+'), 'Jalar+': t('Jalar+','Pull+') };
+        const hoyDow = new Date().getDay();
+        const equipos = (typeof leerEquipos === 'function') ? leerEquipos() : ['peso_corporal'];
+        const semanaNum = window.NP_RoadmapData && window.NP_RoadmapData.semanaActual ? window.NP_RoadmapData.semanaActual(_localDate()) : 1;
+        return (
+          <div className="animate-fadeIn">
+            <div className="surface-card-shadow p-5 mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+                    <span className="banner-premium-pulse-dot" />
+                    {t('Esta semana','This week')}
+                  </p>
+                  <h3 className="text-xl font-bold text-ink mt-1.5" style={{ letterSpacing: '-0.02em' }}>
+                    {t('Tu split de entrenos','Your training split')}
+                  </h3>
+                </div>
+                <span className="text-xs text-ink-muted font-semibold tabular-nums">
+                  {planEntreno.label}
+                </span>
+              </div>
+              <div className="grid grid-cols-7 gap-2">
+                {['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'].map((dia) => {
+                  const dow = dowMap[dia];
+                  const tipo = planEntreno.schedule[dow];
+                  const esDescanso = tipo === 'descanso';
+                  const tipoInfo = !esDescanso && planEntreno.tipos.find(x => x.k === tipo);
+                  const esHoy = dow === hoyDow && semanaActiva === 1;
+                  return (
+                    <div key={dia}
+                      className={`flex flex-col items-center gap-1 py-2 px-1 rounded-xl transition ${
+                        esHoy
+                          ? 'border-2'
+                          : esDescanso
+                            ? darkMode ? 'bg-gray-800/50' : 'bg-gray-50'
+                            : darkMode ? 'bg-amber-900/30' : 'bg-amber-50'
+                      }`}
+                      style={esHoy ? { borderColor: 'var(--color-accent)', background: 'var(--color-accent-light)' } : undefined}>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${esHoy ? 'text-ink' : 'text-ink-faint'}`}>
+                        {labels[dia]}
+                      </span>
+                      {esDescanso ? (
+                        <i className={`fas fa-bed text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
+                      ) : (
+                        <span className="text-sm font-extrabold tabular-nums" style={{ color: esHoy ? 'var(--color-accent-dark)' : 'var(--color-accent)' }}>
+                          {tipoInfo ? tipoInfo.short : tipo}
+                        </span>
+                      )}
+                      <span className={`text-[9px] font-medium leading-tight text-center ${esHoy ? 'text-ink-muted' : 'text-ink-faint'}`}
+                        style={{ minHeight: '1.5em' }}>
+                        {esDescanso ? t('Descanso','Rest') : (tipoInfo && cortoMap[tipoInfo.corto]) || (tipoInfo && tipoInfo.corto) || ''}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className={`mt-4 pt-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'} flex items-center justify-between text-xs text-ink-muted`}>
+                <span>
+                  <i className="fas fa-circle-info mr-1"></i>
+                  {t('Tocá un día para ver el detalle del entreno desde Hoy o Progreso.','Tap a day to view workout detail from Hoy or Progreso.')}
+                </span>
+              </div>
+            </div>
+            {/* Detalle del entreno del día seleccionado (mismo día que la vista comidas) */}
+            {(() => {
+              const dow = dowMap[diaSeleccionado];
+              const tipo = planEntreno.schedule[dow];
+              if (tipo === 'descanso') {
+                return (
+                  <div className="surface-card-shadow p-5 text-center">
+                    <i className={`fas fa-bed text-3xl mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}></i>
+                    <h4 className="font-bold text-ink mb-1">{t(diaSeleccionado, {Lunes:'Monday',Martes:'Tuesday','Miércoles':'Wednesday',Jueves:'Thursday',Viernes:'Friday','Sábado':'Saturday',Domingo:'Sunday'}[diaSeleccionado])}: {t('Día de descanso','Rest day')}</h4>
+                    <p className="text-sm text-ink-muted">{t('Aprovecha para caminar, dormir bien y recuperar.','Walk, sleep well, and recover.')}</p>
+                  </div>
+                );
+              }
+              const tipoInfo = planEntreno.tipos.find(x => x.k === tipo);
+              const protocolo = window.NP_RoadmapData && window.NP_RoadmapData.generarProtocoloDia
+                ? window.NP_RoadmapData.generarProtocoloDia(tipo, semanaNum, equipos) : null;
+              const ejercicios = protocolo ? protocolo.ejercicios.slice(0, 8) : [];
+              return (
+                <div className="surface-card-shadow p-5">
+                  <p className="premium-eyebrow mb-2" style={{ display: 'inline-flex' }}>
+                    {t('Sesión de','Session for')} {t(diaSeleccionado, {Lunes:'Monday',Martes:'Tuesday','Miércoles':'Wednesday',Jueves:'Thursday',Viernes:'Friday','Sábado':'Saturday',Domingo:'Sunday'}[diaSeleccionado])}
+                  </p>
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-2xl font-extrabold" style={{ color: 'var(--color-accent)', letterSpacing: '-0.02em' }}>
+                      {tipoInfo ? tipoInfo.short : tipo}
+                    </span>
+                    <div className="flex-1">
+                      <div className="text-sm font-bold text-ink">{tipoInfo ? (cortoMap[tipoInfo.corto] || tipoInfo.corto) : ''}</div>
+                      {protocolo && protocolo.duracionMin && (
+                        <div className="text-xs text-ink-muted"><i className="fas fa-clock mr-1"></i>{protocolo.duracionMin} min · {ejercicios.length} {t('ejercicios','exercises')}</div>
+                      )}
+                    </div>
+                  </div>
+                  {ejercicios.length > 0 && (
+                    <ul className={`space-y-1.5 text-sm ${darkMode ? 'text-gray-300' : 'text-ink-muted'}`}>
+                      {ejercicios.map((ej, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-ink-faint font-mono tabular-nums" style={{ minWidth: '1.5em' }}>{idx + 1}.</span>
+                          <span className="flex-1">{ej.nombre}{ej.series && ej.reps ? <span className="text-ink-faint"> · {ej.series}×{ej.reps}</span> : null}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        );
+      })()}
+
+      {vistaSemanal === 'comidas' && (<>
 
       {/* MEJORA 2: Day tabs with "Hoy" badge */}
       <div className="mb-6 overflow-x-auto pb-2">
@@ -5062,6 +5219,8 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
           onClose={function() { setShowModalExtPlan(false); }}
         />
       )}
+
+      </>)}
     </div>
   );
 }
