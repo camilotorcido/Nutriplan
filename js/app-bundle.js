@@ -370,16 +370,19 @@ function LoginScreen({ darkMode, onToggleDark }) {
   const btnLabels = { login: 'Iniciar sesión', signup: 'Crear cuenta', reset: 'Enviar email' };
 
   return (
-    <div className={`min-h-screen flex flex-col items-center justify-center px-4 py-8 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50'}`}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8"
+      style={{ background: darkMode ? '#1A1816' : '#F5F0E8' }}>
 
       {/* Dark mode toggle */}
       <button onClick={onToggleDark} aria-label={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-        className={`absolute top-4 right-4 p-2 rounded-lg transition-colors ${darkMode ? 'text-yellow-400 hover:bg-gray-800' : 'text-gray-400 hover:bg-white/70'}`}>
+        className={`absolute top-4 right-4 p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-white/70'}`}
+        style={{ color: darkMode ? '#E8C77A' : 'var(--color-ink-faint)' }}>
         <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'} text-sm`}></i>
       </button>
 
       {/* Card */}
-      <div className={`w-full max-w-sm rounded-2xl shadow-xl p-8 animate-scaleIn ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'}`}>
+      <div className="w-full max-w-sm premium-shell animate-scaleIn">
+        <div className="surface-card-shadow" style={{ borderRadius: 'var(--radius-premium-lg)', padding: '2rem' }}>
 
         {/* Logo */}
         <div className="text-center mb-8">
@@ -440,7 +443,10 @@ function LoginScreen({ darkMode, onToggleDark }) {
           )}
 
           <button aria-label="Circle notch" onClick={handleSubmit} disabled={loading}
-            className={`w-full py-3 rounded-xl font-semibold text-sm text-white transition ${loading ? 'bg-green-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 active:scale-[0.98] shadow-md shadow-green-200'}`}>
+            className={`w-full py-3 rounded-xl font-semibold text-sm text-white transition active:scale-[0.98] ${loading ? 'cursor-not-allowed' : ''}`}
+            style={{ background: loading ? 'rgba(200,148,58,0.55)' : 'var(--color-accent)', boxShadow: loading ? 'none' : 'var(--shadow-soft-md)' }}
+            onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = 'var(--color-accent-dark)'; }}
+            onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = 'var(--color-accent)'; }}>
             {loading
               ? <span className="flex items-center justify-center gap-2"><i className="fas fa-circle-notch fa-spin"></i>Procesando…</span>
               : btnLabels[mode]
@@ -497,23 +503,26 @@ function LoginScreen({ darkMode, onToggleDark }) {
             <span>
               ¿Ya tienes cuenta?{' '}
               <button onClick={() => { setMode('login'); clearMessages(); }}
-                className="font-semibold text-green-500 hover:text-green-400 transition-colors cursor-pointer">
+                className="font-semibold transition-colors cursor-pointer"
+                style={{ color: 'var(--color-accent-dark)' }}>
                 Iniciar sesión
               </button>
             </span>
           )}
           {mode === 'reset' && (
             <button onClick={() => { setMode('login'); clearMessages(); }}
-              className="font-semibold text-green-500 hover:text-green-400 transition-colors cursor-pointer flex items-center gap-1.5 mx-auto">
+              className="font-semibold transition-colors cursor-pointer flex items-center gap-1.5 mx-auto"
+              style={{ color: 'var(--color-accent-dark)' }}>
               <i className="fas fa-arrow-left text-xs"></i>
               Volver al login
             </button>
           )}
         </div>
+        </div>
       </div>
 
       {/* Footer */}
-      <p className={`mt-6 text-xs ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>
+      <p className="mt-6 text-xs text-ink-faint">
         Solo para amigos · Beta privada
       </p>
     </div>
@@ -9997,72 +10006,77 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
     if (window.NP_Alcohol && window.NP_Alcohol.impactoSemanal) setAlcohol(window.NP_Alcohol.impactoSemanal());
   }, [refresh]);
 
+  // IA redesign: paleta de estado del brand (success salvia / accent mostaza / alert terracota)
   const colorAlcohol = (nivel) => {
-    if (nivel === 'critico') return 'bg-red-500 text-white';
-    if (nivel === 'alto') return 'bg-orange-500 text-white';
-    if (nivel === 'moderado') return 'bg-yellow-400 text-yellow-900';
-    return 'bg-green-500 text-white';
+    if (nivel === 'critico') return { bg: 'var(--color-alert)', color: '#fff' };
+    if (nivel === 'alto')    return { bg: 'var(--color-accent-dark)', color: '#fff' };
+    if (nivel === 'moderado') return { bg: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' };
+    return { bg: 'var(--color-success-light)', color: 'var(--color-success)' };
   };
+  const cumplColor = (pct) => pct >= 75 ? 'var(--color-success)' : pct >= 50 ? 'var(--color-accent-dark)' : 'var(--color-alert)';
+  const deltaColor = (d) => d < 0 ? 'var(--color-success)' : d > 0 ? 'var(--color-alert)' : 'var(--color-ink-muted)';
 
   return (
     <div className="space-y-4">
 
       {/* Dashboard semanal */}
-      <div className={`rounded-2xl p-5 surface-card-shadow`}>
-        <h3 className={`text-sm font-bold uppercase tracking-wider mb-3 text-ink-faint`}>{t('Esta semana','This week')}</h3>
-        <div className="grid grid-cols-3 gap-3">
+      <div className="surface-card-shadow" style={{ padding: '1.5rem 1.4rem' }}>
+        <span className="premium-eyebrow mb-5" style={{ display: 'inline-flex' }}>
+          <span className="banner-premium-pulse-dot" />
+          {t('Esta semana','This week')}
+        </span>
+        <div className="grid grid-cols-3 gap-4 mt-4">
           {/* Entrenamiento */}
           <div>
-            <div className={`text-[11px] uppercase tracking-wide text-ink-faint`}>{t('Entrenos','Workouts')}</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">{t('Entrenos','Workouts')}</div>
             {semana && semana.entrenos > 0 ? (
               <>
-                <div className={`text-2xl font-extrabold text-ink`}>
-                  {semana.completados}<span className={`text-sm font-normal text-ink-faint`}>/{semana.entrenos}</span>
+                <div className="text-ink tabular-nums mt-2"
+                  style={{ fontSize: '1.625rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                  {semana.completados}<span className="text-sm font-medium text-ink-faint">/{semana.entrenos}</span>
                 </div>
-                <div className={`text-xs ${semana.cumplimiento >= 75 ? 'text-green-500' : semana.cumplimiento >= 50 ? 'text-yellow-500' : 'text-red-400'}`}>
+                <div className="text-xs font-semibold mt-1.5 tabular-nums" style={{ color: cumplColor(semana.cumplimiento) }}>
                   {semana.cumplimiento}% {t('completados','completed')}
                 </div>
               </>
             ) : (
-              <div className={`text-sm mt-1 text-ink-faint`}>{t('Sin registros','No records')}</div>
+              <div className="text-sm mt-2 text-ink-faint">{t('Sin registros','No records')}</div>
             )}
           </div>
 
           {/* Tendencia peso */}
           <div>
-            <div className={`text-[11px] uppercase tracking-wide text-ink-faint`}>{t('Peso/sem','Weight/wk')}</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">{t('Peso/sem','Weight/wk')}</div>
             {progreso && progreso.tendencia && progreso.tendencia.deltaSemanal != null ? (
               <>
-                <div className={`text-2xl font-extrabold ${
-                  progreso.tendencia.deltaSemanal < 0 ? 'text-green-500'
-                  : progreso.tendencia.deltaSemanal > 0 ? 'text-red-500'
-                  : darkMode ? 'text-gray-400' : 'text-gray-600'
-                }`}>
+                <div className="tabular-nums mt-2"
+                  style={{ fontSize: '1.625rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: deltaColor(progreso.tendencia.deltaSemanal) }}>
                   {progreso.tendencia.deltaSemanal > 0 ? '+' : ''}{progreso.tendencia.deltaSemanal}
                 </div>
-                <div className={`text-xs text-ink-faint`}>
+                <div className="text-xs text-ink-faint mt-1.5 tabular-nums">
                   target: -{roadmap.calculados.tasaSemanal} kg
                 </div>
               </>
             ) : (
-              <div className={`text-sm mt-1 text-ink-faint`}>{t('Sin datos','No data')}</div>
+              <div className="text-sm mt-2 text-ink-faint">{t('Sin datos','No data')}</div>
             )}
           </div>
 
           {/* Alcohol */}
           <div>
-            <div className={`text-[11px] uppercase tracking-wide text-ink-faint`}>{t('Alcohol','Alcohol')}</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">{t('Alcohol','Alcohol')}</div>
             {alcohol ? (
               <>
-                <div className={`text-xs font-bold px-2 py-0.5 rounded inline-block mt-1 ${colorAlcohol(alcohol.nivel)}`}>
+                <div className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full inline-block mt-2"
+                  style={colorAlcohol(alcohol.nivel)}>
                   {alcohol.nivel}
                 </div>
-                <div className={`text-xs mt-0.5 text-ink-faint`}>
+                <div className="text-xs mt-1.5 text-ink-faint tabular-nums">
                   {alcohol._resumen.kcal} kcal · {alcohol._resumen.dias}d
                 </div>
               </>
             ) : (
-              <div className={`text-sm mt-1 text-ink-faint`}>{t('Sin registros','No records')}</div>
+              <div className="text-sm mt-2 text-ink-faint">{t('Sin registros','No records')}</div>
             )}
           </div>
         </div>
@@ -10070,9 +10084,12 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
         {/* Plateau badge — clickeable → lleva a Registros */}
         {plateau && plateau.plateau && (
           <button onClick={onGoToRegistros}
-            className={`w-full mt-3 px-3 py-2 rounded-lg text-xs flex items-center gap-2 text-left transition-colors ${
-              darkMode ? 'bg-yellow-900/30 text-yellow-300 border border-yellow-800 hover:bg-yellow-900/50' : 'bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100'
-            }`}>
+            className="w-full mt-5 px-3.5 py-2.5 rounded-xl text-xs flex items-center gap-2 text-left transition-colors"
+            style={{
+              background: darkMode ? 'rgba(192, 82, 58, 0.14)' : 'rgba(192, 82, 58, 0.08)',
+              color: darkMode ? '#E89B85' : 'var(--color-alert)',
+              boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.20)'
+            }}>
             <i className="fas fa-triangle-exclamation flex-shrink-0"></i>
             <span>{t('Meseta detectada','Plateau detected')} · {plateau.diasVentana}d · {plateau.deltaSemanal} kg/sem</span>
             <span className="ml-auto flex-shrink-0 font-semibold underline">{t('Ver protocolo →','See protocol →')}</span>
@@ -10082,33 +10099,49 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
 
       {/* Progreso global */}
       {progreso && (
-        <div className={`rounded-2xl p-5 surface-card-shadow`}>
-          <h3 className={`text-sm font-bold uppercase tracking-wider mb-3 text-ink-faint`}>{t('Progreso global','Overall progress')}</h3>
-          <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="surface-card-shadow" style={{ padding: '1.5rem 1.4rem' }}>
+          <span className="premium-eyebrow mb-5" style={{ display: 'inline-flex' }}>
+            <i className="fas fa-bullseye" style={{ fontSize: '10px' }}></i>
+            {t('Progreso global','Overall progress')}
+          </span>
+          <div className="grid grid-cols-3 gap-4 mt-4 mb-5">
             <div>
-              <div className={`text-[11px] uppercase tracking-wide text-ink-faint`}>{t('Inicial','Initial')}</div>
-              <div className={`text-xl font-bold text-ink`}>{progreso.pesoInicial} kg</div>
-              {progreso.bfInicial != null && <div className="text-xs text-gray-400">{progreso.bfInicial}% BF</div>}
+              <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">{t('Inicial','Initial')}</div>
+              <div className="text-ink tabular-nums mt-2"
+                style={{ fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                {progreso.pesoInicial}<span className="text-sm font-medium text-ink-faint ml-1">kg</span>
+              </div>
+              {progreso.bfInicial != null && <div className="text-xs text-ink-faint mt-1 tabular-nums">{progreso.bfInicial}% BF</div>}
             </div>
             <div>
-              <div className="text-[11px] text-orange-500 uppercase font-bold tracking-wide">{t('Actual','Current')}{!progreso.pesoActualEsReal && t(' (estim.)',' (est.)')}</div>
-              <div className={`text-2xl font-extrabold text-ink`}>{progreso.pesoActual} kg</div>
-              {progreso.bfActual != null && <div className="text-xs text-orange-500">{progreso.bfActual}% BF</div>}
+              <div className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: 'var(--color-accent-dark)' }}>
+                {t('Actual','Current')}{!progreso.pesoActualEsReal && t(' (est.)',' (est.)')}
+              </div>
+              <div className="text-ink tabular-nums mt-2"
+                style={{ fontSize: '1.625rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                {progreso.pesoActual}<span className="text-sm font-medium text-ink-faint ml-1">kg</span>
+              </div>
+              {progreso.bfActual != null && (
+                <div className="text-xs mt-1 tabular-nums" style={{ color: 'var(--color-accent-dark)' }}>{progreso.bfActual}% BF</div>
+              )}
             </div>
             <div>
-              <div className={`text-[11px] uppercase tracking-wide text-ink-faint`}>Target</div>
-              <div className={`text-xl font-bold text-ink-muted`}>{progreso.pesoTarget} kg</div>
-              {progreso.bfTarget != null && <div className="text-xs text-gray-400">{progreso.bfTarget}% BF</div>}
+              <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-faint">Target</div>
+              <div className="text-ink-muted tabular-nums mt-2"
+                style={{ fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                {progreso.pesoTarget}<span className="text-sm font-medium text-ink-faint ml-1">kg</span>
+              </div>
+              {progreso.bfTarget != null && <div className="text-xs text-ink-faint mt-1 tabular-nums">{progreso.bfTarget}% BF</div>}
             </div>
           </div>
-          <div className={`w-full h-3 rounded-full overflow-hidden surface-secondary`}>
+          <div className="w-full h-2.5 rounded-full overflow-hidden surface-secondary">
             <div className="h-full transition"
-              style={{ width: progreso.pctPeso + '%', backgroundImage: 'linear-gradient(to right, #f97316, #ef4444)' }}></div>
+              style={{ width: progreso.pctPeso + '%', background: 'var(--color-accent)', transition: 'width 0.6s cubic-bezier(0.32, 0.72, 0, 1)' }}></div>
           </div>
-          <div className="flex justify-between text-xs mt-1">
-            <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>{progreso.kgPerdidos} {t('kg perdidos','kg lost')}</span>
-            <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{progreso.pctPeso}% {t('del camino','of the way')}</span>
-            <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>{progreso.kgRestantes} {t('kg para target','kg to target')}</span>
+          <div className="flex justify-between text-xs mt-2.5 tabular-nums">
+            <span className="text-ink-muted">{progreso.kgPerdidos} {t('kg perdidos','kg lost')}</span>
+            <span className="text-ink font-semibold">{progreso.pctPeso}% {t('del camino','of the way')}</span>
+            <span className="text-ink-muted">{progreso.kgRestantes} {t('kg para target','kg to target')}</span>
           </div>
         </div>
       )}
