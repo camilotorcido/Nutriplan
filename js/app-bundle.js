@@ -9648,34 +9648,54 @@ function NutricionLogView({ perfil, darkMode }) {
 }
 
 // =============================================
-// COMPONENTE: FitnessTab (Entreno + Pasos + Roadmap + Registros + Nutrición)
+// COMPONENTE: ProgresoTab (Roadmap + Registros + Entreno + Pasos)
+// IA redesign 2026-05-07: ex-FitnessTab. Sub-tab "nutricion" eliminado (era duplicado de Hoy/Plan).
+// Siempre visible — el empty state ahora invita a generar el roadmap.
 // =============================================
-function FitnessTab({ perfil, darkMode }) {
+function ProgresoTab({ perfil, darkMode, onNavigate }) {
   const subs = [
-    { k: 'entreno',   l: t('Entreno','Workout'),  icon: 'fa-dumbbell' },
-    { k: 'pasos',     l: t('Pasos','Steps'),      icon: 'fa-person-walking' },
     { k: 'roadmap',   l: 'Roadmap',               icon: 'fa-route' },
     { k: 'metricas',  l: t('Registros','Logs'),   icon: 'fa-clipboard-list' },
-    { k: 'nutricion', l: t('Nutrición','Nutrition'), icon: 'fa-chart-pie' }
+    { k: 'entreno',   l: t('Entreno','Workout'),  icon: 'fa-dumbbell' },
+    { k: 'pasos',     l: t('Pasos','Steps'),      icon: 'fa-person-walking' }
   ];
-  // N5: persistir sub-tab activa para no perder posición al navegar
+  // Migración silenciosa del key viejo al nuevo
   const [subVista, setSubVista] = React.useState(() => {
-    const saved = localStorage.getItem('nutriplan_fitness_subtab');
-    return saved && subs.some(s => s.k === saved) ? saved : 'entreno';
+    const legacy = localStorage.getItem('nutriplan_fitness_subtab');
+    if (legacy) {
+      // 'nutricion' ya no existe — fallback a roadmap
+      const migrated = (legacy === 'nutricion') ? 'roadmap' : legacy;
+      try { localStorage.setItem('calibrate_progreso_subtab', migrated); } catch (_) {}
+      try { localStorage.removeItem('nutriplan_fitness_subtab'); } catch (_) {}
+    }
+    const saved = localStorage.getItem('calibrate_progreso_subtab');
+    return saved && subs.some(s => s.k === saved) ? saved : 'roadmap';
   });
-  const cambiarSub = (k) => { setSubVista(k); localStorage.setItem('nutriplan_fitness_subtab', k); };
+  const cambiarSub = (k) => { setSubVista(k); try { localStorage.setItem('calibrate_progreso_subtab', k); } catch (_) {} };
   const [refresh, setRefresh] = React.useState(0);
 
   const tieneRoadmapActivo = perfil && (perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen);
   if (!tieneRoadmapActivo) {
     return (
-      <div className={`rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white border border-gray-100'}`}>
-        <EmptyState
-          icon="fa-flask"
-          title={t('Plan científico no configurado','Scientific plan not set up')}
-          desc={t('Ve a tu perfil y configura tu objetivo (pérdida, mantenimiento o volumen) para ver tu roadmap y progreso.','Set your goal in your profile to see your roadmap and progress.')}
-          darkMode={darkMode}
-        />
+      <div className="surface-card-shadow p-6 text-center">
+        <div className="premium-eyebrow mb-4 justify-center" style={{ display: 'inline-flex' }}>
+          <span className="banner-premium-pulse-dot" />
+          {t('Activa tu plan','Activate your plan')}
+        </div>
+        <h3 className="text-2xl font-bold text-ink mb-3" style={{ letterSpacing: '-0.02em' }}>
+          {t('Tu progreso vive acá','Your progress lives here')}
+        </h3>
+        <p className="text-ink-muted text-sm mb-5 max-w-md mx-auto" style={{ lineHeight: 1.6 }}>
+          {t('Configura tu objetivo y Calibrate genera tu roadmap de fases, plan de entrenamiento y registros de avance integrados.',
+             'Set your goal and Calibrate builds your phase roadmap, training plan, and progress logs — all integrated.')}
+        </p>
+        <button
+          onClick={() => onNavigate ? onNavigate('perfil') : (window._NP_nav && window._NP_nav('perfil'))}
+          className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-dark transition-colors inline-flex items-center gap-2"
+          style={{ background: 'var(--color-accent)' }}>
+          <i className="fas fa-route"></i>
+          {t('Generar mi roadmap','Generate my roadmap')}
+        </button>
       </div>
     );
   }
@@ -9696,11 +9716,10 @@ function FitnessTab({ perfil, darkMode }) {
           </button>
         ))}
       </div>
-      {subVista === 'entreno'   && <FLEntrenoView  perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
-      {subVista === 'pasos'     && <FLPasosView    perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
       {subVista === 'roadmap'   && <FLRoadmapView  perfil={perfil} darkMode={darkMode} refresh={refresh} onGoToRegistros={() => cambiarSub('metricas')} />}
       {subVista === 'metricas'  && <FLMetricasView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
-      {subVista === 'nutricion' && <NutricionLogView perfil={perfil} darkMode={darkMode} />}
+      {subVista === 'entreno'   && <FLEntrenoView  perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
+      {subVista === 'pasos'     && <FLPasosView    perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
     </div>
   );
 }
@@ -11854,7 +11873,7 @@ function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange, units, o
 // COMPONENTE: ChatPanel — Asistente IA Calibrate
 // Proxy → Firebase Cloud Function → Claude API
 // =============================================
-function ChatPanel({ darkMode }) {
+function ChatPanel({ darkMode, activeTab }) {
   const [open, setOpen]       = React.useState(false);
   const [input, setInput]     = React.useState('');
   const [loading, setLoading] = React.useState(false);
@@ -11949,8 +11968,10 @@ function ChatPanel({ darkMode }) {
     var ayer     = _localDate(_ayerD);
     var anteayer = _localDate(_antD);
     // Exponer qué slots ya están reemplazados hoy para que el coach no doble-reemplace
+    // IA redesign: activeTab le dice al modelo en qué pantalla está el usuario para adaptar el primer mensaje
     return { perfil, planHoy, macrosObjetivo, macrosConsumidos, diaActual, fechaHoy, ayer, anteayer,
-             slotsReemplazados: tiposReemplazadosHoy };
+             slotsReemplazados: tiposReemplazadosHoy,
+             activeTab: activeTab || 'hoy' };
   }
 
   // ── Análisis proactivo: detectar brecha y sugerir ajustes ───────────────
@@ -13853,8 +13874,10 @@ function App() {
     window.scrollTo(0, 0);
   };
   const navegarA = (destino) => {
-    // "tienda" es el nav label — internamente enruta a "despensa" por defecto
-    const dest = destino === 'tienda' ? 'despensa' : destino;
+    // IA redesign: 'tienda' y 'fitness' son aliases legacy — mapear a la nueva IA
+    let dest = destino;
+    if (destino === 'tienda') dest = 'compras';
+    else if (destino === 'fitness') dest = 'progreso';
     setPantalla(dest);
     window.scrollTo(0, 0);
   };
@@ -14016,15 +14039,14 @@ function App() {
             {[
               { id: "hoy",      label: t("Hoy","Today"),           short: t("Hoy","Today"),    icon: "fa-house" },
               { id: "plan",     label: t("Plan","Plan"),           short: t("Plan","Plan"),    icon: "fa-calendar-days" },
-              ...((perfil && (perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen)) ? [
-                { id: "fitness", label: "Fitness",                  short: "Fitness",           icon: "fa-dumbbell" }
-              ] : []),
-              { id: "cocinar",  label: t("Recetas","Recipes"),       short: t("Recetas","Recipes"), icon: "fa-utensils" },
-              { id: "tienda",   label: t("Compras","Shopping"),      short: t("Compras","Shopping"),  icon: "fa-cart-shopping" }
+              { id: "progreso", label: t("Progreso","Progress"),   short: t("Progreso","Progress"), icon: "fa-chart-line" },
+              { id: "cocinar",  label: t("Recetario","Cookbook"),  short: t("Recetario","Cookbook"), icon: "fa-utensils" }
             ].map(tab => (
               <button key={tab.id} onClick={() => navegarA(tab.id)}
                 className={`nav-pill flex-shrink-0 sm:flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition ${
-                  pantalla === tab.id || (tab.id === 'tienda' && (pantalla === 'despensa' || pantalla === 'compras'))
+                  pantalla === tab.id ||
+                  (tab.id === 'cocinar' && pantalla === 'despensa') ||
+                  (tab.id === 'plan' && pantalla === 'compras')
                     ? 'nav-pill-active'
                     : darkMode
                       ? 'text-gray-500 hover:bg-gray-700 hover:text-gray-300'
@@ -14046,17 +14068,29 @@ function App() {
 
       <main key={pantalla} className="max-w-3xl mx-auto px-4 py-6 animate-fadeIn" style={{ display: pantalla === "hoy" ? "none" : "" }}>
         {pantalla === "plan" && (planSemanal ? (
-          <WeeklyPlan plan={planSemanal} perfil={perfil}
-            onRecipeClick={(receta) => setRecetaSeleccionada(receta)}
-            onRegenerate={handleRegenerar}
-            onSwapRecipe={handleSwapRecipe}
-            onRestoreRecipe={handleRestoreRecipe}
-            onVetoRecipe={handleVetoRecipe}
-            onRegenDay={handleRegenDay}
-            onCompartir={handleCompartirPlan}
-            historialSlots={historialSlots}
-            darkMode={darkMode}
-            swapping={swapping} />
+          <>
+            <div className="mb-4 flex items-center justify-end gap-2">
+              <button onClick={() => navegarA('compras')}
+                className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition ${
+                  darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'surface-card-shadow text-ink-muted hover:text-ink'
+                }`}
+                style={{ letterSpacing: '0.02em' }}>
+                <i className="fas fa-cart-shopping"></i>
+                {t('Lista de compras','Shopping list')}
+              </button>
+            </div>
+            <WeeklyPlan plan={planSemanal} perfil={perfil}
+              onRecipeClick={(receta) => setRecetaSeleccionada(receta)}
+              onRegenerate={handleRegenerar}
+              onSwapRecipe={handleSwapRecipe}
+              onRestoreRecipe={handleRestoreRecipe}
+              onVetoRecipe={handleVetoRecipe}
+              onRegenDay={handleRegenDay}
+              onCompartir={handleCompartirPlan}
+              historialSlots={historialSlots}
+              darkMode={darkMode}
+              swapping={swapping} />
+          </>
         ) : (
           <div className={`rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white border border-gray-100'}`}>
             <EmptyState
@@ -14069,64 +14103,81 @@ function App() {
             />
           </div>
         ))}
-        {pantalla === "fitness" && (
-          <FitnessTab perfil={perfil} darkMode={darkMode} />
+        {pantalla === "progreso" && (
+          <ProgresoTab perfil={perfil} darkMode={darkMode} onNavigate={navegarA} />
         )}
-        {pantalla === "cocinar" && (
-          <CocinarTab darkMode={darkMode} onRecipeClick={(r) => setRecetaSeleccionada(r)} plan={planSemanal} factorComensales={factorComensales} />
-        )}
-        {(pantalla === "tienda" || pantalla === "despensa" || pantalla === "compras") && (() => {
-          const tiendaSub = pantalla === "compras" ? "compras" : "despensa";
-          const noHayPlan = !planSemanal;
-          return (
-            <div className="animate-fadeIn">
-              {/* Sub-tab switcher */}
+        {(pantalla === "cocinar" || pantalla === "despensa") && (
+          <div className="animate-fadeIn">
+            {/* IA redesign: Despensa vive como sección dentro de Recetario */}
+            {planSemanal && (
               <div className={`flex gap-2 mb-4 p-1 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                <button
+                  onClick={() => navegarA('cocinar')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition ${
+                    pantalla === 'cocinar' ? 'nav-pill-active'
+                      : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+                  }`}>
+                  <i className="fas fa-utensils text-sm"></i>
+                  {t('Recetas','Recipes')}
+                </button>
                 <button
                   onClick={() => navegarA('despensa')}
                   className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition ${
-                    tiendaSub === 'despensa'
-                      ? 'nav-pill-active'
+                    pantalla === 'despensa' ? 'nav-pill-active'
                       : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
                   }`}>
                   <i className="fas fa-warehouse text-sm"></i>
                   {t('Despensa','Pantry')}
                 </button>
-                <button
-                  onClick={() => navegarA('compras')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition ${
-                    tiendaSub === 'compras'
-                      ? 'nav-pill-active'
-                      : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
-                  }`}>
-                  <i className="fas fa-cart-shopping text-sm"></i>
-                  {t('Compras','Shopping')}
+              </div>
+            )}
+            {pantalla === "cocinar" && (
+              <CocinarTab darkMode={darkMode} onRecipeClick={(r) => setRecetaSeleccionada(r)} plan={planSemanal} factorComensales={factorComensales} />
+            )}
+            {pantalla === "despensa" && (planSemanal ? (
+              <Pantry plan={planSemanal} onNavigateToShopping={() => navegarA("compras")} darkMode={darkMode} />
+            ) : (
+              <div className="cal-empty-state">
+                <div className="cal-empty-state__icon"><i className="fas fa-warehouse"></i></div>
+                <p className="cal-empty-state__title">{t('Primero genera tu plan','Generate your plan first')}</p>
+                <p className="cal-empty-state__desc">{t('Tu despensa aparece aquí una vez que tengas un plan semanal activo.','Your pantry appears here once you have an active weekly plan.')}</p>
+                <button onClick={() => navegarA('plan')}
+                  className="mt-3 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
+                  style={{ background: 'var(--color-accent)', color: '#fff' }}>
+                  <i className="fas fa-calendar-days"></i>{t('Ir al Plan','Go to Plan')}
                 </button>
               </div>
-
-              {noHayPlan ? (
-                <div className="cal-empty-state">
-                  <div className="cal-empty-state__icon">
-                    <i className={`fas ${tiendaSub === 'compras' ? 'fa-cart-shopping' : 'fa-warehouse'}`}></i>
-                  </div>
-                  <p className="cal-empty-state__title">Primero genera tu plan</p>
-                  <p className="cal-empty-state__desc">
-                    {tiendaSub === 'compras'
-                      ? 'Tu lista de compras aparece aquí una vez que tengas un plan semanal activo.'
-                      : 'Tu despensa aparece aquí una vez que tengas un plan semanal activo.'}
-                  </p>
-                  <button onClick={() => navegarA('plan')}
-                    className="mt-3 px-5 py-2.5 rounded-xl text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors flex items-center gap-2">
-                    <i className="fas fa-calendar-days"></i>Ir al Plan
-                  </button>
-                </div>
-              ) : tiendaSub === 'compras'
-                ? <ShoppingList plan={planSemanal} darkMode={darkMode} />
-                : <Pantry plan={planSemanal} onNavigateToShopping={() => navegarA("compras")} darkMode={darkMode} />
-              }
+            ))}
+          </div>
+        )}
+        {pantalla === "compras" && (
+          <div className="animate-fadeIn">
+            {/* IA redesign: Lista de compras vive como vista de Plan */}
+            <div className="mb-4 flex items-center gap-2">
+              <button onClick={() => navegarA('plan')}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition ${
+                  darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' : 'text-ink-muted hover:text-ink hover:bg-gray-100'
+                }`}>
+                <i className="fas fa-arrow-left"></i>
+                {t('Volver al Plan','Back to Plan')}
+              </button>
             </div>
-          );
-        })()}
+            {planSemanal ? (
+              <ShoppingList plan={planSemanal} darkMode={darkMode} />
+            ) : (
+              <div className="cal-empty-state">
+                <div className="cal-empty-state__icon"><i className="fas fa-cart-shopping"></i></div>
+                <p className="cal-empty-state__title">{t('Primero genera tu plan','Generate your plan first')}</p>
+                <p className="cal-empty-state__desc">{t('Tu lista de compras aparece aquí una vez que tengas un plan semanal activo.','Your shopping list appears here once you have an active weekly plan.')}</p>
+                <button onClick={() => navegarA('plan')}
+                  className="mt-3 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
+                  style={{ background: 'var(--color-accent)', color: '#fff' }}>
+                  <i className="fas fa-calendar-days"></i>{t('Ir al Plan','Go to Plan')}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       <footer className={`text-center py-6 text-xs no-print text-ink-faint`}>
@@ -14146,9 +14197,9 @@ function App() {
 
       {globalOverlays}
 
-      {/* Asistente IA — siempre disponible */}
+      {/* Asistente IA — siempre disponible, contextual al tab activo */}
       {pantalla !== 'loading' && pantalla !== 'onboarding' && (
-        <ChatPanel darkMode={darkMode} />
+        <ChatPanel darkMode={darkMode} activeTab={pantalla} />
       )}
     </div>
   );

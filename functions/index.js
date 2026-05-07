@@ -233,10 +233,23 @@ function buildSystemPrompt(contexto) {
   const slotsLibres   = ['desayuno','snack_am','almuerzo','snack_pm','cena'].filter(s => !slotsReemplazados.includes(s));
   const slotsOcupados = slotsReemplazados;
 
+  // IA redesign 2026-05-07: el coach adapta el saludo y foco según el tab activo
+  const activeTab = contexto?.activeTab || 'hoy';
+  const tabHint = ({
+    hoy:       'El usuario está en la pantalla "Hoy" — prioriza ayudarle con la comida y entreno del día. Si no escribió nada todavía, podrías ofrecer ayuda con la próxima comida pendiente.',
+    plan:      'El usuario está en "Plan" (vista semanal) — orientá la conversación a ajustes del plan completo, regenerar comidas o entrenamientos de la semana.',
+    progreso:  'El usuario está en "Progreso" — enfocá la conversación en tendencias (peso, fase del roadmap, adherencia, métricas corporales). Evitá registrar comidas acá salvo que lo pida explícito.',
+    cocinar:   'El usuario está en "Recetario" — ayudá a buscar recetas, crear con ingredientes que tenga, o sugerir según despensa.',
+    despensa:  'El usuario está viendo su Despensa — ayudá a sugerir qué cocinar con lo que tiene o qué falta comprar.',
+    compras:   'El usuario está viendo la Lista de compras — ayudá a optimizar la lista o explicar qué se necesita para qué receta.',
+    perfil:    'El usuario está editando su perfil — ayudá con dudas sobre su configuración u objetivo.'
+  })[activeTab] || '';
+
   return `Eres el asistente nutricional de Calibrate, una app de nutrición personalizada.
 
 USUARIO: ${perfil.nombre || 'Usuario'}
 OBJETIVO: ${perfil.objetivo || 'mantenimiento'}
+PANTALLA ACTIVA: ${activeTab}${tabHint ? ` — ${tabHint}` : ''}
 DÍA Y FECHA HOY: ${contexto?.diaActual || ''} ${contexto?.fechaHoy || ''}
 
 PLAN DE HOY (${contexto?.diaActual || ''}):
