@@ -12361,6 +12361,15 @@ function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange, units, o
                 <span>{t('Notificaciones','Notifications')}</span>
                 <i className={`fas fa-chevron-right ml-auto text-xs ${mutedCls}`}></i>
               </button>
+              {/* Admin — solo visible para emails whitelist */}
+              {authUser && authUser.email && ADMIN_EMAILS_CLIENT.indexOf(authUser.email.toLowerCase()) >= 0 && (
+                <button onClick={() => { onClose(); window.dispatchEvent(new CustomEvent('calibrate_open_admin')); }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors cursor-pointer ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                  <i className="fas fa-chart-line w-4 text-center" style={{ color: 'var(--color-accent-dark)' }}></i>
+                  <span>Admin</span>
+                  <i className={`fas fa-chevron-right ml-auto text-xs ${mutedCls}`}></i>
+                </button>
+              )}
               <button onClick={async () => { onClose(); await window.NP_Auth.signOut(); }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors cursor-pointer"
                 style={{ color: 'var(--color-alert)' }}>
@@ -14050,6 +14059,253 @@ function ChatPanel({ darkMode, activeTab }) {
 }
 
 // =============================================
+// COMPONENTE: NotificationGrantedView — vista del estado granted con botón de test push
+// =============================================
+function NotificationGrantedView({ darkMode }) {
+  const [testing, setTesting]   = React.useState(false);
+  const [testResult, setResult] = React.useState(null);
+  async function sendTest() {
+    setTesting(true); setResult(null);
+    try {
+      if (typeof firebase === 'undefined' || !firebase.functions) { setResult('err'); return; }
+      const fn = firebase.functions().httpsCallable('sendTestPush');
+      await fn({});
+      setResult('ok');
+    } catch (e) {
+      setResult('err');
+    } finally {
+      setTesting(false);
+      setTimeout(() => setResult(null), 5000);
+    }
+  }
+  return (
+    <div className="space-y-3">
+      <div className="rounded-2xl text-sm flex items-start gap-2.5"
+        style={{
+          padding: '1rem 1.15rem',
+          background: darkMode ? 'rgba(140, 188, 145, 0.10)' : 'rgba(90, 122, 94, 0.06)',
+          boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(140, 188, 145, 0.20)' : 'rgba(90, 122, 94, 0.18)'),
+          color: 'var(--color-success)', lineHeight: 1.5
+        }}>
+        <i className="fas fa-circle-check mt-1 flex-shrink-0"></i>
+        <span>{t('Notificaciones activas. Vas a recibir el recordatorio nocturno y aviso si se detecta una meseta.','Notifications active. You\'ll get the evening reminder and a plateau alert if detected.')}</span>
+      </div>
+      <button onClick={sendTest} disabled={testing}
+        className="w-full py-2.5 rounded-xl text-sm font-semibold transition active:scale-[0.98]"
+        style={testing
+          ? { background: darkMode ? 'rgba(232, 224, 212, 0.06)' : '#FAF6EE', color: 'var(--color-ink-faint)', cursor: 'wait' }
+          : { background: darkMode ? 'rgba(232, 199, 122, 0.14)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 199, 122, 0.20)' : 'rgba(200, 148, 58, 0.18)') }}>
+        {testing
+          ? <><i className="fas fa-circle-notch fa-spin mr-2"></i>{t('Enviando…','Sending…')}</>
+          : <><i className="fas fa-paper-plane mr-2"></i>{t('Enviar push de prueba','Send test push')}</>}
+      </button>
+      {testResult === 'ok' && (
+        <p className="text-xs text-center" style={{ color: 'var(--color-success)' }}>
+          <i className="fas fa-check mr-1"></i>{t('Push enviado. Si no llega en 10 segundos, revisá los permisos del sistema.','Push sent. If it doesn\'t arrive within 10 seconds, check your system notification settings.')}
+        </p>
+      )}
+      {testResult === 'err' && (
+        <p className="text-xs text-center" style={{ color: 'var(--color-alert)' }}>
+          <i className="fas fa-circle-xmark mr-1"></i>{t('No se pudo enviar. ¿Estás conectado?','Could not send. Are you online?')}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// =============================================
+// COMPONENTE: AdminScreen — métricas internas (solo whitelist email)
+// =============================================
+const ADMIN_EMAILS_CLIENT = ['crespo.camilo@gmail.com'];
+
+function AdminScreen({ darkMode, onClose }) {
+  const [data, setData]       = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError]     = React.useState(null);
+
+  React.useEffect(function() {
+    let cancelled = false;
+    async function load() {
+      setLoading(true); setError(null);
+      try {
+        if (typeof firebase === 'undefined' || !firebase.functions) throw new Error('Firebase not ready');
+        const fn = firebase.functions().httpsCallable('getAdminMetrics');
+        const result = await fn({});
+        if (!cancelled) setData(result.data);
+      } catch (e) {
+        if (!cancelled) setError(e.message || 'Error');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return function() { cancelled = true; };
+  }, []);
+
+  function fmtDate(ms) {
+    if (!ms) return '—';
+    try { return new Date(ms).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }); }
+    catch (_) { return '—'; }
+  }
+  function fmtRel(ms) {
+    if (!ms) return '—';
+    const diff = Date.now() - ms;
+    const min = Math.floor(diff / 60000);
+    if (min < 60)   return `hace ${min} min`;
+    const h = Math.floor(min / 60);
+    if (h < 24)     return `hace ${h}h`;
+    const d = Math.floor(h / 24);
+    if (d < 30)     return `hace ${d}d`;
+    return new Date(ms).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' });
+  }
+
+  return (
+    <div className="max-w-3xl lg:max-w-5xl mx-auto px-4 py-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+          <span className="banner-premium-pulse-dot" />
+          Admin · Calibrate
+        </span>
+        <button onClick={onClose}
+          className="text-xs font-semibold px-3 py-2 rounded-xl transition"
+          style={{ background: darkMode ? 'rgba(232, 224, 212, 0.06)' : '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'rgba(0,0,0,0.04)') }}>
+          <i className="fas fa-arrow-left mr-1.5"></i>Volver
+        </button>
+      </div>
+
+      {loading && (
+        <div className="surface-card-shadow text-center" style={{ padding: '3rem 1rem' }}>
+          <i className="fas fa-circle-notch fa-spin text-2xl mb-3" style={{ color: 'var(--color-accent)' }}></i>
+          <p className="text-sm text-ink-muted">Cargando métricas…</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-2xl text-sm flex items-start gap-2.5"
+          style={{ padding: '1rem 1.15rem', background: 'rgba(192, 82, 58, 0.08)', boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.20)', color: 'var(--color-alert)', lineHeight: 1.5 }}>
+          <i className="fas fa-triangle-exclamation mt-1 flex-shrink-0"></i>
+          <span>{error}</span>
+        </div>
+      )}
+
+      {data && (
+        <>
+          {/* Tiles principales */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { l: 'Usuarios totales',    v: data.totals.users,            i: 'fa-users' },
+              { l: 'Auth users',          v: data.totals.authUsers || '—', i: 'fa-id-card' },
+              { l: 'Push subs activas',   v: data.totals.pushSubscriptions, i: 'fa-bell' },
+              { l: 'Users con push',      v: data.totals.usersWithPush,    i: 'fa-circle-check' }
+            ].map(x => (
+              <div key={x.l} className="surface-card-shadow" style={{ padding: '1.15rem 1.25rem' }}>
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">
+                  <i className={`fas ${x.i} mr-1`}></i>{x.l}
+                </div>
+                <div className="text-ink tabular-nums mt-2"
+                  style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                  {x.v}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Push enviados últimos 7 días */}
+          <div className="surface-card-shadow" style={{ padding: '1.5rem 1.4rem' }}>
+            <span className="premium-eyebrow mb-4" style={{ display: 'inline-flex' }}>
+              <i className="fas fa-paper-plane" style={{ fontSize: '10px' }}></i>
+              Push enviados — últimos 7 días
+            </span>
+            <div className="overflow-x-auto mt-4">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">
+                    <th className="text-left py-2">Fecha</th>
+                    <th className="text-right py-2">Cierre día</th>
+                    <th className="text-right py-2">Meseta</th>
+                    <th className="text-right py-2">Test</th>
+                  </tr>
+                </thead>
+                <tbody className="tabular-nums">
+                  {data.stats7d.map((s, i) => (
+                    <tr key={s.date} style={{ borderTop: '1px solid ' + (darkMode ? 'rgba(232, 224, 212, 0.08)' : 'var(--color-border)') }}>
+                      <td className="py-2 text-ink">{s.date}</td>
+                      <td className="py-2 text-right text-ink">{s.evening_sent}</td>
+                      <td className="py-2 text-right text-ink">{s.plateau_sent}</td>
+                      <td className="py-2 text-right text-ink-muted">{s.test_push_sent}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Distribución timezones */}
+          {Object.keys(data.tzDistribution || {}).length > 0 && (
+            <div className="surface-card-shadow" style={{ padding: '1.5rem 1.4rem' }}>
+              <span className="premium-eyebrow mb-4" style={{ display: 'inline-flex' }}>
+                <i className="fas fa-globe" style={{ fontSize: '10px' }}></i>
+                Timezones de subscripciones
+              </span>
+              <div className="flex flex-wrap gap-2 mt-4">
+                {Object.entries(data.tzDistribution).sort((a,b) => b[1]-a[1]).map(([tz, n]) => (
+                  <span key={tz} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold tabular-nums"
+                    style={{ background: darkMode ? 'rgba(232, 199, 122, 0.14)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 199, 122, 0.20)' : 'rgba(200, 148, 58, 0.18)') }}>
+                    {tz} <span className="text-ink-muted">· {n}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Lista de usuarios recientes */}
+          <div className="surface-card-shadow overflow-hidden">
+            <div className="px-5 py-3 border-b border-default flex items-center justify-between">
+              <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+                <i className="fas fa-clock-rotate-left" style={{ fontSize: '10px' }}></i>
+                Usuarios recientes (top 20)
+              </span>
+              <span className="text-xs font-semibold tabular-nums text-ink-muted">{data.recentUsers.length}</span>
+            </div>
+            <div className={`divide-y ${darkMode ? 'divide-gray-700/40' : 'divide-gray-100'}`}>
+              {data.recentUsers.length === 0 && (
+                <div className="px-5 py-8 text-center text-sm text-ink-muted">Sin usuarios con push subs</div>
+              )}
+              {data.recentUsers.map(u => (
+                <div key={u.uid} className="flex items-center gap-3 px-5 py-3">
+                  {u.photoURL
+                    ? <img src={u.photoURL} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" referrerPolicy="no-referrer" />
+                    : <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                        style={{ background: darkMode ? 'rgba(232, 199, 122, 0.18)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
+                        {(u.displayName || u.email || '?')[0].toUpperCase()}
+                      </div>}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-ink truncate">
+                      {u.displayName || u.email || u.uid.slice(0, 10) + '…'}
+                    </div>
+                    <div className="text-xs text-ink-muted truncate">{u.email}</div>
+                    <div className="text-[10px] text-ink-faint mt-0.5 tabular-nums">
+                      {u.tz ? <span className="mr-2"><i className="fas fa-globe mr-1"></i>{u.tz}</span> : null}
+                      {u.provider ? <span className="mr-2"><i className={`${u.provider === 'google.com' ? 'fab fa-google' : 'fas fa-envelope'} mr-1`}></i>{u.provider === 'google.com' ? 'Google' : 'Email'}</span> : null}
+                      {u.createdAt ? <span className="mr-2">Alta: {fmtDate(u.createdAt)}</span> : null}
+                      {u.lastSignIn ? <span>Último login: {fmtRel(u.lastSignIn)}</span> : null}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-xs text-ink-faint text-center pt-2">
+            Generado: {fmtRel(data.generatedAt)} · Solo visible para admin
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+// =============================================
 // COMPONENTE: NotificationSetupModal
 // Configuración de notificaciones push. Detecta plataforma:
 //  - iOS Safari sin PWA instalada → instructivo Add-to-Home-Screen
@@ -14245,16 +14501,7 @@ function NotificationSetupModal({ darkMode }) {
           )}
 
           {supported && permState === 'granted' && (
-            <div className="rounded-2xl text-sm flex items-start gap-2.5"
-              style={{
-                padding: '1rem 1.15rem',
-                background: darkMode ? 'rgba(140, 188, 145, 0.10)' : 'rgba(90, 122, 94, 0.06)',
-                boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(140, 188, 145, 0.20)' : 'rgba(90, 122, 94, 0.18)'),
-                color: 'var(--color-success)', lineHeight: 1.5
-              }}>
-              <i className="fas fa-circle-check mt-1 flex-shrink-0"></i>
-              <span>{t('Notificaciones activas. Vas a recibir el recordatorio nocturno y aviso si se detecta una meseta.','Notifications active. You\'ll get the evening reminder and a plateau alert if detected.')}</span>
-            </div>
+            <NotificationGrantedView darkMode={darkMode} />
           )}
 
           {supported && permState === 'denied' && (
@@ -14785,6 +15032,19 @@ function App() {
     return function() { navigator.serviceWorker.removeEventListener('message', onSWMessage); };
   }, []);
 
+  // Admin screen: solo whitelist email
+  const [showAdmin, setShowAdmin] = React.useState(false);
+  React.useEffect(function() {
+    function onOpenAdmin() {
+      if (authUser && authUser.email && ADMIN_EMAILS_CLIENT.indexOf(authUser.email.toLowerCase()) >= 0) {
+        setShowAdmin(true);
+        window.scrollTo(0, 0);
+      }
+    }
+    window.addEventListener('calibrate_open_admin', onOpenAdmin);
+    return function() { window.removeEventListener('calibrate_open_admin', onOpenAdmin); };
+  }, [authUser]);
+
   // ── Herramienta para el coach: agregar comida planificada (pendiente) ──
   // La agente llama: window._NP_addPendiente({ nombre, kcal, proteinas_g, carbohidratos_g, grasas_g })
   window._NP_addPendiente = function(datos) {
@@ -15098,6 +15358,13 @@ function App() {
 
       {/* Modal de configuración de notificaciones — disparado desde avatar dropdown */}
       <NotificationSetupModal darkMode={darkMode} />
+
+      {/* Admin screen — overlay full-screen para emails whitelist */}
+      {showAdmin && (
+        <div className="fixed inset-0 z-40 overflow-y-auto" style={{ background: 'var(--color-base)' }}>
+          <AdminScreen darkMode={darkMode} onClose={() => setShowAdmin(false)} />
+        </div>
+      )}
 
       {/* Asistente IA — siempre disponible, contextual al tab activo */}
       {pantalla !== 'loading' && pantalla !== 'onboarding' && (

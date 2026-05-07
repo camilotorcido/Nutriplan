@@ -19,6 +19,9 @@ const VAPID_PRIVATE_KEY = defineSecret('VAPID_PRIVATE_KEY');
 const VAPID_PUBLIC_KEY = 'BHaa4Gkl2iQ_qrIFze1YaKqkqy2DGdH2Ae4wivJGvR3kgn8ng3qbK_AS9Mu0o1uxzmFDIZIw7QJvTIK_iCdzeGU';
 const VAPID_SUBJECT    = 'mailto:crespo.camilo@gmail.com';
 
+// Admin whitelist — solo estos emails pueden llamar getAdminMetrics
+const ADMIN_EMAILS = ['crespo.camilo@gmail.com'];
+
 // Init Firebase Admin (idempotente)
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -696,28 +699,67 @@ function _localDateForTz(tz) {
   }
 }
 
-// ── Scheduled: Cierre del día (19:00 Chile) — recordatorio para calificar comidas ──
+// ── Helper: hora local (0-23) en una zona horaria ──
+function _localHourForTz(tz) {
+  try {
+    const fmt = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: '2-digit', hour12: false });
+    return parseInt(fmt.format(new Date()), 10);
+  } catch (_) {
+    return new Date().getHours();
+  }
+}
+
+// ── Helper: incrementa un contador en admin/stats ──
+async function _bumpStatsCounter(field, n) {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    await admin.firestore()
+      .collection('admin').doc('stats')
+      .collection('daily').doc(today)
+      .set({ [field]: admin.firestore.FieldValue.increment(n || 1) }, { merge: true });
+  } catch (_) {}
+}
+
+// ── Helper: itera collection group de pushSubscriptions y agrupa por user ──
+// Devuelve Map<uid, [subDocs]> filtrado por TZ que matcha la hora target
+async function _activeSubsAtLocalHour(targetHour) {
+  const subsSnap = await admin.firestore()
+    .collectionGroup('pushSubscriptions').get();
+  const byUser = new Map();
+  subsSnap.forEach((doc) => {
+    const data = doc.data();
+    const tz = data.tz || 'America/Santiago';
+    if (_localHourForTz(tz) !== targetHour) return;
+    // El path del doc es users/{uid}/pushSubscriptions/{subId}
+    const uid = doc.ref.parent.parent.id;
+    if (!byUser.has(uid)) byUser.set(uid, []);
+    byUser.get(uid).push({ ref: doc.ref, data });
+  });
+  return byUser;
+}
+
+// ── Scheduled: Cierre del día — corre cada hora, filtra subs cuya hora local sea 19 ──
 exports.sendEveningPush = onSchedule(
   {
-    schedule: '0 19 * * *',
-    timeZone: 'America/Santiago',
+    schedule: '5 * * * *',
+    timeZone: 'UTC',
     secrets: [VAPID_PRIVATE_KEY],
     region: 'us-central1'
   },
   async () => {
     _setupWebPush();
-    const usersSnap = await admin.firestore().collection('users').get();
+    const TARGET_HOUR = 19;
+    const byUser = await _activeSubsAtLocalHour(TARGET_HOUR);
+    if (byUser.size === 0) {
+      console.log('[sendEveningPush] no subs en hora 19 local');
+      return null;
+    }
     let sent = 0;
-    for (const userDoc of usersSnap.docs) {
-      const uid = userDoc.id;
-      const subsSnap = await admin.firestore()
-        .collection('users').doc(uid)
-        .collection('pushSubscriptions').limit(1).get();
-      if (subsSnap.empty) continue;
+    for (const [uid, subs] of byUser) {
       try {
         const adher  = await _readUserData(uid, 'nutriplan_adherencia') || {};
         const ratings = await _readUserData(uid, 'nutriplan_ratings') || {};
-        const tz = (subsSnap.docs[0].data().tz) || 'America/Santiago';
+        const tz = subs[0].data.tz || 'America/Santiago';
         const fechaHoy = _localDateForTz(tz);
         const adhHoy = adher[fechaHoy] || {};
         let unrated = 0;
@@ -742,31 +784,31 @@ exports.sendEveningPush = onSchedule(
         console.warn('[sendEveningPush] uid:', uid, 'error:', e.message);
       }
     }
-    console.log('[sendEveningPush] sent:', sent, 'of', usersSnap.size);
+    if (sent > 0) await _bumpStatsCounter('evening_sent', sent);
+    console.log('[sendEveningPush] sent:', sent, 'of', byUser.size);
     return null;
   }
 );
 
-// ── Scheduled: Meseta detectada (08:00 Chile) — aviso matutino ──
+// ── Scheduled: Meseta detectada — corre cada hora, filtra subs cuya hora local sea 8 ──
 exports.sendPlateauPush = onSchedule(
   {
-    schedule: '0 8 * * *',
-    timeZone: 'America/Santiago',
+    schedule: '5 * * * *',
+    timeZone: 'UTC',
     secrets: [VAPID_PRIVATE_KEY],
     region: 'us-central1'
   },
   async () => {
     _setupWebPush();
-    const usersSnap = await admin.firestore().collection('users').get();
+    const TARGET_HOUR = 8;
+    const byUser = await _activeSubsAtLocalHour(TARGET_HOUR);
+    if (byUser.size === 0) {
+      console.log('[sendPlateauPush] no subs en hora 8 local');
+      return null;
+    }
     let sent = 0;
-    for (const userDoc of usersSnap.docs) {
-      const uid = userDoc.id;
-      const subsSnap = await admin.firestore()
-        .collection('users').doc(uid)
-        .collection('pushSubscriptions').limit(1).get();
-      if (subsSnap.empty) continue;
+    for (const [uid, subs] of byUser) {
       try {
-        // Plateau heuristic simple: leer body_comp, calcular delta semanal últimos 14 días
         const bc = await _readUserData(uid, 'nutriplan_body_comp') || [];
         if (!Array.isArray(bc) || bc.length < 14) continue;
         const sorted = bc.filter((e) => e && e.peso != null && e.fecha).sort((a, b) => a.fecha < b.fecha ? -1 : 1);
@@ -776,11 +818,10 @@ exports.sendPlateauPush = onSchedule(
         const ultimo  = ultimos14[ultimos14.length - 1].peso;
         const deltaSemanal = ((ultimo - primero) / 14) * 7;
         const enPlateau = Math.abs(deltaSemanal) < 0.25;
-        // Verificar que no haya un protocolo activo
         const plateauState = await _readUserData(uid, 'nutriplan_plateau_state');
         const pasoActivo = plateauState && plateauState.pasoActual && plateauState.pasoActual > 0;
         if (!enPlateau || pasoActivo) continue;
-        const tz = (subsSnap.docs[0].data().tz) || 'America/Santiago';
+        const tz = subs[0].data.tz || 'America/Santiago';
         const fechaHoy = _localDateForTz(tz);
         await _sendPushToUser(uid, {
           title: 'Meseta detectada — Calibrate',
@@ -795,7 +836,161 @@ exports.sendPlateauPush = onSchedule(
         console.warn('[sendPlateauPush] uid:', uid, 'error:', e.message);
       }
     }
-    console.log('[sendPlateauPush] sent:', sent, 'of', usersSnap.size);
+    if (sent > 0) await _bumpStatsCounter('plateau_sent', sent);
+    console.log('[sendPlateauPush] sent:', sent, 'of', byUser.size);
     return null;
+  }
+);
+
+// ── Test push: dispara una notif inmediata al usuario que llama ──
+exports.sendTestPush = onCall(
+  {
+    secrets: [VAPID_PRIVATE_KEY],
+    region: 'us-central1',
+    cors: ['https://camilotorcido.github.io', 'http://localhost:5000', 'http://localhost:3000'],
+    invoker: 'public'
+  },
+  async (request) => {
+    if (!request.auth || !request.auth.uid) {
+      throw new HttpsError('unauthenticated', 'Requiere autenticación');
+    }
+    _setupWebPush();
+    const uid = request.auth.uid;
+    const subsSnap = await admin.firestore()
+      .collection('users').doc(uid)
+      .collection('pushSubscriptions').get();
+    if (subsSnap.empty) {
+      throw new HttpsError('failed-precondition', 'Sin subscripciones activas');
+    }
+    await _sendPushToUser(uid, {
+      title: 'Calibrate — Push de prueba',
+      body:  'Si recibís esto, las notificaciones funcionan ✓',
+      tag:   'calibrate-test-' + Date.now(),
+      icon:  'icons/icon.svg',
+      url:   './',
+      nav:   null
+    });
+    await _bumpStatsCounter('test_push_sent');
+    return { ok: true, count: subsSnap.size };
+  }
+);
+
+// ── Admin metrics: solo emails whitelist pueden llamar ──
+exports.getAdminMetrics = onCall(
+  {
+    region: 'us-central1',
+    cors: ['https://camilotorcido.github.io', 'http://localhost:5000', 'http://localhost:3000'],
+    invoker: 'public'
+  },
+  async (request) => {
+    if (!request.auth || !request.auth.token) {
+      throw new HttpsError('unauthenticated', 'Requiere autenticación');
+    }
+    const email = (request.auth.token.email || '').toLowerCase();
+    if (!ADMIN_EMAILS.map((e) => e.toLowerCase()).includes(email)) {
+      throw new HttpsError('permission-denied', 'No autorizado');
+    }
+
+    const db = admin.firestore();
+
+    // 1. Total users (count aggregation)
+    const usersAgg = await db.collection('users').count().get();
+    const totalUsers = usersAgg.data().count;
+
+    // 2. Active push subs (collection group count)
+    const subsAgg = await db.collectionGroup('pushSubscriptions').count().get();
+    const totalSubs = subsAgg.data().count;
+
+    // 3. Users con push activo (distintos uids)
+    const subsSnap = await db.collectionGroup('pushSubscriptions').get();
+    const usersWithSubs = new Set();
+    const tzDistribution = {};
+    subsSnap.forEach((doc) => {
+      usersWithSubs.add(doc.ref.parent.parent.id);
+      const tz = doc.data().tz || 'unknown';
+      tzDistribution[tz] = (tzDistribution[tz] || 0) + 1;
+    });
+
+    // 4. Lista de usuarios recientes (últimos 30 — por pushSubscription createdAt como proxy de actividad)
+    const recientesSnap = await db.collectionGroup('pushSubscriptions')
+      .orderBy('createdAt', 'desc')
+      .limit(30)
+      .get();
+    const recientesUids = [];
+    const seen = new Set();
+    recientesSnap.forEach((doc) => {
+      const uid = doc.ref.parent.parent.id;
+      if (!seen.has(uid)) {
+        seen.add(uid);
+        const data = doc.data();
+        recientesUids.push({
+          uid,
+          tz: data.tz || null,
+          userAgent: data.userAgent || null,
+          lastSubAt: data.createdAt && data.createdAt.toMillis ? data.createdAt.toMillis() : null
+        });
+      }
+    });
+
+    // 5. Enriquecer con datos de Firebase Auth (displayName, email)
+    const enriched = [];
+    for (const u of recientesUids.slice(0, 20)) {
+      try {
+        const userRecord = await admin.auth().getUser(u.uid);
+        enriched.push(Object.assign({}, u, {
+          displayName: userRecord.displayName || null,
+          email:       userRecord.email || null,
+          photoURL:    userRecord.photoURL || null,
+          provider:    (userRecord.providerData[0] && userRecord.providerData[0].providerId) || 'unknown',
+          createdAt:   userRecord.metadata && userRecord.metadata.creationTime
+            ? new Date(userRecord.metadata.creationTime).getTime() : null,
+          lastSignIn:  userRecord.metadata && userRecord.metadata.lastSignInTime
+            ? new Date(userRecord.metadata.lastSignInTime).getTime() : null
+        }));
+      } catch (e) {
+        enriched.push(Object.assign({}, u, { error: 'auth-not-found' }));
+      }
+    }
+
+    // 6. Stats de los últimos 7 días
+    const today = new Date();
+    const stats7d = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today);
+      d.setUTCDate(d.getUTCDate() - i);
+      const iso = d.toISOString().slice(0, 10);
+      try {
+        const sd = await db.collection('admin').doc('stats').collection('daily').doc(iso).get();
+        const data = sd.exists ? sd.data() : {};
+        stats7d.push({
+          date: iso,
+          evening_sent:   data.evening_sent || 0,
+          plateau_sent:   data.plateau_sent || 0,
+          test_push_sent: data.test_push_sent || 0
+        });
+      } catch (_) {
+        stats7d.push({ date: iso, evening_sent: 0, plateau_sent: 0, test_push_sent: 0 });
+      }
+    }
+
+    // 7. Total Firebase Auth users (puede diferir de Firestore users si alguno no se sincroniza)
+    let totalAuthUsers = null;
+    try {
+      const list = await admin.auth().listUsers(1000);
+      totalAuthUsers = list.users.length;
+    } catch (_) {}
+
+    return {
+      generatedAt: Date.now(),
+      totals: {
+        users:           totalUsers,
+        authUsers:       totalAuthUsers,
+        pushSubscriptions: totalSubs,
+        usersWithPush:   usersWithSubs.size
+      },
+      tzDistribution,
+      stats7d,
+      recentUsers: enriched
+    };
   }
 );
