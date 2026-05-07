@@ -14174,11 +14174,14 @@ function UsersList({ users, darkMode, fmtDate, fmtRel }) {
 
       <div className="px-7 py-6" style={{ borderBottom: '1px solid ' + (darkMode ? 'rgba(232, 224, 212, 0.06)' : 'var(--color-border)') }}>
         <div className="relative mb-4">
-          <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-xs text-ink-faint"></i>
+          <i className="fas fa-search absolute top-1/2 -translate-y-1/2 text-xs text-ink-faint"
+             style={{ left: '20px' }}></i>
           <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por email, nombre o UID…"
-            className="w-full text-sm rounded-xl pl-11 pr-4 py-3 outline-none transition"
+            className="w-full text-sm rounded-xl py-3 outline-none transition"
             style={{
+              paddingLeft: '46px',
+              paddingRight: '16px',
               background: darkMode ? 'rgba(232, 224, 212, 0.10)' : '#FAF6EE',
               color: 'var(--color-ink)',
               boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.18)' : 'rgba(0,0,0,0.08)')
