@@ -3715,41 +3715,59 @@ function AdherenceWidget({ darkMode, forceUpdate }) {
 
   if (stats.registros_total === 0) {
     return (
-      <div className={`mt-6 rounded-2xl p-4 border-2 border-dashed text-center ${darkMode ? 'border-gray-700 text-gray-500' : 'border-gray-300 text-gray-400'}`}>
-        <i className="fas fa-clipboard-check text-2xl mb-2"></i>
-        <p className="text-xs">Marca las comidas que efectivamente comiste para medir tu adherencia</p>
+      <div className="mt-6 rounded-2xl text-center"
+        style={{
+          padding: '1.25rem',
+          border: '1px dashed ' + (darkMode ? 'rgba(232, 224, 212, 0.18)' : 'var(--color-border)'),
+          color: 'var(--color-ink-faint)',
+          background: darkMode ? 'rgba(232, 224, 212, 0.03)' : 'rgba(245, 240, 232, 0.4)'
+        }}>
+        <i className="fas fa-clipboard-check text-2xl mb-2" style={{ opacity: 0.6 }}></i>
+        <p className="text-sm" style={{ lineHeight: 1.5 }}>{t('Marca las comidas que efectivamente comiste para medir tu adherencia','Mark the meals you ate to measure adherence')}</p>
       </div>
     );
   }
 
-  const color = stats.porcentaje >= 80 ? 'emerald' : stats.porcentaje >= 50 ? 'amber' : 'rose';
+  // IA redesign: paleta de estado del brand
+  const adhColor = stats.porcentaje >= 80 ? 'var(--color-success)' : stats.porcentaje >= 50 ? 'var(--color-accent-dark)' : 'var(--color-alert)';
+  const tileBg = darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(245, 240, 232, 0.55)';
+  const tileRing = darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.06)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.05)';
+  const barColor = (pct) => pct == null
+    ? (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'var(--color-border)')
+    : pct >= 80 ? 'var(--color-success)' : pct >= 50 ? 'var(--color-accent)' : 'var(--color-alert)';
 
   return (
-    <div className={`mt-6 rounded-2xl border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
-      style={{ padding: '20px 20px 24px' }}>
+    <div className="mt-6 surface-card-shadow" style={{ padding: '1.5rem 1.4rem' }}>
       {/* Header */}
-      <div className="flex items-center justify-between" style={{ marginBottom: '16px' }}>
-        <div className={`text-xs font-semibold uppercase tracking-wide text-ink-muted`}>
-          <i className="fas fa-clipboard-check mr-1.5"></i>{t('Adherencia 7 días','7-Day Adherence')}
+      <div className="flex items-center justify-between mb-5">
+        <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+          <i className="fas fa-clipboard-check" style={{ fontSize: '10px' }}></i>
+          {t('Adherencia 7 días','7-Day Adherence')}
+        </span>
+        <div className="tabular-nums"
+          style={{ fontSize: '1.625rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: adhColor }}>
+          {stats.porcentaje}%
         </div>
-        <div className={`text-2xl font-bold font-display text-${color}-500`}>{stats.porcentaje}%</div>
       </div>
       {/* Stats grid */}
-      <div className="grid grid-cols-3" style={{ gap: '10px', marginBottom: '20px' }}>
-        <div className={`rounded-xl text-center ${darkMode ? 'bg-gray-700/60' : 'bg-gray-50'}`}
-          style={{ padding: '12px 8px' }}>
-          <div className="font-bold text-emerald-500" style={{ fontSize: '18px', lineHeight: 1.2 }}>{stats.cumplidos}</div>
-          <div style={{ fontSize: '11px', marginTop: '4px' }} className="text-gray-400">{t('cumplidas','completed')}</div>
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="text-center" style={{ background: tileBg, boxShadow: tileRing, borderRadius: 'var(--radius-premium-md)', padding: '1rem 0.5rem' }}>
+          <div className="tabular-nums" style={{ fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: 'var(--color-success)' }}>
+            {stats.cumplidos}
+          </div>
+          <div className="text-[10px] font-bold uppercase tracking-wider mt-2 text-ink-muted">{t('cumplidas','completed')}</div>
         </div>
-        <div className={`rounded-xl text-center ${darkMode ? 'bg-gray-700/60' : 'bg-gray-50'}`}
-          style={{ padding: '12px 8px' }}>
-          <div className={`font-bold text-ink`} style={{ fontSize: '18px', lineHeight: 1.2 }}>{stats.kcal_cumplidas.toLocaleString('es-CL')}</div>
-          <div style={{ fontSize: '11px', marginTop: '4px' }} className="text-gray-400">kcal ✓</div>
+        <div className="text-center" style={{ background: tileBg, boxShadow: tileRing, borderRadius: 'var(--radius-premium-md)', padding: '1rem 0.5rem' }}>
+          <div className="tabular-nums text-ink" style={{ fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+            {stats.kcal_cumplidas.toLocaleString('es-CL')}
+          </div>
+          <div className="text-[10px] font-bold uppercase tracking-wider mt-2 text-ink-muted">kcal ✓</div>
         </div>
-        <div className={`rounded-xl text-center ${darkMode ? 'bg-gray-700/60' : 'bg-gray-50'}`}
-          style={{ padding: '12px 8px' }}>
-          <div className="font-bold text-rose-500" style={{ fontSize: '18px', lineHeight: 1.2 }}>{stats.kcal_perdidas.toLocaleString('es-CL')}</div>
-          <div style={{ fontSize: '11px', marginTop: '4px' }} className="text-gray-400">{t('kcal perdidas','kcal missed')}</div>
+        <div className="text-center" style={{ background: tileBg, boxShadow: tileRing, borderRadius: 'var(--radius-premium-md)', padding: '1rem 0.5rem' }}>
+          <div className="tabular-nums" style={{ fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: 'var(--color-alert)' }}>
+            {stats.kcal_perdidas.toLocaleString('es-CL')}
+          </div>
+          <div className="text-[10px] font-bold uppercase tracking-wider mt-2 text-ink-muted leading-tight">{t('kcal perdidas','kcal missed')}</div>
         </div>
       </div>
       {/* Bar chart */}
@@ -3757,17 +3775,20 @@ function AdherenceWidget({ darkMode, forceUpdate }) {
         role="img" aria-label={`Gráfico de adherencia 7 días: ${stats.porcentaje}% promedio`}>
         {historial.map((d, idx) => {
           const altura = d.porcentaje != null ? Math.max(4, d.porcentaje * 0.56) : 0;
-          const bgBar = d.porcentaje == null
-            ? (darkMode ? '#374151' : '#e5e7eb')
-            : d.porcentaje >= 80 ? '#10b981' : d.porcentaje >= 50 ? '#f59e0b' : '#f87171';
           return (
             <div key={idx} className="flex-1 flex flex-col items-center" style={{ gap: '6px' }} aria-hidden="true">
               <div className="w-full flex items-end" style={{ height: '52px' }}>
-                <div className="w-full rounded-t"
-                  style={{ height: `${altura}px`, minHeight: d.porcentaje != null ? '4px' : '2px', background: bgBar, transition: 'height 0.3s ease' }}
-                  title={d.porcentaje != null ? `${d.porcentaje}% (${d.cumplidos}/${d.total})` : 'Sin registro'}></div>
+                <div className="w-full"
+                  style={{
+                    height: altura + 'px',
+                    minHeight: d.porcentaje != null ? '4px' : '2px',
+                    background: barColor(d.porcentaje),
+                    borderRadius: '3px 3px 0 0',
+                    transition: 'height 0.45s cubic-bezier(0.32, 0.72, 0, 1)'
+                  }}
+                  title={d.porcentaje != null ? d.porcentaje + '% (' + d.cumplidos + '/' + d.total + ')' : 'Sin registro'}></div>
               </div>
-              <div style={{ fontSize: '11px' }} className="text-gray-500">{d.dia_semana}</div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-faint">{d.dia_semana}</div>
             </div>
           );
         })}
@@ -4420,33 +4441,48 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
 
   return (
     <div className="animate-fadeIn">
-      {/* Banner Fat Loss Mode */}
+      {/* Banner Fat Loss Mode — IA redesign brand */}
       {faseInfo && (
-        <div className={`mb-4 rounded-2xl overflow-hidden border min-w-0 w-full ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-          {/* Barra de acento superior */}
-          <div className={`h-2 ${faseInfo.tipoFase === 'dietBreak' ? 'bg-gradient-to-r from-violet-500 to-purple-500' : 'bg-gradient-to-r from-amber-500 to-orange-500'}`} />
+        <div className="mb-4 surface-card-shadow overflow-hidden min-w-0 w-full">
+          {/* Barra de acento superior — color sólido brand */}
+          <div style={{
+            height: '4px',
+            background: faseInfo.tipoFase === 'dietBreak'
+              ? 'linear-gradient(90deg, var(--color-success), var(--color-accent))'
+              : 'var(--color-accent)'
+          }} />
 
-          <div className="px-6 min-w-0" style={{ paddingTop: '24px', paddingBottom: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="px-6 min-w-0" style={{ paddingTop: '1.5rem', paddingBottom: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {/* ── Header: etiqueta + nombre de fase ── */}
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <i className={`fas ${faseInfo.tipoFase === 'dietBreak' ? 'fa-pause-circle text-violet-500' : 'fa-fire text-amber-500'} text-sm`}></i>
-                <span className={`text-[10px] font-bold tracking-widest uppercase ${faseInfo.tipoFase === 'dietBreak' ? (darkMode ? 'text-violet-400' : 'text-violet-600') : (darkMode ? 'text-amber-400' : 'text-amber-600')}`}>
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+                  <span className="banner-premium-pulse-dot" />
                   {faseInfo.tipoFase === 'dietBreak' ? 'Diet Break' : 'Fat Loss Mode'}
                 </span>
                 {faseInfo.completado && (
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${darkMode ? 'bg-green-900/60 text-green-400' : 'bg-green-100 text-green-700'}`}>{t('COMPLETADO','COMPLETED')}</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                    style={darkMode
+                      ? { background: 'rgba(140, 188, 145, 0.16)', color: '#9FCBA3', boxShadow: 'inset 0 0 0 1px rgba(140, 188, 145, 0.22)' }
+                      : { background: 'var(--color-success-light)', color: 'var(--color-success)' }}>
+                    {t('Completado','Completed')}
+                  </span>
                 )}
                 {faseInfo.porEmpezar && (
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>{t('PROGRAMADO','SCHEDULED')}</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                    style={darkMode
+                      ? { background: 'rgba(232, 224, 212, 0.06)', color: '#B8AB9C', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
+                      : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' }}>
+                    {t('Programado','Scheduled')}
+                  </span>
                 )}
               </div>
-              <h3 className={`text-2xl font-bold leading-tight text-ink`}>
+              <h3 className="text-ink leading-tight" style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
                 {tData(faseInfo.nombreFase)}
               </h3>
-              <p className={`text-xs mt-2 text-ink-faint`}>
+              <p className="text-sm mt-2 text-ink-muted tabular-nums">
                 {t('Día','Day')} {faseInfo.diaDentroDeFase} {t('de fase · Mes','of phase · Month')} {faseInfo.mesInicio}{faseInfo.mesFin !== faseInfo.mesInicio ? '–' + faseInfo.mesFin : ''}
-                {faseInfo.diasRestantesEnFase > 0 && ` · ${faseInfo.diasRestantesEnFase}d ${t('restantes','remaining')}`}
+                {faseInfo.diasRestantesEnFase > 0 && ' · ' + faseInfo.diasRestantesEnFase + 'd ' + t('restantes','remaining')}
               </p>
             </div>
 
@@ -4484,70 +4520,96 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
 
             {/* ── Foco de la fase ── */}
             {faseInfo.foco && (
-              <div className="flex items-start gap-3 min-w-0">
-                <i className="fas fa-bullseye text-amber-500 mt-1 flex-shrink-0"></i>
-                <p className={`text-sm leading-relaxed min-w-0 text-ink-muted`}>{tData(faseInfo.foco)}</p>
+              <div className="flex items-start gap-2.5 min-w-0">
+                <i className="fas fa-bullseye mt-1 flex-shrink-0" style={{ color: 'var(--color-accent)', fontSize: '13px' }}></i>
+                <p className="text-sm min-w-0 text-ink-muted" style={{ lineHeight: 1.6 }}>{tData(faseInfo.foco)}</p>
               </div>
             )}
 
-            {/* ── Prescripción de entrenamiento (basada en evidencia científica) ── */}
-            {faseInfo.entrenamiento && (
-              <div className={`rounded-xl p-4 ${darkMode ? 'bg-gray-700/40 border border-gray-700' : 'bg-blue-50/60 border border-blue-100'}`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <i className={`fas fa-dumbbell ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}></i>
-                    <span className={`text-xs font-bold uppercase tracking-wide text-info`}>{t('Entrenamiento de la fase','Phase training')}</span>
+            {/* ── Prescripción de entrenamiento (basada en evidencia científica) — brand pattern ── */}
+            {faseInfo.entrenamiento && (() => {
+              const _tileBg = darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(245, 240, 232, 0.55)';
+              const _tileRing = darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.06)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.05)';
+              const _chipAccent = darkMode
+                ? { background: 'rgba(232, 199, 122, 0.14)', color: '#E8C77A', boxShadow: 'inset 0 0 0 1px rgba(232, 199, 122, 0.20)' }
+                : { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' };
+              const _divider = darkMode ? 'rgba(232, 224, 212, 0.10)' : 'var(--color-border)';
+              return (
+                <div style={{ borderTop: '1px solid ' + _divider, paddingTop: '1.25rem' }}>
+                  <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+                    <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+                      <i className="fas fa-dumbbell" style={{ fontSize: '10px' }}></i>
+                      {t('Entrenamiento de la fase','Phase training')}
+                    </span>
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
+                      style={_chipAccent}>
+                      {faseInfo.entrenamiento.modalidad}
+                    </span>
                   </div>
-                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${darkMode ? 'bg-blue-900/40 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>{faseInfo.entrenamiento.modalidad}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  {[
-                    { l: t('Volumen','Volume'), v: faseInfo.entrenamiento.volumenSets },
-                    { l: t('Reps por serie','Reps per set'), v: faseInfo.entrenamiento.repRange ? faseInfo.entrenamiento.repRange + ' reps' : '—' },
-                    { l: t('Frecuencia','Frequency'), v: faseInfo.entrenamiento.frecuenciaSemanal + ' ' + t('días por semana','days per week') },
-                    { l: t('Peso (% de tu máx.)','Weight (% of your max)'), v: faseInfo.entrenamiento.intensidadPct1RM },
-                    { l: t('Esfuerzo (1-10)','Effort (1-10)'), v: faseInfo.entrenamiento.rpeObjetivo },
-                    { l: 'Cardio', v: faseInfo.entrenamiento.cardioMinSemana + ' min/' + t('sem','wk') + (faseInfo.entrenamiento.cardioExtraNecesario > 0 ? ' (+' + faseInfo.entrenamiento.cardioExtraNecesario + ' extra)' : '') },
-                    { l: t('Ajuste de volumen','Volume adjustment'), v: (faseInfo.entrenamiento.factorVolumen != null ? faseInfo.entrenamiento.factorVolumen.toFixed(2) + '×' : '1.00×') },
-                    { l: t('Energía mínima','Min energy'), v: '≥ ' + faseInfo.entrenamiento.eaMinKcalKgFFM + ' ' + t('kcal/kg masa magra','kcal/kg lean mass') }
-                  ].map(x => (
-                    <div key={x.l} className={`rounded-lg px-2.5 py-1.5 ${darkMode ? 'bg-gray-800/60' : 'bg-white/70'}`}>
-                      <div className={`text-[10px] uppercase ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{x.l}</div>
-                      <div className={`text-xs font-semibold text-ink`}>{x.v}</div>
-                    </div>
-                  ))}
-                </div>
-                <p className={`text-[11px] leading-relaxed text-ink-muted`}>
-                  <i className="fas fa-info-circle mr-1.5 opacity-70"></i>
-                  {tData(faseInfo.entrenamiento.foco)}
-                </p>
-                {faseInfo.entrenamiento.redFlags && faseInfo.entrenamiento.redFlags.length > 0 && (
-                  <div className={`mt-2.5 pt-2.5 border-t ${darkMode ? 'border-gray-700' : 'border-blue-100'}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-amber-400' : 'text-amber-700'}`}>
-                      <i className="fas fa-flag mr-1"></i>{t('Red flags','Red flags')}
-                    </div>
-                    <ul className={`text-[11px] space-y-0.5 text-ink-muted`}>
-                      {faseInfo.entrenamiento.redFlags.map((rf, i) => (
-                        <li key={i} className="flex items-start gap-1.5">
-                          <span className="opacity-60">·</span>
-                          <span>{tData(rf)}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    {[
+                      { l: t('Volumen','Volume'), v: faseInfo.entrenamiento.volumenSets },
+                      { l: t('Reps por serie','Reps per set'), v: faseInfo.entrenamiento.repRange ? faseInfo.entrenamiento.repRange + ' reps' : '—' },
+                      { l: t('Frecuencia','Frequency'), v: faseInfo.entrenamiento.frecuenciaSemanal + ' ' + t('días/sem','days/wk') },
+                      { l: t('Peso (% máx.)','Weight (% max)'), v: faseInfo.entrenamiento.intensidadPct1RM },
+                      { l: t('Esfuerzo (1-10)','Effort (1-10)'), v: faseInfo.entrenamiento.rpeObjetivo },
+                      { l: 'Cardio', v: faseInfo.entrenamiento.cardioMinSemana + ' min/' + t('sem','wk') + (faseInfo.entrenamiento.cardioExtraNecesario > 0 ? ' (+' + faseInfo.entrenamiento.cardioExtraNecesario + ')' : '') },
+                      { l: t('Ajuste de volumen','Volume adj'), v: (faseInfo.entrenamiento.factorVolumen != null ? faseInfo.entrenamiento.factorVolumen.toFixed(2) + '×' : '1.00×') },
+                      { l: t('Energía mínima','Min energy'), v: '≥ ' + faseInfo.entrenamiento.eaMinKcalKgFFM + ' kcal/kg' }
+                    ].map(x => (
+                      <div key={x.l} className="flex flex-col"
+                        style={{ background: _tileBg, boxShadow: _tileRing, borderRadius: 'var(--radius-premium-sm)', padding: '0.75rem 0.875rem 0.875rem' }}>
+                        <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-muted" style={{ lineHeight: 1.35 }}>
+                          {x.l}
+                        </div>
+                        <div className="text-ink tabular-nums mt-1.5"
+                          style={{ fontSize: '0.95rem', fontWeight: 700, letterSpacing: '-0.015em', lineHeight: 1.1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                          {x.v}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
-            )}
+                  <div className="flex items-start gap-2.5">
+                    <i className="fas fa-circle-info text-ink-faint" style={{ fontSize: '12px', marginTop: '0.2rem' }}></i>
+                    <p className="text-sm text-ink-muted flex-1" style={{ lineHeight: 1.6 }}>
+                      {tData(faseInfo.entrenamiento.foco)}
+                    </p>
+                  </div>
+                  {faseInfo.entrenamiento.redFlags && faseInfo.entrenamiento.redFlags.length > 0 && (
+                    <div className="mt-4 pt-4" style={{ borderTop: '1px solid ' + _divider }}>
+                      <span className="premium-eyebrow mb-2" style={{ display: 'inline-flex', color: 'var(--color-alert)' }}>
+                        <i className="fas fa-flag" style={{ fontSize: '10px' }}></i>
+                        {t('Red flags','Red flags')}
+                      </span>
+                      <ul className="text-sm space-y-1 text-ink-muted mt-2">
+                        {faseInfo.entrenamiento.redFlags.map((rf, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-ink-faint">·</span>
+                            <span>{tData(rf)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* ── Próximo hito ── */}
             {faseInfo.proximoHito && (
-              <div className={`flex items-center justify-between gap-3 text-sm rounded-xl px-4 py-3 ${darkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-50 text-gray-500'}`}>
+              <div className="flex items-center justify-between gap-3 rounded-xl px-4 py-3"
+                style={{
+                  background: darkMode ? 'rgba(232, 199, 122, 0.08)' : 'rgba(200, 148, 58, 0.06)',
+                  boxShadow: darkMode ? 'inset 0 0 0 1px rgba(232, 199, 122, 0.14)' : 'inset 0 0 0 1px rgba(200, 148, 58, 0.14)'
+                }}>
                 <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-                  <i className={`fas fa-forward-fast flex-shrink-0 ${faseInfo.tipoFase === 'dietBreak' ? 'text-violet-400' : 'text-amber-500'}`}></i>
-                  <span className="flex-shrink-0">{t('Próximo:','Next:')}</span>
-                  <span className={`font-semibold truncate text-ink`}>{tData(faseInfo.proximoHito.nombre)}</span>
+                  <i className="fas fa-forward-fast flex-shrink-0" style={{ color: 'var(--color-accent-dark)', fontSize: '12px' }}></i>
+                  <span className="flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-muted">{t('Próximo','Next')}</span>
+                  <span className="font-semibold truncate text-ink text-sm">{tData(faseInfo.proximoHito.nombre)}</span>
                 </div>
-                <span className="flex-shrink-0 text-xs opacity-70">{t('en','in')} {faseInfo.proximoHito.enDias}d</span>
+                <span className="flex-shrink-0 text-xs font-semibold tabular-nums text-ink-muted">
+                  {t('en','in')} {faseInfo.proximoHito.enDias}d
+                </span>
               </div>
             )}
 
