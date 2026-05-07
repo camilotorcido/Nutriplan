@@ -13,6 +13,17 @@ service cloud.firestore {
                          && request.auth.uid == userId;
     }
 
+    // Perfil/heartbeat del propio usuario (lastSeenAt, email, displayName, tz)
+    match /users/{userId}/profile/{document} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
+    }
+
+    // Push subscriptions del propio usuario (lectura — server escribe via admin SDK)
+    match /users/{userId}/pushSubscriptions/{subId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+    }
+
     // Bloquear cualquier otro acceso por defecto
     match /{document=**} {
       allow read, write: if false;

@@ -951,14 +951,35 @@ exports.getAdminMetrics = onCall(
     let activeToday = 0;
     let activeLast7d = 0;
 
+    // Pre-cargar lastSeenAt de Firestore (heartbeat client-side) para enriquecer last-active
+    const lastSeenByUid = new Map();
+    try {
+      const profilesSnap = await db.collectionGroup('profile').get();
+      profilesSnap.forEach((doc) => {
+        if (doc.id !== 'meta') return;
+        const uid = doc.ref.parent.parent.id;
+        const data = doc.data();
+        const ts = data.lastSeenAt && data.lastSeenAt.toMillis ? data.lastSeenAt.toMillis() : null;
+        if (ts) lastSeenByUid.set(uid, ts);
+      });
+    } catch (e) {
+      errors.push('lastSeen: ' + e.message);
+    }
+
     const usersList = allAuthUsers.map((u) => {
       const sub = subsByUid.get(u.uid);
-      const createdAt = u.metadata && u.metadata.creationTime ? new Date(u.metadata.creationTime).getTime() : null;
-      const lastSignIn = u.metadata && u.metadata.lastSignInTime ? new Date(u.metadata.lastSignInTime).getTime() : null;
+      const createdAt    = u.metadata && u.metadata.creationTime    ? new Date(u.metadata.creationTime).getTime()    : null;
+      const lastSignIn   = u.metadata && u.metadata.lastSignInTime  ? new Date(u.metadata.lastSignInTime).getTime()  : null;
+      const lastRefresh  = u.metadata && u.metadata.lastRefreshTime ? new Date(u.metadata.lastRefreshTime).getTime() : null;
+      const lastSeen     = lastSeenByUid.get(u.uid) || null;
+      // lastActiveAt: el más reciente entre heartbeat client-side, refresh de token y sign-in
+      const lastActiveAt = Math.max(lastSeen || 0, lastRefresh || 0, lastSignIn || 0) || null;
+
       if (createdAt && createdAt >= todayMs) registeredToday++;
       if (createdAt && (now - createdAt) <= 7 * dayMs) registeredLast7d++;
-      if (lastSignIn && lastSignIn >= todayMs) activeToday++;
-      if (lastSignIn && (now - lastSignIn) <= 7 * dayMs) activeLast7d++;
+      if (lastActiveAt && lastActiveAt >= todayMs) activeToday++;
+      if (lastActiveAt && (now - lastActiveAt) <= 7 * dayMs) activeLast7d++;
+
       return {
         uid:         u.uid,
         email:       u.email || null,
@@ -969,6 +990,7 @@ exports.getAdminMetrics = onCall(
         disabled:    !!u.disabled,
         createdAt,
         lastSignIn,
+        lastActiveAt,
         hasPush:     !!sub,
         pushTz:      sub ? sub.tz : null,
         pushSince:   sub ? sub.lastSubAt : null

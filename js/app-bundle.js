@@ -14201,74 +14201,79 @@ function UsersList({ users, darkMode, fmtDate, fmtRel }) {
 
       {filtered.length > 0 && (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
+          <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead>
               <tr className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint" style={{ background: headBg }}>
-                <th className="text-left  px-7 py-3.5 font-bold">Usuario</th>
-                <th className="text-left  px-4 py-3.5 font-bold whitespace-nowrap">Provider</th>
-                <th className="text-left  px-4 py-3.5 font-bold whitespace-nowrap">Registrado</th>
-                <th className="text-left  px-4 py-3.5 font-bold whitespace-nowrap">Última conexión</th>
-                <th className="text-right px-7 py-3.5 font-bold whitespace-nowrap">Estado</th>
+                <th className="text-left  px-8 py-4 font-bold">Usuario</th>
+                <th className="text-left  px-5 py-4 font-bold whitespace-nowrap">Provider</th>
+                <th className="text-left  px-5 py-4 font-bold whitespace-nowrap">Registrado</th>
+                <th className="text-left  px-5 py-4 font-bold whitespace-nowrap">Última conexión</th>
+                <th className="text-right px-8 py-4 font-bold whitespace-nowrap">Estado</th>
               </tr>
             </thead>
             <tbody>
-              {visible.map((u) => (
-                <tr key={u.uid} style={{ borderTop: '1px solid ' + rowBorder }}>
-                  <td className="px-7 py-4">
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      {u.photoURL
-                        ? <img src={u.photoURL} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" referrerPolicy="no-referrer" />
-                        : <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                            style={{ background: darkMode ? 'rgba(232, 199, 122, 0.18)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
-                            {(u.displayName || u.email || '?')[0].toUpperCase()}
-                          </div>}
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold text-ink truncate" style={{ maxWidth: '14rem' }}>
-                          {u.displayName || (u.email ? u.email.split('@')[0] : u.uid.slice(0, 10) + '…')}
-                        </div>
-                        <div className="text-xs text-ink-muted truncate mt-0.5" style={{ maxWidth: '14rem' }}>
-                          {u.email || '—'}
+              {visible.map((u) => {
+                const lastTs = u.lastActiveAt || u.lastSignIn;
+                const isOnlineNow = lastTs && (Date.now() - lastTs) < 5 * 60 * 1000;
+                return (
+                  <tr key={u.uid} style={{ borderTop: '1px solid ' + rowBorder }}>
+                    <td className="px-8 py-5" style={{ borderTop: '1px solid ' + rowBorder }}>
+                      <div className="flex items-center gap-4 min-w-0">
+                        {u.photoURL
+                          ? <img src={u.photoURL} alt="" className="w-11 h-11 rounded-full object-cover flex-shrink-0" referrerPolicy="no-referrer" />
+                          : <div className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                              style={{ background: darkMode ? 'rgba(232, 199, 122, 0.18)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
+                              {(u.displayName || u.email || '?')[0].toUpperCase()}
+                            </div>}
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-ink truncate" style={{ maxWidth: '14rem' }}>
+                            {u.displayName || (u.email ? u.email.split('@')[0] : u.uid.slice(0, 10) + '…')}
+                          </div>
+                          <div className="text-xs text-ink-muted truncate mt-1" style={{ maxWidth: '14rem' }}>
+                            {u.email || '—'}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 text-xs text-ink-muted whitespace-nowrap">
-                    <i className={`${u.provider === 'google.com' ? 'fab fa-google' : 'fas fa-envelope'} mr-2`} style={{ opacity: 0.65 }}></i>
-                    {u.provider === 'google.com' ? 'Google' : (u.provider === 'password' ? 'Email' : u.provider)}
-                  </td>
-                  <td className="px-4 py-4 text-xs text-ink whitespace-nowrap tabular-nums">
-                    {u.createdAt ? fmtDate(u.createdAt) : '—'}
-                  </td>
-                  <td className="px-4 py-4 text-xs text-ink-muted whitespace-nowrap tabular-nums">
-                    {u.lastSignIn ? fmtRel(u.lastSignIn) : '—'}
-                  </td>
-                  <td className="px-7 py-4 text-right whitespace-nowrap">
-                    <div className="inline-flex items-center gap-1.5">
-                      {u.createdAt && u.createdAt >= todayMs && (
-                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded"
-                          style={{ background: 'rgba(140, 162, 122, 0.18)', color: 'var(--color-success, #6B8E5A)' }}>
-                          Nuevo
-                        </span>
-                      )}
-                      {u.hasPush && (
-                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded"
-                          style={{ background: 'rgba(232, 199, 122, 0.18)', color: 'var(--color-accent-dark)' }}>
-                          <i className="fas fa-bell mr-1" style={{ fontSize: '8px' }}></i>Push
-                        </span>
-                      )}
-                      {u.disabled && (
-                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded"
-                          style={{ background: 'rgba(192, 82, 58, 0.14)', color: 'var(--color-alert)' }}>
-                          Off
-                        </span>
-                      )}
-                      {!u.createdAt || (u.createdAt < todayMs && !u.hasPush && !u.disabled) ? (
-                        <span className="text-[10px] text-ink-faint">—</span>
-                      ) : null}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-5 py-5 text-xs text-ink-muted whitespace-nowrap" style={{ borderTop: '1px solid ' + rowBorder }}>
+                      <i className={`${u.provider === 'google.com' ? 'fab fa-google' : 'fas fa-envelope'} mr-2`} style={{ opacity: 0.65 }}></i>
+                      {u.provider === 'google.com' ? 'Google' : (u.provider === 'password' ? 'Email' : u.provider)}
+                    </td>
+                    <td className="px-5 py-5 text-xs text-ink whitespace-nowrap tabular-nums" style={{ borderTop: '1px solid ' + rowBorder }}>
+                      {u.createdAt ? fmtDate(u.createdAt) : '—'}
+                    </td>
+                    <td className="px-5 py-5 text-xs whitespace-nowrap tabular-nums" style={{ borderTop: '1px solid ' + rowBorder, color: isOnlineNow ? 'var(--color-success, #6B8E5A)' : 'var(--color-ink-muted)' }}>
+                      {isOnlineNow && <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle" style={{ background: 'var(--color-success, #6B8E5A)' }}></span>}
+                      {isOnlineNow ? 'Ahora' : (lastTs ? fmtRel(lastTs) : '—')}
+                    </td>
+                    <td className="px-8 py-5 text-right whitespace-nowrap" style={{ borderTop: '1px solid ' + rowBorder }}>
+                      <div className="inline-flex items-center gap-1.5">
+                        {u.createdAt && u.createdAt >= todayMs && (
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded"
+                            style={{ background: 'rgba(140, 162, 122, 0.18)', color: 'var(--color-success, #6B8E5A)' }}>
+                            Nuevo
+                          </span>
+                        )}
+                        {u.hasPush && (
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded"
+                            style={{ background: 'rgba(232, 199, 122, 0.18)', color: 'var(--color-accent-dark)' }}>
+                            <i className="fas fa-bell mr-1" style={{ fontSize: '8px' }}></i>Push
+                          </span>
+                        )}
+                        {u.disabled && (
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded"
+                            style={{ background: 'rgba(192, 82, 58, 0.14)', color: 'var(--color-alert)' }}>
+                            Off
+                          </span>
+                        )}
+                        {(!u.hasPush && !u.disabled && (!u.createdAt || u.createdAt < todayMs)) && (
+                          <span className="text-[10px] text-ink-faint">—</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -14317,18 +14322,19 @@ function AdminScreen({ darkMode, onClose }) {
   function fmtRel(ms) {
     if (!ms) return '—';
     const diff = Date.now() - ms;
+    if (diff < 60000)        return 'hace segundos';
     const min = Math.floor(diff / 60000);
-    if (min < 60)   return `hace ${min} min`;
+    if (min < 60)            return `hace ${min} min`;
     const h = Math.floor(min / 60);
-    if (h < 24)     return `hace ${h}h`;
+    if (h < 24)              return `hace ${h}h`;
     const d = Math.floor(h / 24);
-    if (d < 30)     return `hace ${d}d`;
+    if (d < 30)              return `hace ${d}d`;
     return new Date(ms).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' });
   }
 
   return (
-    <div className="max-w-3xl lg:max-w-5xl mx-auto px-5 lg:px-6 py-8 lg:py-10 space-y-7">
-      <div className="flex items-center justify-between mb-2">
+    <div className="max-w-3xl lg:max-w-5xl mx-auto px-6 sm:px-8 lg:px-12 py-10 lg:py-14 space-y-8">
+      <div className="flex items-center justify-between mb-4">
         <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
           <span className="banner-premium-pulse-dot" />
           Admin · Calibrate
@@ -14777,6 +14783,22 @@ function App() {
         if (window.NP_CloudStorage) {
           await window.NP_CloudStorage.onLogin(user.uid);
         }
+        // Heartbeat: registrar última actividad en Firestore (para admin dashboard)
+        try {
+          if (typeof firebase !== 'undefined' && firebase.firestore) {
+            firebase.firestore()
+              .collection('users').doc(user.uid)
+              .collection('profile').doc('meta')
+              .set({
+                lastSeenAt:  firebase.firestore.FieldValue.serverTimestamp(),
+                email:       user.email || null,
+                displayName: user.displayName || null,
+                photoURL:    user.photoURL || null,
+                tz:          (Intl.DateTimeFormat().resolvedOptions().timeZone) || null
+              }, { merge: true })
+              .catch(() => {});
+          }
+        } catch (_) {}
         authUserRef.current = user;
         setAuthUser(user);
       } else {
