@@ -11474,82 +11474,134 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
 
   return (
     <div className="space-y-4">
-      {/* Prescripción de la fase actual (basada en evidencia) */}
-      {_faseEnt && (
-        <div className={`rounded-xl p-4 ${darkMode ? 'bg-blue-900/20 border border-blue-800/40' : 'bg-blue-50/70 border border-blue-100'}`}>
-          <div className="flex items-center justify-between mb-2.5">
-            <div className="flex items-center gap-2">
-              <i className={`fas fa-bullseye ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}></i>
-              <span className={`text-xs font-bold uppercase tracking-wide text-info`}>{t('Prescripción · ','Prescription · ')}{_faseEnt.nombre}</span>
-            </div>
-            <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${darkMode ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>{_faseEnt.ent.modalidad}</span>
-          </div>
-          {/* Métricas del entrenamiento */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
-            {[
-              { l: t('Series por grupo','Sets per group'), v: _faseEnt.ent.volumenSets.split(' ').slice(0,2).join(' ') },
-              { l: t('Reps por serie','Reps per set'), v: _faseEnt.ent.repRange || '—' },
-              { l: t('Esfuerzo (1-10)','Effort (1-10)'), v: _faseEnt.ent.rpeObjetivo.split(' ')[0] },
-              { l: t('Peso (% de tu máx.)','Weight (% of your max)'), v: _faseEnt.ent.intensidadPct1RM.split(' ')[0] }
-            ].map(x => (
-              <div key={x.l} className={`rounded-lg px-2.5 py-1.5 ${darkMode ? 'bg-gray-800/50' : 'bg-white/70'}`}>
-                <div className={`text-[10px] uppercase ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{x.l}</div>
-                <div className={`text-xs font-semibold text-ink`}>{x.v}</div>
-              </div>
-            ))}
-          </div>
-          {/* Cardio total: cuánto del protocolo + cuánto sumar fuera */}
-          <div className={`rounded-lg px-3 py-2 mb-2 ${darkMode ? 'bg-gray-800/40' : 'bg-white/60'}`}>
-            <div className="flex items-center justify-between mb-1">
-              <div className={`text-[10px] uppercase tracking-wide font-bold text-ink-faint`}>
-                <i className="fas fa-heart-pulse mr-1 opacity-70"></i>{t('Cardio total / semana','Total cardio / week')}
-              </div>
-              <div className={`text-xs font-bold text-info`}>{_faseEnt.ent.cardioMinSemana} min</div>
-            </div>
-            <div className="flex items-center gap-2 text-[11px] flex-wrap">
-              <span className={`px-1.5 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
-                {_faseEnt.ent.cardioBaseProtocolo || '~45'} min {t('dentro de tus sesiones','within your sessions')}
+      {/* IA redesign: Prescripción de la fase — brand-aligned (cream/mostaza, double-bezel sutil, jerarquía clara) */}
+      {_faseEnt && (() => {
+        const chipAccentSty = darkMode
+          ? { background: 'rgba(232, 199, 122, 0.14)', color: '#E8C77A', boxShadow: 'inset 0 0 0 1px rgba(232, 199, 122, 0.20)' }
+          : { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' };
+        const chipMutedSty = darkMode
+          ? { background: 'rgba(232, 224, 212, 0.06)', color: '#B8AB9C', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
+          : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' };
+        const tileBg = darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(245, 240, 232, 0.55)';
+        const tileRing = darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.06)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.05)';
+        const dividerColor = darkMode ? 'rgba(232, 224, 212, 0.10)' : 'var(--color-border)';
+        return (
+          <div className="surface-card-shadow" style={{ padding: '1.5rem 1.4rem' }}>
+            {/* Header: eyebrow + modalidad pill */}
+            <div className="flex items-start justify-between gap-3 mb-5">
+              <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+                <span className="banner-premium-pulse-dot" />
+                {t('Prescripción','Prescription')} · {_faseEnt.nombre}
               </span>
-              {(_faseEnt.ent.cardioExtraNecesario > 0) && (
-                <>
-                  <span className={`text-ink-faint`}>+</span>
-                  <span className={`px-1.5 py-0.5 rounded font-semibold ${darkMode ? 'bg-amber-900/40 text-amber-300' : 'bg-amber-100 text-amber-700'}`}>
-                    {_faseEnt.ent.cardioExtraNecesario} min {t('caminata extra / semana','extra walking / week')}
-                  </span>
-                </>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap flex-shrink-0"
+                style={chipAccentSty}>
+                {_faseEnt.ent.modalidad}
+              </span>
+            </div>
+
+            {/* Métricas del entrenamiento (mini-tiles bento) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+              {[
+                { l: t('Series por grupo','Sets per group'), v: _faseEnt.ent.volumenSets.split(' ').slice(0,2).join(' ') },
+                { l: t('Reps por serie','Reps per set'), v: _faseEnt.ent.repRange || '—' },
+                { l: t('Esfuerzo (1-10)','Effort (1-10)'), v: _faseEnt.ent.rpeObjetivo.split(' ')[0] },
+                { l: t('Peso (% de tu máx.)','Weight (% of your max)'), v: _faseEnt.ent.intensidadPct1RM.split(' ')[0] }
+              ].map(x => (
+                <div key={x.l} className="rounded-xl px-3.5 py-3"
+                  style={{ background: tileBg, boxShadow: tileRing, borderRadius: 'var(--radius-premium-md)' }}>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-ink-muted leading-tight" style={{ minHeight: '2.4em' }}>
+                    {x.l}
+                  </div>
+                  <div className="premium-num-mini text-ink mt-1.5 tabular-nums" style={{ fontSize: '1.125rem', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                    {x.v}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Cardio total */}
+            <div className="mb-5" style={{ borderTop: `1px solid ${dividerColor}`, paddingTop: '1.25rem' }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+                  <i className="fas fa-heart-pulse" style={{ fontSize: '10px' }}></i>
+                  {t('Cardio total / semana','Total cardio / week')}
+                </span>
+                <span className="text-base font-extrabold tabular-nums text-ink"
+                  style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", letterSpacing: '-0.02em' }}>
+                  {_faseEnt.ent.cardioMinSemana} min
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tabular-nums"
+                  style={chipMutedSty}>
+                  {_faseEnt.ent.cardioBaseProtocolo || '~45'} min {t('dentro de tus sesiones','within your sessions')}
+                </span>
+                {(_faseEnt.ent.cardioExtraNecesario > 0) && (
+                  <>
+                    <span className="text-ink-faint text-xs font-bold">+</span>
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tabular-nums"
+                      style={chipAccentSty}>
+                      {_faseEnt.ent.cardioExtraNecesario} min {t('caminata extra / semana','extra walking / week')}
+                    </span>
+                  </>
+                )}
+              </div>
+              {_faseEnt.ent.cardioTipoSimple && (
+                <p className="text-xs text-ink-muted mt-2.5" style={{ lineHeight: 1.5 }}>
+                  {_faseEnt.ent.cardioTipoSimple}
+                </p>
               )}
             </div>
-            {_faseEnt.ent.cardioTipoSimple && (
-              <div className={`text-[10px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{_faseEnt.ent.cardioTipoSimple}</div>
+
+            {/* Conexión con plan nutricional */}
+            {_faseEnt.kcal && _diasEntreno && (
+              <div className="mb-5" style={{ borderTop: `1px solid ${dividerColor}`, paddingTop: '1.25rem' }}>
+                <span className="premium-eyebrow mb-3" style={{ display: 'inline-flex' }}>
+                  <i className="fas fa-link" style={{ fontSize: '10px' }}></i>
+                  {t('Tu plan de comidas','Your meal plan')}
+                </span>
+                <div className="space-y-2 mt-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-ink-muted">{t('Promedio diario','Daily avg')}</span>
+                    <span className="text-base font-extrabold tabular-nums text-ink"
+                      style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", letterSpacing: '-0.02em' }}>
+                      {_faseEnt.kcal} kcal
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-ink-muted">
+                      {t('Días que entrenas','Training days')}
+                      <span className="text-[10px] text-ink-faint ml-1">(+5% kcal)</span>
+                    </span>
+                    <span className="text-sm font-semibold tabular-nums text-ink"
+                      style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                      {_diasEntreno.entreno.join(' · ') || '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-ink-muted">
+                      {t('Días de descanso','Rest days')}
+                      <span className="text-[10px] text-ink-faint ml-1">(−5% kcal)</span>
+                    </span>
+                    <span className="text-sm font-semibold tabular-nums text-ink"
+                      style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                      {_diasEntreno.descanso.join(' · ') || '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             )}
-          </div>
-          {/* Conexión con plan nutricional */}
-          {_faseEnt.kcal && _diasEntreno && (
-            <div className={`rounded-lg px-3 py-2 mb-2 ${darkMode ? 'bg-gray-800/40' : 'bg-white/60'}`}>
-              <div className={`text-[10px] uppercase tracking-wide font-bold mb-1 text-ink-faint`}>
-                <i className="fas fa-link mr-1 opacity-70"></i>{t('Tu plan de comidas','Your meal plan')}
-              </div>
-              <div className="flex items-center justify-between text-[11px]">
-                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{t('Promedio diario','Daily avg')}</span>
-                <span className={`font-bold text-info`}>{_faseEnt.kcal} kcal</span>
-              </div>
-              <div className="flex items-center justify-between text-[11px]">
-                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{t('Días que entrenas','Training days')} <span className="text-[10px] opacity-70">(+5% kcal)</span></span>
-                <span className={`font-mono text-ink`}>{_diasEntreno.entreno.join('·') || '—'}</span>
-              </div>
-              <div className="flex items-center justify-between text-[11px]">
-                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{t('Días de descanso','Rest days')} <span className="text-[10px] opacity-70">(−5% kcal)</span></span>
-                <span className={`font-mono text-ink`}>{_diasEntreno.descanso.join('·') || '—'}</span>
-              </div>
+
+            {/* Foco de la fase */}
+            <div style={{ borderTop: `1px solid ${dividerColor}`, paddingTop: '1.25rem' }}>
+              <p className="text-sm text-ink-muted flex items-start gap-2" style={{ lineHeight: 1.55 }}>
+                <i className="fas fa-circle-info text-ink-faint mt-1" style={{ fontSize: '11px' }}></i>
+                <span className="flex-1">{tData(_faseEnt.ent.foco)}</span>
+              </p>
             </div>
-          )}
-          {/* Foco de la fase */}
-          <p className={`text-[11px] leading-relaxed text-ink-muted`}>
-            <i className="fas fa-info-circle mr-1.5 opacity-70"></i>
-            {tData(_faseEnt.ent.foco)}
-          </p>
-        </div>
-      )}
+          </div>
+        );
+      })()}
       {/* Resumen semana */}
       <div className="grid grid-cols-3 gap-2">
         <div className={`rounded-xl p-3 surface-card-shadow`}>
