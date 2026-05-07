@@ -8759,9 +8759,10 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         return (
         <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
           <div className={`px-5 py-3 flex items-center justify-between border-b border-default`}>
-            <h3 className={`text-[11px] font-bold uppercase tracking-[0.12em] text-ink-faint`}>
-              {t('Resumen de hoy','Today\'s summary')}
-            </h3>
+            <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+              <span className="banner-premium-pulse-dot" />
+              {t('Comida del día',"Today's meals")}
+            </span>
             {consumidoHoy.calorias > 0 && (
               <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full tabular-nums ${
                 inRange
@@ -9373,11 +9374,13 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           {entrenoHoy && (
             <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
               <div className={`px-5 py-3 flex items-center justify-between border-b border-default`}>
-                <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>
-                  <i className="fas fa-dumbbell mr-2"></i>{t('Entreno de hoy',"Today's workout")}
-                </h3>
-                <button onClick={() => onNavigate('fitness')}
-                  className="text-xs text-orange-500 font-semibold hover:text-orange-600">{t('Abrir →','Open →')}</button>
+                <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+                  <span className="banner-premium-pulse-dot" />
+                  {t('Entreno de hoy',"Today's workout")}
+                </span>
+                <button onClick={() => onNavigate('progreso')}
+                  className="text-xs font-semibold transition-colors"
+                  style={{ color: 'var(--color-accent-dark)' }}>{t('Abrir →','Open →')}</button>
               </div>
               <div className="px-5 py-3">
                 {entrenoHoy.esDescanso ? (
@@ -9420,10 +9423,11 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           {pasosHoy != null && (
             <div className={`rounded-2xl px-5 py-3 surface-card-shadow`}>
               <div className="flex items-center justify-between mb-2">
-                <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>
-                  <i className="fas fa-person-walking mr-2"></i>{t('Pasos hoy','Steps today')}
-                </h3>
-                <span className={`text-sm font-extrabold ${(pasosHoy.pasos || 0) >= (pasosHoy.target || 8000) ? 'text-green-500' : darkMode ? 'text-white' : 'text-gray-800'}`}>
+                <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+                  <i className="fas fa-person-walking" style={{ fontSize: '10px' }}></i>
+                  {t('Pasos hoy','Steps today')}
+                </span>
+                <span className={`text-sm font-extrabold tabular-nums ${(pasosHoy.pasos || 0) >= (pasosHoy.target || 8000) ? 'text-green-500' : 'text-ink'}`}>
                   {(pasosHoy.pasos || 0).toLocaleString()} / {(pasosHoy.target || 8000).toLocaleString()}
                 </span>
               </div>
