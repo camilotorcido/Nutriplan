@@ -10683,9 +10683,16 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
 
   if (!est.deteccion.datosSuficientes && est.pasoActual === 0) {
     return (
-      <div className={`rounded-xl p-4 text-sm ${darkMode ? 'bg-gray-800 text-gray-500 border border-gray-700' : 'bg-gray-50 text-gray-500 border border-gray-200'}`}>
-        <i className="fas fa-radar mr-2"></i>
-        {t('Detector de meseta: necesita ≥14 días de peso registrado para activarse.', 'Plateau detector: needs ≥14 days of weight data to activate.')}
+      <div className="rounded-2xl text-sm flex items-start gap-2.5"
+        style={{
+          padding: '1rem 1.15rem',
+          border: '1px dashed ' + (darkMode ? 'rgba(232, 224, 212, 0.18)' : 'var(--color-border)'),
+          color: 'var(--color-ink-muted)',
+          background: darkMode ? 'rgba(232, 224, 212, 0.03)' : 'rgba(245, 240, 232, 0.4)',
+          lineHeight: 1.5
+        }}>
+        <i className="fas fa-radar mt-1 flex-shrink-0" style={{ opacity: 0.6 }}></i>
+        <span>{t('Detector de meseta: necesita ≥14 días de peso registrado para activarse.', 'Plateau detector: needs ≥14 days of weight data to activate.')}</span>
       </div>
     );
   }
@@ -10716,49 +10723,78 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
     }
   };
 
-  // Color del banner según estado
-  let bannerCls, iconCls, ribbon;
+  // IA redesign: paleta del brand para banner según estado
+  let bannerStyle, ribbonStyle, iconColor, deltaColor;
   if (hayPasoActivo) {
-    bannerCls = darkMode ? 'bg-amber-900/30 border-amber-700' : 'bg-amber-50 border-amber-300';
-    iconCls = 'text-amber-500';
-    ribbon = t('PROTOCOLO ACTIVO', 'ACTIVE PROTOCOL');
+    bannerStyle = darkMode
+      ? { background: 'rgba(232, 199, 122, 0.08)', boxShadow: 'inset 0 0 0 1px rgba(232, 199, 122, 0.20)' }
+      : { background: 'rgba(200, 148, 58, 0.06)', boxShadow: 'inset 0 0 0 1px rgba(200, 148, 58, 0.18)' };
+    ribbonStyle = darkMode
+      ? { background: 'rgba(232, 199, 122, 0.18)', color: '#E8C77A' }
+      : { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' };
+    iconColor = 'var(--color-accent-dark)';
+    ribbon = t('Protocolo activo', 'Active protocol');
   } else if (hayPlateau) {
-    bannerCls = darkMode ? 'bg-red-900/30 border-red-700' : 'bg-red-50 border-red-300';
-    iconCls = 'text-red-500';
-    ribbon = t('MESETA DETECTADA', 'PLATEAU DETECTED');
+    bannerStyle = darkMode
+      ? { background: 'rgba(192, 82, 58, 0.10)', boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.22)' }
+      : { background: 'rgba(192, 82, 58, 0.06)', boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.18)' };
+    ribbonStyle = darkMode
+      ? { background: 'rgba(192, 82, 58, 0.20)', color: '#E89B85' }
+      : { background: 'rgba(192, 82, 58, 0.10)', color: 'var(--color-alert)' };
+    iconColor = 'var(--color-alert)';
+    ribbon = t('Meseta detectada', 'Plateau detected');
   } else {
-    bannerCls = darkMode ? 'bg-green-900/20 border-green-800' : 'bg-green-50 border-green-200';
-    iconCls = 'text-green-500';
-    ribbon = t('PROGRESO NORMAL', 'NORMAL PROGRESS');
+    bannerStyle = darkMode
+      ? { background: 'rgba(140, 188, 145, 0.08)', boxShadow: 'inset 0 0 0 1px rgba(140, 188, 145, 0.18)' }
+      : { background: 'rgba(90, 122, 94, 0.05)', boxShadow: 'inset 0 0 0 1px rgba(90, 122, 94, 0.16)' };
+    ribbonStyle = darkMode
+      ? { background: 'rgba(140, 188, 145, 0.16)', color: '#9FCBA3' }
+      : { background: 'var(--color-success-light)', color: 'var(--color-success)' };
+    iconColor = 'var(--color-success)';
+    ribbon = t('Progreso normal', 'Normal progress');
   }
+  deltaColor = delta == null ? 'var(--color-ink-faint)'
+    : delta < -0.25 ? 'var(--color-success)'
+    : delta > 0.25 ? 'var(--color-alert)'
+    : 'var(--color-accent-dark)';
 
   return (
-    <div className={`rounded-2xl p-5 border ${bannerCls}`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <i className={`fas fa-radar ${iconCls}`}></i>
-          <span className={`text-sm font-bold uppercase tracking-wider text-ink-muted`}>{t('Detector de meseta', 'Plateau detector')}</span>
-        </div>
-        <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${iconCls} bg-surface`}>{ribbon}</span>
+    <div className="rounded-2xl" style={Object.assign({ padding: '1.5rem 1.4rem' }, bannerStyle)}>
+      <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
+        <span className="premium-eyebrow" style={{ display: 'inline-flex', color: iconColor }}>
+          <i className="fas fa-radar" style={{ fontSize: '10px' }}></i>
+          {t('Detector de meseta', 'Plateau detector')}
+        </span>
+        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full whitespace-nowrap"
+          style={ribbonStyle}>
+          {ribbon}
+        </span>
       </div>
 
       {/* Stats de detección */}
       {est.deteccion.datosSuficientes && (
-        <div className="grid grid-cols-3 gap-3 mb-3">
+        <div className="grid grid-cols-3 gap-4 mb-4">
           <div>
-            <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Δ semanal', 'Δ weekly')}</div>
-            <div className={`text-2xl font-extrabold ${delta == null ? 'text-gray-400' : delta < -0.25 ? 'text-green-500' : delta > 0.25 ? 'text-red-500' : 'text-amber-500'}`}>
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">{t('Δ semanal', 'Δ weekly')}</div>
+            <div className="tabular-nums mt-2"
+              style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: deltaColor }}>
               {delta == null ? '—' : (delta > 0 ? '+' : '') + delta}
-              {delta != null && <span className="text-sm font-semibold opacity-70 ml-0.5">kg</span>}
+              {delta != null && <span className="text-sm font-medium ml-1 text-ink-faint" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>kg</span>}
             </div>
           </div>
           <div>
-            <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Ventana', 'Window')}</div>
-            <div className={`text-2xl font-extrabold text-ink-muted`}>{est.deteccion.diasVentana}<span className="text-sm font-semibold opacity-70 ml-0.5">d</span></div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">{t('Ventana', 'Window')}</div>
+            <div className="text-ink-muted tabular-nums mt-2"
+              style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+              {est.deteccion.diasVentana}<span className="text-sm font-medium ml-1 text-ink-faint" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>d</span>
+            </div>
           </div>
           <div>
-            <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Umbral', 'Threshold')}</div>
-            <div className={`text-sm font-bold mt-1.5 text-ink-muted`}>±0.25 kg/sem</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">{t('Umbral', 'Threshold')}</div>
+            <div className="text-ink-muted tabular-nums mt-2.5 text-sm font-semibold"
+              style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+              ±0.25 kg/sem
+            </div>
           </div>
         </div>
       )}
@@ -11309,33 +11345,39 @@ function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
   };
 
   return (
-    <div className={`rounded-xl overflow-hidden surface-card-shadow`}>
+    <div className="surface-card-shadow overflow-hidden">
       <button
         onClick={() => setAbierto(!abierto)}
-        className={`w-full flex items-center justify-between px-4 py-3 text-sm font-bold uppercase tracking-wider text-ink-faint`}>
-        <span><i className="fas fa-dumbbell mr-2"></i>Mi equipamiento</span>
-        <i className={`fas fa-chevron-${abierto ? 'up' : 'down'} text-xs`}></i>
+        className="w-full flex items-center justify-between transition"
+        style={{ padding: '1rem 1.4rem' }}>
+        <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+          <i className="fas fa-dumbbell" style={{ fontSize: '10px' }}></i>
+          {t('Mi equipamiento','My equipment')}
+        </span>
+        <i className={`fas fa-chevron-${abierto ? 'up' : 'down'} text-xs text-ink-muted`}></i>
       </button>
       {abierto && (
-        <div className={`px-4 pb-4 border-t border-default`}>
-          <p className={`text-xs mt-2 mb-3 text-ink-faint`}>Marca lo que tienes. Los ejercicios muestran aviso si falta equipo.</p>
+        <div className="border-t border-default" style={{ padding: '1rem 1.4rem 1.25rem' }}>
+          <p className="text-sm mt-2 mb-4 text-ink-muted" style={{ lineHeight: 1.5 }}>
+            {t('Marca lo que tienes. Los ejercicios muestran aviso si falta equipo.','Mark what you have. Exercises will warn if equipment is missing.')}
+          </p>
           <div className="flex flex-wrap gap-2">
             {equipos.map(eq => {
               const activo = seleccion.includes(eq.id);
+              const btnStyle = activo
+                ? eq.siempre
+                  ? { background: darkMode ? 'rgba(232, 199, 122, 0.16)' : 'var(--color-accent-light)', color: darkMode ? '#E8C77A' : 'var(--color-accent-dark)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 199, 122, 0.20)' : 'rgba(200, 148, 58, 0.20)'), opacity: 0.7, cursor: 'default' }
+                  : { background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-sm)' }
+                : darkMode
+                  ? { background: 'rgba(232, 224, 212, 0.04)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
+                  : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' };
               return (
                 <button
                   key={eq.id}
                   onClick={() => toggle(eq.id)}
                   disabled={eq.siempre}
-                  className={`px-3 py-1.5 rounded-full text-sm font-semibold transition border ${
-                    activo
-                      ? eq.siempre
-                        ? 'bg-green-500 text-white border-green-500 opacity-70 cursor-default'
-                        : 'bg-green-500 text-white border-green-500'
-                      : darkMode
-                        ? 'bg-transparent text-gray-500 border-gray-600 hover:border-gray-400 hover:text-gray-300'
-                        : 'bg-transparent text-gray-400 border-gray-300 hover:border-gray-500 hover:text-gray-600'
-                  }`}>
+                  className="px-3.5 py-2 rounded-full text-sm font-semibold transition active:scale-[0.98]"
+                  style={btnStyle}>
                   <i className={`fas ${eq.icono} mr-1.5`}></i>
                   {eq.nombre.charAt(0).toUpperCase() + eq.nombre.slice(1)}
                 </button>
@@ -11366,42 +11408,51 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
     ? window.NP_RoadmapData.EQUIPOS_DISPONIBLES.find(eq => eq.id === eqId)
     : null;
 
+  // IA redesign: estilos brand para EjercicioCard
+  const cardStyle = e.done
+    ? darkMode
+      ? { background: 'rgba(140, 188, 145, 0.08)', boxShadow: 'inset 0 0 0 1px rgba(140, 188, 145, 0.18)' }
+      : { background: 'rgba(90, 122, 94, 0.05)', boxShadow: 'inset 0 0 0 1px rgba(90, 122, 94, 0.16)' }
+    : null;
+
   return (
-    <div className={`rounded-xl p-4 transition-colors ${
-      e.done
-        ? darkMode ? 'bg-green-900/20 border border-green-800' : 'bg-green-50 border border-green-200'
-        : darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100 shadow-sm'
-    }`}>
-      <div className="flex items-start justify-between gap-2">
+    <div className={e.done ? '' : 'surface-card-shadow'}
+      style={Object.assign({ padding: '1.15rem 1.25rem', borderRadius: 'var(--radius-premium-md)', transition: 'background 0.3s, box-shadow 0.3s' }, cardStyle || {})}>
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className={`font-semibold text-base text-ink`}>{e.nombre}</div>
-          <div className="flex items-center gap-2 flex-wrap mt-1">
-            <span className="text-xs text-gray-400"><b>{e.setsEsperado} × {e.repsEsperado}</b> · {e.equipo}</span>
+          <div className="font-semibold text-base text-ink" style={{ letterSpacing: '-0.01em' }}>{e.nombre}</div>
+          <div className="flex items-center gap-3 flex-wrap mt-1.5">
+            <span className="text-xs text-ink-muted tabular-nums">
+              <span className="font-bold tabular-nums" style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{e.setsEsperado} × {e.repsEsperado}</span>
+              <span className="text-ink-faint"> · {e.equipo}</span>
+            </span>
             {protEj && protEj.youtube && (
               <a href={protEj.youtube} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs text-red-400 hover:text-red-500 font-medium">
+                className="flex items-center gap-1 text-xs font-medium transition-colors"
+                style={{ color: 'var(--color-accent-dark)' }}>
                 <i className="fab fa-youtube"></i>
                 <span>{t('ver video', 'watch video')}</span>
               </a>
             )}
           </div>
           {protEj && protEj.descripcion && (
-            <div className={`text-xs mt-1 leading-snug text-ink-faint`}>{protEj.descripcion}</div>
+            <div className="text-xs mt-1.5 text-ink-faint" style={{ lineHeight: 1.5 }}>{protEj.descripcion}</div>
           )}
-          {e.nota && <div className="text-xs text-gray-400 italic mt-0.5">{e.nota}</div>}
+          {e.nota && <div className="text-xs text-ink-faint italic mt-1">{e.nota}</div>}
           {eqNoDisp && (
-            <div className="text-xs mt-1 font-medium text-amber-500">
-              <i className="fas fa-exclamation-triangle mr-1"></i>
-              {eqInfo ? t(`Requiere ${eqInfo.nombre} — no marcado como disponible`, `Requires ${eqInfo.nombre} — not marked as available`) : t('Equipo no disponible', 'Equipment not available')}
+            <div className="text-xs mt-2 font-semibold flex items-center gap-1.5" style={{ color: 'var(--color-alert)' }}>
+              <i className="fas fa-exclamation-triangle"></i>
+              {eqInfo ? t('Requiere ' + eqInfo.nombre + ' — no marcado como disponible', 'Requires ' + eqInfo.nombre + ' — not marked as available') : t('Equipo no disponible', 'Equipment not available')}
             </div>
           )}
         </div>
         <button onClick={() => onToggle(i)}
-          className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${
-            e.done
-              ? 'bg-green-500 text-white shadow-md'
-              : darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-          }`}>
+          className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-base transition active:scale-[0.92]"
+          style={e.done
+            ? { background: 'var(--color-success)', color: '#fff', boxShadow: 'var(--shadow-soft-sm)' }
+            : darkMode
+              ? { background: 'rgba(232, 224, 212, 0.06)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
+              : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' }}>
           <i className={`fas ${e.done ? 'fa-check' : 'fa-circle'} text-sm`}></i>
         </button>
       </div>
@@ -11459,13 +11510,14 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
       </div>
 
       {previo && (
-        <div className="flex items-center justify-between mt-2 text-xs">
-          <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
-            Último: <b className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{previo.peso} kg</b> × {previo.reps} <span className="opacity-60">({previo.fecha})</span>
+        <div className="flex items-center justify-between mt-3 text-xs gap-2 flex-wrap">
+          <span className="text-ink-muted tabular-nums">
+            {t('Último','Last')}: <span className="font-bold text-ink" style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{previo.peso} kg</span> × {previo.reps} <span className="text-ink-faint">({previo.fecha})</span>
           </span>
           {(mejoró || bajó) && (
-            <span className={`font-bold text-sm ${mejoró ? 'text-green-500' : 'text-red-400'}`}>
-              <i className={`fas ${mejoró ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1`}></i>
+            <span className="font-bold text-sm tabular-nums inline-flex items-center gap-1"
+              style={{ color: mejoró ? 'var(--color-success)' : 'var(--color-alert)', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+              <i className={`fas ${mejoró ? 'fa-arrow-up' : 'fa-arrow-down'}`}></i>
               {mejoró ? '+' : ''}{(Number(e.peso) - previo.peso).toFixed(1)} kg
             </span>
           )}
@@ -11960,26 +12012,42 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
 
       {/* Cardio extra del día (suma fuera de los ejercicios para llegar al total semanal de la fase) */}
       {_faseEnt && _faseEnt.ent && _faseEnt.ent.cardioPorSesionExtra > 0 && !esDescanso && (
-        <div className={`rounded-xl p-4 ${darkMode ? 'bg-amber-900/20 border border-amber-800/40' : 'bg-amber-50 border border-amber-100'}`}>
+        <div className="rounded-2xl"
+          style={{
+            padding: '1.15rem 1.25rem',
+            background: darkMode ? 'rgba(232, 199, 122, 0.08)' : 'rgba(200, 148, 58, 0.06)',
+            boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 199, 122, 0.18)' : 'rgba(200, 148, 58, 0.16)')
+          }}>
           <div className="flex items-start gap-3">
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${darkMode ? 'bg-amber-800/40' : 'bg-amber-100'}`}>
-              <i className={`fas fa-person-walking ${darkMode ? 'text-amber-300' : 'text-amber-700'}`}></i>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{
+                background: darkMode ? 'rgba(232, 199, 122, 0.18)' : 'var(--color-accent-light)',
+                color: darkMode ? '#E8C77A' : 'var(--color-accent-dark)'
+              }}>
+              <i className="fas fa-person-walking"></i>
             </div>
             <div className="flex-1 min-w-0">
-              <div className={`text-sm font-bold ${darkMode ? 'text-amber-200' : 'text-amber-800'}`}>
+              <div className="text-sm font-bold tabular-nums" style={{ color: darkMode ? '#E8C77A' : 'var(--color-accent-dark)' }}>
                 {t('Después de la sesión: ','After this session: ')}+{_faseEnt.ent.cardioPorSesionExtra} {t('min de caminata','min of walking')}
               </div>
-              <p className={`text-[11px] mt-1 leading-relaxed ${darkMode ? 'text-amber-300/80' : 'text-amber-700/90'}`}>
-                {t('Tu fase ','Your phase ')}<b>{_faseEnt.nombre}</b>{t(' pide ','requires ')}{_faseEnt.ent.cardioMinSemana}{t(' min de cardio por semana. El protocolo te da ','min of cardio per week. The protocol gives you ')}{_faseEnt.ent.cardioBaseProtocolo}{t(' min en las sesiones. Te faltan ','min in sessions. You need ')}{_faseEnt.ent.cardioExtraNecesario}{t(' min/semana extra: distribuye ~','min/week extra: distribute ~')}{_faseEnt.ent.cardioPorSesionExtra}{t(' min al final de cada día A/B/C/D (caminata inclinada en treadmill, bici suave o paseo).','min at the end of each A/B/C/D day (inclined walk on treadmill, easy bike, or walk).')}
+              <p className="text-sm mt-1.5 text-ink-muted" style={{ lineHeight: 1.55 }}>
+                {t('Tu fase ','Your phase ')}<b className="text-ink">{_faseEnt.nombre}</b>{t(' pide ','requires ')}{_faseEnt.ent.cardioMinSemana}{t(' min de cardio por semana. El protocolo te da ','min of cardio per week. The protocol gives you ')}{_faseEnt.ent.cardioBaseProtocolo}{t(' min en las sesiones. Te faltan ','min in sessions. You need ')}{_faseEnt.ent.cardioExtraNecesario}{t(' min/semana extra: distribuye ~','min/week extra: distribute ~')}{_faseEnt.ent.cardioPorSesionExtra}{t(' min al final de cada día A/B/C/D (caminata inclinada en treadmill, bici suave o paseo).','min at the end of each A/B/C/D day (inclined walk on treadmill, easy bike, or walk).')}
               </p>
             </div>
           </div>
         </div>
       )}
       {_faseEnt && _faseEnt.ent && _faseEnt.ent.cardioPorSesionExtra === 0 && _faseEnt.ent.cardioMinSemana < 50 && !esDescanso && (
-        <div className={`rounded-xl p-3 text-[11px] ${darkMode ? 'bg-gray-800/40 border border-gray-700 text-gray-400' : 'bg-gray-50 border border-gray-100 text-gray-600'}`}>
-          <i className="fas fa-info-circle mr-1.5 opacity-70"></i>
-          {t('Estás en ','You are in ')}<b>{_faseEnt.nombre}</b>{t('. No agregues cardio extra: tu fase prioriza preservar masa magra. El cardio del protocolo (~','. Don\'t add extra cardio: your phase prioritizes preserving lean mass. Protocol cardio (~')}{_faseEnt.ent.cardioBaseProtocolo}{t(' min/semana) es suficiente.',' min/week) is enough.')}
+        <div className="rounded-2xl text-sm flex items-start gap-2.5"
+          style={{
+            padding: '0.875rem 1.15rem',
+            background: darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(245, 240, 232, 0.55)',
+            boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.08)' : 'rgba(120, 53, 15, 0.05)'),
+            color: 'var(--color-ink-muted)',
+            lineHeight: 1.55
+          }}>
+          <i className="fas fa-info-circle mt-1 flex-shrink-0" style={{ opacity: 0.7 }}></i>
+          <span>{t('Estás en ','You are in ')}<b className="text-ink">{_faseEnt.nombre}</b>{t('. No agregues cardio extra: tu fase prioriza preservar masa magra. El cardio del protocolo (~','. Don\'t add extra cardio: your phase prioritizes preserving lean mass. Protocol cardio (~')}{_faseEnt.ent.cardioBaseProtocolo}{t(' min/semana) es suficiente.',' min/week) is enough.')}</span>
         </div>
       )}
 
