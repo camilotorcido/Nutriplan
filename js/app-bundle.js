@@ -11502,7 +11502,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             {/* Métricas del entrenamiento (mini-tiles bento) */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-7">
               {[
-                { l: t('Series por grupo','Sets per group'), v: _faseEnt.ent.volumenSets.split(' ').slice(0,2).join(' ') },
+                { l: t('Series por grupo','Sets per group'), v: _faseEnt.ent.volumenSets.split(' ')[0] },
                 { l: t('Reps por serie','Reps per set'), v: _faseEnt.ent.repRange || '—' },
                 { l: t('Esfuerzo (1-10)','Effort (1-10)'), v: _faseEnt.ent.rpeObjetivo.split(' ')[0] },
                 { l: t('Peso (% de tu máx.)','Weight (% of your max)'), v: _faseEnt.ent.intensidadPct1RM.split(' ')[0] }
