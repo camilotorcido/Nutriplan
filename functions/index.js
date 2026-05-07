@@ -1038,3 +1038,82 @@ exports.getAdminMetrics = onCall(
     };
   }
 );
+
+// ── Admin delete user: borra Auth + Firestore subcollections ──
+// Solo whitelist puede llamar. Protege contra self-deletion.
+exports.adminDeleteUser = onCall(
+  {
+    region: 'us-central1',
+    cors: ['https://camilotorcido.github.io', 'http://localhost:5000', 'http://localhost:3000'],
+    invoker: 'public',
+    timeoutSeconds: 120
+  },
+  async (request) => {
+    if (!request.auth || !request.auth.token) {
+      throw new HttpsError('unauthenticated', 'Requiere autenticación');
+    }
+    const callerEmail = (request.auth.token.email || '').toLowerCase();
+    if (!ADMIN_EMAILS.map((e) => e.toLowerCase()).includes(callerEmail)) {
+      throw new HttpsError('permission-denied', 'No autorizado');
+    }
+
+    const targetUid = request.data && request.data.uid;
+    if (!targetUid || typeof targetUid !== 'string') {
+      throw new HttpsError('invalid-argument', 'uid requerido');
+    }
+
+    // Protección: no permitir auto-eliminación
+    if (targetUid === request.auth.uid) {
+      throw new HttpsError('failed-precondition', 'No podés eliminar tu propia cuenta desde admin');
+    }
+
+    const db = admin.firestore();
+    const result = { uid: targetUid, auth: false, firestore: { data: 0, profile: 0, pushSubs: 0 } };
+
+    // 1. Borrar todas las subcollections del usuario en Firestore
+    const subcollections = ['data', 'profile', 'pushSubscriptions'];
+    for (const sub of subcollections) {
+      try {
+        const snap = await db.collection('users').doc(targetUid).collection(sub).get();
+        if (!snap.empty) {
+          // Batch delete en chunks de 400 (límite Firestore = 500)
+          const docs = snap.docs;
+          for (let i = 0; i < docs.length; i += 400) {
+            const batch = db.batch();
+            docs.slice(i, i + 400).forEach((d) => batch.delete(d.ref));
+            await batch.commit();
+          }
+          result.firestore[sub === 'pushSubscriptions' ? 'pushSubs' : sub] = docs.length;
+        }
+      } catch (e) {
+        console.warn('[adminDeleteUser] error borrando ' + sub + ':', e.message);
+      }
+    }
+
+    // 2. Borrar el doc raíz users/{uid} si existe
+    try {
+      await db.collection('users').doc(targetUid).delete();
+    } catch (_) {}
+
+    // 3. Borrar el usuario en Firebase Auth
+    try {
+      await admin.auth().deleteUser(targetUid);
+      result.auth = true;
+    } catch (e) {
+      throw new HttpsError('internal', 'Error eliminando Auth: ' + e.message);
+    }
+
+    // 4. Log de auditoría
+    try {
+      await db.collection('admin').doc('audit').collection('deletions').add({
+        deletedUid:    targetUid,
+        deletedBy:     callerEmail,
+        deletedByUid:  request.auth.uid,
+        timestamp:     admin.firestore.FieldValue.serverTimestamp(),
+        firestoreDocs: result.firestore
+      });
+    } catch (_) {}
+
+    return result;
+  }
+);

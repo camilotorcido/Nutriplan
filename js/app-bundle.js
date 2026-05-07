@@ -14118,10 +14118,29 @@ function NotificationGrantedView({ darkMode }) {
 // =============================================
 const ADMIN_EMAILS_CLIENT = ['crespo.camilo@gmail.com'];
 
-function UsersList({ users, darkMode, fmtDate, fmtRel }) {
+function UsersList({ users, darkMode, fmtDate, fmtRel, onUserDeleted, currentUserUid }) {
   const [query, setQuery]         = React.useState('');
   const [filter, setFilter]       = React.useState('all'); // all | today | 7d | push | google
   const [showAll, setShowAll]     = React.useState(false);
+  const [deleteTarget, setDeleteTarget] = React.useState(null); // user obj
+  const [deleting, setDeleting]   = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState(null);
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true); setDeleteError(null);
+    try {
+      const fn = firebase.functions().httpsCallable('adminDeleteUser');
+      await fn({ uid: deleteTarget.uid });
+      setDeleting(false);
+      const closedUid = deleteTarget.uid;
+      setDeleteTarget(null);
+      if (typeof onUserDeleted === 'function') onUserDeleted(closedUid);
+    } catch (e) {
+      setDeleting(false);
+      setDeleteError(e.message || 'Error eliminando usuario');
+    }
+  }
 
   const now = Date.now();
   const dayMs = 86400000;
@@ -14211,7 +14230,8 @@ function UsersList({ users, darkMode, fmtDate, fmtRel }) {
                 <th className="text-left px-7 py-4 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-muted">Usuario</th>
                 <th className="text-left px-4 py-4 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-muted whitespace-nowrap">Provider</th>
                 <th className="text-left px-4 py-4 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-muted whitespace-nowrap">Registrado</th>
-                <th className="text-left px-7 py-4 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-muted whitespace-nowrap">Última conexión</th>
+                <th className="text-left px-4 py-4 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-muted whitespace-nowrap">Última conexión</th>
+                <th className="text-right px-7 py-4 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-muted whitespace-nowrap" style={{ width: '60px' }}></th>
               </tr>
             </thead>
             <tbody>
@@ -14284,10 +14304,26 @@ function UsersList({ users, darkMode, fmtDate, fmtRel }) {
                     </td>
 
                     {/* Última conexión — destaca si está online */}
-                    <td className="px-7 py-5 whitespace-nowrap text-[13px] tabular-nums"
+                    <td className="px-4 py-5 whitespace-nowrap text-[13px] tabular-nums"
                       style={{ borderTop: '1px solid ' + rowBorder, color: isOnlineNow ? 'var(--color-success, #6B8E5A)' : 'var(--color-ink-muted)', fontWeight: isOnlineNow ? 600 : 400 }}>
                       {isOnlineNow && <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle" style={{ background: 'var(--color-success, #6B8E5A)', boxShadow: '0 0 0 3px rgba(140, 162, 122, 0.20)' }}></span>}
                       {isOnlineNow ? 'Ahora' : (lastTs ? fmtRel(lastTs) : '—')}
+                    </td>
+
+                    {/* Acciones — eliminar (deshabilitado para self) */}
+                    <td className="px-7 py-5 text-right whitespace-nowrap" style={{ borderTop: '1px solid ' + rowBorder }}>
+                      {u.uid === currentUserUid ? (
+                        <span className="text-[10px] text-ink-faint" title="No podés eliminar tu propia cuenta">—</span>
+                      ) : (
+                        <button onClick={() => { setDeleteError(null); setDeleteTarget(u); }}
+                          className="inline-flex items-center justify-center rounded-lg transition"
+                          style={{ width: '32px', height: '32px', background: 'transparent', color: 'var(--color-ink-faint)' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(192, 82, 58, 0.12)'; e.currentTarget.style.color = 'var(--color-alert)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-ink-faint)'; }}
+                          title="Eliminar usuario">
+                          <i className="fas fa-trash" style={{ fontSize: '12px' }}></i>
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
@@ -14303,6 +14339,97 @@ function UsersList({ users, darkMode, fmtDate, fmtRel }) {
           Ver todos ({filtered.length})
           <i className="fas fa-chevron-down ml-2"></i>
         </button>
+      )}
+
+      {/* Modal de confirmación de eliminación */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+          style={{ background: 'rgba(26, 24, 22, 0.72)' }}
+          onClick={(e) => { if (e.target === e.currentTarget && !deleting) setDeleteTarget(null); }}>
+          <div className="rounded-2xl mx-4"
+            style={{
+              background: darkMode ? '#2A2622' : '#FFFFFF',
+              boxShadow: '0 24px 64px 0 rgba(0,0,0,0.40), inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.08)' : 'rgba(0,0,0,0.06)'),
+              maxWidth: '440px',
+              width: '100%',
+              padding: '2rem'
+            }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ width: '44px', height: '44px', background: 'rgba(192, 82, 58, 0.14)', color: 'var(--color-alert)' }}>
+                <i className="fas fa-triangle-exclamation"></i>
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-ink">Eliminar usuario</h3>
+                <p className="text-xs text-ink-muted mt-0.5">Esta acción no se puede deshacer</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl p-4 mb-5"
+              style={{ background: darkMode ? 'rgba(232, 224, 212, 0.04)' : '#FAF6EE', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.08)' : 'rgba(0,0,0,0.05)') }}>
+              <div className="flex items-center gap-3">
+                {deleteTarget.photoURL
+                  ? <img src={deleteTarget.photoURL} alt="" referrerPolicy="no-referrer"
+                      style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                  : <div className="rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                      style={{ width: '36px', height: '36px', background: darkMode ? 'rgba(232, 199, 122, 0.18)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
+                      {(deleteTarget.displayName || deleteTarget.email || '?')[0].toUpperCase()}
+                    </div>}
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-ink truncate">
+                    {deleteTarget.displayName || (deleteTarget.email ? deleteTarget.email.split('@')[0] : deleteTarget.uid.slice(0, 10) + '…')}
+                  </div>
+                  <div className="text-xs text-ink-muted truncate">{deleteTarget.email || deleteTarget.uid}</div>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-sm text-ink-muted mb-5" style={{ lineHeight: 1.5 }}>
+              Se eliminará permanentemente:
+            </p>
+            <ul className="text-xs text-ink-muted mb-6 space-y-1.5" style={{ paddingLeft: '0.25rem' }}>
+              <li>· La cuenta de Firebase Auth (no podrá volver a iniciar sesión)</li>
+              <li>· Todos sus datos sincronizados (planes, perfil, adherencia, etc.)</li>
+              <li>· Sus subscripciones de notificaciones push</li>
+              <li>· Su perfil y heartbeat de actividad</li>
+            </ul>
+
+            {deleteError && (
+              <div className="rounded-xl text-xs flex items-start gap-2 mb-4"
+                style={{ padding: '0.75rem 1rem', background: 'rgba(192, 82, 58, 0.08)', boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.20)', color: 'var(--color-alert)', lineHeight: 1.5 }}>
+                <i className="fas fa-circle-info mt-0.5 flex-shrink-0"></i>
+                <span>{deleteError}</span>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteTarget(null)} disabled={deleting}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold transition"
+                style={{
+                  background: darkMode ? 'rgba(232, 224, 212, 0.06)' : '#FAF6EE',
+                  color: 'var(--color-ink)',
+                  boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'rgba(0,0,0,0.05)'),
+                  opacity: deleting ? 0.5 : 1
+                }}>
+                Cancelar
+              </button>
+              <button onClick={confirmDelete} disabled={deleting}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold transition active:scale-[0.98]"
+                style={{
+                  background: 'var(--color-alert)',
+                  color: '#FFFFFF',
+                  boxShadow: '0 2px 8px rgba(192, 82, 58, 0.30), inset 0 1px 0 rgba(255,255,255,0.18)',
+                  opacity: deleting ? 0.7 : 1
+                }}>
+                {deleting ? (
+                  <><i className="fas fa-circle-notch fa-spin mr-2"></i>Eliminando…</>
+                ) : (
+                  <><i className="fas fa-trash mr-2"></i>Eliminar</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -14500,7 +14627,16 @@ function AdminScreen({ darkMode, onClose }) {
           )}
 
           {/* Lista COMPLETA de usuarios registrados (Firebase Auth) */}
-          <UsersList users={data.users || []} darkMode={darkMode} fmtDate={fmtDate} fmtRel={fmtRel} />
+          <UsersList users={data.users || []} darkMode={darkMode} fmtDate={fmtDate} fmtRel={fmtRel}
+            currentUserUid={(typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) ? firebase.auth().currentUser.uid : null}
+            onUserDeleted={(deletedUid) => {
+              setData((prev) => prev ? Object.assign({}, prev, {
+                users: (prev.users || []).filter(u => u.uid !== deletedUid),
+                totals: Object.assign({}, prev.totals, {
+                  authUsers: Math.max(0, (prev.totals.authUsers || 0) - 1)
+                })
+              }) : prev);
+            }} />
 
           {/* Errores parciales (si los hubo) */}
           {data.errors && data.errors.length > 0 && (
