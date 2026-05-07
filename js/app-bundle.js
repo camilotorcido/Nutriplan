@@ -8464,6 +8464,13 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     return function() { window._NP_refreshHoyView = null; };
   }, []);
 
+  // Abrir modal de vacaciones desde el avatar dropdown (uso esporádico)
+  React.useEffect(function() {
+    function onOpenVacation() { setShowVacaciones(true); }
+    window.addEventListener('calibrate_open_vacation', onOpenVacation);
+    return function() { window.removeEventListener('calibrate_open_vacation', onOpenVacation); };
+  }, []);
+
   const necesitaPeso = React.useMemo(() => {
     if (!tieneEntrenamiento || !window.NP_BodyComp || !window.NP_BodyComp.cargar) return false;
     const entries = window.NP_BodyComp.cargar();
@@ -8705,7 +8712,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         );
       })()}
 
-      {/* ── Chip Vacaciones — siempre visible, estilo según estado ─────────── */}
+      {/* ── Chip Vacaciones — solo cuando está activa o programada esta semana (status). */}
+      {/*    El acceso a configurar vive en el dropdown del avatar (uso esporádico).    */}
       {(() => {
         const hoyD = new Date();
         const dow = hoyD.getDay();
@@ -8717,45 +8725,25 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         const hayVacSemana = _vacacionesGet().some(function(v) {
           return v.inicio <= domingoFecha && v.fin >= lunesFecha;
         });
-        if (esVacaciones || hayVacSemana) {
-          // Estado activo: chip teal prominente
-          return (
-            <button
-              onClick={() => setShowVacaciones(true)}
-              className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl cursor-pointer transition-colors ${
-                darkMode
-                  ? 'bg-teal-900/40 border border-teal-700/60 hover:bg-teal-900/70'
-                  : 'bg-teal-50 border border-teal-200 hover:bg-teal-100'
-              }`}
-            >
-              <span className={`flex items-center gap-2 text-sm font-semibold ${darkMode ? 'text-teal-300' : 'text-teal-700'}`}>
-                <span className="text-base">🏖</span>
-                {esVacaciones
-                  ? t('Estás en modo vacaciones','Vacation Mode is active')
-                  : t('Tienes vacaciones esta semana','You have vacation days this week')}
-              </span>
-              <span className={`text-xs font-medium ${darkMode ? 'text-teal-400' : 'text-teal-600'}`}>
-                {t('Gestionar →','Manage →')}
-              </span>
-            </button>
-          );
-        }
-        // Estado inactivo: link sutil, siempre visible
+        if (!(esVacaciones || hayVacSemana)) return null;
         return (
           <button
             onClick={() => setShowVacaciones(true)}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-colors border ${
-              darkMode
-                ? 'bg-gray-800 border-gray-700 hover:bg-gray-750 hover:border-gray-600'
-                : 'bg-white border-gray-100 shadow-sm hover:bg-gray-50'
-            }`}
+            className="w-full flex items-center justify-between rounded-xl cursor-pointer transition"
+            style={{
+              padding: '0.75rem 1rem',
+              background: darkMode ? 'rgba(140, 188, 145, 0.08)' : 'rgba(90, 122, 94, 0.05)',
+              boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(140, 188, 145, 0.20)' : 'rgba(90, 122, 94, 0.18)')
+            }}
           >
-            <span className={`flex items-center gap-2.5 text-sm font-medium text-ink-faint`}>
+            <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: darkMode ? '#9FCBA3' : 'var(--color-success)' }}>
               <span className="text-base">🏖</span>
-              {t('Modo Vacaciones','Vacation Mode')}
+              {esVacaciones
+                ? t('Estás en modo vacaciones','Vacation Mode is active')
+                : t('Tienes vacaciones esta semana','You have vacation days this week')}
             </span>
-            <span className={`text-xs font-medium text-ink-faint`}>
-              {t('Configurar →','Set up →')}
+            <span className="text-xs font-medium" style={{ color: darkMode ? '#9FCBA3' : 'var(--color-success)', opacity: 0.85 }}>
+              {t('Gestionar →','Manage →')}
             </span>
           </button>
         );
@@ -12292,8 +12280,16 @@ function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange, units, o
                   <span>{t('Contraseña gestionada por Google','Password managed by Google')}</span>
                 </div>
               )}
+              {/* IA redesign: Modo Vacaciones movido del Hoy a este dropdown — uso esporádico */}
+              <button onClick={() => { onClose(); window.dispatchEvent(new CustomEvent('calibrate_open_vacation')); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors cursor-pointer ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                <i className={`fas fa-umbrella-beach w-4 text-center ${mutedCls}`}></i>
+                <span>{t('Modo Vacaciones','Vacation Mode')}</span>
+                <i className={`fas fa-chevron-right ml-auto text-xs ${mutedCls}`}></i>
+              </button>
               <button onClick={async () => { onClose(); await window.NP_Auth.signOut(); }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors cursor-pointer ${darkMode ? 'text-orange-400 hover:bg-gray-700' : 'text-orange-500 hover:bg-orange-50'}`}>
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors cursor-pointer"
+                style={{ color: 'var(--color-alert)' }}>
                 <i className="fas fa-arrow-right-from-bracket w-4 text-center"></i>
                 <span>{t('Cerrar sesión','Sign out')}</span>
               </button>
