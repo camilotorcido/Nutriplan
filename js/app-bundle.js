@@ -8477,6 +8477,39 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     return function() { window.removeEventListener('calibrate_open_vacation', onOpenVacation); };
   }, []);
 
+  // IA redesign: Push notification "Meseta detectada" — proactivo, en horario de pesarse (~8am)
+  React.useEffect(function() {
+    if (!('Notification' in window) || !window.NP_Plateau) return;
+    var fechaHoyStr = _localDate();
+    var sentKey = 'calibrate_plateau_push_sent_' + fechaHoyStr;
+    try { if (localStorage.getItem(sentKey) === '1') return; } catch (_) {}
+    var hora = new Date().getHours();
+    if (hora < 7 || hora > 11) return; // ventana de pesaje matutino
+    var est;
+    try { est = window.NP_Plateau.estado(); } catch (_) { return; }
+    if (!est || !est.deteccion || !est.deteccion.plateau) return;
+    if (est.pasoActual > 0) return; // ya hay protocolo activo, no duplicar aviso
+    if (Notification.permission !== 'granted') return;
+    try {
+      var n = new Notification(t('Meseta detectada — Calibrate', 'Plateau detected — Calibrate'), {
+        body: t(
+          'Tu peso no baja hace ' + est.deteccion.diasVentana + ' días. Hay un protocolo de 6 pasos para romperla.',
+          'Your weight has been flat for ' + est.deteccion.diasVentana + ' days. There\'s a 6-step protocol to break it.'
+        ),
+        icon: 'icons/icon.svg',
+        badge: 'icons/icon.svg',
+        tag: 'calibrate-plateau-' + fechaHoyStr,
+        requireInteraction: false
+      });
+      n.onclick = function() {
+        window.focus();
+        if (window._NP_nav) window._NP_nav('progreso');
+        n.close();
+      };
+      try { localStorage.setItem(sentKey, '1'); } catch (_) {}
+    } catch (_) {}
+  }, [refresh]);
+
   // IA redesign: Push notification "Cierre del día" — sustituye el EveningRatingCard de feed.
   // Dispara si: hora ≥ 19h, hay comidas marcadas como comidas sin rating, no dismissed hoy,
   // permission concedido. Si permission default, pide una sola vez (contextual).
@@ -8663,7 +8696,9 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     ? Math.min(100, Math.round((resumenTotal.calorias / perfil.caloriasObjetivo) * 100)) : 0;
 
   return (
-    <div className="space-y-4 animate-fadeIn">
+    <div className="animate-fadeIn space-y-4 lg:space-y-0 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-5 lg:items-start">
+      {/* Navegador de fecha — full width on desktop */}
+      <div className="lg:col-span-2">
       {/* Navegador de fecha */}
       <div className={`flex items-center justify-between rounded-2xl px-4 py-2.5 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100'} shadow-sm`}>
         <button
@@ -8692,6 +8727,9 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           <i className="fas fa-chevron-right text-sm"></i>
         </button>
       </div>
+      </div>{/* /nav fecha wrapper */}
+
+      {/* ── COL IZQUIERDA (1.6fr): Hero + Resumen + Comidas ─────────────────── */}
       {/* IA redesign: Hero double-bezel — sustituye el gradient de marca por shell premium */}
       {(() => {
         const obj = perfil && perfil.objetivo ? perfil.objetivo.toLowerCase() : 'default';
@@ -8716,7 +8754,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           ? { background: 'rgba(140, 188, 145, 0.14)', color: '#9FCBA3', boxShadow: 'inset 0 0 0 1px rgba(140, 188, 145, 0.20)' }
           : { background: 'var(--color-success-light)', color: 'var(--color-success)' };
         return (
-          <div className="premium-shell">
+          <div className="premium-shell lg:col-start-1 lg:row-start-2">
             <div className="surface-card-shadow relative overflow-hidden"
               style={{ borderRadius: 'var(--radius-premium-lg)', padding: '1.4rem 1.5rem' }}>
               {/* Eyebrow: fecha + pulse dot */}
@@ -8796,7 +8834,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         return (
           <button
             onClick={() => setShowVacaciones(true)}
-            className="w-full flex items-center justify-between rounded-xl cursor-pointer transition"
+            className="w-full flex items-center justify-between rounded-xl cursor-pointer transition lg:col-start-2 lg:row-start-2"
             style={{
               padding: '0.75rem 1rem',
               background: darkMode ? 'rgba(140, 188, 145, 0.08)' : 'rgba(90, 122, 94, 0.05)',
@@ -8852,7 +8890,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         if (!hayDatos) return null;
 
         return (
-          <div className={`rounded-2xl px-5 py-3 flex items-center justify-between surface-card-shadow`}>
+          <div className="rounded-2xl px-5 py-3 flex items-center justify-between surface-card-shadow lg:col-start-2">
             <span className={`text-xs font-semibold uppercase tracking-wider flex-shrink-0 text-ink-faint`}>
               <i className="fas fa-calendar-check mr-1.5"></i>{t('Esta semana','This week')}
             </span>
@@ -8891,7 +8929,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
 
       {/* ── Peso de hoy: aparece solo si no hay comidas marcadas y no hay peso registrado hoy ── */}
       {!pesoHoyYaRegistrado && !pesoGuardado && consumidoHoy.calorias === 0 && window.NP_BodyComp && (
-        <div className={`rounded-2xl p-5 border animate-fadeIn surface-card-shadow`}>
+        <div className="rounded-2xl p-5 border animate-fadeIn surface-card-shadow lg:col-start-2">
           <div className="flex items-center gap-3 mb-3">
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${darkMode ? 'bg-orange-900/30' : 'bg-orange-50'}`}>
               <i className="fas fa-weight-scale text-orange-500"></i>
@@ -8929,7 +8967,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             ? (darkMode ? '#4ADE80' : '#16A34A')
             : (darkMode ? '#34D399' : '#0D9488');
         return (
-        <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
+        <div className="rounded-2xl overflow-hidden surface-card-shadow lg:col-start-1">
           <div className={`px-5 py-3 flex items-center justify-between border-b border-default`}>
             <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
               <span className="banner-premium-pulse-dot" />
@@ -9018,7 +9056,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
 
       {/* Comidas del día — en vacaciones se muestra vista de macros libre */}
       {esVacaciones ? (
-        <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800 border border-teal-800/50' : 'bg-white border border-teal-200 shadow-sm'}`}>
+        <div className={`rounded-2xl overflow-hidden lg:col-start-1 ${darkMode ? 'bg-gray-800 border border-teal-800/50' : 'bg-white border border-teal-200 shadow-sm'}`}>
           {/* Banner vacaciones */}
           <div className="px-5 py-3 flex items-center justify-between" style={{ background: 'linear-gradient(135deg,#0d9488,#0891b2)' }}>
             <div className="flex items-center gap-2">
@@ -9118,7 +9156,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           </div>
         </div>
       ) : planSemanal ? (
-        <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
+        <div className="rounded-2xl overflow-hidden surface-card-shadow lg:col-start-1">
           <div className={`px-5 py-3 flex items-center justify-between border-b border-default`}>
             <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>
               <i className="fas fa-utensils mr-2"></i>{t('Comidas de hoy','Today\'s meals')}
@@ -9256,7 +9294,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         </div>
       ) : (
         /* ── Guía visual 3 pasos cuando no hay plan ── */
-        <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
+        <div className="rounded-2xl overflow-hidden surface-card-shadow lg:col-start-1">
           <div className="px-5 pt-5 pb-5">
             <p className={`text-xs font-bold uppercase tracking-wider mb-5 text-ink-faint`}>
               <i className="fas fa-map mr-1.5"></i>{t('Primeros pasos','Getting started')}
@@ -9541,9 +9579,9 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         </div>
       </div>
 
-      {/* Bloque Fitness (solo fatLossMode) */}
+      {/* Bloque Fitness (solo fatLossMode) — col 2 en desktop */}
       {tieneEntrenamiento && (
-        <div className="space-y-3">
+        <div className="space-y-3 lg:col-start-2">
           {entrenoHoy && (
             <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
               <div className={`px-5 py-3 flex items-center justify-between border-b border-default`}>
@@ -12316,6 +12354,13 @@ function CuentaModal({ authUser, darkMode, onClose, lang, onLangChange, units, o
                 <span>{t('Modo Vacaciones','Vacation Mode')}</span>
                 <i className={`fas fa-chevron-right ml-auto text-xs ${mutedCls}`}></i>
               </button>
+              {/* IA redesign: control de notificaciones — instalar PWA en iOS, permitir en otros */}
+              <button onClick={() => { onClose(); window.dispatchEvent(new CustomEvent('calibrate_open_notif_setup')); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors cursor-pointer ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                <i className={`fas fa-bell w-4 text-center ${mutedCls}`}></i>
+                <span>{t('Notificaciones','Notifications')}</span>
+                <i className={`fas fa-chevron-right ml-auto text-xs ${mutedCls}`}></i>
+              </button>
               <button onClick={async () => { onClose(); await window.NP_Auth.signOut(); }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors cursor-pointer"
                 style={{ color: 'var(--color-alert)' }}>
@@ -14004,6 +14049,171 @@ function ChatPanel({ darkMode, activeTab }) {
   );
 }
 
+// =============================================
+// COMPONENTE: NotificationSetupModal
+// Configuración de notificaciones push. Detecta plataforma:
+//  - iOS Safari sin PWA instalada → instructivo Add-to-Home-Screen
+//  - PWA instalada o desktop → solicitar permiso Notification API
+//  - Permiso ya concedido → mostrar status + toggle de tipos de notif
+// =============================================
+function NotificationSetupModal({ darkMode }) {
+  const [open, setOpen] = React.useState(false);
+  const [permState, setPermState] = React.useState(
+    'Notification' in window ? Notification.permission : 'unsupported'
+  );
+
+  React.useEffect(function() {
+    function onOpen() {
+      setOpen(true);
+      if ('Notification' in window) setPermState(Notification.permission);
+    }
+    window.addEventListener('calibrate_open_notif_setup', onOpen);
+    return function() { window.removeEventListener('calibrate_open_notif_setup', onOpen); };
+  }, []);
+
+  if (!open) return null;
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const supported = permState !== 'unsupported';
+  const cardBase = darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200';
+  const mutedCls = darkMode ? 'text-gray-400' : 'text-gray-600';
+
+  function requestPerm() {
+    if (!('Notification' in window)) return;
+    Notification.requestPermission().then(function(p) {
+      setPermState(p);
+      if (p === 'granted') {
+        try {
+          new Notification('Calibrate', {
+            body: t('Notificaciones activadas. Te avisaremos al cierre del día y si detectamos una meseta.','Notifications enabled. We\'ll notify you at day-end and if we detect a plateau.'),
+            icon: 'icons/icon.svg'
+          });
+        } catch (_) {}
+      }
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center backdrop-blur-sm animate-fadeIn"
+      style={{ background: 'rgba(26, 24, 22, 0.6)' }}
+      onClick={function(e) { if (e.target === e.currentTarget) setOpen(false); }}>
+      <div className={`w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl border ${cardBase}`}
+        style={{ maxHeight: '90vh', overflow: 'auto', paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-default">
+          <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+            <i className="fas fa-bell" style={{ fontSize: '10px' }}></i>
+            {t('Notificaciones','Notifications')}
+          </span>
+          <button onClick={() => setOpen(false)}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}>
+            <i className="fas fa-xmark text-sm"></i>
+          </button>
+        </div>
+
+        <div className="px-5 py-5 space-y-4">
+          {!supported && (
+            <div className="rounded-2xl text-sm flex items-start gap-2.5"
+              style={{
+                padding: '1rem 1.15rem',
+                background: 'rgba(192, 82, 58, 0.06)',
+                boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.18)',
+                color: 'var(--color-alert)', lineHeight: 1.5
+              }}>
+              <i className="fas fa-circle-info mt-1 flex-shrink-0"></i>
+              <span>{t('Tu navegador no soporta notificaciones. Probá Safari (iOS 16.4+), Chrome o Firefox.','Your browser doesn\'t support notifications. Try Safari (iOS 16.4+), Chrome, or Firefox.')}</span>
+            </div>
+          )}
+
+          {supported && isIOS && !isStandalone && (
+            <div className="space-y-3">
+              <p className="text-sm text-ink-muted" style={{ lineHeight: 1.6 }}>
+                {t('Para recibir notificaciones en iOS, primero instalá Calibrate en tu pantalla de inicio:','To receive notifications on iOS, first install Calibrate to your home screen:')}
+              </p>
+              <ol className="space-y-2.5 text-sm text-ink" style={{ paddingLeft: '0' }}>
+                <li className="flex items-start gap-3">
+                  <span className="inline-flex items-center justify-center flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold tabular-nums"
+                    style={{ background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>1</span>
+                  <span style={{ lineHeight: 1.5 }}>
+                    {t('Tocá el botón ','Tap the ')}
+                    <i className="fas fa-arrow-up-from-bracket mx-1" style={{ color: 'var(--color-accent-dark)' }}></i>
+                    {t('Compartir','Share')}{t(' en la barra de Safari.',' button in Safari.')}
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="inline-flex items-center justify-center flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold tabular-nums"
+                    style={{ background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>2</span>
+                  <span style={{ lineHeight: 1.5 }}>
+                    {t('Elegí ','Choose ')}<b>{t('Agregar a inicio','Add to Home Screen')}</b>.
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="inline-flex items-center justify-center flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold tabular-nums"
+                    style={{ background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>3</span>
+                  <span style={{ lineHeight: 1.5 }}>
+                    {t('Abrí Calibrate desde el ícono de la pantalla de inicio y volvé a esta sección para activar las notificaciones.','Open Calibrate from the home screen icon and come back here to enable notifications.')}
+                  </span>
+                </li>
+              </ol>
+            </div>
+          )}
+
+          {supported && (!isIOS || isStandalone) && permState === 'default' && (
+            <div className="space-y-4">
+              <p className="text-sm text-ink-muted" style={{ lineHeight: 1.6 }}>
+                {t('Calibrate puede avisarte cuando:','Calibrate can notify you when:')}
+              </p>
+              <ul className="space-y-2.5">
+                <li className="flex items-start gap-2.5 text-sm text-ink">
+                  <i className="fas fa-moon mt-1 flex-shrink-0" style={{ color: 'var(--color-accent-dark)', fontSize: '12px' }}></i>
+                  <span><b>{t('Cierre del día','Day wrap-up')}</b> — {t('después de las 19h, recordatorio para calificar tus comidas.','after 7pm, reminder to rate today\'s meals.')}</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-ink">
+                  <i className="fas fa-radar mt-1 flex-shrink-0" style={{ color: 'var(--color-alert)', fontSize: '12px' }}></i>
+                  <span><b>{t('Meseta detectada','Plateau detected')}</b> — {t('en la mañana, si tu peso está estancado.','in the morning, if your weight is plateauing.')}</span>
+                </li>
+              </ul>
+              <button onClick={requestPerm}
+                className="w-full py-3 rounded-xl font-semibold text-sm transition active:scale-[0.98]"
+                style={{ background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-md), inset 0 1px 0 rgba(255,255,255,0.18)' }}>
+                <i className="fas fa-bell mr-2"></i>{t('Activar notificaciones','Enable notifications')}
+              </button>
+            </div>
+          )}
+
+          {supported && permState === 'granted' && (
+            <div className="rounded-2xl text-sm flex items-start gap-2.5"
+              style={{
+                padding: '1rem 1.15rem',
+                background: darkMode ? 'rgba(140, 188, 145, 0.10)' : 'rgba(90, 122, 94, 0.06)',
+                boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(140, 188, 145, 0.20)' : 'rgba(90, 122, 94, 0.18)'),
+                color: 'var(--color-success)', lineHeight: 1.5
+              }}>
+              <i className="fas fa-circle-check mt-1 flex-shrink-0"></i>
+              <span>{t('Notificaciones activas. Vas a recibir el recordatorio nocturno y aviso si se detecta una meseta.','Notifications active. You\'ll get the evening reminder and a plateau alert if detected.')}</span>
+            </div>
+          )}
+
+          {supported && permState === 'denied' && (
+            <div className="space-y-3">
+              <div className="rounded-2xl text-sm flex items-start gap-2.5"
+                style={{
+                  padding: '1rem 1.15rem',
+                  background: 'rgba(192, 82, 58, 0.06)',
+                  boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.18)',
+                  color: 'var(--color-alert)', lineHeight: 1.5
+                }}>
+                <i className="fas fa-circle-xmark mt-1 flex-shrink-0"></i>
+                <span>{t('Bloqueaste las notificaciones. Para reactivarlas, andá a la configuración del navegador → Calibrate → Notificaciones → Permitir.','Notifications are blocked. To re-enable, go to browser settings → Calibrate → Notifications → Allow.')}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [pantalla, setPantalla] = React.useState("loading");
   const [perfil, setPerfil] = React.useState(null);
@@ -14809,6 +15019,9 @@ function App() {
       {recetaSeleccionada && <RecipeModal receta={recetaSeleccionada} onClose={() => setRecetaSeleccionada(null)} darkMode={darkMode} factorComensales={factorComensales} usaThermomix={perfil?.usaThermomix !== false} />}
 
       {globalOverlays}
+
+      {/* Modal de configuración de notificaciones — disparado desde avatar dropdown */}
+      <NotificationSetupModal darkMode={darkMode} />
 
       {/* Asistente IA — siempre disponible, contextual al tab activo */}
       {pantalla !== 'loading' && pantalla !== 'onboarding' && (

@@ -168,9 +168,40 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
       for (const c of clients) {
-        if ('focus' in c) return c.focus();
+        if ('focus' in c) {
+          // Si la notificación tiene una pantalla destino, navegar allá vía postMessage
+          if (event.notification.data && event.notification.data.nav) {
+            try { c.postMessage({ type: 'NAVIGATE', dest: event.notification.data.nav }); } catch (_) {}
+          }
+          return c.focus();
+        }
       }
       if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
     })
   );
+});
+
+// --- Push event (FCM-ready) ---
+// El servidor (FCM o similar) puede enviar payload con title/body/nav/url
+// El SW renderiza la notificación. iOS PWA 16.4+ soporta este flujo.
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (_) {
+    payload = { title: 'Calibrate', body: event.data ? event.data.text() : '' };
+  }
+  const title = payload.title || 'Calibrate';
+  const options = {
+    body:    payload.body  || '',
+    icon:    payload.icon  || 'icons/icon.svg',
+    badge:   payload.badge || 'icons/icon.svg',
+    tag:     payload.tag   || 'calibrate-push',
+    data:    {
+      url: payload.url || './',
+      nav: payload.nav || null
+    },
+    requireInteraction: !!payload.requireInteraction
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
 });
