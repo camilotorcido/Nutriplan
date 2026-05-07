@@ -8505,10 +8505,17 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           : _pct >= 30 ? t('Vas bien. Continuá con el plan.','On track. Keep going.')
           : _pct > 0   ? t('Buen comienzo. Registra tu próxima comida.','Good start. Log your next meal.')
           : t('Marca las comidas que ya tomaste para ver tu progreso.','Mark the meals you\'ve had to see your progress.');
+        // Chips: warm-tinted en light, accent-tinted con alpha en dark (mejor armonía y contraste)
+        const chipAccentStyle = darkMode
+          ? { background: 'rgba(232, 199, 122, 0.14)', color: '#E8C77A', boxShadow: 'inset 0 0 0 1px rgba(232, 199, 122, 0.20)' }
+          : { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' };
+        const chipSuccessStyle = darkMode
+          ? { background: 'rgba(140, 188, 145, 0.14)', color: '#9FCBA3', boxShadow: 'inset 0 0 0 1px rgba(140, 188, 145, 0.20)' }
+          : { background: 'var(--color-success-light)', color: 'var(--color-success)' };
         return (
           <div className="premium-shell">
-            <div className={`relative overflow-hidden ${darkMode ? '' : 'surface-card-shadow'}`}
-              style={{ borderRadius: 'var(--radius-premium-lg)', padding: '1.4rem 1.5rem', background: darkMode ? 'var(--color-surface)' : undefined }}>
+            <div className="surface-card-shadow relative overflow-hidden"
+              style={{ borderRadius: 'var(--radius-premium-lg)', padding: '1.4rem 1.5rem' }}>
               {/* Eyebrow: fecha + pulse dot */}
               <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
                 <span className="banner-premium-pulse-dot" />
@@ -8536,7 +8543,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               {/* Chips: objetivo + streak + entreno/descanso */}
               <div className="flex items-center gap-2 mt-3 flex-wrap">
                 {objetivoLabel && (
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-faint">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">
                     {objetivoLabel}
                   </span>
                 )}
@@ -8545,15 +8552,13 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                     {objetivoLabel && <span className="text-ink-faint">·</span>}
                     {streak >= 1 && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold tabular-nums"
-                        style={{ background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
+                        style={chipAccentStyle}>
                         🔥 {streak} {streak === 1 ? t('día','day') : t('días','days')}
                       </span>
                     )}
                     {sch && (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                        style={esEntreno
-                          ? { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }
-                          : { background: 'var(--color-success-light)', color: 'var(--color-success)' }}>
+                        style={esEntreno ? chipAccentStyle : chipSuccessStyle}>
                         <i className={`fas ${esEntreno ? 'fa-dumbbell' : 'fa-bed'}`} style={{ fontSize: '10px' }}></i>
                         {esEntreno ? t('Día de entreno','Training day') : t('Descanso','Rest day')}
                       </span>
