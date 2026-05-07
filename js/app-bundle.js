@@ -6168,33 +6168,69 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
   const enDespensa = ingredientesConsolidados.filter(ing => despensa[ing.id]).length;
   const faltantes = totalIngredientes - enDespensa;
 
+  // IA redesign: agrupar ingredientes por categoría (mismo patrón que ShoppingList)
+  const categoriasDespensa = React.useMemo(() => {
+    const cats = {
+      "🥩 Proteínas": [], "🥬 Frutas y Verduras": [],
+      "🥛 Lácteos": [], "🥤 Líquidos y Bebidas": [], "🥜 Frutos Secos y Semillas": [],
+      "🏪 Despensa": [], "📦 Otros": []
+    };
+    const clasificar = (nombre) => {
+      const n = (nombre || '').toLowerCase();
+      if (n.includes("nuez moscada")) return "🏪 Despensa";
+      if ((n.includes("arandano") || n.includes("arándano")) && (n.includes("deshid") || n.includes("seco"))) return "🥜 Frutos Secos y Semillas";
+      if (n.includes("salsa de tomate") || n.includes("puré de tomate") || n.includes("pasta de tomate") || n.includes("tomate enlatado")) return "🏪 Despensa";
+      if (n.includes("poroto verde") || n.includes("porotos verdes")) return "🥬 Frutas y Verduras";
+      if (n.includes("coco rallado") || n.includes("dátil") || n.includes("datil") || n.includes("mantequilla de almendra") || n.includes("alcapar") || n.includes("crackers") || n.includes("gelatina") || n.includes("café instantáneo") || n.includes("cafe instantaneo") || n.includes("café instant") || n.includes("muffin") || n.includes("masa para empanada") || n.includes("masa de empanada") || n.includes("masa empanada") || n.includes("frijol") || n.includes("frejol") || n.includes("habichuela") || n.includes("lata de ") || n.includes("enlatado") || n.includes("ají ") || n === "ají" || n.startsWith("aji ") || n === "aji" || n.includes("chile en polvo") || n.includes("chile seco") || n.includes("hojuelas de chile") || n.includes("jalape")) return "🏪 Despensa";
+      if (n.includes("quesillo") || n.includes("queso gruy") || n.includes("gruyère") || n.includes("mozzarella") || n.includes("mozarella") || n.includes("cottage") || n.includes("queso blanco untable") || n.includes("ricota") || n.includes("ricotta")) return "🥛 Lácteos";
+      if (n === "agua" || n.startsWith("agua ") || n.includes("bebida de ") || n.includes("bebida vegetal") || (n.includes("leche") && (n.includes("coco") || n.includes("almendra") || n.includes("avena") || n.includes("soja") || n.includes("soya") || n.includes("arroz"))) || n.includes("caldo") || n.includes("jugo") || n.includes("zumo") || n.includes("gaseosa") || n.includes("refresco") || n.includes("bebida") || n.includes("té ") || n === "té" || n.includes("infusión") || n.includes("infusion") || n.includes("café") || n.includes("cafe") || n.includes("yerba") || n.includes("vino") || n.includes("cerveza") || n.includes("pisco") || n.includes("ron") || n.includes("whisky") || n.includes("vodka")) return "🥤 Líquidos y Bebidas";
+      if (n.includes("lechuga") || n.includes("tomate") || n.includes("cebolla") || n.includes("cebollín") || n.includes("cebollin") || n.includes("pimentón") || n.includes("pimenton") || n.includes("pimiento") || n.includes("zapallo") || n.includes("zanahoria") || n.includes("papa") || n.includes("camote") || n.includes("pepino") || n.includes("espinaca") || n.includes("apio") || n.includes("espárrago") || n.includes("esparrago") || n.includes("champiñ") || n.includes("plátano") || n.includes("platano") || n.includes("mango") || n.includes("frutilla") || n.includes("arándano") || n.includes("arandano") || n.includes("manzana") || n.includes("palta") || n.includes("aguacate") || n.includes("limón") || n.includes("limon") || n.includes("cilantro") || n.includes("perejil") || n.includes("romero") || n.includes("tomillo") || n.includes("eneldo") || n.includes("albahaca") || n.includes("menta") || n.includes("cherry") || n.includes("choclo") || n.includes("brócoli") || n.includes("brocoli") || n.includes("coliflor") || n.includes("repollo") || n.includes("arveja") || n.includes("aceituna") || n.includes("piña") || n.includes("pina") || n.includes("naranja") || n.includes("uva") || n.includes("kale") || n.includes("puerro") || n.includes("berenjena") || n.includes("calabacín") || n.includes("calabacin") || n.includes("durazno") || n.includes("higo") || n.includes("jengibre") || n.includes("kiwi") || n.includes("pera") || n.includes("sandía") || n.includes("sandia") || n.includes("melón") || n.includes("melon") || n.includes("fresa") || (n.includes("ajo") && !n.includes("polvo"))) return "🥬 Frutas y Verduras";
+      if (n.includes("pollo") || n.includes("carne") || n.includes("salmón") || n.includes("salmon") || n.includes("atún") || n.includes("atun") || n.includes("huevo") || n.includes("proteína") || n.includes("pavo") || n.includes("cerdo") || n.includes("pescado") || n.includes("merluza") || n.includes("camar") || n.includes("tofu") || n.includes("jamón") || n.includes("jamon") || n.includes("chorizo") || n.includes("salchicha") || n.includes("tocino") || n.includes("panceta") || n.includes("sardina") || n.includes("caballa") || n.includes("trucha") || n.includes("anchoa")) return "🥩 Proteínas";
+      if (n.includes("leche") || n.includes("yogur") || n.includes("queso") || n.includes("crema") || (n.includes("mantequilla") && !n.includes("maní") && !n.includes("almendra"))) return "🥛 Lácteos";
+      if (n.includes("almendra") || n.includes("nuez") || n.includes("nueces") || n.includes("maní") || n.includes("mani") || n.includes("semilla") || n.includes("chía") || n.includes("chia") || n.includes("pasa") || n.includes("deshidratado") || n.includes("piñón") || n.includes("piñones") || n.includes("pinon")) return "🥜 Frutos Secos y Semillas";
+      if (n.includes("arroz") || n.includes("avena") || n.includes("quinoa") || n.includes("lenteja") || n.includes("poroto") || n.includes("garbanzo") || n.includes("granola") || n.includes("maíz") || n.includes("maiz") || n.includes("edamame") || n.includes("aceite") || n === "sal" || n.startsWith("sal ") || n.includes("pimienta") || n.includes("comino") || n.includes("orégano") || n.includes("oregano") || n.includes("ajo en polvo") || n.includes("laurel") || n.includes("canela") || n.includes("curry") || n.includes("salsa") || n.includes("miel") || n.includes("vinagre") || n.includes("maple") || n.includes("tahini") || n.includes("sésamo") || n.includes("sesamo") || n.includes("cacao") || n.includes("hojuela") || n.includes("chocolate") || n.includes("azúcar") || n.includes("azucar") || n.includes("mostaza") || n.includes("ketchup") || n.includes("mayonesa") || (n.includes("coco") && !n.includes("leche")) || n.includes("pan ") || n.includes("pan pita") || n.includes("pan integral") || n.includes("pan rallado") || n.includes("tortilla") || n.includes("harina") || n.includes("fideo") || n.includes("pasta") || n.includes("espagueti") || n.includes("hummus")) return "🏪 Despensa";
+      return "📦 Otros";
+    };
+    ingredientesFiltrados.forEach(ing => { cats[clasificar(ing.nombre)].push(ing); });
+    return Object.entries(cats).filter(([_, items]) => items.length > 0);
+  }, [ingredientesFiltrados]);
+
   return (
     <div className="animate-fadeIn">
-      <div className={`rounded-2xl shadow-sm border p-5 mb-6 surface-card`}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className={`font-semibold text-lg flex items-center gap-2 text-ink`}>
-            <i className="fas fa-warehouse text-green-500"></i>{t('Tu Despensa','Your Pantry')}
-          </h3>
-        </div>
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className={`rounded-xl p-3 text-center ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-            <div className={`text-xl font-bold text-ink`}>{totalIngredientes}</div>
-            <div className="text-xs text-gray-500">Total</div>
+      <div className="surface-card-shadow mb-6" style={{ padding: '1.5rem 1.4rem' }}>
+        <span className="premium-eyebrow mb-5" style={{ display: 'inline-flex' }}>
+          <span className="banner-premium-pulse-dot" />
+          {t('Tu despensa','Your pantry')}
+        </span>
+        <div className="grid grid-cols-3 gap-3 mt-4 mb-5">
+          <div className="text-center" style={{ background: darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(245, 240, 232, 0.55)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.06)' : 'rgba(120, 53, 15, 0.05)'), borderRadius: 'var(--radius-premium-md)', padding: '0.95rem 0.5rem' }}>
+            <div className="text-ink tabular-nums" style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+              {totalIngredientes}
+            </div>
+            <div className="text-[10px] font-bold uppercase tracking-wider mt-2 text-ink-muted">Total</div>
           </div>
-          <div className={`rounded-xl p-3 text-center ${darkMode ? 'bg-green-900/40' : 'bg-green-50'}`}>
-            <div className="text-xl font-bold text-green-600">{enDespensa}</div>
-            <div className="text-xs text-green-600">{t('Ya tengo','I have it')}</div>
+          <div className="text-center" style={{ background: darkMode ? 'rgba(140, 188, 145, 0.10)' : 'rgba(90, 122, 94, 0.06)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(140, 188, 145, 0.18)' : 'rgba(90, 122, 94, 0.16)'), borderRadius: 'var(--radius-premium-md)', padding: '0.95rem 0.5rem' }}>
+            <div className="tabular-nums" style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: 'var(--color-success)' }}>
+              {enDespensa}
+            </div>
+            <div className="text-[10px] font-bold uppercase tracking-wider mt-2" style={{ color: 'var(--color-success)' }}>{t('Ya tengo','I have it')}</div>
           </div>
-          <div className={`rounded-xl p-3 text-center ${darkMode ? 'bg-amber-900/40' : 'bg-amber-50'}`}>
-            <div className="text-xl font-bold text-amber-600">{faltantes}</div>
-            <div className="text-xs text-amber-600">{t('Me faltan',"I'm missing")}</div>
+          <div className="text-center" style={{ background: darkMode ? 'rgba(232, 199, 122, 0.10)' : 'rgba(200, 148, 58, 0.06)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 199, 122, 0.18)' : 'rgba(200, 148, 58, 0.16)'), borderRadius: 'var(--radius-premium-md)', padding: '0.95rem 0.5rem' }}>
+            <div className="tabular-nums" style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: 'var(--color-accent-dark)' }}>
+              {faltantes}
+            </div>
+            <div className="text-[10px] font-bold uppercase tracking-wider mt-2" style={{ color: 'var(--color-accent-dark)' }}>{t('Me faltan',"I'm missing")}</div>
           </div>
         </div>
-        <div className={`h-2.5 rounded-full overflow-hidden surface-secondary`}>
-          <div className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition duration-500"
-            style={{ width: `${totalIngredientes > 0 ? (enDespensa / totalIngredientes) * 100 : 0}%` }}></div>
+        <div className="h-2 rounded-full overflow-hidden surface-secondary">
+          <div className="h-full"
+            style={{
+              width: (totalIngredientes > 0 ? (enDespensa / totalIngredientes) * 100 : 0) + '%',
+              background: 'var(--color-success)',
+              transition: 'width 0.6s cubic-bezier(0.32, 0.72, 0, 1)'
+            }}></div>
         </div>
-        <div className="text-xs text-gray-400 mt-1 text-right">
+        <div className="text-xs text-ink-faint mt-2 text-right tabular-nums">
           {totalIngredientes > 0 ? Math.round((enDespensa / totalIngredientes) * 100) : 0}% {t('completo','complete')}
         </div>
       </div>
@@ -6293,49 +6329,69 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
         )}
       </div>
 
-      <div className={`rounded-2xl shadow-sm border overflow-hidden surface-card`}>
-        <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
-          {ingredientesFiltrados.map(ing => (
-            <div key={ing.id}
-              className={`flex items-center justify-between p-4 transition ${
-                despensa[ing.id]
-                  ? (darkMode ? 'bg-green-900/20' : 'bg-green-50/50')
-                  : darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
-              }`}>
-              {/* T2/A8: div→button con 32×32px mínimo y aria-label */}
-              <button onClick={() => toggleDespensa(ing.id)}
-                aria-label={`${despensa[ing.id] ? 'Quitar de despensa' : 'Tengo en despensa'}: ${ing.nombre}`}
-                className="flex items-center gap-3 flex-1 cursor-pointer text-left">
-                <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center transition flex-shrink-0 ${
-                  despensa[ing.id] ? 'bg-green-500 border-green-500' : darkMode ? 'border-gray-500 hover:border-green-400' : 'border-gray-300 hover:border-green-400'}`}>
-                  {despensa[ing.id] && <i className="fas fa-check text-white text-xs"></i>}
-                </div>
-                <div className="flex-1">
-                  <span className={`text-sm ${despensa[ing.id] ? 'text-gray-500' : darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{ing.nombre}</span>
-                </div>
-              </button>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-lg whitespace-nowrap ml-2 ${
-                despensa[ing.id]
-                  ? 'bg-green-100 text-green-600'
-                  : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
-              }`}>
-                {formatearCompraCorto(ing)}
+      {/* Lista agrupada por categorías — IA redesign */}
+      <div className="space-y-4">
+        {categoriasDespensa.map(([cat, items]) => (
+          <div key={cat} className="surface-card-shadow overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-default">
+              <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+                {cat}
+              </span>
+              <span className="text-xs font-semibold tabular-nums text-ink-muted">
+                {items.filter(ing => despensa[ing.id]).length}/{items.length}
               </span>
             </div>
-          ))}
-        </div>
-        {ingredientesFiltrados.length === 0 && (
-          <div className="p-8 text-center text-gray-400">
-            <i className="fas fa-search text-2xl mb-2"></i>
-            <p className="text-sm">No se encontraron ingredientes</p>
+            <div className={`divide-y ${darkMode ? 'divide-gray-700/40' : 'divide-gray-100'}`}>
+              {items.map(ing => (
+                <div key={ing.id}
+                  className="flex items-center justify-between transition"
+                  style={{
+                    padding: '0.875rem 1.25rem',
+                    background: despensa[ing.id]
+                      ? (darkMode ? 'rgba(140, 188, 145, 0.06)' : 'rgba(90, 122, 94, 0.04)')
+                      : 'transparent'
+                  }}>
+                  <button onClick={() => toggleDespensa(ing.id)}
+                    aria-label={(despensa[ing.id] ? 'Quitar de despensa' : 'Tengo en despensa') + ': ' + ing.nombre}
+                    className="flex items-center gap-3 flex-1 cursor-pointer text-left">
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center transition flex-shrink-0"
+                      style={despensa[ing.id]
+                        ? { background: 'var(--color-success)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18)' }
+                        : { background: darkMode ? 'rgba(232, 224, 212, 0.04)' : '#FAF6EE',
+                            boxShadow: 'inset 0 0 0 1.5px ' + (darkMode ? 'rgba(232, 224, 212, 0.18)' : 'rgba(120, 53, 15, 0.18)') }}>
+                      {despensa[ing.id] && <i className="fas fa-check text-white text-xs"></i>}
+                    </div>
+                    <span className="text-sm flex-1"
+                      style={{ color: despensa[ing.id] ? 'var(--color-ink-faint)' : 'var(--color-ink)', textDecoration: despensa[ing.id] ? 'line-through' : 'none' }}>
+                      {ing.nombre}
+                    </span>
+                  </button>
+                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ml-2 tabular-nums"
+                    style={despensa[ing.id]
+                      ? (darkMode ? { background: 'rgba(140, 188, 145, 0.16)', color: '#9FCBA3' } : { background: 'var(--color-success-light)', color: 'var(--color-success)' })
+                      : (darkMode ? { background: 'rgba(232, 224, 212, 0.06)', color: 'var(--color-ink-muted)' } : { background: '#FAF6EE', color: 'var(--color-ink-muted)' })
+                    }>
+                    {formatearCompraCorto(ing)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+        {categoriasDespensa.length === 0 && (
+          <div className="surface-card-shadow text-center" style={{ padding: '2rem 1rem', color: 'var(--color-ink-faint)' }}>
+            <i className="fas fa-search text-2xl mb-2" style={{ opacity: 0.6 }}></i>
+            <p className="text-sm">{t('No se encontraron ingredientes', 'No ingredients found')}</p>
           </div>
         )}
       </div>
 
       <div className="mt-6">
         <button onClick={onNavigateToShopping}
-          className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl font-semibold text-lg shadow-lg shadow-amber-200 hover:shadow-xl transition active:scale-[0.98]">
-          <i className="fas fa-shopping-cart mr-2"></i>Ver Lista de Compras ({faltantes} items)
+          className="w-full py-3.5 rounded-xl font-semibold text-base transition active:scale-[0.98] flex items-center justify-center gap-2"
+          style={{ background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-md), inset 0 1px 0 rgba(255,255,255,0.18)' }}>
+          <i className="fas fa-cart-shopping"></i>
+          {t('Ver lista de compras', 'View shopping list')} <span className="tabular-nums opacity-90">({faltantes})</span>
         </button>
       </div>
     </div>
@@ -11710,12 +11766,12 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
         return (
           <div className="surface-card-shadow" style={{ padding: '1.75rem 1.5rem' }}>
             {/* Header: eyebrow + modalidad pill */}
-            <div className="flex items-start justify-between gap-3 mb-7">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2.5 mb-8">
               <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
                 <span className="banner-premium-pulse-dot" />
                 {t('Prescripción','Prescription')} · {_faseEnt.nombre}
               </span>
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap flex-shrink-0"
+              <span className="inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
                 style={chipAccentSty}>
                 {_faseEnt.ent.modalidad}
               </span>
@@ -13644,11 +13700,17 @@ function ChatPanel({ darkMode, activeTab }) {
     window.addEventListener('mouseup', onUp);
   }
 
-  var borderColor = darkMode ? '#374151' : '#e5e7eb';
-  var bgPanel     = darkMode ? '#111827' : '#ffffff';
-  var bgMsg       = darkMode ? '#1f2937' : '#f3f4f6';
-  var colorText   = darkMode ? '#f3f4f6' : '#111827';
-  var colorMuted  = darkMode ? '#9ca3af' : '#6b7280';
+  // IA redesign: paleta del brand para ChatPanel
+  var borderColor = darkMode ? 'rgba(232, 224, 212, 0.10)' : '#E0D9CC';
+  var bgPanel     = darkMode ? '#2A2622' : '#FFFFFF';
+  var bgMsg       = darkMode ? 'rgba(232, 224, 212, 0.06)' : '#FAF6EE';
+  var colorText   = darkMode ? '#E8E0D4' : '#1A1A1A';
+  var colorMuted  = darkMode ? '#B8AB9C' : '#4A4A4A';
+  var brandAccent = '#C8943A';
+  var brandAccentDark = '#A67830';
+  var brandAccentLight = darkMode ? 'rgba(232, 199, 122, 0.14)' : '#F0D9AC';
+  var brandSuccess = '#5A7A5E';
+  var brandAlert = '#C0523A';
 
   return React.createElement(React.Fragment, null,
     /* ── Botón flotante ── */
@@ -13661,23 +13723,23 @@ function ChatPanel({ darkMode, activeTab }) {
         right:'calc(16px + env(safe-area-inset-right, 0px))',
         zIndex:1000,
         width:52, height:52, borderRadius:'50%', border:'none',
-        background:'linear-gradient(135deg,#10b981,#059669)',
-        color:'#fff', fontSize:22, cursor:'pointer',
+        background: brandAccent,
+        color:'#fff', fontSize:20, cursor:'pointer',
         boxShadow: badge && !open
-          ? '0 4px 24px rgba(239,68,68,0.5)'
-          : '0 4px 20px rgba(16,185,129,0.45)',
+          ? '0 4px 24px rgba(192, 82, 58, 0.40), inset 0 1px 0 rgba(255,255,255,0.18)'
+          : '0 6px 22px rgba(120, 53, 15, 0.32), inset 0 1px 0 rgba(255,255,255,0.18)',
         display:'flex', alignItems:'center', justifyContent:'center',
-        transition:'transform 0.15s, box-shadow 0.15s'
+        transition:'transform 0.15s, box-shadow 0.3s, background 0.3s'
       }
     },
       open ? '✕' : React.createElement('i', { className:'fas fa-comment-dots' }),
-      /* Badge rojo cuando hay sugerencia no vista */
+      /* Badge cuando hay sugerencia no vista */
       badge && !open && React.createElement('span', {
         style:{
           position:'absolute', top:2, right:2,
-          width:13, height:13, borderRadius:'50%',
-          background:'#ef4444',
-          border:'2px solid #fff',
+          width:11, height:11, borderRadius:'50%',
+          background: brandAlert,
+          border:'2px solid '+bgPanel,
           pointerEvents:'none'
         }
       })
@@ -13689,9 +13751,11 @@ function ChatPanel({ darkMode, activeTab }) {
         var base = {
           position:'fixed',
           zIndex:999,
-          borderRadius:20, background:bgPanel,
+          borderRadius:'1.4rem', background:bgPanel,
           border:'1px solid '+borderColor,
-          boxShadow:'0 20px 60px rgba(0,0,0,0.25)',
+          boxShadow: darkMode
+            ? '0 28px 50px -22px rgba(0,0,0,0.55), 0 8px 16px -10px rgba(0,0,0,0.35)'
+            : '0 28px 50px -22px rgba(120,53,15,0.20), 0 8px 16px -10px rgba(120,53,15,0.10)',
           display:'flex', flexDirection:'column', overflow:'hidden'
         };
         if (isDesktop) {
@@ -13742,13 +13806,16 @@ function ChatPanel({ darkMode, activeTab }) {
           userSelect: 'none' }
       },
         React.createElement('div', {
-          style:{ width:34, height:34, borderRadius:'50%',
-            background:'linear-gradient(135deg,#10b981,#059669)',
-            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }
-        }, React.createElement('i', { className:'fas fa-robot', style:{ color:'#fff', fontSize:15 } })),
+          style:{ width:34, height:34, borderRadius:10,
+            background: brandAccent,
+            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+            boxShadow:'inset 0 1px 0 rgba(255,255,255,0.18)' }
+        }, React.createElement('i', { className:'fas fa-seedling', style:{ color:'#fff', fontSize:14 } })),
         React.createElement('div', { style:{ flex:1 } },
-          React.createElement('div', { style:{ fontWeight:700, fontSize:14, color:colorText } }, 'Calibrate IA'),
-          React.createElement('div', { style:{ fontSize:11, color:'#10b981' } }, '● ' + t('En línea','Online'))
+          React.createElement('div', { style:{ fontWeight:700, fontSize:14, color:colorText, letterSpacing:'-0.01em' } }, 'Calibrate'),
+          React.createElement('div', { style:{ fontSize:10, fontWeight:700, letterSpacing:'0.16em', textTransform:'uppercase', color: brandAccentDark, marginTop:2 } },
+            React.createElement('span', { style:{ display:'inline-block', width:5, height:5, borderRadius:'50%', background: brandSuccess, marginRight:6, verticalAlign:'middle' } }),
+            t('En línea','Online'))
         ),
         React.createElement('button', {
           onClick: function() { setMessages([]); localStorage.removeItem('nutriplan_chat_history'); },
@@ -13764,9 +13831,9 @@ function ChatPanel({ darkMode, activeTab }) {
         messages.length === 0 && React.createElement('div', {
           style:{ textAlign:'center', padding:'32px 16px', color:colorMuted }
         },
-          React.createElement('div', { style:{ fontSize:36, marginBottom:10 } }, '🥗'),
-          React.createElement('div', { style:{ fontSize:13, lineHeight:1.5 } },
-            'Hola, soy tu asistente nutricional.', React.createElement('br'), '¿Qué comiste hoy?'
+          React.createElement('div', { style:{ fontSize:36, marginBottom:10 } }, '🌿'),
+          React.createElement('div', { style:{ fontSize:13, lineHeight:1.6 } },
+            t('Hola, soy tu asistente nutricional.','Hi, I\'m your nutrition assistant.'), React.createElement('br'), t('¿Qué comiste hoy?','What did you eat today?')
           )
         ),
         messages.map(function(m, i) {
@@ -13776,25 +13843,29 @@ function ChatPanel({ darkMode, activeTab }) {
             React.createElement('div', {
               style:{
                 maxWidth:'85%',
-                padding: esProactivo ? '10px 13px' : '9px 13px',
-                borderRadius: esUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                padding: esProactivo ? '12px 14px' : '10px 14px',
+                borderRadius: esUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
                 background: esUser
-                  ? 'linear-gradient(135deg,#10b981,#059669)'
+                  ? brandAccent
                   : esProactivo
-                    ? (darkMode ? 'rgba(16,185,129,0.12)' : '#f0fdf4')
+                    ? brandAccentLight
                     : bgMsg,
-                border: esProactivo ? '1px solid rgba(16,185,129,0.3)' : 'none',
-                color: esUser ? '#fff' : colorText,
-                fontSize:13, lineHeight:1.55, whiteSpace:'pre-wrap', wordBreak:'break-word'
+                boxShadow: esUser
+                  ? 'inset 0 1px 0 rgba(255,255,255,0.18)'
+                  : esProactivo
+                    ? (darkMode ? 'inset 0 0 0 1px rgba(232, 199, 122, 0.22)' : 'inset 0 0 0 1px rgba(200, 148, 58, 0.20)')
+                    : (darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(0, 0, 0, 0.04)'),
+                color: esUser ? '#fff' : (esProactivo ? brandAccentDark : colorText),
+                fontSize:13.5, lineHeight:1.6, whiteSpace:'pre-wrap', wordBreak:'break-word'
               }
             },
               /* Header de sugerencia proactiva */
               esProactivo && React.createElement('div', {
-                style:{ display:'flex', alignItems:'center', gap:5, marginBottom:6,
-                  fontSize:10, fontWeight:700, color:'#10b981', letterSpacing:'0.04em', textTransform:'uppercase' }
+                style:{ display:'flex', alignItems:'center', gap:6, marginBottom:7,
+                  fontSize:10, fontWeight:700, color: brandAccentDark, letterSpacing:'0.18em', textTransform:'uppercase' }
               },
                 React.createElement('i', { className:'fas fa-lightbulb', style:{ fontSize:9 } }),
-                ' Sugerencia de Calibrate'
+                ' ', t('Sugerencia de Calibrate', 'Calibrate suggestion')
               ),
               /* Thumbnail de foto adjunta */
               m._imageUrl && React.createElement('img', {
@@ -13810,7 +13881,7 @@ function ChatPanel({ darkMode, activeTab }) {
             style:{ padding:'10px 14px', borderRadius:'18px 18px 18px 4px', background:bgMsg, color:colorMuted, fontSize:13, letterSpacing:3 }
           }, '●●●')
         ),
-        error && React.createElement('div', { style:{ textAlign:'center', color:'#f87171', fontSize:12, padding:'4px 0' } }, error),
+        error && React.createElement('div', { style:{ textAlign:'center', color: brandAlert, fontSize:12, padding:'4px 0' } }, error),
         React.createElement('div', { ref:bottomRef })
       ),
 
@@ -13855,9 +13926,9 @@ function ChatPanel({ darkMode, activeTab }) {
             placeholder: chatImage ? t('Agrega contexto (opcional)…','Add context (optional)…') : t('Escribe aquí…','Type here…'),
             disabled: loading,
             style:{
-              flex:1, padding:'9px 13px', borderRadius:12, fontSize:13,
+              flex:1, padding:'10px 13px', borderRadius:12, fontSize:13,
               border:'1px solid '+borderColor,
-              background: darkMode ? '#1f2937' : '#f9fafb',
+              background: bgMsg,
               color: colorText, outline:'none'
             }
           }),
@@ -13868,7 +13939,8 @@ function ChatPanel({ darkMode, activeTab }) {
             title: t('Enviar foto de comida','Send food photo'),
             style:{
               width:38, height:38, borderRadius:12, border:'none', flexShrink:0,
-              background: chatImage ? '#8b5cf6' : (darkMode ? '#374151' : '#e5e7eb'),
+              background: chatImage ? brandAccent : bgMsg,
+              boxShadow: chatImage ? 'inset 0 1px 0 rgba(255,255,255,0.18)' : (darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(0,0,0,0.04)'),
               color: chatImage ? '#fff' : colorMuted,
               cursor: loading ? 'not-allowed' : 'pointer',
               display:'flex', alignItems:'center', justifyContent:'center'
@@ -13881,7 +13953,8 @@ function ChatPanel({ darkMode, activeTab }) {
             title: recording ? t('Soltar para enviar','Release to send') : t('Hablar','Speak'),
             style:{
               width:38, height:38, borderRadius:12, border:'none', flexShrink:0,
-              background: recording ? 'linear-gradient(135deg,#ef4444,#dc2626)' : (darkMode ? '#374151' : '#e5e7eb'),
+              background: recording ? brandAlert : bgMsg,
+              boxShadow: recording ? 'inset 0 1px 0 rgba(255,255,255,0.18)' : (darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(0,0,0,0.04)'),
               color: recording ? '#fff' : colorMuted,
               cursor: loading ? 'not-allowed' : 'pointer',
               display:'flex', alignItems:'center', justifyContent:'center'
@@ -13893,7 +13966,8 @@ function ChatPanel({ darkMode, activeTab }) {
             disabled: loading || (!input.trim() && !chatImage),
             style:{
               width:38, height:38, borderRadius:12, border:'none', flexShrink:0,
-              background: (loading || (!input.trim() && !chatImage)) ? (darkMode ? '#374151' : '#e5e7eb') : 'linear-gradient(135deg,#10b981,#059669)',
+              background: (loading || (!input.trim() && !chatImage)) ? bgMsg : brandAccent,
+              boxShadow: (loading || (!input.trim() && !chatImage)) ? 'none' : 'inset 0 1px 0 rgba(255,255,255,0.18)',
               color: (loading || (!input.trim() && !chatImage)) ? colorMuted : '#fff',
               cursor: (loading || (!input.trim() && !chatImage)) ? 'not-allowed' : 'pointer',
               display:'flex', alignItems:'center', justifyContent:'center'
