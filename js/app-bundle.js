@@ -11486,9 +11486,9 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
         const tileRing = darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.06)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.05)';
         const dividerColor = darkMode ? 'rgba(232, 224, 212, 0.10)' : 'var(--color-border)';
         return (
-          <div className="surface-card-shadow" style={{ padding: '1.5rem 1.4rem' }}>
+          <div className="surface-card-shadow" style={{ padding: '1.75rem 1.5rem' }}>
             {/* Header: eyebrow + modalidad pill */}
-            <div className="flex items-start justify-between gap-3 mb-5">
+            <div className="flex items-start justify-between gap-3 mb-7">
               <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
                 <span className="banner-premium-pulse-dot" />
                 {t('Prescripción','Prescription')} · {_faseEnt.nombre}
@@ -11500,19 +11500,20 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             </div>
 
             {/* Métricas del entrenamiento (mini-tiles bento) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-7">
               {[
                 { l: t('Series por grupo','Sets per group'), v: _faseEnt.ent.volumenSets.split(' ').slice(0,2).join(' ') },
                 { l: t('Reps por serie','Reps per set'), v: _faseEnt.ent.repRange || '—' },
                 { l: t('Esfuerzo (1-10)','Effort (1-10)'), v: _faseEnt.ent.rpeObjetivo.split(' ')[0] },
                 { l: t('Peso (% de tu máx.)','Weight (% of your max)'), v: _faseEnt.ent.intensidadPct1RM.split(' ')[0] }
               ].map(x => (
-                <div key={x.l} className="rounded-xl px-3.5 py-3"
-                  style={{ background: tileBg, boxShadow: tileRing, borderRadius: 'var(--radius-premium-md)' }}>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-ink-muted leading-tight" style={{ minHeight: '2.4em' }}>
+                <div key={x.l} className="flex flex-col"
+                  style={{ background: tileBg, boxShadow: tileRing, borderRadius: 'var(--radius-premium-md)', padding: '1.1rem 1.15rem 1.25rem', minHeight: '6.5rem' }}>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted" style={{ lineHeight: 1.35, minHeight: '2.7em' }}>
                     {x.l}
                   </div>
-                  <div className="premium-num-mini text-ink mt-1.5 tabular-nums" style={{ fontSize: '1.125rem', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                  <div className="text-ink tabular-nums mt-auto"
+                    style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace", paddingTop: '0.75rem' }}>
                     {x.v}
                   </div>
                 </div>
@@ -11520,26 +11521,26 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             </div>
 
             {/* Cardio total */}
-            <div className="mb-5" style={{ borderTop: `1px solid ${dividerColor}`, paddingTop: '1.25rem' }}>
-              <div className="flex items-center justify-between mb-3">
+            <div className="mb-7" style={{ borderTop: `1px solid ${dividerColor}`, paddingTop: '1.75rem' }}>
+              <div className="flex items-center justify-between mb-4 gap-3">
                 <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
                   <i className="fas fa-heart-pulse" style={{ fontSize: '10px' }}></i>
                   {t('Cardio total / semana','Total cardio / week')}
                 </span>
-                <span className="text-base font-extrabold tabular-nums text-ink"
-                  style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", letterSpacing: '-0.02em' }}>
+                <span className="text-ink tabular-nums whitespace-nowrap"
+                  style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.025em', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
                   {_faseEnt.ent.cardioMinSemana} min
                 </span>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tabular-nums"
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-semibold tabular-nums"
                   style={chipMutedSty}>
                   {_faseEnt.ent.cardioBaseProtocolo || '~45'} min {t('dentro de tus sesiones','within your sessions')}
                 </span>
                 {(_faseEnt.ent.cardioExtraNecesario > 0) && (
                   <>
-                    <span className="text-ink-faint text-xs font-bold">+</span>
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tabular-nums"
+                    <span className="text-ink-faint text-sm font-bold">+</span>
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-semibold tabular-nums"
                       style={chipAccentSty}>
                       {_faseEnt.ent.cardioExtraNecesario} min {t('caminata extra / semana','extra walking / week')}
                     </span>
@@ -11547,7 +11548,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                 )}
               </div>
               {_faseEnt.ent.cardioTipoSimple && (
-                <p className="text-xs text-ink-muted mt-2.5" style={{ lineHeight: 1.5 }}>
+                <p className="text-sm text-ink-muted mt-4" style={{ lineHeight: 1.6 }}>
                   {_faseEnt.ent.cardioTipoSimple}
                 </p>
               )}
@@ -11555,36 +11556,36 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
 
             {/* Conexión con plan nutricional */}
             {_faseEnt.kcal && _diasEntreno && (
-              <div className="mb-5" style={{ borderTop: `1px solid ${dividerColor}`, paddingTop: '1.25rem' }}>
-                <span className="premium-eyebrow mb-3" style={{ display: 'inline-flex' }}>
+              <div className="mb-7" style={{ borderTop: `1px solid ${dividerColor}`, paddingTop: '1.75rem' }}>
+                <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
                   <i className="fas fa-link" style={{ fontSize: '10px' }}></i>
                   {t('Tu plan de comidas','Your meal plan')}
                 </span>
-                <div className="space-y-2 mt-3">
+                <div className="mt-5" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm text-ink-muted">{t('Promedio diario','Daily avg')}</span>
-                    <span className="text-base font-extrabold tabular-nums text-ink"
-                      style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", letterSpacing: '-0.02em' }}>
+                    <span className="text-ink tabular-nums whitespace-nowrap"
+                      style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.025em', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
                       {_faseEnt.kcal} kcal
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm text-ink-muted">
                       {t('Días que entrenas','Training days')}
-                      <span className="text-[10px] text-ink-faint ml-1">(+5% kcal)</span>
+                      <span className="text-[11px] text-ink-faint ml-1.5">(+5% kcal)</span>
                     </span>
-                    <span className="text-sm font-semibold tabular-nums text-ink"
-                      style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                    <span className="text-sm font-semibold tabular-nums text-ink whitespace-nowrap"
+                      style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", letterSpacing: '0.02em' }}>
                       {_diasEntreno.entreno.join(' · ') || '—'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm text-ink-muted">
                       {t('Días de descanso','Rest days')}
-                      <span className="text-[10px] text-ink-faint ml-1">(−5% kcal)</span>
+                      <span className="text-[11px] text-ink-faint ml-1.5">(−5% kcal)</span>
                     </span>
-                    <span className="text-sm font-semibold tabular-nums text-ink"
-                      style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                    <span className="text-sm font-semibold tabular-nums text-ink whitespace-nowrap"
+                      style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", letterSpacing: '0.02em' }}>
                       {_diasEntreno.descanso.join(' · ') || '—'}
                     </span>
                   </div>
@@ -11593,9 +11594,9 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             )}
 
             {/* Foco de la fase */}
-            <div style={{ borderTop: `1px solid ${dividerColor}`, paddingTop: '1.25rem' }}>
-              <p className="text-sm text-ink-muted flex items-start gap-2" style={{ lineHeight: 1.55 }}>
-                <i className="fas fa-circle-info text-ink-faint mt-1" style={{ fontSize: '11px' }}></i>
+            <div style={{ borderTop: `1px solid ${dividerColor}`, paddingTop: '1.5rem' }}>
+              <p className="text-sm text-ink-muted flex items-start gap-2.5" style={{ lineHeight: 1.65 }}>
+                <i className="fas fa-circle-info text-ink-faint" style={{ fontSize: '12px', marginTop: '0.2rem' }}></i>
                 <span className="flex-1">{tData(_faseEnt.ent.foco)}</span>
               </p>
             </div>
