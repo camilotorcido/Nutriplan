@@ -161,7 +161,7 @@ html.dark .premium-eyebrow { color: #E8C77A; }
 
 html.dark .text-ink            { color: #E8E0D4; }
 html.dark .text-ink-muted      { color: #B8AB9C; }
-html.dark .text-ink-faint      { color: #6B6055; }
+html.dark .text-ink-faint      { color: #8A7E70; }
 html.dark .text-accent         { color: #E8C77A; }
 html.dark .text-accent-dark    { color: #C8A45A; }
 html.dark .text-success        { color: #8FAF94; }
@@ -175,6 +175,15 @@ html.dark .bg-alert-light      { background-color: #3A1F1B; }
 html.dark .border-default      { border-color: #3A352E; }
 html.dark .surface-card        { background-color: #2A2622; border-color: #3A352E; }
 html.dark .surface-card-shadow { background-color: #2A2622; border-color: #3A352E; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.3); }
+
+/* IA redesign: variables ink overridden en dark mode para que `var(--color-ink)` */
+/* funcione bien en estilos inline (no solo en las clases .text-ink, .text-ink-muted) */
+html.dark {
+    --color-ink:        #E8E0D4;
+    --color-ink-muted:  #B8AB9C;
+    --color-ink-faint:  #8A7E70;
+    --color-base:       #1A1816;
+}
 html.dark .surface-subtle      { background-color: #25211E; }
 html.dark .surface-secondary   { background-color: #322D28; }
 html.dark .text-info           { color: #93C5FD; }
