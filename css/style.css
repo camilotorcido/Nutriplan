@@ -300,6 +300,27 @@ button.bg-gradient-to-r.from-green-500:hover {
     color: var(--color-accent-dark) !important;
 }
 
+/* IA redesign: orange-500/600 estaban heredados del template (entreno mode color).
+   Mapearlos a accent mostaza para unificar paleta.                            */
+.text-orange-500:not([class*="bg-orange"]):not([class*="text-amber"]),
+.text-orange-600:not([class*="bg-orange"]):not([class*="text-amber"]),
+.text-orange-400:not([class*="bg-orange"]):not([class*="text-amber"]) {
+    color: var(--color-accent-dark) !important;
+}
+.bg-orange-500:not([class*="text-orange"]):not([class*="from-"]),
+.hover\:bg-orange-600:hover:not([class*="from-"]) {
+    background-color: var(--color-accent) !important;
+}
+.hover\:bg-orange-600:hover {
+    background-color: var(--color-accent-dark) !important;
+}
+/* Sombras orange/red tinted → warm brown del brand */
+.shadow-orange-200,
+.shadow-red-200 {
+    --tw-shadow-color: rgba(120, 53, 15, 0.18) !important;
+    --tw-shadow: var(--tw-shadow-colored) !important;
+}
+
 .banner-premium-hero-unit {
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     font-size: 0.9rem;

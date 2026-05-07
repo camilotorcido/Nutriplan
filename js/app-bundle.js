@@ -7041,7 +7041,8 @@ function BarcodeScannerModal({ darkMode, onAdd, onClose }) {
   var inputStyle = { background: darkMode ? '#1f2937' : '#fff', color: darkMode ? '#f9fafb' : '#111827', border: '1px solid ' + (darkMode ? '#4b5563' : '#e5e7eb') };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 backdrop-blur-sm animate-fadeIn"
+    <div className="fixed inset-0 z-[60] flex items-end justify-center backdrop-blur-sm animate-fadeIn"
+      style={{ background: 'rgba(26, 24, 22, 0.65)' }}
       onClick={function(e) { if (e.target === e.currentTarget) { detenerCamara(); onClose(); } }}>
       <div className={'w-full max-w-md rounded-t-2xl shadow-2xl ' + cardBase}
         style={{ maxHeight: '92vh', display: 'flex', flexDirection: 'column', paddingBottom: 'env(safe-area-inset-bottom,16px)' }}>
@@ -7593,7 +7594,8 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm animate-fadeIn"
+    <div className="fixed inset-0 z-50 flex items-end justify-center backdrop-blur-sm animate-fadeIn"
+      style={{ background: 'rgba(26, 24, 22, 0.6)' }}
       onClick={function(e) { if (e.target === e.currentTarget) onClose(); }}>
       <div className={`w-full max-w-md rounded-t-2xl shadow-2xl ${darkMode ? 'bg-gray-900 border-t border-gray-700' : 'bg-white'}`}
         style={{ maxHeight:'90vh', display:'flex', flexDirection:'column', paddingBottom:'env(safe-area-inset-bottom, 16px)' }}>
