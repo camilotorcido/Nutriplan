@@ -8489,61 +8489,83 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           <i className="fas fa-chevron-right text-sm"></i>
         </button>
       </div>
-      {/* Saludo */}
+      {/* IA redesign: Hero double-bezel — sustituye el gradient de marca por shell premium */}
       {(() => {
         const obj = perfil && perfil.objetivo ? perfil.objetivo.toLowerCase() : 'default';
-        const headerGradient = OBJETIVO_GRADIENTS[obj] || OBJETIVO_GRADIENTS['default'];
-        const objetivoLabel = { perdida: 'Pérdida de grasa', volumen: 'Ganancia muscular', mantenimiento: 'Mantenimiento' }[obj] || '';
+        const objetivoLabel = { perdida: t('Pérdida de grasa','Fat loss'), volumen: t('Ganancia muscular','Muscle gain'), mantenimiento: t('Mantenimiento','Maintenance') }[obj] || '';
+        const streak = calcularStreakAdherencia();
+        const sch = window.NP_RoadmapData && window.NP_RoadmapData.ENTRENO_PROTOCOLO
+          ? window.NP_RoadmapData.ENTRENO_PROTOCOLO.scheduleDefault : null;
+        const dow = new Date().getDay();
+        const esEntreno = sch && sch[dow] && sch[dow] !== 'descanso';
+        const _pct = (metaKcalDia > 0 && consumidoHoy.calorias > 0) ? Math.round((consumidoHoy.calorias / metaKcalDia) * 100) : 0;
+        const _msg = metaKcalDia <= 0 ? '' :
+          _pct >= 100  ? t('Meta de hoy cumplida. Excelente día.','Daily goal reached. Outstanding.')
+          : _pct >= 70 ? t('Casi listo. Un poco más y llegas al objetivo.','Almost there. Just a little more.')
+          : _pct >= 30 ? t('Vas bien. Continuá con el plan.','On track. Keep going.')
+          : _pct > 0   ? t('Buen comienzo. Registra tu próxima comida.','Good start. Log your next meal.')
+          : t('Marca las comidas que ya tomaste para ver tu progreso.','Mark the meals you\'ve had to see your progress.');
         return (
-          <div className="rounded-2xl px-5 py-4 text-white shadow-md relative overflow-hidden" style={{ background: headerGradient }}>
-            {/* Sutil overlay radial para reducir brillo del gradient */}
-            <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 100% 0%, rgba(255,255,255,0.08), transparent 60%)', pointerEvents: 'none' }} />
-            <div className="relative">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] opacity-80">{fechaStr}{objetivoLabel ? ' · ' + objetivoLabel : ''}</p>
-              <h2 className="font-display mt-1.5" style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.01em', lineHeight: 1.1 }}>
+          <div className="premium-shell">
+            <div className={`relative overflow-hidden ${darkMode ? '' : 'surface-card-shadow'}`}
+              style={{ borderRadius: 'var(--radius-premium-lg)', padding: '1.4rem 1.5rem', background: darkMode ? 'var(--color-surface)' : undefined }}>
+              {/* Eyebrow: fecha + pulse dot */}
+              <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+                <span className="banner-premium-pulse-dot" />
+                {fechaStr}
+              </span>
+
+              {/* Hero numérico: kcal objetivo */}
+              {perfil && perfil.caloriasObjetivo > 0 && (
+                <div className="mt-3 flex items-baseline gap-2 flex-wrap">
+                  <span className="premium-num-display text-ink"
+                    style={{ fontSize: 'clamp(2.75rem, 9vw, 3.75rem)', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                    {perfil.caloriasObjetivo}
+                  </span>
+                  <span className="text-sm font-semibold text-ink-muted tabular-nums">
+                    kcal · {perfil.numSemanas > 1 ? perfil.numSemanas + t(' semanas',' weeks') : t('1 semana','1 week')}
+                  </span>
+                </div>
+              )}
+
+              {/* Saludo natural */}
+              <h2 className="text-ink mt-3" style={{ fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
                 {saludo}{nombreCorto ? ', ' + nombreCorto : ''}
               </h2>
-              {perfil && (
-                <p className="text-xs font-medium opacity-85 mt-1 tabular-nums">
-                  <span style={{ fontWeight: 700 }}>{perfil.caloriasObjetivo}</span> kcal · {perfil.numSemanas > 1 ? perfil.numSemanas + t(' semanas',' weeks') : t('1 semana','1 week')}
-                </p>
+
+              {/* Chips: objetivo + streak + entreno/descanso */}
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
+                {objetivoLabel && (
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-faint">
+                    {objetivoLabel}
+                  </span>
+                )}
+                {(streak >= 1 || sch) && (
+                  <>
+                    {objetivoLabel && <span className="text-ink-faint">·</span>}
+                    {streak >= 1 && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold tabular-nums"
+                        style={{ background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
+                        🔥 {streak} {streak === 1 ? t('día','day') : t('días','days')}
+                      </span>
+                    )}
+                    {sch && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                        style={esEntreno
+                          ? { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }
+                          : { background: 'var(--color-success-light)', color: 'var(--color-success)' }}>
+                        <i className={`fas ${esEntreno ? 'fa-dumbbell' : 'fa-bed'}`} style={{ fontSize: '10px' }}></i>
+                        {esEntreno ? t('Día de entreno','Training day') : t('Descanso','Rest day')}
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Mensaje motivacional sobrio */}
+              {_msg && (
+                <p className="text-sm text-ink-muted mt-3" style={{ lineHeight: 1.5 }}>{_msg}</p>
               )}
-            {/* Streak + training/rest day badges */}
-            {(() => {
-              var streak = calcularStreakAdherencia();
-              var sch = window.NP_RoadmapData && window.NP_RoadmapData.ENTRENO_PROTOCOLO
-                ? window.NP_RoadmapData.ENTRENO_PROTOCOLO.scheduleDefault : null;
-              var dow = new Date().getDay();
-              var esEntreno = sch && sch[dow] && sch[dow] !== 'descanso';
-              if (streak < 1 && !sch) return null;
-              return (
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  {streak >= 1 && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}>
-                      🔥 {streak} {streak === 1 ? t('día','day') : t('días','days')}
-                    </span>
-                  )}
-                  {sch && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}>
-                      {esEntreno
-                        ? <><i className="fas fa-dumbbell" style={{ marginRight: '3px' }}></i>{t('Entreno','Training')}</>
-                        : <><i className="fas fa-bed" style={{ marginRight: '3px' }}></i>{t('Descanso','Rest')}</>}
-                    </span>
-                  )}
-                </div>
-              );
-            })()}
-            {/* Mensaje motivacional según progreso del día — siempre visible si hay plan */}
-            {metaKcalDia > 0 && (() => {
-              var _pct = consumidoHoy.calorias > 0 ? Math.round((consumidoHoy.calorias / metaKcalDia) * 100) : 0;
-              var _msg = _pct >= 100
-                ? t('🎉 ¡Meta de hoy cumplida! Excelente día.','🎉 Daily goal reached! Outstanding.')
-                : _pct >= 70 ? t('¡Casi listo! Un poco más y llegas al objetivo.','Almost there! Just a little more.')
-                : _pct >= 30 ? t('¡Vas muy bien! Continúa con el plan.','Great progress! Keep going.')
-                : _pct > 0  ? t('¡Buen comienzo! Registra tu próxima comida.','Good start! Log your next meal.')
-                : t('¡Marca las comidas que ya tomaste para ver tu progreso!','Mark the meals you\'ve had to see your progress!');
-              return <p style={{ fontSize: '12px', opacity: 0.82, marginTop: '6px', fontWeight: 500 }}>{_msg}</p>;
-            })()}
             </div>
           </div>
         );
