@@ -892,102 +892,96 @@ exports.getAdminMetrics = onCall(
     }
 
     const db = admin.firestore();
+    const errors = [];
 
-    // 1. Total users — usar select() en lugar de count() (no requiere runAggregationQuery)
-    let totalUsers = 0;
-    try {
-      const usersSnap = await db.collection('users').select().get();
-      totalUsers = usersSnap.size;
-    } catch (e) {
-      console.warn('[admin] users count failed:', e.message);
-    }
-
-    // 2 + 3. Push subs (todos los docs, calcula total + uids únicos + tz distribution en una pasada)
+    // 1. Push subs — todos los docs (total + uids únicos + tz distribution en una pasada)
     const usersWithSubs = new Set();
+    const subsByUid = new Map();
     const tzDistribution = {};
     let totalSubs = 0;
-    let subsSnap = { docs: [], forEach: () => {} };
     try {
-      subsSnap = await db.collectionGroup('pushSubscriptions').get();
+      const subsSnap = await db.collectionGroup('pushSubscriptions').get();
       totalSubs = subsSnap.size;
       subsSnap.forEach((doc) => {
-        usersWithSubs.add(doc.ref.parent.parent.id);
-        const tz = doc.data().tz || 'unknown';
-        tzDistribution[tz] = (tzDistribution[tz] || 0) + 1;
-      });
-    } catch (e) {
-      console.warn('[admin] subs query failed:', e.message);
-    }
-
-    // 4. Usuarios recientes — orderBy createdAt desc (requiere índice de collection group)
-    const recientesUids = [];
-    const seen = new Set();
-    try {
-      const recientesSnap = await db.collectionGroup('pushSubscriptions')
-        .orderBy('createdAt', 'desc')
-        .limit(30)
-        .get();
-      recientesSnap.forEach((doc) => {
         const uid = doc.ref.parent.parent.id;
-        if (!seen.has(uid)) {
-          seen.add(uid);
-          const data = doc.data();
-          recientesUids.push({
-            uid,
-            tz: data.tz || null,
-            userAgent: data.userAgent || null,
-            lastSubAt: data.createdAt && data.createdAt.toMillis ? data.createdAt.toMillis() : null
-          });
+        usersWithSubs.add(uid);
+        const data = doc.data();
+        const tz = data.tz || 'unknown';
+        tzDistribution[tz] = (tzDistribution[tz] || 0) + 1;
+        const lastSubAt = data.createdAt && data.createdAt.toMillis ? data.createdAt.toMillis() : 0;
+        const prev = subsByUid.get(uid);
+        if (!prev || lastSubAt > prev.lastSubAt) {
+          subsByUid.set(uid, { tz, userAgent: data.userAgent || null, lastSubAt });
         }
       });
     } catch (e) {
-      console.warn('[admin] recientes query failed (índice puede faltar):', e.message);
-      // Fallback: ordenar en memoria desde subsSnap
-      const rows = [];
-      subsSnap.forEach((doc) => {
-        const data = doc.data();
-        rows.push({
-          uid: doc.ref.parent.parent.id,
-          tz: data.tz || null,
-          userAgent: data.userAgent || null,
-          lastSubAt: data.createdAt && data.createdAt.toMillis ? data.createdAt.toMillis() : 0
-        });
-      });
-      rows.sort((a, b) => (b.lastSubAt || 0) - (a.lastSubAt || 0));
-      for (const r of rows.slice(0, 30)) {
-        if (!seen.has(r.uid)) {
-          seen.add(r.uid);
-          recientesUids.push(r);
-        }
-      }
+      errors.push('subs: ' + e.message);
     }
 
-    // 5. Enriquecer con datos de Firebase Auth (displayName, email)
-    const enriched = [];
-    for (const u of recientesUids.slice(0, 20)) {
-      try {
-        const userRecord = await admin.auth().getUser(u.uid);
-        enriched.push(Object.assign({}, u, {
-          displayName: userRecord.displayName || null,
-          email:       userRecord.email || null,
-          photoURL:    userRecord.photoURL || null,
-          provider:    (userRecord.providerData[0] && userRecord.providerData[0].providerId) || 'unknown',
-          createdAt:   userRecord.metadata && userRecord.metadata.creationTime
-            ? new Date(userRecord.metadata.creationTime).getTime() : null,
-          lastSignIn:  userRecord.metadata && userRecord.metadata.lastSignInTime
-            ? new Date(userRecord.metadata.lastSignInTime).getTime() : null
-        }));
-      } catch (e) {
-        enriched.push(Object.assign({}, u, { error: 'auth-not-found' }));
-      }
+    // 2. Total Firestore "users" collection (proxy de cloud-sync activado)
+    let totalUsersFirestore = 0;
+    try {
+      const usersSnap = await db.collection('users').select().get();
+      totalUsersFirestore = usersSnap.size;
+    } catch (e) {
+      errors.push('users: ' + e.message);
     }
 
-    // 6. Stats de los últimos 7 días
-    const today = new Date();
+    // 3. Lista COMPLETA de Firebase Auth users (fuente de verdad de registros)
+    const allAuthUsers = [];
+    try {
+      let nextPageToken = undefined;
+      do {
+        const list = await admin.auth().listUsers(1000, nextPageToken);
+        list.users.forEach((u) => allAuthUsers.push(u));
+        nextPageToken = list.pageToken;
+      } while (nextPageToken && allAuthUsers.length < 5000);
+    } catch (e) {
+      errors.push('listUsers: ' + e.message);
+    }
+
+    // 4. Calcular registrados hoy / últimos 7 días (usando admin server time)
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const startOfToday = new Date(); startOfToday.setUTCHours(0, 0, 0, 0);
+    const todayMs = startOfToday.getTime();
+
+    let registeredToday = 0;
+    let registeredLast7d = 0;
+    let activeToday = 0;
+    let activeLast7d = 0;
+
+    const usersList = allAuthUsers.map((u) => {
+      const sub = subsByUid.get(u.uid);
+      const createdAt = u.metadata && u.metadata.creationTime ? new Date(u.metadata.creationTime).getTime() : null;
+      const lastSignIn = u.metadata && u.metadata.lastSignInTime ? new Date(u.metadata.lastSignInTime).getTime() : null;
+      if (createdAt && createdAt >= todayMs) registeredToday++;
+      if (createdAt && (now - createdAt) <= 7 * dayMs) registeredLast7d++;
+      if (lastSignIn && lastSignIn >= todayMs) activeToday++;
+      if (lastSignIn && (now - lastSignIn) <= 7 * dayMs) activeLast7d++;
+      return {
+        uid:         u.uid,
+        email:       u.email || null,
+        displayName: u.displayName || null,
+        photoURL:    u.photoURL || null,
+        provider:    (u.providerData && u.providerData[0] && u.providerData[0].providerId) || 'unknown',
+        emailVerified: !!u.emailVerified,
+        disabled:    !!u.disabled,
+        createdAt,
+        lastSignIn,
+        hasPush:     !!sub,
+        pushTz:      sub ? sub.tz : null,
+        pushSince:   sub ? sub.lastSubAt : null
+      };
+    });
+
+    // Ordenar: más recientes primero por createdAt
+    usersList.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    // 5. Stats de los últimos 7 días
     const stats7d = [];
     for (let i = 0; i < 7; i++) {
-      const d = new Date(today);
-      d.setUTCDate(d.getUTCDate() - i);
+      const d = new Date(); d.setUTCDate(d.getUTCDate() - i);
       const iso = d.toISOString().slice(0, 10);
       try {
         const sd = await db.collection('admin').doc('stats').collection('daily').doc(iso).get();
@@ -1003,24 +997,22 @@ exports.getAdminMetrics = onCall(
       }
     }
 
-    // 7. Total Firebase Auth users (puede diferir de Firestore users si alguno no se sincroniza)
-    let totalAuthUsers = null;
-    try {
-      const list = await admin.auth().listUsers(1000);
-      totalAuthUsers = list.users.length;
-    } catch (_) {}
-
     return {
       generatedAt: Date.now(),
       totals: {
-        users:           totalUsers,
-        authUsers:       totalAuthUsers,
+        authUsers:         allAuthUsers.length,
+        usersFirestore:    totalUsersFirestore,
         pushSubscriptions: totalSubs,
-        usersWithPush:   usersWithSubs.size
+        usersWithPush:     usersWithSubs.size,
+        registeredToday,
+        registeredLast7d,
+        activeToday,
+        activeLast7d
       },
       tzDistribution,
       stats7d,
-      recentUsers: enriched
+      users: usersList,
+      errors: errors.length ? errors : undefined
     };
   }
 );

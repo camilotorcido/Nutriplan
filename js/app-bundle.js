@@ -14118,6 +14118,143 @@ function NotificationGrantedView({ darkMode }) {
 // =============================================
 const ADMIN_EMAILS_CLIENT = ['crespo.camilo@gmail.com'];
 
+function UsersList({ users, darkMode, fmtDate, fmtRel }) {
+  const [query, setQuery]         = React.useState('');
+  const [filter, setFilter]       = React.useState('all'); // all | today | 7d | push | google
+  const [showAll, setShowAll]     = React.useState(false);
+
+  const now = Date.now();
+  const dayMs = 86400000;
+  const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+  const todayMs = startOfToday.getTime();
+
+  const filtered = users.filter((u) => {
+    const q = query.trim().toLowerCase();
+    if (q && !((u.email || '').toLowerCase().includes(q) || (u.displayName || '').toLowerCase().includes(q) || (u.uid || '').toLowerCase().includes(q))) return false;
+    if (filter === 'today'  && !(u.createdAt && u.createdAt >= todayMs))                return false;
+    if (filter === '7d'     && !(u.createdAt && (now - u.createdAt) <= 7*dayMs))        return false;
+    if (filter === 'push'   && !u.hasPush)                                              return false;
+    if (filter === 'google' && u.provider !== 'google.com')                             return false;
+    return true;
+  });
+
+  const visible = showAll ? filtered : filtered.slice(0, 25);
+
+  const filterChip = (id, label, count) => (
+    <button key={id} onClick={() => setFilter(id)}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold tabular-nums transition"
+      style={filter === id
+        ? { background: 'var(--color-accent)', color: '#fff', boxShadow: '0 2px 8px rgba(200, 148, 58, 0.25)' }
+        : { background: darkMode ? 'rgba(232, 224, 212, 0.06)' : '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'rgba(0,0,0,0.05)') }}>
+      {label} {count !== undefined ? <span style={{ opacity: 0.7 }}>· {count}</span> : null}
+    </button>
+  );
+
+  const counts = {
+    all:    users.length,
+    today:  users.filter(u => u.createdAt && u.createdAt >= todayMs).length,
+    sevenD: users.filter(u => u.createdAt && (now - u.createdAt) <= 7*dayMs).length,
+    push:   users.filter(u => u.hasPush).length,
+    google: users.filter(u => u.provider === 'google.com').length
+  };
+
+  return (
+    <div className="surface-card-shadow overflow-hidden">
+      <div className="px-5 py-3.5 flex items-center justify-between" style={{ borderBottom: '1px solid ' + (darkMode ? 'rgba(232, 224, 212, 0.08)' : 'var(--color-border)') }}>
+        <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+          <i className="fas fa-users" style={{ fontSize: '10px' }}></i>
+          Usuarios registrados
+        </span>
+        <span className="text-xs font-semibold tabular-nums text-ink-muted">{filtered.length} / {users.length}</span>
+      </div>
+
+      <div className="px-5 py-3" style={{ borderBottom: '1px solid ' + (darkMode ? 'rgba(232, 224, 212, 0.06)' : 'var(--color-border)') }}>
+        <div className="relative mb-3">
+          <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink-faint"></i>
+          <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por email, nombre o UID…"
+            className="w-full text-sm rounded-xl pl-9 pr-3 py-2.5 outline-none transition"
+            style={{
+              background: darkMode ? 'rgba(232, 224, 212, 0.04)' : '#FAF6EE',
+              color: 'var(--color-ink)',
+              boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'rgba(0,0,0,0.06)')
+            }} />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {filterChip('all',    'Todos',          counts.all)}
+          {filterChip('today',  'Hoy',            counts.today)}
+          {filterChip('7d',     'Últimos 7 días', counts.sevenD)}
+          {filterChip('push',   'Con push',       counts.push)}
+          {filterChip('google', 'Google',         counts.google)}
+        </div>
+      </div>
+
+      <div>
+        {filtered.length === 0 && (
+          <div className="px-5 py-10 text-center text-sm text-ink-muted">
+            <i className="fas fa-user-slash text-2xl mb-2 block" style={{ opacity: 0.4 }}></i>
+            Sin resultados
+          </div>
+        )}
+        {visible.map((u, idx) => (
+          <div key={u.uid} className="flex items-start gap-3 px-5 py-3.5"
+            style={{ borderTop: idx === 0 ? 'none' : '1px solid ' + (darkMode ? 'rgba(232, 224, 212, 0.05)' : 'var(--color-border)') }}>
+            {u.photoURL
+              ? <img src={u.photoURL} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" referrerPolicy="no-referrer" />
+              : <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                  style={{ background: darkMode ? 'rgba(232, 199, 122, 0.18)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
+                  {(u.displayName || u.email || '?')[0].toUpperCase()}
+                </div>}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-semibold text-ink truncate">
+                  {u.displayName || (u.email ? u.email.split('@')[0] : u.uid.slice(0, 10) + '…')}
+                </span>
+                {u.createdAt && u.createdAt >= todayMs && (
+                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                    style={{ background: 'rgba(140, 162, 122, 0.18)', color: 'var(--color-success, #6B8E5A)' }}>
+                    Nuevo
+                  </span>
+                )}
+                {u.hasPush && (
+                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                    style={{ background: 'rgba(232, 199, 122, 0.18)', color: 'var(--color-accent-dark)' }}>
+                    Push
+                  </span>
+                )}
+                {u.disabled && (
+                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                    style={{ background: 'rgba(192, 82, 58, 0.14)', color: 'var(--color-alert)' }}>
+                    Deshabilitado
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-ink-muted truncate mt-0.5">
+                <i className="fas fa-envelope mr-1" style={{ fontSize: '10px', opacity: 0.6 }}></i>
+                {u.email || '—'}
+              </div>
+              <div className="text-[10px] text-ink-faint mt-1.5 tabular-nums flex flex-wrap gap-x-3 gap-y-0.5">
+                <span><i className={`${u.provider === 'google.com' ? 'fab fa-google' : 'fas fa-envelope'} mr-1`} style={{ opacity: 0.7 }}></i>{u.provider === 'google.com' ? 'Google' : (u.provider === 'password' ? 'Email' : u.provider)}</span>
+                {u.createdAt ? <span><i className="fas fa-calendar-plus mr-1" style={{ opacity: 0.7 }}></i>{fmtDate(u.createdAt)}</span> : null}
+                {u.lastSignIn ? <span><i className="fas fa-clock mr-1" style={{ opacity: 0.7 }}></i>{fmtRel(u.lastSignIn)}</span> : null}
+                {u.pushTz ? <span><i className="fas fa-globe mr-1" style={{ opacity: 0.7 }}></i>{u.pushTz}</span> : null}
+              </div>
+            </div>
+          </div>
+        ))}
+        {filtered.length > 25 && !showAll && (
+          <button onClick={() => setShowAll(true)}
+            className="w-full px-5 py-3 text-xs font-semibold transition"
+            style={{ borderTop: '1px solid ' + (darkMode ? 'rgba(232, 224, 212, 0.05)' : 'var(--color-border)'), color: 'var(--color-accent-dark)' }}>
+            Ver todos ({filtered.length})
+            <i className="fas fa-chevron-down ml-1.5"></i>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AdminScreen({ darkMode, onClose }) {
   const [data, setData]       = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -14190,13 +14327,13 @@ function AdminScreen({ darkMode, onClose }) {
 
       {data && (
         <>
-          {/* Tiles principales */}
+          {/* Tiles principales — registros y actividad */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
-              { l: 'Usuarios totales',    v: data.totals.users,            i: 'fa-users' },
-              { l: 'Auth users',          v: data.totals.authUsers || '—', i: 'fa-id-card' },
-              { l: 'Push subs activas',   v: data.totals.pushSubscriptions, i: 'fa-bell' },
-              { l: 'Users con push',      v: data.totals.usersWithPush,    i: 'fa-circle-check' }
+              { l: 'Total registrados',   v: data.totals.authUsers,        i: 'fa-users',         tone: 'accent' },
+              { l: 'Registrados hoy',     v: data.totals.registeredToday,  i: 'fa-user-plus',     tone: 'sage' },
+              { l: 'Activos hoy',         v: data.totals.activeToday,      i: 'fa-bolt',          tone: 'accent' },
+              { l: 'Activos 7 días',      v: data.totals.activeLast7d,     i: 'fa-chart-line',    tone: 'sage' }
             ].map(x => (
               <div key={x.l} className="surface-card-shadow" style={{ padding: '1.15rem 1.25rem' }}>
                 <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">
@@ -14204,6 +14341,26 @@ function AdminScreen({ darkMode, onClose }) {
                 </div>
                 <div className="text-ink tabular-nums mt-2"
                   style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                  {x.v}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tiles secundarios — push & cloud sync */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { l: 'Registrados 7d',      v: data.totals.registeredLast7d,  i: 'fa-calendar-week' },
+              { l: 'Cloud sync activo',   v: data.totals.usersFirestore,    i: 'fa-cloud' },
+              { l: 'Push subs',           v: data.totals.pushSubscriptions, i: 'fa-bell' },
+              { l: 'Users con push',      v: data.totals.usersWithPush,     i: 'fa-circle-check' }
+            ].map(x => (
+              <div key={x.l} className="surface-card-shadow" style={{ padding: '0.95rem 1.1rem' }}>
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">
+                  <i className={`fas ${x.i} mr-1`}></i>{x.l}
+                </div>
+                <div className="text-ink tabular-nums mt-1.5"
+                  style={{ fontSize: '1.35rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
                   {x.v}
                 </div>
               </div>
@@ -14258,43 +14415,17 @@ function AdminScreen({ darkMode, onClose }) {
             </div>
           )}
 
-          {/* Lista de usuarios recientes */}
-          <div className="surface-card-shadow overflow-hidden">
-            <div className="px-5 py-3 border-b border-default flex items-center justify-between">
-              <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
-                <i className="fas fa-clock-rotate-left" style={{ fontSize: '10px' }}></i>
-                Usuarios recientes (top 20)
-              </span>
-              <span className="text-xs font-semibold tabular-nums text-ink-muted">{data.recentUsers.length}</span>
+          {/* Lista COMPLETA de usuarios registrados (Firebase Auth) */}
+          <UsersList users={data.users || []} darkMode={darkMode} fmtDate={fmtDate} fmtRel={fmtRel} />
+
+          {/* Errores parciales (si los hubo) */}
+          {data.errors && data.errors.length > 0 && (
+            <div className="rounded-2xl text-xs"
+              style={{ padding: '0.75rem 1rem', background: 'rgba(192, 82, 58, 0.06)', boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.14)', color: 'var(--color-ink-muted)' }}>
+              <i className="fas fa-circle-info mr-1.5" style={{ color: 'var(--color-alert)' }}></i>
+              Algunas consultas fallaron parcialmente: {data.errors.join(' · ')}
             </div>
-            <div className={`divide-y ${darkMode ? 'divide-gray-700/40' : 'divide-gray-100'}`}>
-              {data.recentUsers.length === 0 && (
-                <div className="px-5 py-8 text-center text-sm text-ink-muted">Sin usuarios con push subs</div>
-              )}
-              {data.recentUsers.map(u => (
-                <div key={u.uid} className="flex items-center gap-3 px-5 py-3">
-                  {u.photoURL
-                    ? <img src={u.photoURL} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" referrerPolicy="no-referrer" />
-                    : <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                        style={{ background: darkMode ? 'rgba(232, 199, 122, 0.18)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
-                        {(u.displayName || u.email || '?')[0].toUpperCase()}
-                      </div>}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-ink truncate">
-                      {u.displayName || u.email || u.uid.slice(0, 10) + '…'}
-                    </div>
-                    <div className="text-xs text-ink-muted truncate">{u.email}</div>
-                    <div className="text-[10px] text-ink-faint mt-0.5 tabular-nums">
-                      {u.tz ? <span className="mr-2"><i className="fas fa-globe mr-1"></i>{u.tz}</span> : null}
-                      {u.provider ? <span className="mr-2"><i className={`${u.provider === 'google.com' ? 'fab fa-google' : 'fas fa-envelope'} mr-1`}></i>{u.provider === 'google.com' ? 'Google' : 'Email'}</span> : null}
-                      {u.createdAt ? <span className="mr-2">Alta: {fmtDate(u.createdAt)}</span> : null}
-                      {u.lastSignIn ? <span>Último login: {fmtRel(u.lastSignIn)}</span> : null}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
 
           <p className="text-xs text-ink-faint text-center pt-2">
             Generado: {fmtRel(data.generatedAt)} · Solo visible para admin
