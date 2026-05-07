@@ -330,6 +330,56 @@ button.bg-gradient-to-r.from-green-500:hover {
     --tw-shadow: var(--tw-shadow-colored) !important;
 }
 
+/* IA redesign: wizard showExplicacion — backgrounds claros off-brand → cream warm */
+.bg-orange-50:not([class*="hover"]),
+.bg-blue-50:not([class*="hover"]),
+.bg-green-50:not([class*="hover"]),
+.bg-purple-50,
+.bg-indigo-50 {
+    background-color: rgba(245, 240, 232, 0.55) !important;
+}
+html.dark .bg-orange-50:not([class*="hover"]),
+html.dark .bg-blue-50:not([class*="hover"]),
+html.dark .bg-green-50:not([class*="hover"]),
+html.dark .bg-purple-50,
+html.dark .bg-indigo-50 {
+    background-color: rgba(232, 224, 212, 0.04) !important;
+    box-shadow: inset 0 0 0 1px rgba(232, 224, 212, 0.06);
+}
+/* Headings color de objetivos en wizard → accent del brand */
+.text-orange-700,
+.text-orange-600,
+.text-blue-700,
+.text-blue-600,
+.text-purple-600,
+.text-purple-500,
+.text-indigo-600 {
+    color: var(--color-accent-dark) !important;
+}
+html.dark .text-orange-700,
+html.dark .text-orange-600,
+html.dark .text-orange-300,
+html.dark .text-blue-700,
+html.dark .text-blue-600,
+html.dark .text-blue-300,
+html.dark .text-purple-600,
+html.dark .text-purple-500,
+html.dark .text-purple-300,
+html.dark .text-indigo-600,
+html.dark .text-indigo-300 {
+    color: #E8C77A !important;
+}
+/* Macro pills bg-blue-500/amber-500/rose-500 con texto blanco → paleta de macros del brand */
+.bg-blue-500.text-white {
+    background-color: #3B82F6 !important; /* proteína: azul saturado para legibilidad */
+}
+.bg-amber-500.text-white {
+    background-color: var(--color-accent) !important;
+}
+.bg-rose-500.text-white {
+    background-color: var(--color-alert) !important;
+}
+
 .banner-premium-hero-unit {
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     font-size: 0.9rem;

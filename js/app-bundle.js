@@ -1039,9 +1039,10 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
       const calc = rm ? rm.calculados : null;
 
       // Colores por objetivo
-      const objColor = obj === 'perdida' ? { from: 'from-orange-500', to: 'to-red-500', badge: 'bg-orange-100 text-orange-700', accent: 'text-orange-600' }
-        : obj === 'mantenimiento' ? { from: 'from-green-500', to: 'to-emerald-600', badge: 'bg-green-100 text-green-700', accent: 'text-green-600' }
-        : { from: 'from-blue-500', to: 'to-indigo-600', badge: 'bg-blue-100 text-blue-700', accent: 'text-blue-600' };
+      // IA redesign: paleta del brand para todos los objetivos (cream/mostaza con tints de estado)
+      const objColor = obj === 'perdida' ? { from: 'from-amber-500', to: 'to-orange-600', badge: 'bg-accent-light text-accent-dark', accent: 'text-accent-dark' }
+        : obj === 'mantenimiento' ? { from: 'from-amber-500', to: 'to-orange-600', badge: 'bg-success-light text-success', accent: 'text-success' }
+        : { from: 'from-amber-500', to: 'to-orange-600', badge: 'bg-accent-light text-accent-dark', accent: 'text-accent-dark' };
 
       const objLabel = obj === 'perdida' ? 'Pérdida de peso' : obj === 'mantenimiento' ? 'Mantenimiento' : 'Volumen muscular';
       const objMeta = obj === 'perdida' ? 'Precision Nutrition'
@@ -6168,31 +6169,35 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
   const enDespensa = ingredientesConsolidados.filter(ing => despensa[ing.id]).length;
   const faltantes = totalIngredientes - enDespensa;
 
-  // IA redesign: agrupar ingredientes por categoría (mismo patrón que ShoppingList)
+  // IA redesign: agrupar ingredientes por categoría con FA-icons consistentes con el brand
   const categoriasDespensa = React.useMemo(() => {
     const cats = {
-      "🥩 Proteínas": [], "🥬 Frutas y Verduras": [],
-      "🥛 Lácteos": [], "🥤 Líquidos y Bebidas": [], "🥜 Frutos Secos y Semillas": [],
-      "🏪 Despensa": [], "📦 Otros": []
+      "proteinas":      { label: t('Proteínas','Protein'),         icon: 'fa-drumstick-bite', items: [] },
+      "verduras":       { label: t('Frutas y Verduras','Produce'), icon: 'fa-carrot',         items: [] },
+      "lacteos":        { label: t('Lácteos','Dairy'),             icon: 'fa-cheese',         items: [] },
+      "liquidos":       { label: t('Líquidos y Bebidas','Drinks'), icon: 'fa-glass-water',    items: [] },
+      "secos":          { label: t('Frutos Secos y Semillas','Nuts & Seeds'), icon: 'fa-seedling', items: [] },
+      "despensa":       { label: t('Despensa','Pantry'),           icon: 'fa-jar',            items: [] },
+      "otros":          { label: t('Otros','Other'),               icon: 'fa-box',            items: [] }
     };
     const clasificar = (nombre) => {
       const n = (nombre || '').toLowerCase();
-      if (n.includes("nuez moscada")) return "🏪 Despensa";
-      if ((n.includes("arandano") || n.includes("arándano")) && (n.includes("deshid") || n.includes("seco"))) return "🥜 Frutos Secos y Semillas";
-      if (n.includes("salsa de tomate") || n.includes("puré de tomate") || n.includes("pasta de tomate") || n.includes("tomate enlatado")) return "🏪 Despensa";
-      if (n.includes("poroto verde") || n.includes("porotos verdes")) return "🥬 Frutas y Verduras";
-      if (n.includes("coco rallado") || n.includes("dátil") || n.includes("datil") || n.includes("mantequilla de almendra") || n.includes("alcapar") || n.includes("crackers") || n.includes("gelatina") || n.includes("café instantáneo") || n.includes("cafe instantaneo") || n.includes("café instant") || n.includes("muffin") || n.includes("masa para empanada") || n.includes("masa de empanada") || n.includes("masa empanada") || n.includes("frijol") || n.includes("frejol") || n.includes("habichuela") || n.includes("lata de ") || n.includes("enlatado") || n.includes("ají ") || n === "ají" || n.startsWith("aji ") || n === "aji" || n.includes("chile en polvo") || n.includes("chile seco") || n.includes("hojuelas de chile") || n.includes("jalape")) return "🏪 Despensa";
-      if (n.includes("quesillo") || n.includes("queso gruy") || n.includes("gruyère") || n.includes("mozzarella") || n.includes("mozarella") || n.includes("cottage") || n.includes("queso blanco untable") || n.includes("ricota") || n.includes("ricotta")) return "🥛 Lácteos";
-      if (n === "agua" || n.startsWith("agua ") || n.includes("bebida de ") || n.includes("bebida vegetal") || (n.includes("leche") && (n.includes("coco") || n.includes("almendra") || n.includes("avena") || n.includes("soja") || n.includes("soya") || n.includes("arroz"))) || n.includes("caldo") || n.includes("jugo") || n.includes("zumo") || n.includes("gaseosa") || n.includes("refresco") || n.includes("bebida") || n.includes("té ") || n === "té" || n.includes("infusión") || n.includes("infusion") || n.includes("café") || n.includes("cafe") || n.includes("yerba") || n.includes("vino") || n.includes("cerveza") || n.includes("pisco") || n.includes("ron") || n.includes("whisky") || n.includes("vodka")) return "🥤 Líquidos y Bebidas";
-      if (n.includes("lechuga") || n.includes("tomate") || n.includes("cebolla") || n.includes("cebollín") || n.includes("cebollin") || n.includes("pimentón") || n.includes("pimenton") || n.includes("pimiento") || n.includes("zapallo") || n.includes("zanahoria") || n.includes("papa") || n.includes("camote") || n.includes("pepino") || n.includes("espinaca") || n.includes("apio") || n.includes("espárrago") || n.includes("esparrago") || n.includes("champiñ") || n.includes("plátano") || n.includes("platano") || n.includes("mango") || n.includes("frutilla") || n.includes("arándano") || n.includes("arandano") || n.includes("manzana") || n.includes("palta") || n.includes("aguacate") || n.includes("limón") || n.includes("limon") || n.includes("cilantro") || n.includes("perejil") || n.includes("romero") || n.includes("tomillo") || n.includes("eneldo") || n.includes("albahaca") || n.includes("menta") || n.includes("cherry") || n.includes("choclo") || n.includes("brócoli") || n.includes("brocoli") || n.includes("coliflor") || n.includes("repollo") || n.includes("arveja") || n.includes("aceituna") || n.includes("piña") || n.includes("pina") || n.includes("naranja") || n.includes("uva") || n.includes("kale") || n.includes("puerro") || n.includes("berenjena") || n.includes("calabacín") || n.includes("calabacin") || n.includes("durazno") || n.includes("higo") || n.includes("jengibre") || n.includes("kiwi") || n.includes("pera") || n.includes("sandía") || n.includes("sandia") || n.includes("melón") || n.includes("melon") || n.includes("fresa") || (n.includes("ajo") && !n.includes("polvo"))) return "🥬 Frutas y Verduras";
-      if (n.includes("pollo") || n.includes("carne") || n.includes("salmón") || n.includes("salmon") || n.includes("atún") || n.includes("atun") || n.includes("huevo") || n.includes("proteína") || n.includes("pavo") || n.includes("cerdo") || n.includes("pescado") || n.includes("merluza") || n.includes("camar") || n.includes("tofu") || n.includes("jamón") || n.includes("jamon") || n.includes("chorizo") || n.includes("salchicha") || n.includes("tocino") || n.includes("panceta") || n.includes("sardina") || n.includes("caballa") || n.includes("trucha") || n.includes("anchoa")) return "🥩 Proteínas";
-      if (n.includes("leche") || n.includes("yogur") || n.includes("queso") || n.includes("crema") || (n.includes("mantequilla") && !n.includes("maní") && !n.includes("almendra"))) return "🥛 Lácteos";
-      if (n.includes("almendra") || n.includes("nuez") || n.includes("nueces") || n.includes("maní") || n.includes("mani") || n.includes("semilla") || n.includes("chía") || n.includes("chia") || n.includes("pasa") || n.includes("deshidratado") || n.includes("piñón") || n.includes("piñones") || n.includes("pinon")) return "🥜 Frutos Secos y Semillas";
-      if (n.includes("arroz") || n.includes("avena") || n.includes("quinoa") || n.includes("lenteja") || n.includes("poroto") || n.includes("garbanzo") || n.includes("granola") || n.includes("maíz") || n.includes("maiz") || n.includes("edamame") || n.includes("aceite") || n === "sal" || n.startsWith("sal ") || n.includes("pimienta") || n.includes("comino") || n.includes("orégano") || n.includes("oregano") || n.includes("ajo en polvo") || n.includes("laurel") || n.includes("canela") || n.includes("curry") || n.includes("salsa") || n.includes("miel") || n.includes("vinagre") || n.includes("maple") || n.includes("tahini") || n.includes("sésamo") || n.includes("sesamo") || n.includes("cacao") || n.includes("hojuela") || n.includes("chocolate") || n.includes("azúcar") || n.includes("azucar") || n.includes("mostaza") || n.includes("ketchup") || n.includes("mayonesa") || (n.includes("coco") && !n.includes("leche")) || n.includes("pan ") || n.includes("pan pita") || n.includes("pan integral") || n.includes("pan rallado") || n.includes("tortilla") || n.includes("harina") || n.includes("fideo") || n.includes("pasta") || n.includes("espagueti") || n.includes("hummus")) return "🏪 Despensa";
-      return "📦 Otros";
+      if (n.includes("nuez moscada")) return "despensa";
+      if ((n.includes("arandano") || n.includes("arándano")) && (n.includes("deshid") || n.includes("seco"))) return "secos";
+      if (n.includes("salsa de tomate") || n.includes("puré de tomate") || n.includes("pasta de tomate") || n.includes("tomate enlatado")) return "despensa";
+      if (n.includes("poroto verde") || n.includes("porotos verdes")) return "verduras";
+      if (n.includes("coco rallado") || n.includes("dátil") || n.includes("datil") || n.includes("mantequilla de almendra") || n.includes("alcapar") || n.includes("crackers") || n.includes("gelatina") || n.includes("café instantáneo") || n.includes("cafe instantaneo") || n.includes("café instant") || n.includes("muffin") || n.includes("masa para empanada") || n.includes("masa de empanada") || n.includes("masa empanada") || n.includes("frijol") || n.includes("frejol") || n.includes("habichuela") || n.includes("lata de ") || n.includes("enlatado") || n.includes("ají ") || n === "ají" || n.startsWith("aji ") || n === "aji" || n.includes("chile en polvo") || n.includes("chile seco") || n.includes("hojuelas de chile") || n.includes("jalape")) return "despensa";
+      if (n.includes("quesillo") || n.includes("queso gruy") || n.includes("gruyère") || n.includes("mozzarella") || n.includes("mozarella") || n.includes("cottage") || n.includes("queso blanco untable") || n.includes("ricota") || n.includes("ricotta")) return "lacteos";
+      if (n === "agua" || n.startsWith("agua ") || n.includes("bebida de ") || n.includes("bebida vegetal") || (n.includes("leche") && (n.includes("coco") || n.includes("almendra") || n.includes("avena") || n.includes("soja") || n.includes("soya") || n.includes("arroz"))) || n.includes("caldo") || n.includes("jugo") || n.includes("zumo") || n.includes("gaseosa") || n.includes("refresco") || n.includes("bebida") || n.includes("té ") || n === "té" || n.includes("infusión") || n.includes("infusion") || n.includes("café") || n.includes("cafe") || n.includes("yerba") || n.includes("vino") || n.includes("cerveza") || n.includes("pisco") || n.includes("ron") || n.includes("whisky") || n.includes("vodka")) return "liquidos";
+      if (n.includes("lechuga") || n.includes("tomate") || n.includes("cebolla") || n.includes("cebollín") || n.includes("cebollin") || n.includes("pimentón") || n.includes("pimenton") || n.includes("pimiento") || n.includes("zapallo") || n.includes("zanahoria") || n.includes("papa") || n.includes("camote") || n.includes("pepino") || n.includes("espinaca") || n.includes("apio") || n.includes("espárrago") || n.includes("esparrago") || n.includes("champiñ") || n.includes("plátano") || n.includes("platano") || n.includes("mango") || n.includes("frutilla") || n.includes("arándano") || n.includes("arandano") || n.includes("manzana") || n.includes("palta") || n.includes("aguacate") || n.includes("limón") || n.includes("limon") || n.includes("cilantro") || n.includes("perejil") || n.includes("romero") || n.includes("tomillo") || n.includes("eneldo") || n.includes("albahaca") || n.includes("menta") || n.includes("cherry") || n.includes("choclo") || n.includes("brócoli") || n.includes("brocoli") || n.includes("coliflor") || n.includes("repollo") || n.includes("arveja") || n.includes("aceituna") || n.includes("piña") || n.includes("pina") || n.includes("naranja") || n.includes("uva") || n.includes("kale") || n.includes("puerro") || n.includes("berenjena") || n.includes("calabacín") || n.includes("calabacin") || n.includes("durazno") || n.includes("higo") || n.includes("jengibre") || n.includes("kiwi") || n.includes("pera") || n.includes("sandía") || n.includes("sandia") || n.includes("melón") || n.includes("melon") || n.includes("fresa") || (n.includes("ajo") && !n.includes("polvo"))) return "verduras";
+      if (n.includes("pollo") || n.includes("carne") || n.includes("salmón") || n.includes("salmon") || n.includes("atún") || n.includes("atun") || n.includes("huevo") || n.includes("proteína") || n.includes("pavo") || n.includes("cerdo") || n.includes("pescado") || n.includes("merluza") || n.includes("camar") || n.includes("tofu") || n.includes("jamón") || n.includes("jamon") || n.includes("chorizo") || n.includes("salchicha") || n.includes("tocino") || n.includes("panceta") || n.includes("sardina") || n.includes("caballa") || n.includes("trucha") || n.includes("anchoa")) return "proteinas";
+      if (n.includes("leche") || n.includes("yogur") || n.includes("queso") || n.includes("crema") || (n.includes("mantequilla") && !n.includes("maní") && !n.includes("almendra"))) return "lacteos";
+      if (n.includes("almendra") || n.includes("nuez") || n.includes("nueces") || n.includes("maní") || n.includes("mani") || n.includes("semilla") || n.includes("chía") || n.includes("chia") || n.includes("pasa") || n.includes("deshidratado") || n.includes("piñón") || n.includes("piñones") || n.includes("pinon")) return "secos";
+      if (n.includes("arroz") || n.includes("avena") || n.includes("quinoa") || n.includes("lenteja") || n.includes("poroto") || n.includes("garbanzo") || n.includes("granola") || n.includes("maíz") || n.includes("maiz") || n.includes("edamame") || n.includes("aceite") || n === "sal" || n.startsWith("sal ") || n.includes("pimienta") || n.includes("comino") || n.includes("orégano") || n.includes("oregano") || n.includes("ajo en polvo") || n.includes("laurel") || n.includes("canela") || n.includes("curry") || n.includes("salsa") || n.includes("miel") || n.includes("vinagre") || n.includes("maple") || n.includes("tahini") || n.includes("sésamo") || n.includes("sesamo") || n.includes("cacao") || n.includes("hojuela") || n.includes("chocolate") || n.includes("azúcar") || n.includes("azucar") || n.includes("mostaza") || n.includes("ketchup") || n.includes("mayonesa") || (n.includes("coco") && !n.includes("leche")) || n.includes("pan ") || n.includes("pan pita") || n.includes("pan integral") || n.includes("pan rallado") || n.includes("tortilla") || n.includes("harina") || n.includes("fideo") || n.includes("pasta") || n.includes("espagueti") || n.includes("hummus")) return "despensa";
+      return "otros";
     };
-    ingredientesFiltrados.forEach(ing => { cats[clasificar(ing.nombre)].push(ing); });
-    return Object.entries(cats).filter(([_, items]) => items.length > 0);
+    ingredientesFiltrados.forEach(ing => { cats[clasificar(ing.nombre)].items.push(ing); });
+    return Object.entries(cats).filter(([_, c]) => c.items.length > 0);
   }, [ingredientesFiltrados]);
 
   return (
@@ -6331,18 +6336,19 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
 
       {/* Lista agrupada por categorías — IA redesign */}
       <div className="space-y-4">
-        {categoriasDespensa.map(([cat, items]) => (
-          <div key={cat} className="surface-card-shadow overflow-hidden">
+        {categoriasDespensa.map(([key, cat]) => (
+          <div key={key} className="surface-card-shadow overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3 border-b border-default">
               <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
-                {cat}
+                <i className={`fas ${cat.icon}`} style={{ fontSize: '10px' }}></i>
+                {cat.label}
               </span>
               <span className="text-xs font-semibold tabular-nums text-ink-muted">
-                {items.filter(ing => despensa[ing.id]).length}/{items.length}
+                {cat.items.filter(ing => despensa[ing.id]).length}/{cat.items.length}
               </span>
             </div>
             <div className={`divide-y ${darkMode ? 'divide-gray-700/40' : 'divide-gray-100'}`}>
-              {items.map(ing => (
+              {cat.items.map(ing => (
                 <div key={ing.id}
                   className="flex items-center justify-between transition"
                   style={{
@@ -8471,6 +8477,67 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     return function() { window.removeEventListener('calibrate_open_vacation', onOpenVacation); };
   }, []);
 
+  // IA redesign: Push notification "Cierre del día" — sustituye el EveningRatingCard de feed.
+  // Dispara si: hora ≥ 19h, hay comidas marcadas como comidas sin rating, no dismissed hoy,
+  // permission concedido. Si permission default, pide una sola vez (contextual).
+  React.useEffect(function() {
+    if (!('Notification' in window) || !semanaData || !diaActual) return;
+    var fechaHoyStr = _localDate();
+    var dismissKey  = 'calibrate_evening_push_dismissed_' + fechaHoyStr;
+    var sentKey     = 'calibrate_evening_push_sent_' + fechaHoyStr;
+    try {
+      if (localStorage.getItem(dismissKey) === '1') return;
+      if (localStorage.getItem(sentKey) === '1') return;
+    } catch (_) {}
+    var hora = new Date().getHours();
+    if (hora < 19) return;
+    var ratings = (typeof cargarRatings === 'function') ? cargarRatings() : {};
+    var comidasHoyMap = semanaData[diaActual] || {};
+    var unratedCount = 0;
+    ['desayuno','snack_am','almuerzo','snack_pm','cena'].forEach(function(tipo) {
+      var c = comidasHoyMap[tipo];
+      if (!c || !c.id) return;
+      var adh = (window.adherencia && window.adherencia.estado)
+        ? window.adherencia.estado(diaActual, tipo, numSemanaActual) : null;
+      if (!adh || !adh.comido) return;
+      if ((ratings[c.id] || 0) > 0) return;
+      unratedCount++;
+    });
+    if (unratedCount === 0) return;
+
+    function fire() {
+      if (Notification.permission !== 'granted') return;
+      try {
+        var n = new Notification(t('Cierre del día — Calibrate', "Day wrap-up — Calibrate"), {
+          body: t(
+            '¿Cómo estuvieron tus ' + unratedCount + ' comidas de hoy? Toca para calificar.',
+            'How were your ' + unratedCount + ' meals today? Tap to rate.'
+          ),
+          icon: 'icons/icon.svg',
+          badge: 'icons/icon.svg',
+          tag: 'calibrate-evening-' + fechaHoyStr,
+          requireInteraction: false
+        });
+        n.onclick = function() {
+          window.focus();
+          window.dispatchEvent(new CustomEvent('calibrate_open_chat'));
+          n.close();
+        };
+        try { localStorage.setItem(sentKey, '1'); } catch (_) {}
+      } catch (_) {}
+    }
+
+    if (Notification.permission === 'granted') {
+      fire();
+    } else if (Notification.permission === 'default') {
+      // Pedir permiso solo cuando hay contexto real (no en cold start)
+      Notification.requestPermission().then(function(perm) {
+        if (perm === 'granted') fire();
+        else { try { localStorage.setItem(dismissKey, '1'); } catch (_) {} }
+      });
+    }
+  }, [semanaData, diaActual, numSemanaActual, refresh]);
+
   const necesitaPeso = React.useMemo(() => {
     if (!tieneEntrenamiento || !window.NP_BodyComp || !window.NP_BodyComp.cargar) return false;
     const entries = window.NP_BodyComp.cargar();
@@ -8819,47 +8886,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         );
       })()}
 
-      {/* ── Coach card (último tip proactivo del agente) ────────────────── */}
-      {coachTip && !coachDismissed && (
-        <div className={`rounded-2xl surface-card-shadow`}
-          style={{ borderLeft: '4px solid #22c55e', animation: 'fadeIn 0.3s ease both' }}>
-          <div className="px-5 py-4">
-            <div className="flex items-start gap-3">
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-                <i className="fas fa-seedling text-white" style={{ fontSize: 14 }}></i>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#16a34a' }}>
-                  {t('Tu coach dice…','Your coach says…')}
-                </p>
-                <p className={`text-sm leading-relaxed text-ink`}>{coachTip}</p>
-                <div className="flex items-center gap-3 mt-2">
-                  <button
-                    onClick={function() { setCoachDismissed(true); }}
-                    className={`text-xs font-medium transition-colors cursor-pointer ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}>
-                    {t('Descartar','Dismiss')}
-                  </button>
-                  <span className={`text-xs ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}>·</span>
-                  <button
-                    onClick={function() { window.dispatchEvent(new CustomEvent('calibrate_open_chat')); }}
-                    className="text-xs font-semibold text-green-500 hover:text-green-400 transition-colors cursor-pointer">
-                    {t('Abrir chat →','Open chat →')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Cierre del día: calificación de comidas (solo ≥ 19h si hay comidas sin rating) ── */}
-      <EveningRatingCard
-        semanaData={semanaData}
-        diaActual={diaActual}
-        numSemanaActual={numSemanaActual}
-        darkMode={darkMode}
-        refresh={refresh}
-      />
+      {/* IA redesign: el tip proactivo del coach vive en el badge del FAB del chat (no card en feed).
+          El "Cierre del día" (calificación post-19h) se entrega como push notification — ver useEveningRatingPush abajo. */}
 
       {/* ── Peso de hoy: aparece solo si no hay comidas marcadas y no hay peso registrado hoy ── */}
       {!pesoHoyYaRegistrado && !pesoGuardado && consumidoHoy.calorias === 0 && window.NP_BodyComp && (
@@ -8919,9 +8947,10 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               </span>
             )}
           </div>
-          <div className="px-5 py-4 space-y-4">
+          {/* IA redesign: en desktop, kcal+progress + macros donut lado a lado (bento horizontal) */}
+          <div className="px-5 py-4 lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-6 space-y-4 lg:space-y-0">
             {/* Kcal principal: número grande tabular + meta secundaria */}
-            <div>
+            <div className="lg:flex lg:flex-col lg:justify-center">
               <div className="flex items-end justify-between mb-2.5">
                 <div className="flex items-baseline gap-1.5">
                   <span className={`font-display leading-none tabular-nums text-ink`}
@@ -8932,11 +8961,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                     / {metaKcalDia} kcal
                   </span>
                 </div>
-                <span className={`text-[11px] font-semibold uppercase tracking-wider tabular-nums ${
-                  over
-                    ? (darkMode ? 'text-red-400' : 'text-red-600')
-                    : (darkMode ? 'text-gray-400' : 'text-gray-500')
-                }`}>
+                <span className="text-[11px] font-semibold uppercase tracking-wider tabular-nums"
+                  style={{ color: over ? 'var(--color-alert)' : 'var(--color-ink-muted)' }}>
                   {metaKcalDia - consumidoHoy.calorias > 0
                     ? (metaKcalDia - consumidoHoy.calorias) + ' ' + t('restantes','left')
                     : over
@@ -8944,40 +8970,43 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                       : t('Meta alcanzada','Goal reached')}
                 </span>
               </div>
-              <div className={`w-full h-2.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700/60' : 'bg-gray-100'}`}>
+              <div className="w-full h-2.5 rounded-full overflow-hidden"
+                style={{ background: darkMode ? 'rgba(232, 224, 212, 0.06)' : '#EDE7DA' }}>
                 <div
-                  className="h-full rounded-full transition"
+                  className="h-full rounded-full"
                   style={{
                     width: pctClamped + '%',
-                    background: barColor,
-                    transition: 'width 0.6s cubic-bezier(0.22, 1, 0.36, 1), background 0.3s'
+                    background: over ? 'var(--color-alert)' : inRange ? 'var(--color-success)' : 'var(--color-accent)',
+                    transition: 'width 0.6s cubic-bezier(0.32, 0.72, 0, 1), background 0.3s'
                   }}>
                 </div>
               </div>
             </div>
             {/* Macros donut */}
-            <MacroDonut
-              consumed={consumidoHoy}
-              metas={{ proteinas: metaProtDia, carbohidratos: metaCarbDia, grasas: metaGrasDia, calorias: metaKcalDia }}
-              darkMode={darkMode}
-            />
-            {/* Celebración al alcanzar el 100% */}
+            <div className="lg:flex lg:items-center lg:justify-center">
+              <MacroDonut
+                consumed={consumidoHoy}
+                metas={{ proteinas: metaProtDia, carbohidratos: metaCarbDia, grasas: metaGrasDia, calorias: metaKcalDia }}
+                darkMode={darkMode}
+              />
+            </div>
+            {/* Celebración al alcanzar el 100% — span ambas columnas en desktop */}
             {consumidoHoy.calorias >= metaKcalDia && metaKcalDia > 0 && (
-              <div style={{
-                borderRadius: '12px',
-                padding: '10px 14px',
-                background: 'linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(16,185,129,0.12) 100%)',
-                border: '1px solid rgba(34,197,94,0.3)',
+              <div className="lg:col-span-2" style={{
+                borderRadius: 'var(--radius-premium-md)',
+                padding: '12px 16px',
+                background: darkMode ? 'rgba(140, 188, 145, 0.10)' : 'rgba(90, 122, 94, 0.08)',
+                boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(140, 188, 145, 0.22)' : 'rgba(90, 122, 94, 0.20)'),
                 display: 'flex', alignItems: 'center', gap: '10px',
                 animation: 'celebrationPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275)'
               }}>
                 <span style={{ fontSize: '22px', lineHeight: 1 }}>🎉</span>
                 <div>
-                  <p style={{ fontSize: '13px', fontWeight: 700, color: '#16a34a', margin: 0 }}>
-                    {t('¡Meta diaria cumplida!','Daily goal achieved!')}
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-success)', margin: 0 }}>
+                    {t('Meta diaria cumplida','Daily goal achieved')}
                   </p>
-                  <p style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0' }}>
-                    {t('Completaste tus calorías de hoy. ¡Sigue así!','You hit your calorie goal today. Keep it up!')}
+                  <p className="text-ink-muted" style={{ fontSize: '11px', margin: '2px 0 0' }}>
+                    {t('Completaste tus calorías de hoy.','You hit your calorie goal today.')}
                   </p>
                 </div>
               </div>
@@ -14646,7 +14675,7 @@ function App() {
       </nav>
 
       {/* HoyView siempre montada (fuera del main con key) — listener activo desde cualquier tab */}
-      <div style={{ display: pantalla === "hoy" ? "block" : "none" }} className="max-w-3xl mx-auto px-4 py-6">
+      <div style={{ display: pantalla === "hoy" ? "block" : "none" }} className="max-w-3xl lg:max-w-5xl mx-auto px-4 py-6">
         <HoyView perfil={perfil} darkMode={darkMode} planSemanal={planSemanal} onNavigate={navegarA} onSwapRecipe={handleSwapRecipe} swapping={swapping} onVetoRecipe={handleVetoRecipe} />
       </div>
 
