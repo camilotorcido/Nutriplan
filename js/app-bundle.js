@@ -14162,8 +14162,8 @@ function UsersList({ users, darkMode, fmtDate, fmtRel }) {
   const headBg    = darkMode ? 'rgba(232, 224, 212, 0.03)' : '#FAF6EE';
 
   return (
-    <div className="surface-card-shadow overflow-hidden">
-      <div className="px-9 py-7 flex items-center justify-between" style={{ borderBottom: '1px solid ' + (darkMode ? 'rgba(232, 224, 212, 0.08)' : 'var(--color-border)') }}>
+    <div className="surface-card-shadow overflow-hidden" style={darkMode ? { boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.06), 0 4px 16px 0 rgba(0,0,0,0.35)' } : undefined}>
+      <div className="px-7 py-6 flex items-center justify-between" style={{ borderBottom: '1px solid ' + (darkMode ? 'rgba(232, 224, 212, 0.08)' : 'var(--color-border)') }}>
         <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
           <i className="fas fa-users" style={{ fontSize: '10px' }}></i>
           Usuarios registrados
@@ -14171,19 +14171,19 @@ function UsersList({ users, darkMode, fmtDate, fmtRel }) {
         <span className="text-xs font-semibold tabular-nums text-ink-muted">{filtered.length} / {users.length}</span>
       </div>
 
-      <div className="px-9 py-7" style={{ borderBottom: '1px solid ' + (darkMode ? 'rgba(232, 224, 212, 0.06)' : 'var(--color-border)') }}>
-        <div className="relative mb-5">
+      <div className="px-7 py-6" style={{ borderBottom: '1px solid ' + (darkMode ? 'rgba(232, 224, 212, 0.06)' : 'var(--color-border)') }}>
+        <div className="relative mb-4">
           <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-xs text-ink-faint"></i>
           <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por email, nombre o UID…"
-            className="w-full text-sm rounded-xl pl-11 pr-4 py-3.5 outline-none transition"
+            className="w-full text-sm rounded-xl pl-11 pr-4 py-3 outline-none transition"
             style={{
-              background: darkMode ? 'rgba(232, 224, 212, 0.04)' : '#FAF6EE',
+              background: darkMode ? 'rgba(232, 224, 212, 0.10)' : '#FAF6EE',
               color: 'var(--color-ink)',
-              boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'rgba(0,0,0,0.06)')
+              boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.18)' : 'rgba(0,0,0,0.08)')
             }} />
         </div>
-        <div className="flex flex-wrap gap-2.5">
+        <div className="flex flex-wrap gap-2">
           {filterChip('all',    'Todos',          counts.all)}
           {filterChip('today',  'Hoy',            counts.today)}
           {filterChip('7d',     'Últimos 7 días', counts.sevenD)}
@@ -14204,11 +14204,11 @@ function UsersList({ users, darkMode, fmtDate, fmtRel }) {
           <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead>
               <tr className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint" style={{ background: headBg }}>
-                <th className="text-left  px-9 py-5 font-bold">Usuario</th>
-                <th className="text-left  px-7 py-5 font-bold whitespace-nowrap">Provider</th>
-                <th className="text-left  px-7 py-5 font-bold whitespace-nowrap">Registrado</th>
-                <th className="text-left  px-7 py-5 font-bold whitespace-nowrap">Última conexión</th>
-                <th className="text-right px-9 py-5 font-bold whitespace-nowrap">Estado</th>
+                <th className="text-left  px-7 py-4 font-bold">Usuario</th>
+                <th className="text-left  px-5 py-4 font-bold whitespace-nowrap">Provider</th>
+                <th className="text-left  px-5 py-4 font-bold whitespace-nowrap">Registrado</th>
+                <th className="text-left  px-5 py-4 font-bold whitespace-nowrap">Última conexión</th>
+                <th className="text-right px-7 py-4 font-bold whitespace-nowrap">Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -14217,36 +14217,38 @@ function UsersList({ users, darkMode, fmtDate, fmtRel }) {
                 const isOnlineNow = lastTs && (Date.now() - lastTs) < 5 * 60 * 1000;
                 return (
                   <tr key={u.uid}>
-                    <td className="px-9 py-7" style={{ borderTop: '1px solid ' + rowBorder }}>
-                      <div className="flex items-center gap-5 min-w-0">
+                    <td className="px-7 py-5" style={{ borderTop: '1px solid ' + rowBorder }}>
+                      <div className="flex items-center gap-4 min-w-0">
                         {u.photoURL
-                          ? <img src={u.photoURL} alt="" className="w-12 h-12 rounded-full object-cover flex-shrink-0" referrerPolicy="no-referrer" />
-                          : <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold flex-shrink-0"
-                              style={{ background: darkMode ? 'rgba(232, 199, 122, 0.18)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
+                          ? <img src={u.photoURL} alt="" referrerPolicy="no-referrer"
+                              className="rounded-full flex-shrink-0"
+                              style={{ width: '40px', height: '40px', minWidth: '40px', minHeight: '40px', objectFit: 'cover', display: 'block' }} />
+                          : <div className="rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                              style={{ width: '40px', height: '40px', minWidth: '40px', minHeight: '40px', background: darkMode ? 'rgba(232, 199, 122, 0.18)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
                               {(u.displayName || u.email || '?')[0].toUpperCase()}
                             </div>}
                         <div className="min-w-0">
                           <div className="text-sm font-semibold text-ink truncate" style={{ maxWidth: '14rem' }}>
                             {u.displayName || (u.email ? u.email.split('@')[0] : u.uid.slice(0, 10) + '…')}
                           </div>
-                          <div className="text-xs text-ink-muted truncate mt-1.5" style={{ maxWidth: '14rem' }}>
+                          <div className="text-xs text-ink-muted truncate mt-1" style={{ maxWidth: '14rem' }}>
                             {u.email || '—'}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-7 py-7 text-xs text-ink-muted whitespace-nowrap" style={{ borderTop: '1px solid ' + rowBorder }}>
+                    <td className="px-5 py-5 text-xs text-ink-muted whitespace-nowrap" style={{ borderTop: '1px solid ' + rowBorder }}>
                       <i className={`${u.provider === 'google.com' ? 'fab fa-google' : 'fas fa-envelope'} mr-2`} style={{ opacity: 0.65 }}></i>
                       {u.provider === 'google.com' ? 'Google' : (u.provider === 'password' ? 'Email' : u.provider)}
                     </td>
-                    <td className="px-7 py-7 text-xs text-ink whitespace-nowrap tabular-nums" style={{ borderTop: '1px solid ' + rowBorder }}>
+                    <td className="px-5 py-5 text-xs text-ink whitespace-nowrap tabular-nums" style={{ borderTop: '1px solid ' + rowBorder }}>
                       {u.createdAt ? fmtDate(u.createdAt) : '—'}
                     </td>
-                    <td className="px-7 py-7 text-xs whitespace-nowrap tabular-nums" style={{ borderTop: '1px solid ' + rowBorder, color: isOnlineNow ? 'var(--color-success, #6B8E5A)' : 'var(--color-ink-muted)' }}>
+                    <td className="px-5 py-5 text-xs whitespace-nowrap tabular-nums" style={{ borderTop: '1px solid ' + rowBorder, color: isOnlineNow ? 'var(--color-success, #6B8E5A)' : 'var(--color-ink-muted)' }}>
                       {isOnlineNow && <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle" style={{ background: 'var(--color-success, #6B8E5A)' }}></span>}
                       {isOnlineNow ? 'Ahora' : (lastTs ? fmtRel(lastTs) : '—')}
                     </td>
-                    <td className="px-9 py-7 text-right whitespace-nowrap" style={{ borderTop: '1px solid ' + rowBorder }}>
+                    <td className="px-7 py-5 text-right whitespace-nowrap" style={{ borderTop: '1px solid ' + rowBorder }}>
                       <div className="inline-flex items-center gap-2">
                         {u.createdAt && u.createdAt >= todayMs && (
                           <span className="text-[9px] font-bold uppercase tracking-wider px-2.5 py-1.5 rounded"
@@ -14333,8 +14335,8 @@ function AdminScreen({ darkMode, onClose }) {
   }
 
   return (
-    <div className="max-w-3xl lg:max-w-5xl mx-auto px-7 sm:px-10 lg:px-16 py-12 lg:py-16 space-y-10">
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-3xl lg:max-w-5xl mx-auto px-6 sm:px-8 lg:px-12 py-10 lg:py-14 space-y-6">
+      <div className="flex items-center justify-between mb-2">
         <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
           <span className="banner-premium-pulse-dot" />
           Admin · Calibrate
@@ -14364,19 +14366,23 @@ function AdminScreen({ darkMode, onClose }) {
       {data && (
         <>
           {/* Tiles principales — registros y actividad */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { l: 'Total registrados',   v: data.totals.authUsers,        i: 'fa-users' },
               { l: 'Registrados hoy',     v: data.totals.registeredToday,  i: 'fa-user-plus' },
               { l: 'Activos hoy',         v: data.totals.activeToday,      i: 'fa-bolt' },
               { l: 'Activos 7 días',      v: data.totals.activeLast7d,     i: 'fa-chart-line' }
             ].map(x => (
-              <div key={x.l} className="surface-card-shadow" style={{ padding: '2rem 2rem' }}>
-                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">
-                  <i className={`fas ${x.i} mr-1.5`}></i>{x.l}
+              <div key={x.l} className="surface-card-shadow" style={Object.assign(
+                { padding: '1.5rem 1.5rem' },
+                darkMode ? { boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.06), 0 4px 16px 0 rgba(0,0,0,0.35)' } : {}
+              )}>
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted flex items-center gap-2">
+                  <i className={`fas ${x.i}`} style={{ color: 'var(--color-accent)' }}></i>
+                  <span>{x.l}</span>
                 </div>
-                <div className="text-ink tabular-nums mt-5"
-                  style={{ fontSize: '2.15rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                <div className="text-ink tabular-nums mt-4"
+                  style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
                   {x.v}
                 </div>
               </div>
@@ -14384,65 +14390,91 @@ function AdminScreen({ darkMode, onClose }) {
           </div>
 
           {/* Tiles secundarios — push & cloud sync */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { l: 'Registrados 7d',      v: data.totals.registeredLast7d,  i: 'fa-calendar-week' },
               { l: 'Cloud sync activo',   v: data.totals.usersFirestore,    i: 'fa-cloud' },
               { l: 'Push subs',           v: data.totals.pushSubscriptions, i: 'fa-bell' },
               { l: 'Users con push',      v: data.totals.usersWithPush,     i: 'fa-circle-check' }
             ].map(x => (
-              <div key={x.l} className="surface-card-shadow" style={{ padding: '1.6rem 1.75rem' }}>
-                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">
-                  <i className={`fas ${x.i} mr-1.5`}></i>{x.l}
+              <div key={x.l} className="surface-card-shadow" style={Object.assign(
+                { padding: '1.25rem 1.5rem' },
+                darkMode ? { boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.06), 0 2px 8px 0 rgba(0,0,0,0.25)' } : {}
+              )}>
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted flex items-center gap-2">
+                  <i className={`fas ${x.i}`} style={{ color: 'var(--color-accent)', opacity: 0.7 }}></i>
+                  <span>{x.l}</span>
                 </div>
-                <div className="text-ink tabular-nums mt-4"
-                  style={{ fontSize: '1.6rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                <div className="text-ink tabular-nums mt-3"
+                  style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
                   {x.v}
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Push enviados últimos 7 días */}
-          <div className="surface-card-shadow" style={{ padding: '2.5rem 2.5rem' }}>
+          {/* Push enviados últimos 7 días — empty state si todo es 0 */}
+          <div className="surface-card-shadow" style={Object.assign(
+            { padding: '2rem 2rem' },
+            darkMode ? { boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.06), 0 4px 16px 0 rgba(0,0,0,0.35)' } : {}
+          )}>
             <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
               <i className="fas fa-paper-plane" style={{ fontSize: '10px' }}></i>
               Push enviados — últimos 7 días
             </span>
-            <div className="overflow-x-auto mt-7 -mx-2">
-              <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint">
-                    <th className="text-left  px-4 py-4">Fecha</th>
-                    <th className="text-right px-4 py-4">Cierre día</th>
-                    <th className="text-right px-4 py-4">Meseta</th>
-                    <th className="text-right px-4 py-4">Test</th>
-                  </tr>
-                </thead>
-                <tbody className="tabular-nums">
-                  {data.stats7d.map((s) => (
-                    <tr key={s.date} style={{ borderTop: '1px solid ' + (darkMode ? 'rgba(232, 224, 212, 0.06)' : 'var(--color-border)') }}>
-                      <td className="px-4 py-4 text-ink">{s.date}</td>
-                      <td className="px-4 py-4 text-right text-ink">{s.evening_sent}</td>
-                      <td className="px-4 py-4 text-right text-ink">{s.plateau_sent}</td>
-                      <td className="px-4 py-4 text-right text-ink-muted">{s.test_push_sent}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+
+            {(() => {
+              const total7d = data.stats7d.reduce((acc, s) => acc + s.evening_sent + s.plateau_sent + s.test_push_sent, 0);
+              if (total7d === 0) {
+                return (
+                  <div className="mt-5 text-center py-8 rounded-xl"
+                    style={{ background: darkMode ? 'rgba(232, 224, 212, 0.03)' : '#FAF6EE', border: '1px dashed ' + (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'rgba(0,0,0,0.08)') }}>
+                    <i className="fas fa-inbox text-2xl mb-2 block" style={{ opacity: 0.35, color: 'var(--color-ink-muted)' }}></i>
+                    <p className="text-sm font-medium text-ink-muted">Sin pushes enviados aún</p>
+                    <p className="text-xs text-ink-faint mt-1">Activá tu primera subscripción para empezar</p>
+                  </div>
+                );
+              }
+              return (
+                <div className="overflow-x-auto mt-5">
+                  <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint">
+                        <th className="text-left  px-3 py-3">Fecha</th>
+                        <th className="text-right px-3 py-3">Cierre día</th>
+                        <th className="text-right px-3 py-3">Meseta</th>
+                        <th className="text-right px-3 py-3">Test</th>
+                      </tr>
+                    </thead>
+                    <tbody className="tabular-nums">
+                      {data.stats7d.map((s) => (
+                        <tr key={s.date} style={{ borderTop: '1px solid ' + (darkMode ? 'rgba(232, 224, 212, 0.06)' : 'var(--color-border)') }}>
+                          <td className="px-3 py-3 text-ink">{s.date}</td>
+                          <td className="px-3 py-3 text-right text-ink">{s.evening_sent}</td>
+                          <td className="px-3 py-3 text-right text-ink">{s.plateau_sent}</td>
+                          <td className="px-3 py-3 text-right text-ink-muted">{s.test_push_sent}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Distribución timezones */}
           {Object.keys(data.tzDistribution || {}).length > 0 && (
-            <div className="surface-card-shadow" style={{ padding: '2.5rem 2.5rem' }}>
+            <div className="surface-card-shadow" style={Object.assign(
+              { padding: '2rem 2rem' },
+              darkMode ? { boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.06), 0 4px 16px 0 rgba(0,0,0,0.35)' } : {}
+            )}>
               <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
                 <i className="fas fa-globe" style={{ fontSize: '10px' }}></i>
                 Timezones de subscripciones
               </span>
-              <div className="flex flex-wrap gap-3 mt-6">
+              <div className="flex flex-wrap gap-2.5 mt-5">
                 {Object.entries(data.tzDistribution).sort((a,b) => b[1]-a[1]).map(([tz, n]) => (
-                  <span key={tz} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-semibold tabular-nums"
+                  <span key={tz} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold tabular-nums"
                     style={{ background: darkMode ? 'rgba(232, 199, 122, 0.14)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 199, 122, 0.20)' : 'rgba(200, 148, 58, 0.18)') }}>
                     {tz} <span className="text-ink-muted">· {n}</span>
                   </span>
