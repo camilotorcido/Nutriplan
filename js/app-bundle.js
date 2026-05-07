@@ -10459,71 +10459,109 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
       <PlateauCard darkMode={darkMode} refresh={refresh} onRefresh={onRefresh} />
 
       {/* Registro rápido de peso */}
-      <div className={`rounded-2xl p-5 surface-card-shadow`}>
-        <h3 className={`text-sm font-bold uppercase tracking-wider mb-3 text-ink-faint`}>{t('Peso de hoy', "Today's weight")}</h3>
+      <div className="surface-card-shadow" style={{ padding: '1.5rem 1.4rem' }}>
+        <span className="premium-eyebrow mb-4" style={{ display: 'inline-flex' }}>
+          <span className="banner-premium-pulse-dot" />
+          {t('Peso de hoy', "Today's weight")}
+        </span>
         {entradaHoy && entradaHoy.peso != null ? (
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-2">
             <div>
-              <div className={`text-3xl font-extrabold text-ink`}>{entradaHoy.peso} kg</div>
-              <div className="text-xs text-gray-400">{t('Registrado hoy', 'Logged today')}</div>
+              <div className="text-ink tabular-nums"
+                style={{ fontSize: '2.25rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                {entradaHoy.peso}<span className="text-base font-medium text-ink-muted ml-1.5" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>kg</span>
+              </div>
+              <div className="text-xs text-ink-faint mt-1.5">{t('Registrado hoy', 'Logged today')}</div>
             </div>
             <button onClick={() => { window.NP_BodyComp.eliminar(hoy); onRefresh(); }}
-              className={`text-xs px-3 py-1.5 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-              <i className="fas fa-pen mr-1"></i>{t('Cambiar', 'Change')}
+              className="text-xs font-semibold px-3.5 py-2 rounded-xl transition"
+              style={{
+                background: darkMode ? 'rgba(232, 224, 212, 0.06)' : '#FAF6EE',
+                color: 'var(--color-ink-muted)',
+                boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'rgba(0,0,0,0.04)')
+              }}>
+              <i className="fas fa-pen mr-1.5"></i>{t('Cambiar', 'Change')}
             </button>
           </div>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-2">
             <input type="number" step="0.1" value={pesoInput} onChange={e => setPesoInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') registrarPeso(); }}
-              className={`flex-1 px-4 py-3 rounded-xl border text-lg font-semibold ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
+              className={`flex-1 px-4 py-3 rounded-xl border text-lg font-semibold tabular-nums ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
               placeholder={t('Ej: 82.3', 'E.g. 82.3')} />
             <button aria-label="Confirmar" onClick={registrarPeso} disabled={!pesoInput}
-              className={`px-5 py-3 rounded-xl font-semibold ${pesoInput ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}><i className="fas fa-check"></i></button>
+              className="px-5 py-3 rounded-xl font-semibold transition active:scale-[0.98]"
+              style={pesoInput
+                ? { background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-md)' }
+                : { background: darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(0,0,0,0.05)', color: 'var(--color-ink-faint)', cursor: 'not-allowed' }}>
+              <i className="fas fa-check"></i>
+            </button>
           </div>
         )}
       </div>
 
       {/* Promedio + tendencia */}
       <div className="grid grid-cols-2 gap-3">
-        <div className={`rounded-xl p-4 surface-card-shadow`}>
-          <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Promedio 7 días', '7-day avg')}</div>
-          <div className={`text-2xl font-extrabold text-ink`}>{promedio7 != null ? promedio7 + ' kg' : '—'}</div>
+        <div className="surface-card-shadow" style={{ padding: '1.1rem 1.15rem 1.25rem' }}>
+          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">{t('Promedio 7 días', '7-day avg')}</div>
+          <div className="text-ink tabular-nums mt-2"
+            style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+            {promedio7 != null ? promedio7 : '—'}{promedio7 != null && <span className="text-sm font-medium text-ink-faint ml-1" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>kg</span>}
+          </div>
         </div>
-        <div className={`rounded-xl p-4 surface-card-shadow`}>
-          <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Tendencia 14d', '14d trend')}</div>
-          <div className={`text-2xl font-extrabold ${tendencia && tendencia.deltaSemanal != null ? (tendencia.deltaSemanal < 0 ? 'text-green-500' : tendencia.deltaSemanal > 0 ? 'text-red-500' : 'text-gray-400') : 'text-gray-400'}`}>
-            {tendencia && tendencia.deltaSemanal != null ? (tendencia.deltaSemanal > 0 ? '+' : '') + tendencia.deltaSemanal + ' kg/sem' : '—'}
+        <div className="surface-card-shadow" style={{ padding: '1.1rem 1.15rem 1.25rem' }}>
+          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">{t('Tendencia 14d', '14d trend')}</div>
+          <div className="tabular-nums mt-2"
+            style={{
+              fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+              color: tendencia && tendencia.deltaSemanal != null ? (tendencia.deltaSemanal < 0 ? 'var(--color-success)' : tendencia.deltaSemanal > 0 ? 'var(--color-alert)' : 'var(--color-ink-muted)') : 'var(--color-ink-muted)'
+            }}>
+            {tendencia && tendencia.deltaSemanal != null ? (tendencia.deltaSemanal > 0 ? '+' : '') + tendencia.deltaSemanal : '—'}
+            {tendencia && tendencia.deltaSemanal != null && <span className="text-xs font-medium ml-1" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>kg/sem</span>}
           </div>
         </div>
       </div>
 
       {/* Gráfico tendencia peso */}
       {entries.filter(e => e.peso != null).length >= 2 && (
-        <div className={`rounded-2xl p-4 surface-card-shadow`}>
-          <h3 className={`text-sm font-bold uppercase tracking-wider mb-2 text-ink-faint`}>{t('Tendencia de peso', 'Weight trend')}</h3>
-          <WeightChart perfil={perfil} entries={entries} darkMode={darkMode} />
-          {/* TY4: #6b7280 (gray-500) en lugar de #9ca3af (gray-400, contraste insuficiente), 11px mínimo */}
-          <div className="flex items-center gap-5 mt-2" style={{ color: '#6b7280', fontSize: '11px' }}>
+        <div className="surface-card-shadow" style={{ padding: '1.4rem 1.4rem 1.25rem' }}>
+          <span className="premium-eyebrow mb-3" style={{ display: 'inline-flex' }}>
+            <i className="fas fa-chart-line" style={{ fontSize: '10px' }}></i>
+            {t('Tendencia de peso', 'Weight trend')}
+          </span>
+          <div className="mt-2">
+            <WeightChart perfil={perfil} entries={entries} darkMode={darkMode} />
+          </div>
+          <div className="flex items-center gap-5 mt-3 text-xs text-ink-muted">
             <span className="flex items-center gap-1.5">
-              <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#f97316" strokeWidth="2"/></svg>Real
+              <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#C8943A" strokeWidth="2"/></svg>{t('Real','Actual')}
             </span>
             <span className="flex items-center gap-1.5">
-              <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#9ca3af" strokeWidth="1.5" strokeDasharray="4 2"/></svg>Plan
+              <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#8A8A8A" strokeWidth="1.5" strokeDasharray="4 2"/></svg>{t('Plan','Plan')}
             </span>
             <span className="flex items-center gap-1.5">
-              <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#16a34a" strokeWidth="1.5" strokeDasharray="4 2"/></svg>Target
+              <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#5A7A5E" strokeWidth="1.5" strokeDasharray="4 2"/></svg>Target
             </span>
           </div>
         </div>
       )}
 
       {/* Medidas + BF */}
-      <div className={`rounded-2xl p-5 surface-card-shadow`}>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>{t('Medidas (semanal)', 'Measurements (weekly)')}</h3>
+      <div className="surface-card-shadow" style={{ padding: '1.5rem 1.4rem' }}>
+        <div className="flex items-center justify-between mb-4">
+          <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+            <i className="fas fa-ruler" style={{ fontSize: '10px' }}></i>
+            {t('Medidas (semanal)', 'Measurements (weekly)')}
+          </span>
           <button onClick={() => setMostrarMedidas(!mostrarMedidas)}
-            className={`text-xs px-3 py-1.5 rounded-lg ${mostrarMedidas ? 'bg-orange-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+            className="text-xs font-semibold px-3.5 py-2 rounded-xl transition"
+            style={mostrarMedidas
+              ? { background: 'var(--color-accent)', color: '#fff' }
+              : {
+                  background: darkMode ? 'rgba(232, 224, 212, 0.06)' : '#FAF6EE',
+                  color: 'var(--color-ink-muted)',
+                  boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'rgba(0,0,0,0.04)')
+                }}>
             {mostrarMedidas ? t('Cancelar', 'Cancel') : t('+ Registrar', '+ Log')}
           </button>
         </div>
@@ -10559,7 +10597,8 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
               </div>
             </div>
             <button aria-label="Confirmar" onClick={registrarMedidas}
-              className="w-full py-2.5 rounded-xl font-semibold bg-gradient-to-r from-orange-500 to-red-500 text-white">
+              className="w-full py-3 rounded-xl font-semibold transition active:scale-[0.98]"
+              style={{ background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-md)' }}>
               <i className="fas fa-check mr-2"></i>{t('Guardar medidas', 'Save measurements')}
             </button>
           </div>
@@ -11090,35 +11129,48 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
 
   const pct = target ? Math.min(100, (hoy.pasos / target) * 100) : 0;
 
+  // IA redesign: paleta de estado del brand
+  const tileBg = darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(245, 240, 232, 0.55)';
+  const tileRing = darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.06)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.05)';
+  const cumplidoColor = pct >= 100 ? 'var(--color-success)' : 'var(--color-accent)';
+
   return (
     <div className="space-y-4">
       {/* Hoy */}
-      <div className={`rounded-2xl p-5 surface-card-shadow`}>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>{t('Hoy', 'Today')}</h3>
-          <span className="text-xs text-gray-400">Target: <b className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{target ? target.toLocaleString() : '—'}</b></span>
+      <div className="surface-card-shadow" style={{ padding: '1.5rem 1.4rem' }}>
+        <div className="flex items-center justify-between mb-5">
+          <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+            <span className="banner-premium-pulse-dot" />
+            {t('Pasos · Hoy', 'Steps · Today')}
+          </span>
+          <span className="text-xs font-semibold tabular-nums text-ink-muted">
+            Target: <span className="text-ink font-bold">{target ? target.toLocaleString() : '—'}</span>
+          </span>
         </div>
-        <div className={`text-5xl font-extrabold text-ink text-center mb-3`}>
+        <div className="text-ink text-center tabular-nums"
+          style={{ fontSize: 'clamp(2.75rem, 9vw, 3.75rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 0.92, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
           {hoy.pasos.toLocaleString()}
         </div>
         {target > 0 && (
           <>
-            <div className={`w-full h-3 rounded-full overflow-hidden surface-secondary`}>
-              <div className="h-full transition"
-                style={{
-                  width: pct + '%',
-                  backgroundImage: pct >= 100
-                    ? 'linear-gradient(to right, #22c55e, #10b981)'
-                    : 'linear-gradient(to right, #f97316, #ef4444)'
-                }}></div>
+            <div className="w-full h-2.5 rounded-full overflow-hidden surface-secondary mt-5">
+              <div className="h-full"
+                style={{ width: pct + '%', background: cumplidoColor, transition: 'width 0.6s cubic-bezier(0.32, 0.72, 0, 1), background 0.3s' }}></div>
             </div>
-            <div className="text-center text-xs mt-1 text-gray-400">{Math.round(pct)}% {t('del target', 'of target')}{pct >= 100 ? ' ✓' : ''}</div>
+            <div className="text-center text-xs mt-2 text-ink-muted tabular-nums">
+              {Math.round(pct)}% {t('del target', 'of target')}{pct >= 100 ? ' ✓' : ''}
+            </div>
           </>
         )}
-        <div className="flex gap-2 mt-4">
+        <div className="flex gap-2 mt-5">
           {[1000, 2000, 5000].map(n => (
             <button key={n} onClick={() => sumar(n)}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition tabular-nums"
+              style={{
+                background: darkMode ? 'rgba(232, 224, 212, 0.06)' : 'rgba(245, 240, 232, 0.7)',
+                color: 'var(--color-ink)',
+                boxShadow: darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.06)'
+              }}>
               +{n.toLocaleString()}
             </button>
           ))}
@@ -11126,10 +11178,13 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
         <div className="flex gap-2 mt-2">
           <input type="number" value={pasosInput} onChange={e => setPasosInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && pasosInput) setPasos(parseInt(pasosInput)); }}
-            className={`flex-1 px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
+            className={`flex-1 px-3.5 py-2.5 rounded-xl border text-sm tabular-nums ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
             placeholder={t('Set exacto (ej: 8450)', 'Set exact (e.g. 8450)')} />
           <button onClick={() => pasosInput && setPasos(parseInt(pasosInput))} disabled={!pasosInput}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold ${pasosInput ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold transition active:scale-[0.98]"
+            style={pasosInput
+              ? { background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-md)' }
+              : { background: darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(0,0,0,0.05)', color: 'var(--color-ink-faint)', cursor: 'not-allowed' }}>
             Set
           </button>
         </div>
@@ -11137,29 +11192,46 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
-        <div className={`rounded-xl p-4 surface-card-shadow`}>
-          <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Promedio 7 días', '7-day avg')}</div>
-          <div className={`text-2xl font-extrabold text-ink`}>{prom7.toLocaleString()}</div>
+        <div className="surface-card-shadow" style={{ padding: '1.1rem 1.15rem 1.25rem' }}>
+          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">{t('Promedio 7 días', '7-day avg')}</div>
+          <div className="text-ink tabular-nums mt-2"
+            style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+            {prom7.toLocaleString()}
+          </div>
         </div>
-        <div className={`rounded-xl p-4 surface-card-shadow`}>
-          <div className="text-[11px] text-gray-400 uppercase font-bold">{t('Racha actual', 'Current streak')}</div>
-          <div className={`text-2xl font-extrabold ${racha > 0 ? 'text-orange-500' : darkMode ? 'text-white' : 'text-gray-800'}`}>
-            {racha} {racha === 1 ? t('día', 'day') : t('días', 'days')}{racha >= 3 ? <i className="fas fa-fire text-orange-400 ml-1 text-lg"></i> : null}
+        <div className="surface-card-shadow" style={{ padding: '1.1rem 1.15rem 1.25rem' }}>
+          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">{t('Racha actual', 'Current streak')}</div>
+          <div className="tabular-nums mt-2 flex items-baseline gap-1.5"
+            style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: racha > 0 ? 'var(--color-accent-dark)' : 'var(--color-ink)' }}>
+            {racha}
+            <span className="text-sm font-medium text-ink-muted" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              {racha === 1 ? t('día', 'day') : t('días', 'days')}
+            </span>
+            {racha >= 3 && <span className="text-base ml-0.5">🔥</span>}
           </div>
         </div>
       </div>
 
       {/* Historial 14d */}
       {ultimos.length === 0 && (
-        <div className={`rounded-xl p-5 text-center text-sm ${darkMode ? 'bg-gray-800 border border-gray-700 text-gray-400' : 'bg-gray-50 border border-gray-200 text-gray-500'}`}>
-          <i className="fas fa-person-walking text-2xl mb-2 block opacity-40"></i>
+        <div className="rounded-2xl text-center text-sm"
+          style={{
+            padding: '1.5rem',
+            border: '1px dashed ' + (darkMode ? 'rgba(232, 224, 212, 0.18)' : 'var(--color-border)'),
+            color: 'var(--color-ink-muted)',
+            background: darkMode ? 'rgba(232, 224, 212, 0.03)' : 'rgba(245, 240, 232, 0.4)'
+          }}>
+          <i className="fas fa-person-walking text-2xl mb-2 block" style={{ opacity: 0.5 }}></i>
           {t('Aún no registraste pasos. Usa los botones de arriba para empezar.', 'No steps recorded yet. Use the buttons above to get started.')}
         </div>
       )}
       {ultimos.length > 0 && (
-        <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
-          <div className={`px-5 py-3 border-b border-default`}>
-            <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>{t('Últimos 14 días', 'Last 14 days')}</h3>
+        <div className="surface-card-shadow overflow-hidden">
+          <div className="px-5 py-4 border-b border-default">
+            <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+              <i className="fas fa-clock-rotate-left" style={{ fontSize: '10px' }}></i>
+              {t('Últimos 14 días', 'Last 14 days')}
+            </span>
           </div>
           <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
             {ultimos.slice().reverse().map((e, i) => {
@@ -11167,15 +11239,16 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
               const pctDia = Math.min(100, (e.pasos / tgt) * 100);
               const cumplido = e.pasos >= tgt;
               return (
-                <div key={i} className="px-5 py-2.5">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-400">{e.fecha}</span>
-                    <span className={`text-sm font-bold ${cumplido ? 'text-green-500' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <div key={i} className="px-5 py-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs text-ink-faint tabular-nums">{e.fecha}</span>
+                    <span className="text-sm font-semibold tabular-nums"
+                      style={{ color: cumplido ? 'var(--color-success)' : 'var(--color-ink)', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
                       {e.pasos.toLocaleString()} {cumplido && '✓'}
                     </span>
                   </div>
-                  <div className={`w-full h-1.5 rounded-full overflow-hidden surface-secondary`}>
-                    <div className={`h-full ${cumplido ? 'bg-green-500' : 'bg-orange-500'}`} style={{ width: pctDia + '%' }}></div>
+                  <div className="w-full h-1.5 rounded-full overflow-hidden surface-secondary">
+                    <div className="h-full" style={{ width: pctDia + '%', background: cumplido ? 'var(--color-success)' : 'var(--color-accent)' }}></div>
                   </div>
                 </div>
               );
