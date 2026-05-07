@@ -14539,14 +14539,6 @@ function NotificationSetupModal({ darkMode }) {
     return function() { window.removeEventListener('calibrate_open_notif_setup', onOpen); };
   }, []);
 
-  if (!open) return null;
-
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  const supported = permState !== 'unsupported';
-  const cardBase = darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200';
-  const mutedCls = darkMode ? 'text-gray-400' : 'text-gray-600';
-
   // VAPID public key — debe coincidir con functions/index.js
   const VAPID_PUBLIC = 'BHaa4Gkl2iQ_qrIFze1YaKqkqy2DGdH2Ae4wivJGvR3kgn8ng3qbK_AS9Mu0o1uxzmFDIZIw7QJvTIK_iCdzeGU';
 
@@ -14583,23 +14575,8 @@ function NotificationSetupModal({ darkMode }) {
     }
   }
 
-  function requestPerm() {
-    if (!('Notification' in window)) return;
-    Notification.requestPermission().then(async function(p) {
-      setPermState(p);
-      if (p === 'granted') {
-        await subscribeToPush();
-        try {
-          new Notification('Calibrate', {
-            body: t('Notificaciones activadas. Te avisaremos al cierre del día y si detectamos una meseta.','Notifications enabled. We\'ll notify you at day-end and if we detect a plateau.'),
-            icon: 'icons/icon.svg'
-          });
-        } catch (_) {}
-      }
-    });
-  }
-
   // Auto-subscribe si ya tenemos permiso pero no enviamos sub al backend (caso post-login)
+  // CRÍTICO: este hook DEBE ir antes de cualquier early return para no romper Rules of Hooks
   React.useEffect(function() {
     if (!('Notification' in window)) return;
     if (Notification.permission !== 'granted') return;
@@ -14624,6 +14601,30 @@ function NotificationSetupModal({ darkMode }) {
     }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
+
+  if (!open) return null;
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const supported = permState !== 'unsupported';
+  const cardBase = darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200';
+  const mutedCls = darkMode ? 'text-gray-400' : 'text-gray-600';
+
+  function requestPerm() {
+    if (!('Notification' in window)) return;
+    Notification.requestPermission().then(async function(p) {
+      setPermState(p);
+      if (p === 'granted') {
+        await subscribeToPush();
+        try {
+          new Notification('Calibrate', {
+            body: t('Notificaciones activadas. Te avisaremos al cierre del día y si detectamos una meseta.','Notifications enabled. We\'ll notify you at day-end and if we detect a plateau.'),
+            icon: 'icons/icon.svg'
+          });
+        } catch (_) {}
+      }
+    });
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center backdrop-blur-sm animate-fadeIn"
