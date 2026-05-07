@@ -11788,64 +11788,70 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
       </div>
 
       {/* Selector de día */}
-      <div className={`rounded-xl p-4 surface-card-shadow`}>
-        <div className="flex items-center justify-between mb-2">
-          <div className={`text-xs uppercase font-bold tracking-wider text-ink-faint`}>
+      <div className="surface-card-shadow" style={{ padding: '1.4rem 1.4rem' }}>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+            <span className="banner-premium-pulse-dot" />
             {t('Día a registrar · hoy', 'Day to log · today')} ({diaSemana})
-          </div>
-          {esDescanso
-            ? <span className={`text-xs px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>{t('Descanso según plan', 'Rest day per plan')}</span>
-            : <span className="text-xs px-2 py-0.5 rounded bg-orange-500/20 text-orange-500 font-bold">
-                {t('Sugerido: Día', 'Suggested: Day')} {(tipos.find(tipo => tipo.k === sugerido) || {}).short || sugerido}
-              </span>
-          }
+          </span>
+          {esDescanso ? (
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
+              style={darkMode
+                ? { background: 'rgba(232, 224, 212, 0.06)', color: '#B8AB9C', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
+                : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' }}>
+              {t('Descanso según plan', 'Rest day per plan')}
+            </span>
+          ) : (
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
+              style={darkMode
+                ? { background: 'rgba(232, 199, 122, 0.14)', color: '#E8C77A', boxShadow: 'inset 0 0 0 1px rgba(232, 199, 122, 0.20)' }
+                : { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
+              {t('Sugerido: Día', 'Suggested: Day')} {(tipos.find(tipo => tipo.k === sugerido) || {}).short || sugerido}
+            </span>
+          )}
         </div>
 
         {/* Selector días/semana */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className={`text-xs font-medium whitespace-nowrap text-ink-faint`}>{t('Días/sem:', 'Days/week:')}</span>
-          <div className="flex gap-1">
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <span className="text-xs font-semibold whitespace-nowrap text-ink-muted">{t('Días/sem', 'Days/week')}</span>
+          <div className="flex gap-1.5">
             {[2,3,4,5,6].map(n => (
               <button key={n}
                 onClick={() => { localStorage.setItem('nutriplan_dias_semana', String(n)); setDiasSemana(n); }}
-                className="w-10 h-10 rounded text-xs font-bold cursor-pointer"
+                className="w-10 h-10 rounded-xl text-sm font-bold cursor-pointer transition tabular-nums"
                 style={diasSemana === n
-                  ? { background: '#f97316', color: '#ffffff', border: '1px solid #f97316' }
+                  ? { background: 'var(--color-accent)', color: '#ffffff', boxShadow: 'var(--shadow-soft-sm)' }
                   : darkMode
-                    ? { background: 'transparent', color: '#6b7280', border: '1px solid #4b5563' }
-                    : { background: 'transparent', color: '#4b5563', border: '1px solid #d1d5db' }
+                    ? { background: 'rgba(232, 224, 212, 0.04)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
+                    : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' }
                 }>
                 {n}
               </button>
             ))}
           </div>
-          {planActual && <span className={`text-xs text-ink-faint`}>{planActual.label}</span>}
+          {planActual && <span className="text-xs text-ink-faint ml-1">{planActual.label}</span>}
         </div>
 
         {/* Botones de tipo de día */}
-        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
+        <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(' + gridCols + ', 1fr)' }}>
           {tipos.map(tipo => {
             const activo = tipoDia === tipo.k;
             const esSugerido = !esDescanso && sugerido === tipo.k;
+            const btnStyle = activo
+              ? { background: 'var(--color-accent)', color: '#ffffff', boxShadow: 'var(--shadow-soft-md)' }
+              : esSugerido
+                ? darkMode
+                  ? { background: 'rgba(232, 199, 122, 0.10)', color: '#E8C77A', boxShadow: 'inset 0 0 0 1px rgba(232, 199, 122, 0.22)' }
+                  : { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)', boxShadow: 'inset 0 0 0 1px rgba(200, 148, 58, 0.20)' }
+                : darkMode
+                  ? { background: 'rgba(232, 224, 212, 0.04)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.08)' }
+                  : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' };
             return (
               <button key={tipo.k} onClick={() => setTipoDia(tipo.k)}
-                className="rounded-lg font-semibold flex flex-col items-center cursor-pointer"
-                style={{
-                  padding: '10px 0',
-                  gap: '2px',
-                  ...(activo
-                    ? { background: 'linear-gradient(to right, #f97316, #ef4444)', color: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.15)' }
-                    : esSugerido
-                      ? darkMode
-                        ? { background: 'rgba(234,88,12,0.15)', color: '#fb923c', border: '1px solid rgba(194,65,12,0.4)' }
-                        : { background: '#fff7ed', color: '#ea580c', border: '1px solid #fed7aa' }
-                      : darkMode
-                        ? { background: '#374151', color: '#d1d5db' }
-                        : { background: '#f9fafb', color: '#4b5563', border: '1px solid #e5e7eb' }
-                  )
-                }}>
-                <span className="text-sm">{t('Día', 'Day')} {tipo.short || tipo.k}</span>
-                <span style={{ fontSize: '11px', opacity: 0.8 }}>{tipo.corto}</span>
+                className="rounded-xl font-semibold flex flex-col items-center cursor-pointer transition active:scale-[0.98]"
+                style={Object.assign({ padding: '0.75rem 0', gap: '2px' }, btnStyle)}>
+                <span className="text-sm font-bold">{t('Día', 'Day')} {tipo.short || tipo.k}</span>
+                <span className="text-[11px]" style={{ opacity: 0.85 }}>{tipo.corto}</span>
               </button>
             );
           })}
@@ -11856,56 +11862,83 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
       <EquipamientoCard darkMode={darkMode} onEquiposChange={setEquiposDisp} onRefresh={onRefresh} />
 
       {/* Card del día seleccionado */}
-      {protocolo && (
-        <div className={`rounded-2xl p-5 surface-card-shadow`}>
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className={`text-sm uppercase tracking-wider font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{tData(protocolo.nombre)}</div>
-                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded ${darkMode ? 'bg-orange-900/40 text-orange-300' : 'bg-orange-50 text-orange-600'}`}>
-                  {t('Semana', 'Week')} {semanaNum}{protocolo.variante ? ' · V' + protocolo.variante : ''}
-                </span>
+      {protocolo && (() => {
+        const pillNeutralSty = darkMode
+          ? { background: 'rgba(232, 224, 212, 0.06)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
+          : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' };
+        const pillAlertSty = darkMode
+          ? { background: 'rgba(192, 82, 58, 0.14)', color: '#E89B85', boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.20)' }
+          : { background: 'rgba(192, 82, 58, 0.08)', color: 'var(--color-alert)', boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.18)' };
+        const pillAccentSty = darkMode
+          ? { background: 'rgba(232, 199, 122, 0.14)', color: '#E8C77A', boxShadow: 'inset 0 0 0 1px rgba(232, 199, 122, 0.20)' }
+          : { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' };
+        return (
+          <div className="surface-card-shadow" style={{ padding: '1.5rem 1.4rem' }}>
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                  <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+                    <span className="banner-premium-pulse-dot" />
+                    {tData(protocolo.nombre)}
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                    style={pillAccentSty}>
+                    {t('Semana', 'Week')} {semanaNum}{protocolo.variante ? ' · V' + protocolo.variante : ''}
+                  </span>
+                </div>
+                <div className="text-base text-ink mt-2" style={{ fontWeight: 600, letterSpacing: '-0.015em', lineHeight: 1.3 }}>
+                  {tData(protocolo.foco)}
+                </div>
+                <div className="text-xs text-ink-faint mt-1.5 tabular-nums">
+                  <i className="fas fa-clock mr-1.5"></i>{protocolo.duracionMin} min · {tData(protocolo.equipamiento)}
+                </div>
               </div>
-              <div className={`text-base text-ink-muted mt-1`}>{tData(protocolo.foco)}</div>
-              <div className="text-xs text-gray-400 mt-1">
-                <i className="fas fa-clock mr-1"></i>{protocolo.duracionMin} min · {tData(protocolo.equipamiento)}
+              <div className="text-right flex-shrink-0">
+                <div className="tabular-nums"
+                  style={{
+                    fontSize: '1.625rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                    color: pct === 100 ? 'var(--color-success)' : 'var(--color-ink)'
+                  }}>
+                  {pct}%
+                </div>
+                <div className="text-xs text-ink-faint mt-1 tabular-nums">{completados}/{total}</div>
               </div>
             </div>
-            <div className="text-right flex-shrink-0">
-              <div className={`text-2xl font-extrabold ${pct === 100 ? 'text-green-500' : darkMode ? 'text-white' : 'text-gray-800'}`}>{pct}%</div>
-              <div className="text-xs text-gray-400">{completados}/{total}</div>
+            <div className="w-full h-2 rounded-full overflow-hidden surface-secondary">
+              <div className="h-full"
+                style={{
+                  width: pct + '%',
+                  background: pct === 100 ? 'var(--color-success)' : 'var(--color-accent)',
+                  transition: 'width 0.6s cubic-bezier(0.32, 0.72, 0, 1), background 0.3s'
+                }}></div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button aria-label="Check double" onClick={marcarTodos} disabled={pct === 100}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition active:scale-[0.98]"
+                style={pct === 100
+                  ? Object.assign({ cursor: 'not-allowed' }, pillNeutralSty)
+                  : { background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-sm)' }}>
+                <i className="fas fa-check-double mr-1.5"></i>{t('Marcar todos', 'Mark all')}
+              </button>
+              {completados > 0 && (
+                <button onClick={() => {
+                  const nueva = Object.assign({}, sesion, { ejercicios: sesion.ejercicios.map(e => Object.assign({}, e, { done: false })) });
+                  window.NP_Training.guardar(nueva); onRefresh();
+                }}
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold transition active:scale-[0.98]"
+                  style={pillNeutralSty}>
+                  <i className="fas fa-xmark mr-1.5"></i>{t('Desmarcar', 'Unmark')}
+                </button>
+              )}
+              <button aria-label="Rotate left" onClick={limpiarSesion}
+                className="px-4 py-2.5 rounded-xl text-sm font-semibold transition active:scale-[0.98]"
+                style={pillAlertSty}>
+                <i className="fas fa-rotate-left mr-1.5"></i>{t('Reset', 'Reset')}
+              </button>
             </div>
           </div>
-          <div className={`w-full h-2 rounded-full overflow-hidden surface-secondary`}>
-            <div className="h-full transition"
-              style={{
-                width: pct + '%',
-                backgroundImage: pct === 100
-                  ? 'linear-gradient(to right, #22c55e, #10b981)'
-                  : 'linear-gradient(to right, #f97316, #ef4444)'
-              }}></div>
-          </div>
-          <div className="flex gap-2 mt-3">
-            <button aria-label="Check double" onClick={marcarTodos} disabled={pct === 100}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold ${pct === 100 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-              <i className="fas fa-check-double mr-1"></i>{t('Marcar todos', 'Mark all')}
-            </button>
-            {completados > 0 && (
-              <button onClick={() => {
-                const nueva = Object.assign({}, sesion, { ejercicios: sesion.ejercicios.map(e => Object.assign({}, e, { done: false })) });
-                window.NP_Training.guardar(nueva); onRefresh();
-              }}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-              <i className="fas fa-xmark mr-1"></i>{t('Desmarcar', 'Unmark')}
-            </button>
-            )}
-            <button aria-label="Rotate left" onClick={limpiarSesion}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-gray-700 text-red-400 hover:bg-gray-600' : 'bg-gray-100 text-red-500 hover:bg-gray-200'}`}>
-              <i className="fas fa-rotate-left mr-1"></i>{t('Reset', 'Reset')}
-            </button>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Lista de ejercicios */}
       <div className="space-y-2">
