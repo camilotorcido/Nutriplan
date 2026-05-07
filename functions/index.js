@@ -893,44 +893,74 @@ exports.getAdminMetrics = onCall(
 
     const db = admin.firestore();
 
-    // 1. Total users (count aggregation)
-    const usersAgg = await db.collection('users').count().get();
-    const totalUsers = usersAgg.data().count;
+    // 1. Total users — usar select() en lugar de count() (no requiere runAggregationQuery)
+    let totalUsers = 0;
+    try {
+      const usersSnap = await db.collection('users').select().get();
+      totalUsers = usersSnap.size;
+    } catch (e) {
+      console.warn('[admin] users count failed:', e.message);
+    }
 
-    // 2. Active push subs (collection group count)
-    const subsAgg = await db.collectionGroup('pushSubscriptions').count().get();
-    const totalSubs = subsAgg.data().count;
-
-    // 3. Users con push activo (distintos uids)
-    const subsSnap = await db.collectionGroup('pushSubscriptions').get();
+    // 2 + 3. Push subs (todos los docs, calcula total + uids únicos + tz distribution en una pasada)
     const usersWithSubs = new Set();
     const tzDistribution = {};
-    subsSnap.forEach((doc) => {
-      usersWithSubs.add(doc.ref.parent.parent.id);
-      const tz = doc.data().tz || 'unknown';
-      tzDistribution[tz] = (tzDistribution[tz] || 0) + 1;
-    });
+    let totalSubs = 0;
+    let subsSnap = { docs: [], forEach: () => {} };
+    try {
+      subsSnap = await db.collectionGroup('pushSubscriptions').get();
+      totalSubs = subsSnap.size;
+      subsSnap.forEach((doc) => {
+        usersWithSubs.add(doc.ref.parent.parent.id);
+        const tz = doc.data().tz || 'unknown';
+        tzDistribution[tz] = (tzDistribution[tz] || 0) + 1;
+      });
+    } catch (e) {
+      console.warn('[admin] subs query failed:', e.message);
+    }
 
-    // 4. Lista de usuarios recientes (últimos 30 — por pushSubscription createdAt como proxy de actividad)
-    const recientesSnap = await db.collectionGroup('pushSubscriptions')
-      .orderBy('createdAt', 'desc')
-      .limit(30)
-      .get();
+    // 4. Usuarios recientes — orderBy createdAt desc (requiere índice de collection group)
     const recientesUids = [];
     const seen = new Set();
-    recientesSnap.forEach((doc) => {
-      const uid = doc.ref.parent.parent.id;
-      if (!seen.has(uid)) {
-        seen.add(uid);
+    try {
+      const recientesSnap = await db.collectionGroup('pushSubscriptions')
+        .orderBy('createdAt', 'desc')
+        .limit(30)
+        .get();
+      recientesSnap.forEach((doc) => {
+        const uid = doc.ref.parent.parent.id;
+        if (!seen.has(uid)) {
+          seen.add(uid);
+          const data = doc.data();
+          recientesUids.push({
+            uid,
+            tz: data.tz || null,
+            userAgent: data.userAgent || null,
+            lastSubAt: data.createdAt && data.createdAt.toMillis ? data.createdAt.toMillis() : null
+          });
+        }
+      });
+    } catch (e) {
+      console.warn('[admin] recientes query failed (índice puede faltar):', e.message);
+      // Fallback: ordenar en memoria desde subsSnap
+      const rows = [];
+      subsSnap.forEach((doc) => {
         const data = doc.data();
-        recientesUids.push({
-          uid,
+        rows.push({
+          uid: doc.ref.parent.parent.id,
           tz: data.tz || null,
           userAgent: data.userAgent || null,
-          lastSubAt: data.createdAt && data.createdAt.toMillis ? data.createdAt.toMillis() : null
+          lastSubAt: data.createdAt && data.createdAt.toMillis ? data.createdAt.toMillis() : 0
         });
+      });
+      rows.sort((a, b) => (b.lastSubAt || 0) - (a.lastSubAt || 0));
+      for (const r of rows.slice(0, 30)) {
+        if (!seen.has(r.uid)) {
+          seen.add(r.uid);
+          recientesUids.push(r);
+        }
       }
-    });
+    }
 
     // 5. Enriquecer con datos de Firebase Auth (displayName, email)
     const enriched = [];
