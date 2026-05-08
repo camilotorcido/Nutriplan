@@ -105,13 +105,83 @@ function aplicarOverrideFase(numeroFase, override) {
   return perfil.roadmap;
 }
 
+// ─── Override de pasos objetivo (target realista del usuario) ─────────────
+// Si el usuario sabe que en la práctica logra 3500 pasos en lugar de los 8000
+// del default de la fase, guarda esa cifra acá. Reduce TDEE proporcionalmente
+// (heurística estándar: ~0.0005 kcal/paso por kg de peso corporal).
+const _PASOS_OBJ_KEY = 'nutriplan_pasos_objetivo_real';
+
+function _kcalPorPaso(peso) {
+  const p = Number(peso) > 0 ? Number(peso) : 75;
+  return p * 0.0005; // ≈0.04 kcal/step para 80kg
+}
+
+function getPasosObjetivoReal() {
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    const raw = localStorage.getItem(_PASOS_OBJ_KEY);
+    if (raw == null || raw === '') return null;
+    const n = parseInt(raw, 10);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  } catch (e) { return null; }
+}
+
+function _kcalDeltaPasos(faseDefaultPasos, peso) {
+  const override = getPasosObjetivoReal();
+  if (override == null) return 0;
+  const def = Number(faseDefaultPasos) > 0 ? Number(faseDefaultPasos) : 0;
+  return Math.round((override - def) * _kcalPorPaso(peso));
+}
+
+// Persiste el override y re-sincroniza perfil (caloriasManual + caloriasObjetivo).
+// Pasar null/'' borra el override y vuelve al phase default.
+function setPasosObjetivoReal(n) {
+  let saneado = null;
+  try {
+    if (n == null || n === '' || Number(n) <= 0) {
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(_PASOS_OBJ_KEY);
+    } else {
+      saneado = Math.max(0, Math.round(Number(n)));
+      if (typeof localStorage !== 'undefined') localStorage.setItem(_PASOS_OBJ_KEY, String(saneado));
+    }
+  } catch (e) { /* noop */ }
+  if (typeof cargarPerfil === 'function' && typeof guardarPerfil === 'function') {
+    const perfil = cargarPerfil();
+    if (perfil && perfil.fatLossMode) {
+      const kcal = caloriasObjetivoEfectivas();
+      if (kcal && Number.isFinite(kcal)) {
+        perfil.caloriasManual = kcal;
+        perfil.caloriasObjetivo = kcal;
+        guardarPerfil(perfil);
+      }
+    }
+  }
+  return saneado;
+}
+
 // ─── Fase activa hoy ───
 function faseActualPerfil() {
   if (typeof cargarPerfil !== 'function') return null;
   const perfil = cargarPerfil();
   if (!perfil || !perfil.fatLossMode || !perfil.roadmap) return null;
   if (!window.NP_Roadmap || !window.NP_Roadmap.faseActual) return null;
-  return window.NP_Roadmap.faseActual(perfil.roadmap);
+  const fase = window.NP_Roadmap.faseActual(perfil.roadmap);
+  if (!fase) return fase;
+  const override = getPasosObjetivoReal();
+  if (override == null) return fase;
+  const peso = (perfil.peso != null) ? perfil.peso
+    : (perfil.roadmap && perfil.roadmap.inputs ? perfil.roadmap.inputs.peso : null);
+  const defaultPasos = fase.targetPasos;
+  const delta = Math.round((override - (defaultPasos || 0)) * _kcalPorPaso(peso));
+  // Piso de seguridad: nunca calorías por debajo de 800 (protege hormonas)
+  const caloriasAjust = Math.max(800, (fase.calorias || 0) + delta);
+  return Object.assign({}, fase, {
+    _targetPasosDefault: defaultPasos,
+    _caloriasOriginal: fase.calorias,
+    _kcalDeltaPasos: delta,
+    targetPasos: override,
+    calorias: caloriasAjust
+  });
 }
 
 // ─── Calorías efectivas (sobrescribe caloriasManual cuando FL está ON) ───
@@ -382,6 +452,9 @@ if (typeof window !== 'undefined') {
     banner: informacionBanner,
     desincronizado: planDesincronizado,
     sincronizar: sincronizarConFaseActual,
-    migrar: migrarPerfilSiStale
+    migrar: migrarPerfilSiStale,
+    getPasosObjetivoReal,
+    setPasosObjetivoReal,
+    kcalDeltaPasos: _kcalDeltaPasos
   };
 }

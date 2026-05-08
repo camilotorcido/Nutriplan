@@ -11270,6 +11270,23 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
   const racha = (window.NP_Steps && window.NP_Steps.racha) ? window.NP_Steps.racha() : 0;
   const ultimos = (window.NP_Steps && window.NP_Steps.ultimos) ? window.NP_Steps.ultimos(14) : [];
 
+  // ── Override de pasos objetivo (realista) ──
+  const _faseAct = (window.NP_FatLoss && window.NP_FatLoss.faseActual) ? window.NP_FatLoss.faseActual() : null;
+  const pasosOverride = (window.NP_FatLoss && window.NP_FatLoss.getPasosObjetivoReal) ? window.NP_FatLoss.getPasosObjetivoReal() : null;
+  const pasosFaseDefault = _faseAct ? (_faseAct._targetPasosDefault != null ? _faseAct._targetPasosDefault : _faseAct.targetPasos) : null;
+  const _kcalOriginal = _faseAct ? (_faseAct._caloriasOriginal != null ? _faseAct._caloriasOriginal : _faseAct.calorias) : null;
+  const _kcalDelta = _faseAct && typeof _faseAct._kcalDeltaPasos === 'number' ? _faseAct._kcalDeltaPasos : 0;
+  const [pasosObjEdit, setPasosObjEdit] = React.useState(pasosOverride != null ? String(pasosOverride) : '');
+  React.useEffect(() => {
+    setPasosObjEdit(pasosOverride != null ? String(pasosOverride) : '');
+  }, [pasosOverride]);
+  const guardarPasosObj = (val) => {
+    if (window.NP_FatLoss && window.NP_FatLoss.setPasosObjetivoReal) {
+      window.NP_FatLoss.setPasosObjetivoReal(val);
+      onRefresh();
+    }
+  };
+
   const setPasos = (n) => {
     window.NP_Steps.registrar(null, n, target);
     setPasosInput('');
@@ -11342,6 +11359,61 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
           </button>
         </div>
       </div>
+
+      {/* Mi target realista — override del default de la fase */}
+      {pasosFaseDefault != null && (
+        <div className="surface-card-shadow" style={{ padding: '1.5rem 1.4rem' }}>
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
+              <i className="fas fa-bullseye" style={{ fontSize: '10px' }}></i>
+              {t('Mi target realista', 'My realistic target')}
+            </span>
+            <span className="text-[11px] tabular-nums text-ink-faint">
+              {t('Default fase', 'Phase default')}: <span className="font-semibold text-ink-muted">{pasosFaseDefault.toLocaleString()}</span>
+            </span>
+          </div>
+          <p className="text-xs text-ink-muted mb-4" style={{ lineHeight: 1.55 }}>
+            {t('Si tu promedio real es distinto al default, ajustá acá. Tu meta calórica diaria se recalcula sola (~0.04 kcal/paso a 80 kg).',
+               'If your realistic average differs from the phase default, adjust here. Your daily calorie goal recalculates automatically (~0.04 kcal/step at 80 kg).')}
+          </p>
+          <div className="flex gap-2 items-stretch">
+            <input type="number" inputMode="numeric" value={pasosObjEdit}
+              onChange={e => setPasosObjEdit(e.target.value)}
+              onBlur={() => {
+                const cur = pasosOverride != null ? String(pasosOverride) : '';
+                if (pasosObjEdit !== cur) guardarPasosObj(pasosObjEdit);
+              }}
+              onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
+              className={`flex-1 px-3.5 py-2.5 rounded-xl border text-sm tabular-nums ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
+              placeholder={t('ej: 4000', 'e.g. 4000')} />
+            {pasosOverride != null && (
+              <button onClick={() => { setPasosObjEdit(''); guardarPasosObj(''); }}
+                className="px-4 rounded-xl text-xs font-semibold cursor-pointer transition active:scale-[0.98]"
+                style={{
+                  background: darkMode ? 'rgba(232, 224, 212, 0.06)' : 'rgba(245, 240, 232, 0.7)',
+                  color: 'var(--color-ink-muted)',
+                  boxShadow: darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.06)'
+                }}>
+                {t('Volver al default', 'Reset')}
+              </button>
+            )}
+          </div>
+          {pasosOverride != null && _kcalDelta !== 0 && (
+            <div className="mt-4 flex items-start gap-2.5 text-xs" style={{ lineHeight: 1.55 }}>
+              <i className="fas fa-fire-flame-curved" style={{ fontSize: '12px', color: _kcalDelta < 0 ? 'var(--color-alert)' : 'var(--color-success)', marginTop: '0.15rem' }}></i>
+              <span className="text-ink-muted tabular-nums flex-1">
+                {_kcalDelta < 0 ? t('Tu meta diaria baja', 'Your daily goal drops by') : t('Tu meta diaria sube', 'Your daily goal rises by')}
+                {' '}<span className="font-bold text-ink">{Math.abs(_kcalDelta)} kcal</span>
+                {_kcalOriginal && (
+                  <span className="text-ink-faint">
+                    {' '}({_kcalOriginal} → <span className="font-semibold text-ink">{_faseAct.calorias}</span> kcal/día)
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
