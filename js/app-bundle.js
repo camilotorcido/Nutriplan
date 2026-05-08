@@ -11490,28 +11490,41 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
                 {t('Si tu promedio real es distinto al recomendado, ajustá acá. Tu meta calórica diaria se recalcula sola (~0.04 kcal/paso a 80 kg).',
                    'If your realistic average differs from the recommendation, adjust here. Your daily calorie goal recalculates automatically (~0.04 kcal/step at 80 kg).')}
               </p>
-              <div className="flex gap-2 items-stretch">
-                <input type="number" inputMode="numeric" min="0" max="50000" value={pasosObjEdit}
-                  onChange={e => setPasosObjEdit(e.target.value)}
-                  onBlur={() => {
-                    const cur = pasosOverride != null ? String(pasosOverride) : '';
-                    if (pasosObjEdit !== cur) guardarPasosObj(pasosObjEdit);
-                  }}
-                  onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
-                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm tabular-nums ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
-                  placeholder={t('ej: 4000', 'e.g. 4000')} />
-                {pasosOverride != null && (
-                  <button onClick={() => { setPasosObjEdit(''); guardarPasosObj(''); }}
-                    className="px-4 rounded-xl text-xs font-semibold cursor-pointer transition active:scale-[0.97]"
-                    style={{
-                      background: darkMode ? 'rgba(232, 224, 212, 0.06)' : 'rgba(245, 240, 232, 0.7)',
-                      color: 'var(--color-ink-muted)',
-                      boxShadow: darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.06)'
-                    }}>
-                    {t('Volver al recomendado', 'Reset')}
-                  </button>
-                )}
-              </div>
+              {(() => {
+                const _curStr = pasosOverride != null ? String(pasosOverride) : '';
+                const _dirty = pasosObjEdit !== '' && pasosObjEdit !== _curStr;
+                return (
+                  <div className="flex gap-2 items-stretch">
+                    <input type="number" inputMode="numeric" min="0" max="50000" value={pasosObjEdit}
+                      onChange={e => setPasosObjEdit(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && _dirty) { guardarPasosObj(pasosObjEdit); e.target.blur(); } }}
+                      className={`flex-1 px-4 py-2.5 rounded-xl border text-sm tabular-nums ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
+                      placeholder={t('ej: 4000', 'e.g. 4000')} />
+                    <button onMouseDown={e => e.preventDefault()}
+                      onClick={() => _dirty && guardarPasosObj(pasosObjEdit)}
+                      disabled={!_dirty}
+                      aria-label={t('Aplicar', 'Apply')}
+                      className="px-4 py-2.5 rounded-xl text-sm font-semibold transition active:scale-[0.97] shrink-0"
+                      style={_dirty
+                        ? { background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-sm)' }
+                        : { background: darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(0,0,0,0.04)', color: 'var(--color-ink-faint)', cursor: 'not-allowed' }}>
+                      <i className="fas fa-check" style={{ fontSize: '12px' }}></i>
+                    </button>
+                    {pasosOverride != null && (
+                      <button onMouseDown={e => e.preventDefault()}
+                        onClick={() => { setPasosObjEdit(''); guardarPasosObj(''); }}
+                        className="px-4 rounded-xl text-xs font-semibold cursor-pointer transition active:scale-[0.97] shrink-0"
+                        style={{
+                          background: darkMode ? 'rgba(232, 224, 212, 0.06)' : 'rgba(245, 240, 232, 0.7)',
+                          color: 'var(--color-ink-muted)',
+                          boxShadow: darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.06)'
+                        }}>
+                        {t('Volver al recomendado', 'Reset')}
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
               {pasosOverride != null && _kcalDelta !== 0 && (
                 <div className="mt-4 flex items-start gap-2.5 text-xs" style={{ lineHeight: 1.55 }}>
                   <i className={`fas ${_kcalDelta < 0 ? 'fa-arrow-trend-down' : 'fa-arrow-trend-up'}`}
