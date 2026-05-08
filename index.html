@@ -3,8 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Calibrate</title>
-    <meta name="description" content="Calibrate â€” fat loss con mÃ©todo. Meal planning automÃ¡tico, roadmap por fases y tracking integral con base cientÃ­fica explÃ­cita.">
+    <title>Calibrate — fat loss con método</title>
+    <meta name="description" content="Calibrate — fat loss con método. Meal planning automático, roadmap por fases y tracking integral con base científica explícita.">
+    <link rel="canonical" href="https://camilotorcido.github.io/Nutriplan/">
+    <!-- Open Graph (Facebook, WhatsApp, LinkedIn, iMessage) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Calibrate">
+    <meta property="og:title" content="Calibrate — fat loss con método">
+    <meta property="og:description" content="Meal planning automático, roadmap por fases y tracking integral con base científica explícita.">
+    <meta property="og:url" content="https://camilotorcido.github.io/Nutriplan/">
+    <meta property="og:locale" content="es_CL">
+    <meta property="og:image" content="https://camilotorcido.github.io/Nutriplan/icons/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Calibrate — fat loss con método">
+    <!-- Twitter / X Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Calibrate — fat loss con método">
+    <meta name="twitter:description" content="Meal planning automático, roadmap por fases y tracking integral con base científica explícita.">
+    <meta name="twitter:image" content="https://camilotorcido.github.io/Nutriplan/icons/og-image.png">
     <!-- Cache control: prevent stale files -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -60,12 +77,12 @@
             <p>Cargando Calibrate...</p>
         </div>
     </div>
-    <!-- Firebase SDK (compat mode â€” funciona como script tag normal, sin bundler) -->
+    <!-- Firebase SDK (compat mode — funciona como script tag normal, sin bundler) -->
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
-    <!-- Auth + core modules (cargados antes que cualquier otro mÃ³dulo) -->
+    <!-- Auth + core modules (cargados antes que cualquier otro módulo) -->
     <!-- Version timestamp for cache-busting: 20260428ce -->
     <script src="js/firebase-config.js?v=93862b63"></script>
     <script src="js/auth.js?v=93862b63"></script>
@@ -75,7 +92,7 @@
     <!-- Fase 6.2: recipes-extra y upgrades se cargan lazy al primer uso (ahorro ~224 KB en first paint) -->
     <script src="js/nutritionEngine.js?v=93862b63"></script>
     <script src="js/storage.js?v=93862b63"></script>
-    <!-- Calibrate â€” Fat Loss roadmap engine -->
+    <!-- Calibrate — Fat Loss roadmap engine -->
     <script src="js/roadmap-data.js?v=93862b63"></script>
     <script src="js/roadmap-generator.js?v=93862b63"></script>
     <script src="js/protein-complement.js?v=93862b63"></script>
@@ -169,7 +186,7 @@
             navigator.serviceWorker.register('./sw.js?v=' + APP_VERSION)
                 .then(function(reg) {
                     console.log('[PWA] Service Worker registrado:', reg.scope);
-                    // Forzar chequeo de actualizaciÃ³n en cada carga
+                    // Forzar chequeo de actualización en cada carga
                     reg.update();
                     // Auto-activar SW nuevo y recargar una sola vez
                     var refreshing = false;
@@ -251,7 +268,7 @@
     (function() {
       if (!('ontouchstart' in window) || !('serviceWorker' in navigator)) return;
 
-      /* â”€â”€ Indicador visual (burbuja Ã¡mbar) â”€â”€ */
+      /* ── Indicador visual (burbuja ámbar) ── */
       var ind = document.createElement('div');
       ind.style.cssText = [
         'position:fixed', 'top:0', 'left:50%', 'z-index:99999',
@@ -306,11 +323,11 @@
           if (!reg) { setTimeout(function() { snapOut(); setTimeout(function() { setIcon('spin'); }, 350); }, 900); return; }
           reg.update().then(function() {
             if (reg.waiting) {
-              /* SW nuevo listo â†’ activarlo (controllerchange recarga la pÃ¡gina) */
+              /* SW nuevo listo → activarlo (controllerchange recarga la página) */
               reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-              /* No ocultamos el indicador â€” la recarga lo elimina */
+              /* No ocultamos el indicador — la recarga lo elimina */
             } else {
-              /* Sin actualizaciÃ³n disponible â†’ checkmark 1s */
+              /* Sin actualización disponible → checkmark 1s */
               setIcon('check');
               setTimeout(function() {
                 snapOut();
