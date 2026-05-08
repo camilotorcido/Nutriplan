@@ -885,7 +885,10 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   };
 
   // ── v20260428ai: Wizard onboarding ──────────────────────────────────────
-  if (pasoWizard !== null) {
+  // En modo edición (pasoWizard === null) también entramos cuando hay que mostrar
+  // la pantalla de explicación post-submit, para que "Guardar y Regenerar Plan"
+  // no quede congelada visualmente al disparar handleSubmit.
+  if (pasoWizard !== null || (showExplicacion && perfilParaExplicar)) {
 
     // ── Paso 0: Selector de idioma + unidades (pantalla completa, antes del wizard) ───
     if (pasoWizard === 0) {
