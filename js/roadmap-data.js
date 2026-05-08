@@ -567,6 +567,73 @@ function buscarEjercicio(nombre) {
   return null;
 }
 
+// ─── Selección de qué días entrenar (custom por usuario) ─────────────────────
+// Si no hay selección guardada, se deriva del schedule canónico de SCHEDULES_POR_DIAS[N].
+const _DIAS_SEL_KEY = 'nutriplan_dias_entreno_seleccionados';
+
+function _defaultDowsForCount(diasSemana) {
+  const plan = SCHEDULES_POR_DIAS[diasSemana];
+  if (!plan) return [];
+  const dows = [];
+  Object.keys(plan.schedule).forEach(k => {
+    if (plan.schedule[k] !== 'descanso') dows.push(Number(k));
+  });
+  return dows.sort((a, b) => a - b);
+}
+
+function getDiasEntrenoSeleccionados(diasSemana) {
+  const N = SCHEDULES_POR_DIAS[diasSemana] ? diasSemana : 4;
+  try {
+    const raw = (typeof localStorage !== 'undefined') ? localStorage.getItem(_DIAS_SEL_KEY) : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length === N) {
+        const norm = parsed.map(Number).filter(n => Number.isInteger(n) && n >= 0 && n <= 6);
+        const unique = Array.from(new Set(norm));
+        if (unique.length === N) return unique.sort((a, b) => a - b);
+      }
+    }
+  } catch (e) { /* fallthrough a default */ }
+  return _defaultDowsForCount(N);
+}
+
+function setDiasEntrenoSeleccionados(dows) {
+  try {
+    const sane = (dows || []).map(Number).filter(n => Number.isInteger(n) && n >= 0 && n <= 6);
+    const unique = Array.from(new Set(sane)).sort((a, b) => a - b);
+    if (typeof localStorage !== 'undefined') localStorage.setItem(_DIAS_SEL_KEY, JSON.stringify(unique));
+    return unique;
+  } catch (e) { return []; }
+}
+
+// Devuelve { 0:'descanso'|'A'|..., 1:..., ..., 6:... } combinando la selección custom
+// con los tipos del plan canónico de SCHEDULES_POR_DIAS[N]. Si la selección coincide
+// con el default del N, se usa el schedule canónico (preserva el orden A/B/C/D habitual).
+function getEffectiveSchedule(diasSemana) {
+  let N;
+  if (typeof diasSemana === 'number' && SCHEDULES_POR_DIAS[diasSemana]) {
+    N = diasSemana;
+  } else {
+    try { N = parseInt((typeof localStorage !== 'undefined' ? localStorage.getItem('nutriplan_dias_semana') : null) || '4', 10); }
+    catch (e) { N = 4; }
+    if (!SCHEDULES_POR_DIAS[N]) N = 4;
+  }
+  const plan = SCHEDULES_POR_DIAS[N];
+  const dows = getDiasEntrenoSeleccionados(N);
+  const defaults = _defaultDowsForCount(N);
+  const same = dows.length === defaults.length && dows.every((d, i) => d === defaults[i]);
+  const out = { 0: 'descanso', 1: 'descanso', 2: 'descanso', 3: 'descanso', 4: 'descanso', 5: 'descanso', 6: 'descanso' };
+  if (same) {
+    Object.keys(plan.schedule).forEach(k => { out[Number(k)] = plan.schedule[k]; });
+    return out;
+  }
+  // Selección custom: asignar tipos[i].k cronológicamente a los días elegidos (sorted asc).
+  dows.forEach((dow, i) => {
+    out[dow] = (plan.tipos[i] && plan.tipos[i].k) || 'descanso';
+  });
+  return out;
+}
+
 // ─── Exponer a window ───
 if (typeof window !== 'undefined') {
   window.NP_RoadmapData = {
@@ -582,6 +649,9 @@ if (typeof window !== 'undefined') {
     FACTORES_ACTIVIDAD: FACTORES_ACTIVIDAD_FL,
     semanaActual,
     generarProtocoloDia,
-    buscarEjercicio
+    buscarEjercicio,
+    getEffectiveSchedule,
+    getDiasEntrenoSeleccionados,
+    setDiasEntrenoSeleccionados
   };
 }

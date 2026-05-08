@@ -69,9 +69,10 @@ var _DIAS_A_DOW = {
 function _multiplicadorDia(dia, perfil) {
   // Nutrient timing por entreno: días de entreno suben kcal (×1.05), descanso bajan (×0.95).
   // El target diario es el PROMEDIO semanal — los días individuales varían intencionalmente.
-  var sch = (typeof window !== 'undefined' && window.NP_RoadmapData)
-    ? (window.NP_RoadmapData.ENTRENO_PROTOCOLO || {}).scheduleDefault
-    : null;
+  var rd = (typeof window !== 'undefined') ? window.NP_RoadmapData : null;
+  var sch = null;
+  if (rd && typeof rd.getEffectiveSchedule === 'function') sch = rd.getEffectiveSchedule();
+  else if (rd && rd.ENTRENO_PROTOCOLO) sch = rd.ENTRENO_PROTOCOLO.scheduleDefault;
   if (!sch) return 1.0;
   var dow = _DIAS_A_DOW[dia];
   return (sch[dow] && sch[dow] !== 'descanso') ? 1.05 : 0.95;

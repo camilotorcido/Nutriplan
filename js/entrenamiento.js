@@ -30,7 +30,12 @@ function guardarSesiones(sesiones) {
 function tipoDiaSugerido(fecha) {
   const d = fecha ? new Date(fecha + 'T12:00:00') : new Date();
   const dow = d.getDay(); // 0=dom, 1=lun, ..., 6=sáb
-  const ep = window.NP_RoadmapData && window.NP_RoadmapData.ENTRENO_PROTOCOLO;
+  const rd = window.NP_RoadmapData;
+  if (rd && typeof rd.getEffectiveSchedule === 'function') {
+    const sch = rd.getEffectiveSchedule();
+    return (sch && sch[dow]) || 'descanso';
+  }
+  const ep = rd && rd.ENTRENO_PROTOCOLO;
   if (!ep || !ep.scheduleDefault) return 'descanso';
   return ep.scheduleDefault[dow] || 'descanso';
 }

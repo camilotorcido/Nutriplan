@@ -8383,7 +8383,10 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
       ? (window.NP_RoadmapData.SCHEDULES_POR_DIAS[diasSemana] || window.NP_RoadmapData.SCHEDULES_POR_DIAS[4])
       : null;
     const hoyDow = new Date(hoyStr + 'T12:00:00').getDay();
-    const tipo = planActual ? (planActual.schedule[hoyDow] || 'descanso') : 'descanso';
+    const _scheduleEff = (window.NP_RoadmapData && window.NP_RoadmapData.getEffectiveSchedule)
+      ? window.NP_RoadmapData.getEffectiveSchedule(diasSemana)
+      : (planActual ? planActual.schedule : null);
+    const tipo = _scheduleEff ? (_scheduleEff[hoyDow] || 'descanso') : 'descanso';
     const sesion = window.NP_Training.obtener(hoyStr, tipo);
     if (!sesion) return { tipo, tipoInfo: null, completados: 0, total: 0, esDescanso: tipo === 'descanso', foco: null, duracionMin: null };
     const completados = sesion.ejercicios.filter(e => e.done).length;
@@ -8735,8 +8738,9 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         const obj = perfil && perfil.objetivo ? perfil.objetivo.toLowerCase() : 'default';
         const objetivoLabel = { perdida: t('Pérdida de grasa','Fat loss'), volumen: t('Ganancia muscular','Muscle gain'), mantenimiento: t('Mantenimiento','Maintenance') }[obj] || '';
         const streak = calcularStreakAdherencia();
-        const sch = window.NP_RoadmapData && window.NP_RoadmapData.ENTRENO_PROTOCOLO
-          ? window.NP_RoadmapData.ENTRENO_PROTOCOLO.scheduleDefault : null;
+        const sch = (window.NP_RoadmapData && window.NP_RoadmapData.getEffectiveSchedule)
+          ? window.NP_RoadmapData.getEffectiveSchedule()
+          : (window.NP_RoadmapData && window.NP_RoadmapData.ENTRENO_PROTOCOLO ? window.NP_RoadmapData.ENTRENO_PROTOCOLO.scheduleDefault : null);
         const dow = new Date().getDay();
         const esEntreno = sch && sch[dow] && sch[dow] !== 'descanso';
         const _pct = (metaKcalDia > 0 && consumidoHoy.calorias > 0) ? Math.round((consumidoHoy.calorias / metaKcalDia) * 100) : 0;
@@ -11648,13 +11652,24 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   const [diasSemana, setDiasSemana] = React.useState(() =>
     parseInt(localStorage.getItem('nutriplan_dias_semana') || '4')
   );
+  // Selección custom de qué días entrenar (default = derivado del schedule canónico de SCHEDULES_POR_DIAS[N])
+  const [diasSeleccionados, setDiasSeleccionados] = React.useState(() => {
+    const rd = window.NP_RoadmapData;
+    if (rd && rd.getDiasEntrenoSeleccionados) {
+      return rd.getDiasEntrenoSeleccionados(parseInt(localStorage.getItem('nutriplan_dias_semana') || '4', 10));
+    }
+    return [];
+  });
   const planActual = (window.NP_RoadmapData && window.NP_RoadmapData.SCHEDULES_POR_DIAS)
     ? (window.NP_RoadmapData.SCHEDULES_POR_DIAS[diasSemana] || window.NP_RoadmapData.SCHEDULES_POR_DIAS[4])
     : null;
+  const _scheduleEff = (window.NP_RoadmapData && window.NP_RoadmapData.getEffectiveSchedule)
+    ? window.NP_RoadmapData.getEffectiveSchedule(diasSemana)
+    : (planActual ? planActual.schedule : null);
 
   const hoyDow = new Date(hoy + 'T12:00:00').getDay();
-  const sugerido = planActual
-    ? (planActual.schedule[hoyDow] || 'descanso')
+  const sugerido = _scheduleEff
+    ? (_scheduleEff[hoyDow] || 'descanso')
     : (window.NP_Training && window.NP_Training.tipoDiaSugerido ? window.NP_Training.tipoDiaSugerido(hoy) : 'descanso');
   const tipos = planActual ? planActual.tipos
     : [{ k:'A', short:'A', corto:t('Empuje', 'Push') }, { k:'B', short:'B', corto:t('Piernas', 'Legs') },
@@ -11666,6 +11681,15 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   // Cuando cambia diasSemana, resetear al sugerido si el tipo actual ya no existe en el plan
   React.useEffect(() => {
     if (!tipos.some(tipo => tipo.k === tipoDia)) setTipoDia(tipoInicial);
+    // Si la selección custom de días no coincide con el N nuevo, ajustarla al default del N
+    if (diasSeleccionados.length !== diasSemana) {
+      const rd = window.NP_RoadmapData;
+      if (rd && rd.getDiasEntrenoSeleccionados && rd.setDiasEntrenoSeleccionados) {
+        const nuevos = rd.getDiasEntrenoSeleccionados(diasSemana);
+        rd.setDiasEntrenoSeleccionados(nuevos);
+        setDiasSeleccionados(nuevos);
+      }
+    }
   }, [diasSemana]);
 
   if (!window.NP_Training) {
@@ -11794,8 +11818,10 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   })();
   // Días de entreno de la semana (del schedule del protocolo) — para conectar con nutritionEngine ×1.05
   const _diasEntreno = (() => {
-    if (!window.NP_RoadmapData || !window.NP_RoadmapData.ENTRENO_PROTOCOLO) return null;
-    const sch = window.NP_RoadmapData.ENTRENO_PROTOCOLO.scheduleDefault || {};
+    if (!window.NP_RoadmapData) return null;
+    const sch = (window.NP_RoadmapData.getEffectiveSchedule)
+      ? window.NP_RoadmapData.getEffectiveSchedule(diasSemana)
+      : ((window.NP_RoadmapData.ENTRENO_PROTOCOLO || {}).scheduleDefault || {});
     const labels = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
     const entreno = [], descanso = [];
     for (let dow = 0; dow < 7; dow++) {
@@ -11977,7 +12003,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
         </div>
 
         {/* Selector días/semana */}
-        <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
           <span className="text-xs font-semibold whitespace-nowrap text-ink-muted">{t('Días/sem', 'Days/week')}</span>
           <div className="flex gap-1.5">
             {[2,3,4,5,6].map(n => (
@@ -11995,6 +12021,51 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             ))}
           </div>
           {planActual && <span className="text-xs text-ink-faint ml-1">{planActual.label}</span>}
+        </div>
+
+        {/* Selector de qué días de la semana entrenar */}
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <span className="text-xs font-semibold whitespace-nowrap text-ink-muted">{t('Qué días', 'Which days')}</span>
+          <div className="flex gap-1">
+            {[
+              { dow: 1, label: t('Lun','Mon') },
+              { dow: 2, label: t('Mar','Tue') },
+              { dow: 3, label: t('Mié','Wed') },
+              { dow: 4, label: t('Jue','Thu') },
+              { dow: 5, label: t('Vie','Fri') },
+              { dow: 6, label: t('Sáb','Sat') },
+              { dow: 0, label: t('Dom','Sun') }
+            ].map(d => {
+              const seleccionado = diasSeleccionados.includes(d.dow);
+              const lleno = !seleccionado && diasSeleccionados.length >= diasSemana;
+              return (
+                <button key={d.dow}
+                  onClick={() => {
+                    let next;
+                    if (seleccionado) next = diasSeleccionados.filter(x => x !== d.dow);
+                    else if (diasSeleccionados.length < diasSemana) next = [...diasSeleccionados, d.dow].sort((a,b)=>a-b);
+                    else return;
+                    if (window.NP_RoadmapData && window.NP_RoadmapData.setDiasEntrenoSeleccionados) {
+                      window.NP_RoadmapData.setDiasEntrenoSeleccionados(next);
+                    }
+                    setDiasSeleccionados(next);
+                  }}
+                  disabled={lleno}
+                  className={`px-2.5 h-9 rounded-xl text-[11px] font-bold transition ${lleno ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                  style={Object.assign({},
+                    seleccionado
+                      ? { background: 'var(--color-accent)', color: '#ffffff', boxShadow: 'var(--shadow-soft-sm)' }
+                      : darkMode
+                        ? { background: 'rgba(232, 224, 212, 0.04)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
+                        : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' },
+                    lleno ? { opacity: 0.35 } : {}
+                  )}>
+                  {d.label}
+                </button>
+              );
+            })}
+          </div>
+          <span className="text-[11px] text-ink-faint ml-1 tabular-nums">{diasSeleccionados.length}/{diasSemana}</span>
         </div>
 
         {/* Botones de tipo de día */}
