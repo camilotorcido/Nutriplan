@@ -276,7 +276,7 @@ SLOTS YA REEMPLAZADOS HOY (tienen comida externa registrada; NO usar reemplaza p
 SLOTS LIBRES HOY (se pueden reemplazar si el usuario menciona ese tipo de comida):
   ${slotsLibres.length > 0 ? slotsLibres.join(', ') : '(todos reemplazados)'}
 
-MACROS OBJETIVO HOY:
+MACROS OBJETIVO HOY (valor AUTORIZADO — usa SIEMPRE estos números como objetivo; ignora cualquier objetivo distinto que aparezca en turnos anteriores de la conversación, aunque tú mismo lo hayas afirmado antes — el perfil del usuario es la única fuente de verdad y puede haber cambiado):
   • Calorías:      ${macros.kcal || '—'} kcal
   • Proteínas:     ${macros.proteinas || '—'} g
   • Carbohidratos: ${macros.carbohidratos || '—'} g
