@@ -387,7 +387,7 @@ function LoginScreen({ darkMode, onToggleDark }) {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 brand-icon-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <i className="fas fa-seedling text-white text-2xl"></i>
+            <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
           </div>
           <h1 className={`text-2xl font-bold tracking-tight text-ink`}>Calibrate</h1>
           <p className={`text-sm mt-1 text-ink-faint`}>{subtitles[mode]}</p>
@@ -905,7 +905,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           <div className={`w-full max-w-sm rounded-2xl shadow-xl p-8 animate-scaleIn ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'}`}>
             <div className="text-center mb-6">
               <div className="w-16 h-16 brand-icon-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <i className="fas fa-seedling text-white text-2xl"></i>
+                <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
               </div>
               <h1 className={`text-2xl font-bold tracking-tight text-ink`}>Calibrate</h1>
             </div>
@@ -1417,7 +1417,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 brand-icon-bg rounded-xl flex items-center justify-center">
-                <i className="fas fa-seedling text-white text-base"></i>
+                <svg width="18" height="18" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.8" strokeLinecap="round" fill="none"/></svg>
               </div>
               <div>
                 <div className={`font-bold text-base text-ink`}>Calibrate</div>
@@ -2298,7 +2298,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </button>
           </div>
           <div className="inline-flex items-center justify-center w-16 h-16 brand-icon-bg rounded-2xl mb-4">
-            <i className="fas fa-seedling text-white text-2xl"></i>
+            <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
           </div>
           <h1 className={`text-3xl font-bold tracking-tight mb-2 text-ink`}>Calibrate</h1>
           <p className={`text-lg text-ink-faint`}>{tienePlan ? 'Edita tu perfil' : 'Para calcular tu plan necesito tus datos.'}</p>
@@ -14217,7 +14217,8 @@ function ChatPanel({ darkMode, activeTab }) {
             background: brandAccent,
             display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
             boxShadow:'inset 0 1px 0 rgba(255,255,255,0.18)' }
-        }, React.createElement('i', { className:'fas fa-seedling', style:{ color:'#fff', fontSize:14 } })),
+        }, React.createElement('svg', { width:16, height:16, viewBox:'0 0 32 32', fill:'none', 'aria-hidden':true },
+          React.createElement('path', { d:'M 23.1 11.5 A 9 9 0 1 0 23.1 20.5', stroke:'#F5F0E8', strokeWidth:3.8, strokeLinecap:'round', fill:'none' }))),
         React.createElement('div', { style:{ flex:1 } },
           React.createElement('div', { style:{ fontWeight:700, fontSize:14, color:colorText, letterSpacing:'-0.01em' } }, 'Calibrate'),
           React.createElement('div', { style:{ fontSize:10, fontWeight:700, letterSpacing:'0.16em', textTransform:'uppercase', color: brandAccentDark, marginTop:2 } },
@@ -15865,7 +15866,7 @@ function App() {
       <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`}>
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl mb-4 shadow-lg" style={{animation: 'pulse-soft 1.5s infinite'}}>
-            <i className="fas fa-seedling text-white text-2xl"></i>
+            <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
           </div>
           <p className={`text-sm text-ink-faint`}>Verificando sesión…</p>
         </div>
@@ -15883,7 +15884,7 @@ function App() {
       <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`}>
         <div className="text-center" style={{animation: 'pulse-soft 1.5s infinite'}}>
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl mb-4 shadow-lg">
-            <i className="fas fa-seedling text-white text-2xl"></i>
+            <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
           </div>
           <p className="text-gray-500">Cargando Calibrate...</p>
         </div>
@@ -15917,7 +15918,9 @@ function App() {
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 brand-icon-bg rounded-lg flex items-center justify-center">
-              <i className="fas fa-seedling text-white text-sm"></i>
+              <svg width="20" height="20" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                <path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.4" strokeLinecap="round" fill="none"/>
+              </svg>
             </div>
             <span className={`font-bold text-lg tracking-tight text-ink`}>Calibrate</span>
             {perfil && <span className="text-xs text-gray-400 hidden sm:inline">{perfil.caloriasObjetivo} {t('kcal/día','kcal/day')}{perfil.numSemanas > 1 ? ` · ${perfil.numSemanas} ${t('sem','wk')}` : ''}</span>}
