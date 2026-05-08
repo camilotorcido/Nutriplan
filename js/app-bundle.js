@@ -15564,14 +15564,17 @@ function App() {
     }
     regenSilencioso.current = true;
     setCargando(true);
-    setMensajeCarga(t('Recalculando plan a ' + freshPerfil.caloriasObjetivo + ' kcal/día…', 'Recalculating plan to ' + freshPerfil.caloriasObjetivo + ' kcal/day…'));
+    const _msgRegen = t('Regenerando plan a ' + freshPerfil.caloriasObjetivo + ' kcal/día…', 'Regenerating plan to ' + freshPerfil.caloriasObjetivo + ' kcal/day…');
+    setMensajeCarga(_msgRegen);
     console.log('[NP] regen auto: target=' + freshPerfil.caloriasObjetivo + ' kcal');
     const prefs = preferenciasGenRef.current || { cocina: 'cualquiera', altaProteina: false, rapido: false };
     try {
       if (window.lazyRecipes && !window.lazyRecipes.estaCargado()) {
         try { await window.lazyRecipes.cargar(); } catch (e) { console.warn('[NP] lazyRecipes.cargar falló:', e); }
       }
-      const nuevoPlan = await generarPlanSemanalAsync(freshPerfil, freshPerfil.caloriasObjetivo, (msg) => setMensajeCarga(msg), prefs);
+      // Mantener mensaje único "Regenerando plan…" — ignoramos progreso interno del engine
+      // (que dice "Buscando recetas en internet…") para UX coherente en auto-regen.
+      const nuevoPlan = await generarPlanSemanalAsync(freshPerfil, freshPerfil.caloriasObjetivo, () => setMensajeCarga(_msgRegen), prefs);
       setPlanSemanal(nuevoPlan);
       guardarPlanSemanal(nuevoPlan);
       mostrarToast(t('Plan recalculado a ' + freshPerfil.caloriasObjetivo + ' kcal/día', 'Plan recalculated to ' + freshPerfil.caloriasObjetivo + ' kcal/day'));
