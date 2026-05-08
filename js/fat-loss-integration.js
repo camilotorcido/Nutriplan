@@ -153,11 +153,15 @@ function setPasosObjetivoReal(n) {
         perfil.caloriasManual = kcal;
         perfil.caloriasObjetivo = kcal;
         guardarPerfil(perfil);
-        if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
-          try {
-            window.dispatchEvent(new CustomEvent('calibrate_perfil_updated'));
-            window.dispatchEvent(new CustomEvent('calibrate_regenerate_plan', { detail: { reason: 'pasos_objetivo' } }));
-          } catch (e) { /* noop */ }
+        if (typeof window !== 'undefined') {
+          try { window.dispatchEvent(new CustomEvent('calibrate_perfil_updated')); } catch (e) { /* noop */ }
+          // Llamada directa primero (sin depender de eventos), evento como respaldo
+          if (typeof window._NP_regenerarPlanAuto === 'function') {
+            try { window._NP_regenerarPlanAuto(); }
+            catch (e) { console.warn('[NP_FatLoss] regen directo falló:', e); }
+          } else {
+            try { window.dispatchEvent(new CustomEvent('calibrate_regenerate_plan', { detail: { reason: 'pasos_objetivo' } })); } catch (e) { /* noop */ }
+          }
         }
       }
     }

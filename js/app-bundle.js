@@ -11451,7 +11451,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
               placeholder={t('ej: 8450', 'e.g. 8450')} />
             <button onClick={() => pasosInput && setPasos(parseInt(pasosInput))} disabled={!pasosInput}
               aria-label={t('Guardar', 'Save')}
-              className="px-3.5 py-2 rounded-xl text-sm font-semibold transition active:scale-[0.97] shrink-0"
+              className="px-4 py-2 rounded-xl text-sm font-semibold transition active:scale-[0.97] shrink-0"
               style={pasosInput
                 ? { background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-sm)' }
                 : { background: darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(0,0,0,0.04)', color: 'var(--color-ink-faint)', cursor: 'not-allowed' }}>
@@ -11498,7 +11498,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
                     if (pasosObjEdit !== cur) guardarPasosObj(pasosObjEdit);
                   }}
                   onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
-                  className={`flex-1 px-3.5 py-2.5 rounded-xl border text-sm tabular-nums ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
+                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm tabular-nums ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
                   placeholder={t('ej: 4000', 'e.g. 4000')} />
                 {pasosOverride != null && (
                   <button onClick={() => { setPasosObjEdit(''); guardarPasosObj(''); }}
@@ -15482,11 +15482,18 @@ function App() {
 
   // Regeneración automática del plan cuando otro módulo lo solicita
   // (p.ej. setPasosObjetivoReal cambió la meta calórica diaria).
+  // Doble vía: evento + window function para máxima fiabilidad sin depender de orden.
+  const preferenciasGenRef = React.useRef(preferenciasGen);
+  React.useEffect(() => { preferenciasGenRef.current = preferenciasGen; }, [preferenciasGen]);
   React.useEffect(() => {
+    window._NP_regenerarPlanAuto = function() { regenerarPlanSilencioso(); };
     function onRegenPlan() { regenerarPlanSilencioso(); }
     window.addEventListener('calibrate_regenerate_plan', onRegenPlan);
-    return () => window.removeEventListener('calibrate_regenerate_plan', onRegenPlan);
-  }, [preferenciasGen]);
+    return () => {
+      window.removeEventListener('calibrate_regenerate_plan', onRegenPlan);
+      try { delete window._NP_regenerarPlanAuto; } catch(_) {}
+    };
+  }, []);
 
   const mostrarToast = (mensaje, tipo = "success") => {
     setToast({ mensaje, tipo });
@@ -15536,28 +15543,37 @@ function App() {
   // sin abrir el modal de preferencias. Reutiliza las preferencias actuales.
   const regenSilencioso = React.useRef(false);
   const regenerarPlanSilencioso = async () => {
-    if (regenSilencioso.current) return;
+    if (regenSilencioso.current) { console.log('[NP] regen ya en curso, skip'); return; }
     const freshPerfil = (typeof cargarPerfil === 'function') ? cargarPerfil() : null;
-    if (!freshPerfil || !freshPerfil.caloriasObjetivo) return;
+    if (!freshPerfil || !freshPerfil.caloriasObjetivo) {
+      console.warn('[NP] regen abortado: perfil sin caloriasObjetivo');
+      return;
+    }
     regenSilencioso.current = true;
     setCargando(true);
-    setMensajeCarga(t('Recalculando plan con tu nueva meta…', 'Recalculating plan with your new goal…'));
+    setMensajeCarga(t('Recalculando plan a ' + freshPerfil.caloriasObjetivo + ' kcal/día…', 'Recalculating plan to ' + freshPerfil.caloriasObjetivo + ' kcal/day…'));
+    console.log('[NP] regen auto: target=' + freshPerfil.caloriasObjetivo + ' kcal');
+    const prefs = preferenciasGenRef.current || { cocina: 'cualquiera', altaProteina: false, rapido: false };
     try {
       if (window.lazyRecipes && !window.lazyRecipes.estaCargado()) {
-        await window.lazyRecipes.cargar();
+        try { await window.lazyRecipes.cargar(); } catch (e) { console.warn('[NP] lazyRecipes.cargar falló:', e); }
       }
-      const nuevoPlan = await generarPlanSemanalAsync(freshPerfil, freshPerfil.caloriasObjetivo, (msg) => setMensajeCarga(msg), preferenciasGen);
+      const nuevoPlan = await generarPlanSemanalAsync(freshPerfil, freshPerfil.caloriasObjetivo, (msg) => setMensajeCarga(msg), prefs);
       setPlanSemanal(nuevoPlan);
       guardarPlanSemanal(nuevoPlan);
-      mostrarToast(t('Plan recalculado a ' + freshPerfil.caloriasObjetivo + ' kcal', 'Plan recalculated to ' + freshPerfil.caloriasObjetivo + ' kcal'));
+      mostrarToast(t('Plan recalculado a ' + freshPerfil.caloriasObjetivo + ' kcal/día', 'Plan recalculated to ' + freshPerfil.caloriasObjetivo + ' kcal/day'));
+      console.log('[NP] regen auto OK');
     } catch (e) {
-      console.error('[NP] regen silencioso falló:', e);
+      console.error('[NP] regen async falló, fallback sync:', e);
       try {
-        const nuevoPlan = generarPlanSemanal(freshPerfil, freshPerfil.caloriasObjetivo, preferenciasGen);
+        const nuevoPlan = generarPlanSemanal(freshPerfil, freshPerfil.caloriasObjetivo, prefs);
         setPlanSemanal(nuevoPlan);
         guardarPlanSemanal(nuevoPlan);
         mostrarToast(t('Plan recalculado (offline)', 'Plan recalculated (offline)'), 'info');
-      } catch (_) {}
+      } catch (e2) {
+        console.error('[NP] regen sync también falló:', e2);
+        mostrarToast(t('Error recalculando plan. Tocá Regenerar manualmente.', 'Plan recalc failed. Please regenerate manually.'), 'error');
+      }
     } finally {
       setCargando(false);
       regenSilencioso.current = false;
