@@ -15316,6 +15316,14 @@ function App() {
     return () => window.removeEventListener('calibrate_perfil_updated', onPerfilUpdated);
   }, []);
 
+  // Regeneración automática del plan cuando otro módulo lo solicita
+  // (p.ej. setPasosObjetivoReal cambió la meta calórica diaria).
+  React.useEffect(() => {
+    function onRegenPlan() { regenerarPlanSilencioso(); }
+    window.addEventListener('calibrate_regenerate_plan', onRegenPlan);
+    return () => window.removeEventListener('calibrate_regenerate_plan', onRegenPlan);
+  }, [preferenciasGen]);
+
   const mostrarToast = (mensaje, tipo = "success") => {
     setToast({ mensaje, tipo });
     setTimeout(() => setToast(null), 3000);
@@ -15357,6 +15365,39 @@ function App() {
 
   const handleRegenerar = () => {
     setShowPrefModal(true); // abre modal de preferencias antes de regenerar
+  };
+
+  // ─── Regeneración silenciosa: usada cuando algo cambia el objetivo calórico
+  // automáticamente (p. ej. setPasosObjetivoReal) y queremos sincronizar el plan
+  // sin abrir el modal de preferencias. Reutiliza las preferencias actuales.
+  const regenSilencioso = React.useRef(false);
+  const regenerarPlanSilencioso = async () => {
+    if (regenSilencioso.current) return;
+    const freshPerfil = (typeof cargarPerfil === 'function') ? cargarPerfil() : null;
+    if (!freshPerfil || !freshPerfil.caloriasObjetivo) return;
+    regenSilencioso.current = true;
+    setCargando(true);
+    setMensajeCarga(t('Recalculando plan con tu nueva meta…', 'Recalculating plan with your new goal…'));
+    try {
+      if (window.lazyRecipes && !window.lazyRecipes.estaCargado()) {
+        await window.lazyRecipes.cargar();
+      }
+      const nuevoPlan = await generarPlanSemanalAsync(freshPerfil, freshPerfil.caloriasObjetivo, (msg) => setMensajeCarga(msg), preferenciasGen);
+      setPlanSemanal(nuevoPlan);
+      guardarPlanSemanal(nuevoPlan);
+      mostrarToast(t('Plan recalculado a ' + freshPerfil.caloriasObjetivo + ' kcal', 'Plan recalculated to ' + freshPerfil.caloriasObjetivo + ' kcal'));
+    } catch (e) {
+      console.error('[NP] regen silencioso falló:', e);
+      try {
+        const nuevoPlan = generarPlanSemanal(freshPerfil, freshPerfil.caloriasObjetivo, preferenciasGen);
+        setPlanSemanal(nuevoPlan);
+        guardarPlanSemanal(nuevoPlan);
+        mostrarToast(t('Plan recalculado (offline)', 'Plan recalculated (offline)'), 'info');
+      } catch (_) {}
+    } finally {
+      setCargando(false);
+      regenSilencioso.current = false;
+    }
   };
 
   const handleRegenerarConPreferencias = async (prefs) => {
