@@ -5671,7 +5671,7 @@ function ModalPreferenciasGeneracion({ onConfirm, onCancel, darkMode }) {
                 </span>
                 <button onClick={() => item.set(p => !p)} aria-label={item.label}
                   className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 cursor-pointer ${item.val ? 'bg-green-500' : darkMode ? 'bg-gray-600' : 'bg-gray-300'}`}>
-                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${item.val ? 'translate-x-5' : 'translate-x-0.5'}`}></span>
+                  <span className="absolute w-4 h-4 rounded-full bg-white shadow-sm" style={{ top: 2, left: item.val ? 22 : 2, transition: 'left 150ms ease' }}></span>
                 </button>
               </div>
             );
