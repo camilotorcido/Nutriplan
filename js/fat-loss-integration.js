@@ -153,6 +153,9 @@ function setPasosObjetivoReal(n) {
         perfil.caloriasManual = kcal;
         perfil.caloriasObjetivo = kcal;
         guardarPerfil(perfil);
+        if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+          try { window.dispatchEvent(new CustomEvent('calibrate_perfil_updated')); } catch (e) { /* noop */ }
+        }
       }
     }
   }

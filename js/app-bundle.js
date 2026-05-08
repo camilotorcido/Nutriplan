@@ -15303,6 +15303,19 @@ function App() {
     }
   }, [authUser?.uid]);
 
+  // Sincronizar React state cuando otros módulos modifican el perfil en storage
+  // (p.ej. setPasosObjetivoReal en fat-loss-integration.js cambia caloriasObjetivo).
+  React.useEffect(() => {
+    function onPerfilUpdated() {
+      try {
+        const fresh = cargarPerfil();
+        if (fresh) setPerfil(fresh);
+      } catch (e) { /* noop */ }
+    }
+    window.addEventListener('calibrate_perfil_updated', onPerfilUpdated);
+    return () => window.removeEventListener('calibrate_perfil_updated', onPerfilUpdated);
+  }, []);
+
   const mostrarToast = (mensaje, tipo = "success") => {
     setToast({ mensaje, tipo });
     setTimeout(() => setToast(null), 3000);
