@@ -5750,14 +5750,53 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
     return () => { document.body.style.overflow = ''; };
   }, []);
 
+  // Header colapsable on-scroll — al pasar 40px de scroll se comprime y deja solo el título visible
+  const [headerCompact, setHeaderCompact] = React.useState(false);
+  const scrollContainerRef = React.useRef(null);
+  React.useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        setHeaderCompact(el.scrollTop > 40);
+      });
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => { el.removeEventListener('scroll', onScroll); if (raf) cancelAnimationFrame(raf); };
+  }, []);
+
+  // Estilo compartido para secciones que colapsan: transición suave de altura + opacidad
+  const collapsibleStyle = {
+    maxHeight: headerCompact ? '0' : '300px',
+    opacity:   headerCompact ? 0 : 1,
+    overflow:  'hidden',
+    transition: 'max-height 280ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease, margin 280ms cubic-bezier(0.4, 0, 0.2, 1)',
+    marginTop: headerCompact ? 0 : undefined
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-overlay animate-overlayFadeIn" onClick={onClose}>
       <div className={`w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[92vh] overflow-hidden flex flex-col animate-slideUp shadow-2xl bg-surface`}
         onClick={(e) => e.stopPropagation()}>
-        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-5 text-white flex-shrink-0">
+        <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white flex-shrink-0"
+          style={{
+            padding: headerCompact ? '0.75rem 1.25rem' : '1.25rem',
+            transition: 'padding 280ms cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: headerCompact ? '0 4px 12px rgba(0,0,0,0.12)' : 'none'
+          }}>
           <div className="flex items-start justify-between">
-            <div className="flex-1 pr-4">
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <div className="flex-1 pr-4 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap"
+                style={{
+                  maxHeight: headerCompact ? '0' : '40px',
+                  opacity: headerCompact ? 0 : 1,
+                  marginBottom: headerCompact ? 0 : '0.5rem',
+                  overflow: 'hidden',
+                  transition: 'max-height 240ms ease, opacity 180ms ease, margin 240ms ease'
+                }}>
                 <span className="bg-white/15 px-2 py-0.5 rounded-lg text-xs font-medium">
                   {tComida(receta.tipo_comida)}
                 </span>
@@ -5768,7 +5807,14 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
                 )}
                 {tieneThermomix && <span className="thermomix-badge"><i className="fas fa-blender mr-1"></i>TM6</span>}
               </div>
-              <h2 className="text-lg font-bold leading-tight">{getNombreReceta(receta)}</h2>
+              <h2 className="font-bold leading-tight"
+                style={{
+                  fontSize: headerCompact ? '0.95rem' : '1.125rem',
+                  transition: 'font-size 240ms ease',
+                  whiteSpace: headerCompact ? 'nowrap' : 'normal',
+                  overflow: headerCompact ? 'hidden' : 'visible',
+                  textOverflow: headerCompact ? 'ellipsis' : 'clip'
+                }}>{getNombreReceta(receta)}</h2>
             </div>
             {/* A4: aria-label en botón cerrar */}
             <button onClick={onClose} aria-label="Cerrar receta"
@@ -5776,79 +5822,82 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
               <i className="fas fa-times text-sm"></i>
             </button>
           </div>
-          {/* N18 + A9: macro totals adjusted; aria-live anuncia cambios por sustitución */}
-          <div className="grid grid-cols-4 gap-2 mt-4" aria-live="polite" aria-atomic="true">
-            <div className="bg-white/12 rounded-xl p-2 text-center">
-              <div className="text-lg font-bold">{Math.round(receta.calorias_escaladas + macroAjustes.kcal)}</div>
-              <div className="text-xs opacity-80">kcal{macroAjustes.kcal !== 0 && <span className="text-white/70"> *</span>}</div>
+          {/* Wrapper colapsable: macros, ajuste de sustituciones, escala, tiempos/costo, escalado por comensales y rating */}
+          <div style={collapsibleStyle}>
+            {/* N18 + A9: macro totals adjusted; aria-live anuncia cambios por sustitución */}
+            <div className="grid grid-cols-4 gap-2 mt-4" aria-live="polite" aria-atomic="true">
+              <div className="bg-white/12 rounded-xl p-2 text-center">
+                <div className="text-lg font-bold">{Math.round(receta.calorias_escaladas + macroAjustes.kcal)}</div>
+                <div className="text-xs opacity-80">kcal{macroAjustes.kcal !== 0 && <span className="text-white/70"> *</span>}</div>
+              </div>
+              <div className="bg-blue-400/25 rounded-xl p-2 text-center">
+                <div className="text-lg font-bold">{Math.round(receta.proteinas_escaladas + macroAjustes.proteinas)}</div>
+                <div className="text-xs opacity-80">Prot. (g){macroAjustes.proteinas !== 0 && <span className="text-white/70"> *</span>}</div>
+              </div>
+              <div className="bg-amber-400/30 rounded-xl p-2 text-center">
+                <div className="text-lg font-bold">{Math.round(receta.carbohidratos_escalados + macroAjustes.carbohidratos)}</div>
+                <div className="text-xs opacity-80">Carb. (g){macroAjustes.carbohidratos !== 0 && <span className="text-white/70"> *</span>}</div>
+              </div>
+              <div className="bg-rose-400/30 rounded-xl p-2 text-center">
+                <div className="text-lg font-bold">{Math.round(receta.grasas_escaladas + macroAjustes.grasas)}</div>
+                <div className="text-xs opacity-80">Grasas (g){macroAjustes.grasas !== 0 && <span className="text-white/70"> *</span>}</div>
+              </div>
             </div>
-            <div className="bg-blue-400/25 rounded-xl p-2 text-center">
-              <div className="text-lg font-bold">{Math.round(receta.proteinas_escaladas + macroAjustes.proteinas)}</div>
-              <div className="text-xs opacity-80">Prot. (g){macroAjustes.proteinas !== 0 && <span className="text-white/70"> *</span>}</div>
+            {Object.keys(ingsAjustados).length > 0 && (
+              <div className="text-[11px] opacity-70 mt-1 text-center">
+                * ajustado por {Object.keys(ingsAjustados).length} sustitución{Object.keys(ingsAjustados).length > 1 ? 'es' : ''} aplicada{Object.keys(ingsAjustados).length > 1 ? 's' : ''}
+              </div>
+            )}
+            {receta.factor_escala && receta.factor_escala !== 1 && (
+              <div className="text-xs opacity-70 mt-2 text-center">
+                ×{Math.round(receta.factor_escala * 10) / 10} escala · base {receta.calorias_base} kcal
+              </div>
+            )}
+            {/* Tiempo + costo en el header del modal */}
+            {(receta.tiempo_total_min || receta.costo_clp) && (
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                {receta.tiempo_prep_min != null && (
+                  <div className="bg-white/15 rounded-lg p-2 text-center">
+                    <div className="text-sm font-bold"><i className="fas fa-knife-kitchen mr-1 text-xs"></i>{receta.tiempo_prep_min}′</div>
+                    <div className="text-[11px] opacity-80">Preparación</div>
+                  </div>
+                )}
+                {receta.tiempo_coccion_min != null && (
+                  <div className="bg-white/15 rounded-lg p-2 text-center">
+                    <div className="text-sm font-bold"><i className="fas fa-fire mr-1 text-xs"></i>{receta.tiempo_coccion_min}′</div>
+                    <div className="text-[11px] opacity-80">Cocción</div>
+                  </div>
+                )}
+                {receta.costo_clp > 0 && (
+                  <div className="bg-white/15 rounded-lg p-2 text-center">
+                    <div className="text-sm font-bold">${(Math.ceil((receta.costo_clp || 0) * (receta.factor_escala || 1) * factor / 100) * 100).toLocaleString('es-CL')}</div>
+                    <div className="text-[11px] opacity-80">CLP{factor !== 1 ? ` · ×${factor.toFixed(2)}` : ''}</div>
+                  </div>
+                )}
+              </div>
+            )}
+            {factor !== 1 && (
+              <div className="mt-2 p-2 bg-white/15 rounded-lg text-center text-[11px]">
+                <i className="fas fa-users mr-1"></i>
+                Cantidades e ingredientes escalados para <strong>{factor.toFixed(2)} porciones</strong> · kcal/macros siguen siendo tu porción individual
+              </div>
+            )}
+            {/* ⭐ Rating de receta */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginRight: '4px' }}>Valorar:</span>
+              {[1,2,3,4,5].map(s => (
+                <button key={s} onClick={() => handleSetRating(s)} aria-label={`${s} estrellas`}
+                  style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'none', border: 'none', padding: 0, transition: 'transform 0.15s' }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.25)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                  <i className="fas fa-star" style={{ fontSize: '17px', color: s <= ratingActual ? '#FDE047' : 'rgba(255,255,255,0.25)' }}></i>
+                </button>
+              ))}
             </div>
-            <div className="bg-amber-400/30 rounded-xl p-2 text-center">
-              <div className="text-lg font-bold">{Math.round(receta.carbohidratos_escalados + macroAjustes.carbohidratos)}</div>
-              <div className="text-xs opacity-80">Carb. (g){macroAjustes.carbohidratos !== 0 && <span className="text-white/70"> *</span>}</div>
-            </div>
-            <div className="bg-rose-400/30 rounded-xl p-2 text-center">
-              <div className="text-lg font-bold">{Math.round(receta.grasas_escaladas + macroAjustes.grasas)}</div>
-              <div className="text-xs opacity-80">Grasas (g){macroAjustes.grasas !== 0 && <span className="text-white/70"> *</span>}</div>
-            </div>
-          </div>
-          {Object.keys(ingsAjustados).length > 0 && (
-            <div className="text-[11px] opacity-70 mt-1 text-center">
-              * ajustado por {Object.keys(ingsAjustados).length} sustitución{Object.keys(ingsAjustados).length > 1 ? 'es' : ''} aplicada{Object.keys(ingsAjustados).length > 1 ? 's' : ''}
-            </div>
-          )}
-          {receta.factor_escala && receta.factor_escala !== 1 && (
-            <div className="text-xs opacity-70 mt-2 text-center">
-              ×{Math.round(receta.factor_escala * 10) / 10} escala · base {receta.calorias_base} kcal
-            </div>
-          )}
-          {/* Tiempo + costo en el header del modal */}
-          {(receta.tiempo_total_min || receta.costo_clp) && (
-            <div className="grid grid-cols-3 gap-2 mt-3">
-              {receta.tiempo_prep_min != null && (
-                <div className="bg-white/15 rounded-lg p-2 text-center">
-                  <div className="text-sm font-bold"><i className="fas fa-knife-kitchen mr-1 text-xs"></i>{receta.tiempo_prep_min}′</div>
-                  <div className="text-[11px] opacity-80">Preparación</div>
-                </div>
-              )}
-              {receta.tiempo_coccion_min != null && (
-                <div className="bg-white/15 rounded-lg p-2 text-center">
-                  <div className="text-sm font-bold"><i className="fas fa-fire mr-1 text-xs"></i>{receta.tiempo_coccion_min}′</div>
-                  <div className="text-[11px] opacity-80">Cocción</div>
-                </div>
-              )}
-              {receta.costo_clp > 0 && (
-                <div className="bg-white/15 rounded-lg p-2 text-center">
-                  <div className="text-sm font-bold">${(Math.ceil((receta.costo_clp || 0) * (receta.factor_escala || 1) * factor / 100) * 100).toLocaleString('es-CL')}</div>
-                  <div className="text-[11px] opacity-80">CLP{factor !== 1 ? ` · ×${factor.toFixed(2)}` : ''}</div>
-                </div>
-              )}
-            </div>
-          )}
-          {factor !== 1 && (
-            <div className="mt-2 p-2 bg-white/15 rounded-lg text-center text-[11px]">
-              <i className="fas fa-users mr-1"></i>
-              Cantidades e ingredientes escalados para <strong>{factor.toFixed(2)} porciones</strong> · kcal/macros siguen siendo tu porción individual
-            </div>
-          )}
-          {/* ⭐ Rating de receta */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
-            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginRight: '4px' }}>Valorar:</span>
-            {[1,2,3,4,5].map(s => (
-              <button key={s} onClick={() => handleSetRating(s)} aria-label={`${s} estrellas`}
-                style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'none', border: 'none', padding: 0, transition: 'transform 0.15s' }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.25)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-                <i className="fas fa-star" style={{ fontSize: '17px', color: s <= ratingActual ? '#FDE047' : 'rgba(255,255,255,0.25)' }}></i>
-              </button>
-            ))}
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto" ref={scrollContainerRef}>
           {receta._imagen && (
             <div className="relative h-40 overflow-hidden">
               {/* P1: loading lazy — imagen del modal nunca es above-the-fold */}
