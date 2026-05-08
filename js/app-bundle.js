@@ -11287,8 +11287,15 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
     }
   };
 
+  // Disclosure de "Mi meta realista" — abierto solo si hay override activo
+  const [ajusteAbierto, setAjusteAbierto] = React.useState(pasosOverride != null);
+  React.useEffect(() => { if (pasosOverride != null) setAjusteAbierto(true); }, [pasosOverride]);
+
   const setPasos = (n) => {
-    window.NP_Steps.registrar(null, n, target);
+    const v = Number(n);
+    if (!Number.isFinite(v) || v < 0) return;
+    const clamped = Math.min(100000, Math.max(0, Math.round(v)));
+    window.NP_Steps.registrar(null, clamped, target);
     setPasosInput('');
     onRefresh();
   };
@@ -11298,11 +11305,51 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
   };
 
   const pct = target ? Math.min(100, (hoy.pasos / target) * 100) : 0;
-
-  // IA redesign: paleta de estado del brand
-  const tileBg = darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(245, 240, 232, 0.55)';
-  const tileRing = darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.06)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.05)';
   const cumplidoColor = pct >= 100 ? 'var(--color-success)' : 'var(--color-accent)';
+
+  // Count-up animado del contador (~600ms ease-out cubic)
+  const [contador, setContador] = React.useState(hoy.pasos);
+  const prevPasosRef = React.useRef(hoy.pasos);
+  React.useEffect(() => {
+    const from = prevPasosRef.current;
+    const to = hoy.pasos;
+    if (from === to) { setContador(to); return; }
+    const start = performance.now();
+    const dur = 600;
+    let raf;
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setContador(Math.round(from + (to - from) * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else prevPasosRef.current = to;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => { if (raf) cancelAnimationFrame(raf); };
+  }, [hoy.pasos]);
+
+  // Pulse al cruzar el target
+  const [pulseTarget, setPulseTarget] = React.useState(false);
+  const prevPctRef = React.useRef(pct);
+  React.useEffect(() => {
+    if (pct >= 100 && prevPctRef.current < 100) {
+      setPulseTarget(true);
+      const tid = setTimeout(() => setPulseTarget(false), 950);
+      prevPctRef.current = pct;
+      return () => clearTimeout(tid);
+    }
+    prevPctRef.current = pct;
+  }, [pct]);
+
+  // Pista contextual — solo cuando hoy=0, basada en hora del día
+  const hintContextual = React.useMemo(() => {
+    if (hoy.pasos !== 0) return null;
+    const h = new Date().getHours();
+    if (h < 11) return t('Una caminata matinal de 20 min ≈ 2,000 pasos. Sumalos cuando termines.', 'A 20-min morning walk ≈ 2,000 steps. Add them when you finish.');
+    if (h < 16) return t('Trayectos y vueltas en casa probablemente ya sumaron 2,000–3,000 pasos.', 'Errands and walks at home likely already added 2,000–3,000 steps.');
+    if (h < 20) return t('Aún quedan horas. Una vuelta a la manzana suma ~1,500 pasos.', 'Still hours left. A walk around the block adds ~1,500 steps.');
+    return t('Si caminaste hoy, registralo antes de dormir para mantener la racha.', 'If you walked today, log it before bed to keep your streak.');
+  }, [hoy.pasos]);
 
   return (
     <div className="space-y-4">
@@ -11314,142 +11361,169 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
             {t('Pasos · Hoy', 'Steps · Today')}
           </span>
           <span className="text-xs font-semibold tabular-nums text-ink-muted">
-            Target: <span className="text-ink font-bold">{target ? target.toLocaleString() : '—'}</span>
+            {t('Meta', 'Goal')}: <span className="text-ink font-bold">{target ? target.toLocaleString() : '—'}</span>
           </span>
         </div>
         <div className="text-ink text-center tabular-nums"
           style={{ fontSize: 'clamp(2.75rem, 9vw, 3.75rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 0.92, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
-          {hoy.pasos.toLocaleString()}
+          {contador.toLocaleString()}
         </div>
         {target > 0 && (
           <>
-            <div className="w-full h-2.5 rounded-full overflow-hidden surface-secondary mt-5">
+            <div className={`w-full h-2.5 rounded-full overflow-hidden surface-secondary mt-5${pulseTarget ? ' animate-pulse-target' : ''}`}>
               <div className="h-full"
                 style={{ width: pct + '%', background: cumplidoColor, transition: 'width 0.6s cubic-bezier(0.32, 0.72, 0, 1), background 0.3s' }}></div>
             </div>
             <div className="text-center text-xs mt-2 text-ink-muted tabular-nums">
-              {Math.round(pct)}% {t('del target', 'of target')}{pct >= 100 ? ' ✓' : ''}
+              {Math.round(pct)}% {t('de la meta', 'of goal')}{pct >= 100 ? ' ✓' : ''}
             </div>
           </>
+        )}
+        {hintContextual && (
+          <div className="mt-4 text-center text-[12.5px] flex items-start justify-center gap-1.5"
+            style={{ color: 'var(--color-ink-muted)', lineHeight: 1.55 }}>
+            <i className="fas fa-lightbulb" style={{ fontSize: '11px', color: 'var(--color-accent)', marginTop: '0.2rem' }}></i>
+            <span style={{ maxWidth: '40ch' }}>{hintContextual}</span>
+          </div>
         )}
         <div className="flex gap-2 mt-5">
           {[1000, 2000, 5000].map(n => (
             <button key={n} onClick={() => sumar(n)}
-              className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition tabular-nums"
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold tabular-nums active:scale-[0.97]"
               style={{
                 background: darkMode ? 'rgba(232, 224, 212, 0.06)' : 'rgba(245, 240, 232, 0.7)',
                 color: 'var(--color-ink)',
-                boxShadow: darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.06)'
+                boxShadow: darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.06)',
+                transition: 'transform 0.18s cubic-bezier(0.32, 0.72, 0, 1), background 0.2s'
               }}>
               +{n.toLocaleString()}
             </button>
           ))}
         </div>
         <div className="flex gap-2 mt-2">
-          <input type="number" value={pasosInput} onChange={e => setPasosInput(e.target.value)}
+          <input type="number" inputMode="numeric" min="0" max="100000" value={pasosInput} onChange={e => setPasosInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && pasosInput) setPasos(parseInt(pasosInput)); }}
             className={`flex-1 px-3.5 py-2.5 rounded-xl border text-sm tabular-nums ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
-            placeholder={t('Set exacto (ej: 8450)', 'Set exact (e.g. 8450)')} />
+            placeholder={t('Cantidad exacta (ej: 8450)', 'Exact amount (e.g. 8450)')} />
           <button onClick={() => pasosInput && setPasos(parseInt(pasosInput))} disabled={!pasosInput}
-            className="px-5 py-2.5 rounded-xl text-sm font-semibold transition active:scale-[0.98]"
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold transition active:scale-[0.97]"
             style={pasosInput
               ? { background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-md)' }
               : { background: darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(0,0,0,0.05)', color: 'var(--color-ink-faint)', cursor: 'not-allowed' }}>
-            Set
+            {t('Guardar', 'Save')}
           </button>
         </div>
       </div>
 
-      {/* Mi target realista — override del default de la fase */}
+      {/* Mi meta realista — colapsada por defecto, abierta si hay override */}
       {pasosFaseDefault != null && (
-        <div className="surface-card-shadow" style={{ padding: '1.5rem 1.4rem' }}>
-          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div className="surface-card-shadow overflow-hidden">
+          <button onClick={() => setAjusteAbierto(v => !v)}
+            className="w-full flex items-center justify-between transition active:scale-[0.998]"
+            style={{ padding: '1rem 1.4rem' }}>
             <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
               <i className="fas fa-bullseye" style={{ fontSize: '10px' }}></i>
-              {t('Mi target realista', 'My realistic target')}
+              {t('Mi meta realista', 'My realistic goal')}
             </span>
-            <span className="text-[11px] tabular-nums text-ink-faint">
-              {t('Default fase', 'Phase default')}: <span className="font-semibold text-ink-muted">{pasosFaseDefault.toLocaleString()}</span>
+            <span className="flex items-center gap-3">
+              {pasosOverride != null ? (
+                <span className="text-[11px] tabular-nums font-semibold" style={{ color: 'var(--color-accent-dark)' }}>
+                  {pasosOverride.toLocaleString()}
+                </span>
+              ) : (
+                <span className="text-[11px] tabular-nums text-ink-faint">
+                  {t('Recomendado', 'Recommended')}: {pasosFaseDefault.toLocaleString()}
+                </span>
+              )}
+              <i className={`fas fa-chevron-${ajusteAbierto ? 'up' : 'down'} text-xs text-ink-muted`}></i>
             </span>
-          </div>
-          <p className="text-xs text-ink-muted mb-4" style={{ lineHeight: 1.55 }}>
-            {t('Si tu promedio real es distinto al default, ajustá acá. Tu meta calórica diaria se recalcula sola (~0.04 kcal/paso a 80 kg).',
-               'If your realistic average differs from the phase default, adjust here. Your daily calorie goal recalculates automatically (~0.04 kcal/step at 80 kg).')}
-          </p>
-          <div className="flex gap-2 items-stretch">
-            <input type="number" inputMode="numeric" value={pasosObjEdit}
-              onChange={e => setPasosObjEdit(e.target.value)}
-              onBlur={() => {
-                const cur = pasosOverride != null ? String(pasosOverride) : '';
-                if (pasosObjEdit !== cur) guardarPasosObj(pasosObjEdit);
-              }}
-              onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
-              className={`flex-1 px-3.5 py-2.5 rounded-xl border text-sm tabular-nums ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
-              placeholder={t('ej: 4000', 'e.g. 4000')} />
-            {pasosOverride != null && (
-              <button onClick={() => { setPasosObjEdit(''); guardarPasosObj(''); }}
-                className="px-4 rounded-xl text-xs font-semibold cursor-pointer transition active:scale-[0.98]"
-                style={{
-                  background: darkMode ? 'rgba(232, 224, 212, 0.06)' : 'rgba(245, 240, 232, 0.7)',
-                  color: 'var(--color-ink-muted)',
-                  boxShadow: darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.06)'
-                }}>
-                {t('Volver al default', 'Reset')}
-              </button>
-            )}
-          </div>
-          {pasosOverride != null && _kcalDelta !== 0 && (
-            <div className="mt-4 flex items-start gap-2.5 text-xs" style={{ lineHeight: 1.55 }}>
-              <i className="fas fa-fire-flame-curved" style={{ fontSize: '12px', color: _kcalDelta < 0 ? 'var(--color-alert)' : 'var(--color-success)', marginTop: '0.15rem' }}></i>
-              <span className="text-ink-muted tabular-nums flex-1">
-                {_kcalDelta < 0 ? t('Tu meta diaria baja', 'Your daily goal drops by') : t('Tu meta diaria sube', 'Your daily goal rises by')}
-                {' '}<span className="font-bold text-ink">{Math.abs(_kcalDelta)} kcal</span>
-                {_kcalOriginal && (
-                  <span className="text-ink-faint">
-                    {' '}({_kcalOriginal} → <span className="font-semibold text-ink">{_faseAct.calorias}</span> kcal/día)
-                  </span>
+          </button>
+          {ajusteAbierto && (
+            <div className="border-t border-default" style={{ padding: '1.1rem 1.4rem 1.4rem' }}>
+              <p className="text-xs text-ink-muted mb-4" style={{ lineHeight: 1.55 }}>
+                {t('Si tu promedio real es distinto al recomendado, ajustá acá. Tu meta calórica diaria se recalcula sola (~0.04 kcal/paso a 80 kg).',
+                   'If your realistic average differs from the recommendation, adjust here. Your daily calorie goal recalculates automatically (~0.04 kcal/step at 80 kg).')}
+              </p>
+              <div className="flex gap-2 items-stretch">
+                <input type="number" inputMode="numeric" min="0" max="50000" value={pasosObjEdit}
+                  onChange={e => setPasosObjEdit(e.target.value)}
+                  onBlur={() => {
+                    const cur = pasosOverride != null ? String(pasosOverride) : '';
+                    if (pasosObjEdit !== cur) guardarPasosObj(pasosObjEdit);
+                  }}
+                  onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
+                  className={`flex-1 px-3.5 py-2.5 rounded-xl border text-sm tabular-nums ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
+                  placeholder={t('ej: 4000', 'e.g. 4000')} />
+                {pasosOverride != null && (
+                  <button onClick={() => { setPasosObjEdit(''); guardarPasosObj(''); }}
+                    className="px-4 rounded-xl text-xs font-semibold cursor-pointer transition active:scale-[0.97]"
+                    style={{
+                      background: darkMode ? 'rgba(232, 224, 212, 0.06)' : 'rgba(245, 240, 232, 0.7)',
+                      color: 'var(--color-ink-muted)',
+                      boxShadow: darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.06)'
+                    }}>
+                    {t('Volver al recomendado', 'Reset')}
+                  </button>
                 )}
-              </span>
+              </div>
+              {pasosOverride != null && _kcalDelta !== 0 && (
+                <div className="mt-4 flex items-start gap-2.5 text-xs" style={{ lineHeight: 1.55 }}>
+                  <i className={`fas ${_kcalDelta < 0 ? 'fa-arrow-trend-down' : 'fa-arrow-trend-up'}`}
+                    style={{ fontSize: '12px', color: _kcalDelta < 0 ? 'var(--color-alert)' : 'var(--color-success)', marginTop: '0.15rem' }}></i>
+                  <span className="text-ink-muted tabular-nums flex-1">
+                    {_kcalDelta < 0 ? t('Tu meta diaria baja', 'Your daily goal drops by') : t('Tu meta diaria sube', 'Your daily goal rises by')}
+                    {' '}<span className="font-bold text-ink">{Math.abs(_kcalDelta)} kcal</span>
+                    {_kcalOriginal && (
+                      <span className="text-ink-faint">
+                        {' '}({_kcalOriginal} → <span className="font-semibold text-ink">{_faseAct.calorias}</span> kcal/día)
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="surface-card-shadow" style={{ padding: '1.1rem 1.15rem 1.25rem' }}>
-          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">{t('Promedio 7 días', '7-day avg')}</div>
-          <div className="text-ink tabular-nums mt-2"
-            style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
-            {prom7.toLocaleString()}
-          </div>
-        </div>
-        <div className="surface-card-shadow" style={{ padding: '1.1rem 1.15rem 1.25rem' }}>
+      {/* Stats — asimétrico: racha dominante (3/5), promedio satélite (2/5) */}
+      <div className="grid grid-cols-5 gap-3">
+        <div className="surface-card-shadow col-span-3" style={{
+          padding: '1.25rem 1.3rem 1.4rem',
+          background: racha >= 3
+            ? (darkMode ? 'rgba(200, 148, 58, 0.08)' : 'rgba(240, 217, 172, 0.4)')
+            : undefined,
+          boxShadow: racha >= 3 ? 'var(--shadow-soft-md), inset 0 0 0 1px rgba(200, 148, 58, 0.18)' : undefined
+        }}>
           <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">{t('Racha actual', 'Current streak')}</div>
-          <div className="tabular-nums mt-2 flex items-baseline gap-1.5"
-            style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: racha > 0 ? 'var(--color-accent-dark)' : 'var(--color-ink)' }}>
+          <div className="tabular-nums mt-2 flex items-baseline gap-2"
+            style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: racha > 0 ? 'var(--color-accent-dark)' : 'var(--color-ink)' }}>
             {racha}
             <span className="text-sm font-medium text-ink-muted" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               {racha === 1 ? t('día', 'day') : t('días', 'days')}
             </span>
-            {racha >= 3 && <span className="text-base ml-0.5">🔥</span>}
+            {racha >= 3 && <span className="text-lg ml-0.5">🔥</span>}
           </div>
+        </div>
+        <div className="surface-card-shadow col-span-2" style={{ padding: '1.1rem 1.05rem 1.2rem' }}>
+          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">{t('Promedio 7d', '7-day avg')}</div>
+          <div className="text-ink tabular-nums mt-2"
+            style={{ fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+            {prom7.toLocaleString()}
+          </div>
+          {target > 0 && prom7 > 0 && (
+            <>
+              <div className="w-full h-1 rounded-full overflow-hidden surface-secondary mt-2.5">
+                <div className="h-full" style={{ width: Math.min(100, (prom7 / target) * 100) + '%', background: prom7 >= target ? 'var(--color-success)' : 'var(--color-accent)' }}></div>
+              </div>
+              <div className="text-[10px] mt-1 text-ink-faint tabular-nums">
+                {Math.round((prom7 / target) * 100)}% {t('de la meta', 'of goal')}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Historial 14d */}
-      {ultimos.length === 0 && (
-        <div className="rounded-2xl text-center text-sm"
-          style={{
-            padding: '1.5rem',
-            border: '1px dashed ' + (darkMode ? 'rgba(232, 224, 212, 0.18)' : 'var(--color-border)'),
-            color: 'var(--color-ink-muted)',
-            background: darkMode ? 'rgba(232, 224, 212, 0.03)' : 'rgba(245, 240, 232, 0.4)'
-          }}>
-          <i className="fas fa-person-walking text-2xl mb-2 block" style={{ opacity: 0.5 }}></i>
-          {t('Aún no registraste pasos. Usa los botones de arriba para empezar.', 'No steps recorded yet. Use the buttons above to get started.')}
-        </div>
-      )}
       {ultimos.length > 0 && (
         <div className="surface-card-shadow overflow-hidden">
           <div className="px-5 py-4 border-b border-default">

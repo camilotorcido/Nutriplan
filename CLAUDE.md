@@ -24,6 +24,10 @@ Every deploy must bump the version hash. `deploy.ps1` does this automatically by
 
 The version string format is in `index.html` as `?v=<hash>` query params on asset URLs.
 
+## Deploy policy
+
+Cuando un cambio está listo y corresponde shipearlo, hacer push directo a producción (GitHub + Firebase Functions vía `.\deploy.ps1`) sin pedir confirmación adicional. Camilo trabaja con deploy continuo en este proyecto — el ciclo "edit → deploy.ps1 → validar en prod" es el default, no una decisión que debe consultarse cada vez. Excepción: cambios irreversibles en Firestore schema, secrets, o functions con rate-limit de costos — esos sí requieren confirmación.
+
 ## Architecture
 
 **Build step:** esbuild pre-compila `js/app-bundle.js` (JSX, ~830 KB) → `js/app-bundle.compiled.js` (~553 KB minificado, ES2020). Babel Standalone runtime fue eliminado.
