@@ -5768,13 +5768,25 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
     return () => { el.removeEventListener('scroll', onScroll); if (raf) cancelAnimationFrame(raf); };
   }, []);
 
-  // Estilo compartido para secciones que colapsan: transición suave de altura + opacidad
+  // Easing iOS-native (cubic-bezier de UIKit) — más snappy que Material
+  const easeOut = 'cubic-bezier(0.32, 0.72, 0, 1)';
+
+  // Estilo del wrapper colapsable. Usamos grid-template-rows trick:
+  //   - Expandido: 1fr (toma altura natural)
+  //   - Compacto:  0fr (colapsa a 0 sin medir altura, el browser lo optimiza)
+  // Combinado con transform + opacity (GPU-aceleradas) para que la animación se sienta liviana.
   const collapsibleStyle = {
-    maxHeight: headerCompact ? '0' : '300px',
+    display: 'grid',
+    gridTemplateRows: headerCompact ? '0fr' : '1fr',
+    transition: 'grid-template-rows 220ms ' + easeOut,
+    willChange: 'grid-template-rows'
+  };
+  const collapsibleInnerStyle = {
+    overflow: 'hidden',
+    transform: headerCompact ? 'translateY(-8px)' : 'translateY(0)',
     opacity:   headerCompact ? 0 : 1,
-    overflow:  'hidden',
-    transition: 'max-height 280ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease, margin 280ms cubic-bezier(0.4, 0, 0.2, 1)',
-    marginTop: headerCompact ? 0 : undefined
+    transition: 'transform 220ms ' + easeOut + ', opacity 160ms ease-out',
+    willChange: 'transform, opacity'
   };
 
   return (
@@ -5783,37 +5795,42 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
         onClick={(e) => e.stopPropagation()}>
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white flex-shrink-0"
           style={{
-            padding: headerCompact ? '0.75rem 1.25rem' : '1.25rem',
-            transition: 'padding 280ms cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: headerCompact ? '0 4px 12px rgba(0,0,0,0.12)' : 'none'
+            padding: headerCompact ? '0.65rem 1.25rem' : '1.25rem',
+            transition: 'padding 220ms ' + easeOut + ', box-shadow 200ms ease-out',
+            boxShadow: headerCompact ? '0 4px 12px rgba(0,0,0,0.12)' : '0 0 0 rgba(0,0,0,0)'
           }}>
           <div className="flex items-start justify-between">
-            <div className="flex-1 pr-4 min-w-0">
+            <div className="flex-1 pr-4 min-w-0" style={{ display: 'grid', gridTemplateRows: headerCompact ? '1fr' : 'auto 1fr', transition: 'grid-template-rows 220ms ' + easeOut }}>
               <div className="flex items-center gap-2 flex-wrap"
                 style={{
-                  maxHeight: headerCompact ? '0' : '40px',
-                  opacity: headerCompact ? 0 : 1,
+                  display: 'grid',
+                  gridTemplateRows: headerCompact ? '0fr' : '1fr',
+                  transition: 'grid-template-rows 220ms ' + easeOut + ', margin-bottom 220ms ' + easeOut,
                   marginBottom: headerCompact ? 0 : '0.5rem',
-                  overflow: 'hidden',
-                  transition: 'max-height 240ms ease, opacity 180ms ease, margin 240ms ease'
+                  overflow: 'hidden'
                 }}>
-                <span className="bg-white/15 px-2 py-0.5 rounded-lg text-xs font-medium">
-                  {tComida(receta.tipo_comida)}
-                </span>
-                {receta._fuente === 'online' && (
-                  <span className="bg-blue-400/30 px-2 py-0.5 rounded-lg text-xs font-medium">
-                    <i className="fas fa-globe mr-1"></i>Receta de Internet
+                <div style={{ overflow: 'hidden', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', opacity: headerCompact ? 0 : 1, transform: headerCompact ? 'translateY(-6px)' : 'translateY(0)', transition: 'opacity 160ms ease-out, transform 220ms ' + easeOut }}>
+                  <span className="bg-white/15 px-2 py-0.5 rounded-lg text-xs font-medium">
+                    {tComida(receta.tipo_comida)}
                   </span>
-                )}
-                {tieneThermomix && <span className="thermomix-badge"><i className="fas fa-blender mr-1"></i>TM6</span>}
+                  {receta._fuente === 'online' && (
+                    <span className="bg-blue-400/30 px-2 py-0.5 rounded-lg text-xs font-medium">
+                      <i className="fas fa-globe mr-1"></i>Receta de Internet
+                    </span>
+                  )}
+                  {tieneThermomix && <span className="thermomix-badge"><i className="fas fa-blender mr-1"></i>TM6</span>}
+                </div>
               </div>
               <h2 className="font-bold leading-tight"
                 style={{
-                  fontSize: headerCompact ? '0.95rem' : '1.125rem',
-                  transition: 'font-size 240ms ease',
+                  fontSize: '1.05rem',
+                  transform: headerCompact ? 'scale(0.94)' : 'scale(1)',
+                  transformOrigin: 'left center',
+                  transition: 'transform 220ms ' + easeOut,
                   whiteSpace: headerCompact ? 'nowrap' : 'normal',
                   overflow: headerCompact ? 'hidden' : 'visible',
-                  textOverflow: headerCompact ? 'ellipsis' : 'clip'
+                  textOverflow: headerCompact ? 'ellipsis' : 'clip',
+                  willChange: 'transform'
                 }}>{getNombreReceta(receta)}</h2>
             </div>
             {/* A4: aria-label en botón cerrar */}
@@ -5824,6 +5841,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
           </div>
           {/* Wrapper colapsable: macros, ajuste de sustituciones, escala, tiempos/costo, escalado por comensales y rating */}
           <div style={collapsibleStyle}>
+           <div style={collapsibleInnerStyle}>
             {/* N18 + A9: macro totals adjusted; aria-live anuncia cambios por sustitución */}
             <div className="grid grid-cols-4 gap-2 mt-4" aria-live="polite" aria-atomic="true">
               <div className="bg-white/12 rounded-xl p-2 text-center">
@@ -5894,6 +5912,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
                 </button>
               ))}
             </div>
+           </div>
           </div>
         </div>
 
