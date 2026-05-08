@@ -11291,17 +11291,47 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
   const [ajusteAbierto, setAjusteAbierto] = React.useState(pasosOverride != null);
   React.useEffect(() => { if (pasosOverride != null) setAjusteAbierto(true); }, [pasosOverride]);
 
+  // Toast con undo (4s)
+  const [toast, setToast] = React.useState(null); // { msg, undo, leaving }
+  const toastTimerRef = React.useRef(null);
+  const toastLeaveRef = React.useRef(null);
+  const dismissToast = React.useCallback(() => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    if (toastLeaveRef.current) clearTimeout(toastLeaveRef.current);
+    setToast(prev => prev ? { ...prev, leaving: true } : prev);
+    toastLeaveRef.current = setTimeout(() => setToast(null), 220);
+  }, []);
+  const showToast = React.useCallback((msg, undoFn) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    if (toastLeaveRef.current) clearTimeout(toastLeaveRef.current);
+    setToast({ msg, undo: undoFn, leaving: false });
+    toastTimerRef.current = setTimeout(() => dismissToast(), 4000);
+  }, [dismissToast]);
+  React.useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    if (toastLeaveRef.current) clearTimeout(toastLeaveRef.current);
+  }, []);
+
   const setPasos = (n) => {
     const v = Number(n);
     if (!Number.isFinite(v) || v < 0) return;
     const clamped = Math.min(100000, Math.max(0, Math.round(v)));
+    const prev = hoy.pasos;
     window.NP_Steps.registrar(null, clamped, target);
     setPasosInput('');
     onRefresh();
+    showToast(
+      t(`Registrado: ${clamped.toLocaleString()} pasos`, `Logged: ${clamped.toLocaleString()} steps`),
+      () => { window.NP_Steps.registrar(null, prev, target); onRefresh(); dismissToast(); }
+    );
   };
   const sumar = (n) => {
     window.NP_Steps.sumar(n, target);
     onRefresh();
+    showToast(
+      t(`+${n.toLocaleString()} sumados`, `+${n.toLocaleString()} added`),
+      () => { window.NP_Steps.sumar(-n, target); onRefresh(); dismissToast(); }
+    );
   };
 
   const pct = target ? Math.min(100, (hoy.pasos / target) * 100) : 0;
@@ -11328,15 +11358,21 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
     return () => { if (raf) cancelAnimationFrame(raf); };
   }, [hoy.pasos]);
 
-  // Pulse al cruzar el target
+  // Celebración al cruzar la meta — pulse + bounce + label transitorio
   const [pulseTarget, setPulseTarget] = React.useState(false);
+  const [bounceContador, setBounceContador] = React.useState(false);
+  const [metaCumplidaFlash, setMetaCumplidaFlash] = React.useState(false);
   const prevPctRef = React.useRef(pct);
   React.useEffect(() => {
     if (pct >= 100 && prevPctRef.current < 100) {
       setPulseTarget(true);
-      const tid = setTimeout(() => setPulseTarget(false), 950);
+      setBounceContador(true);
+      setMetaCumplidaFlash(true);
+      const t1 = setTimeout(() => setPulseTarget(false), 950);
+      const t2 = setTimeout(() => setBounceContador(false), 600);
+      const t3 = setTimeout(() => setMetaCumplidaFlash(false), 4000);
       prevPctRef.current = pct;
-      return () => clearTimeout(tid);
+      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
     }
     prevPctRef.current = pct;
   }, [pct]);
@@ -11364,7 +11400,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
             {t('Meta', 'Goal')}: <span className="text-ink font-bold">{target ? target.toLocaleString() : '—'}</span>
           </span>
         </div>
-        <div className="text-ink text-center tabular-nums"
+        <div className={`text-ink text-center tabular-nums${bounceContador ? ' animate-celebrate-bounce' : ''}`}
           style={{ fontSize: 'clamp(2.75rem, 9vw, 3.75rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 0.92, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
           {contador.toLocaleString()}
         </div>
@@ -11374,8 +11410,11 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
               <div className="h-full"
                 style={{ width: pct + '%', background: cumplidoColor, transition: 'width 0.6s cubic-bezier(0.32, 0.72, 0, 1), background 0.3s' }}></div>
             </div>
-            <div className="text-center text-xs mt-2 text-ink-muted tabular-nums">
-              {Math.round(pct)}% {t('de la meta', 'of goal')}{pct >= 100 ? ' ✓' : ''}
+            <div className="text-center text-xs mt-2 tabular-nums"
+              style={{ color: pct >= 100 ? 'var(--color-success)' : 'var(--color-ink-muted)', fontWeight: pct >= 100 ? 600 : 400 }}>
+              {metaCumplidaFlash
+                ? <span>🎯 ¡{t('Meta cumplida', 'Goal reached')}!</span>
+                : <span>{Math.round(pct)}% {t('de la meta', 'of goal')}{pct >= 100 ? ' ✓' : ''}</span>}
             </div>
           </>
         )}
@@ -11400,18 +11439,25 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
             </button>
           ))}
         </div>
-        <div className="flex gap-2 mt-2">
-          <input type="number" inputMode="numeric" min="0" max="100000" value={pasosInput} onChange={e => setPasosInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && pasosInput) setPasos(parseInt(pasosInput)); }}
-            className={`flex-1 px-3.5 py-2.5 rounded-xl border text-sm tabular-nums ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
-            placeholder={t('Cantidad exacta (ej: 8450)', 'Exact amount (e.g. 8450)')} />
-          <button onClick={() => pasosInput && setPasos(parseInt(pasosInput))} disabled={!pasosInput}
-            className="px-5 py-2.5 rounded-xl text-sm font-semibold transition active:scale-[0.97]"
-            style={pasosInput
-              ? { background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-md)' }
-              : { background: darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(0,0,0,0.05)', color: 'var(--color-ink-faint)', cursor: 'not-allowed' }}>
-            {t('Guardar', 'Save')}
-          </button>
+        <div className="flex gap-2 mt-3 items-center">
+          <span className="text-[10px] uppercase tracking-[0.16em] font-semibold text-ink-faint shrink-0" style={{ paddingLeft: '0.25rem' }}>
+            {t('o exacto', 'or exact')}
+          </span>
+          <div className="flex gap-1.5 flex-1 items-stretch">
+            <input type="number" inputMode="numeric" min="0" max="100000" value={pasosInput} onChange={e => setPasosInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && pasosInput) setPasos(parseInt(pasosInput)); }}
+              className={`flex-1 px-3 py-2 rounded-xl border text-sm tabular-nums ${darkMode ? 'bg-gray-700/60 border-gray-600/70 text-white placeholder-gray-400' : 'border-gray-200/80 bg-transparent'}`}
+              style={{ minWidth: 0 }}
+              placeholder={t('ej: 8450', 'e.g. 8450')} />
+            <button onClick={() => pasosInput && setPasos(parseInt(pasosInput))} disabled={!pasosInput}
+              aria-label={t('Guardar', 'Save')}
+              className="px-3.5 py-2 rounded-xl text-sm font-semibold transition active:scale-[0.97] shrink-0"
+              style={pasosInput
+                ? { background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-sm)' }
+                : { background: darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(0,0,0,0.04)', color: 'var(--color-ink-faint)', cursor: 'not-allowed' }}>
+              <i className="fas fa-check" style={{ fontSize: '12px' }}></i>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -11532,7 +11578,8 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
               {t('Últimos 14 días', 'Last 14 days')}
             </span>
           </div>
-          <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
+          <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}
+            style={{ maxHeight: '24rem', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
             {ultimos.slice().reverse().map((e, i) => {
               const tgt = e.target || 8000;
               const pctDia = Math.min(100, (e.pasos / tgt) * 100);
@@ -11553,6 +11600,49 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Toast con undo */}
+      {toast && (
+        <div
+          className={toast.leaving ? 'animate-toast-down' : 'animate-toast-up'}
+          style={{
+            position: 'fixed',
+            left: '50%',
+            bottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
+            transform: 'translate(-50%, 0)',
+            zIndex: 60,
+            background: darkMode ? 'rgba(28, 26, 24, 0.96)' : 'rgba(26, 26, 26, 0.94)',
+            color: '#F5F0E8',
+            borderRadius: '0.95rem',
+            padding: '0.7rem 0.85rem 0.7rem 1.1rem',
+            boxShadow: '0 18px 32px -16px rgba(120,53,15,0.35), 0 4px 12px -4px rgba(0,0,0,0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.85rem',
+            maxWidth: 'calc(100vw - 2rem)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)'
+          }}>
+          <span className="text-sm font-medium tabular-nums" style={{ letterSpacing: '-0.005em' }}>{toast.msg}</span>
+          {toast.undo && (
+            <button
+              onClick={() => toast.undo()}
+              className="active:scale-[0.96] transition"
+              style={{
+                background: 'transparent',
+                color: 'var(--color-accent)',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                padding: '0.35rem 0.7rem',
+                borderRadius: '0.6rem',
+                boxShadow: 'inset 0 0 0 1px rgba(200, 148, 58, 0.35)',
+                cursor: 'pointer'
+              }}>
+              {t('Deshacer', 'Undo')}
+            </button>
+          )}
         </div>
       )}
     </div>
