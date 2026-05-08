@@ -5750,87 +5750,124 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
     return () => { document.body.style.overflow = ''; };
   }, []);
 
-  // Header colapsable on-scroll — al pasar 40px de scroll se comprime y deja solo el título visible
-  const [headerCompact, setHeaderCompact] = React.useState(false);
+  // ── Header scroll-driven (iOS Mail-style) ──
+  // El usuario controla la animación con su dedo: progress 0→1 al scrollear 0→80px.
+  // Mutamos estilos directamente en DOM (no React state) para 60fps consistente sin re-renders.
   const scrollContainerRef = React.useRef(null);
+  const headerOuterRef     = React.useRef(null);
+  const collapsibleRef     = React.useRef(null);
+  const titleRef           = React.useRef(null);
+  const badgesRef          = React.useRef(null);
+  const collapsibleHeightRef = React.useRef(0);
+
   React.useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
+
+    // Medir altura natural del bloque colapsable (macros, tiempos, rating) una vez
+    const measure = () => {
+      if (collapsibleRef.current) collapsibleHeightRef.current = collapsibleRef.current.scrollHeight;
+    };
+    measure();
+    // Re-medir cuando cambian los macros/sustituciones (después del primer paint)
+    const ro = (typeof ResizeObserver !== 'undefined') ? new ResizeObserver(measure) : null;
+    if (ro && collapsibleRef.current) ro.observe(collapsibleRef.current);
+
     let raf = 0;
+    const apply = () => {
+      raf = 0;
+      const st = el.scrollTop;
+      // Progress: 0 (top) → 1 (después de 80px scrolled). Lerp suave.
+      const p = Math.max(0, Math.min(1, st / 80));
+
+      // Easing curve para que el progreso se sienta más natural (ease-out cuadrática)
+      const eased = 1 - (1 - p) * (1 - p);
+
+      const fullH = collapsibleHeightRef.current || 0;
+
+      if (collapsibleRef.current) {
+        // Altura va de fullH → 0 ; opacidad de 1 → 0 más rápido (al 60% ya invisible)
+        collapsibleRef.current.style.height  = (fullH * (1 - eased)) + 'px';
+        collapsibleRef.current.style.opacity = String(Math.max(0, 1 - p * 1.6));
+      }
+      if (badgesRef.current) {
+        // Badges: fade out + slide up (más rápido que el collapsible, al 50% ya invisibles)
+        badgesRef.current.style.opacity   = String(Math.max(0, 1 - p * 2));
+        badgesRef.current.style.transform = 'translateY(' + (-6 * eased) + 'px)';
+        badgesRef.current.style.height    = (badgesRef.current.dataset.naturalH || 28) * (1 - eased) + 'px';
+        badgesRef.current.style.marginBottom = (8 * (1 - eased)) + 'px';
+      }
+      if (titleRef.current) {
+        // Título: scale sutil 1 → 0.94 (sin reflow, GPU)
+        const scale = 1 - (0.06 * eased);
+        titleRef.current.style.transform = 'scale(' + scale + ')';
+      }
+      if (headerOuterRef.current) {
+        // Padding del header: 20px → 10px verticalmente
+        const padY = 20 - (10 * eased);
+        headerOuterRef.current.style.paddingTop    = padY + 'px';
+        headerOuterRef.current.style.paddingBottom = padY + 'px';
+        // Sombra de elevación cuando hay scroll (apenas visible al inicio, sólida al final)
+        headerOuterRef.current.style.boxShadow = '0 4px 12px rgba(0,0,0,' + (0.12 * eased) + ')';
+      }
+    };
+
     const onScroll = () => {
       if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        setHeaderCompact(el.scrollTop > 40);
-      });
+      raf = requestAnimationFrame(apply);
     };
     el.addEventListener('scroll', onScroll, { passive: true });
-    return () => { el.removeEventListener('scroll', onScroll); if (raf) cancelAnimationFrame(raf); };
+    // Aplicar estado inicial (por si el modal abre con scroll != 0)
+    apply();
+
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+      if (ro) ro.disconnect();
+    };
   }, []);
 
-  // Easing iOS-native (cubic-bezier de UIKit) — más snappy que Material
-  const easeOut = 'cubic-bezier(0.32, 0.72, 0, 1)';
-
-  // Estilo del wrapper colapsable. Usamos grid-template-rows trick:
-  //   - Expandido: 1fr (toma altura natural)
-  //   - Compacto:  0fr (colapsa a 0 sin medir altura, el browser lo optimiza)
-  // Combinado con transform + opacity (GPU-aceleradas) para que la animación se sienta liviana.
-  const collapsibleStyle = {
-    display: 'grid',
-    gridTemplateRows: headerCompact ? '0fr' : '1fr',
-    transition: 'grid-template-rows 220ms ' + easeOut,
-    willChange: 'grid-template-rows'
-  };
-  const collapsibleInnerStyle = {
+  // Estilos iniciales (estado expandido) — el scroll handler los va mutando
+  const collapsibleInitialStyle = {
+    height: 'auto',
+    opacity: 1,
     overflow: 'hidden',
-    transform: headerCompact ? 'translateY(-8px)' : 'translateY(0)',
-    opacity:   headerCompact ? 0 : 1,
-    transition: 'transform 220ms ' + easeOut + ', opacity 160ms ease-out',
-    willChange: 'transform, opacity'
+    willChange: 'height, opacity'
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-overlay animate-overlayFadeIn" onClick={onClose}>
       <div className={`w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[92vh] overflow-hidden flex flex-col animate-slideUp shadow-2xl bg-surface`}
         onClick={(e) => e.stopPropagation()}>
-        <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white flex-shrink-0"
+        <div ref={headerOuterRef}
+          className="bg-gradient-to-r from-green-500 to-emerald-600 text-white flex-shrink-0"
           style={{
-            padding: headerCompact ? '0.65rem 1.25rem' : '1.25rem',
-            transition: 'padding 220ms ' + easeOut + ', box-shadow 200ms ease-out',
-            boxShadow: headerCompact ? '0 4px 12px rgba(0,0,0,0.12)' : '0 0 0 rgba(0,0,0,0)'
+            paddingTop: '20px', paddingBottom: '20px', paddingLeft: '20px', paddingRight: '20px',
+            willChange: 'padding, box-shadow'
           }}>
           <div className="flex items-start justify-between">
-            <div className="flex-1 pr-4 min-w-0" style={{ display: 'grid', gridTemplateRows: headerCompact ? '1fr' : 'auto 1fr', transition: 'grid-template-rows 220ms ' + easeOut }}>
-              <div className="flex items-center gap-2 flex-wrap"
-                style={{
-                  display: 'grid',
-                  gridTemplateRows: headerCompact ? '0fr' : '1fr',
-                  transition: 'grid-template-rows 220ms ' + easeOut + ', margin-bottom 220ms ' + easeOut,
-                  marginBottom: headerCompact ? 0 : '0.5rem',
-                  overflow: 'hidden'
-                }}>
-                <div style={{ overflow: 'hidden', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', opacity: headerCompact ? 0 : 1, transform: headerCompact ? 'translateY(-6px)' : 'translateY(0)', transition: 'opacity 160ms ease-out, transform 220ms ' + easeOut }}>
-                  <span className="bg-white/15 px-2 py-0.5 rounded-lg text-xs font-medium">
-                    {tComida(receta.tipo_comida)}
+            <div className="flex-1 pr-4 min-w-0">
+              <div ref={badgesRef} className="flex items-center gap-2 flex-wrap"
+                style={{ marginBottom: '8px', overflow: 'hidden', willChange: 'opacity, transform, height, margin-bottom' }}
+                data-natural-h="28">
+                <span className="bg-white/15 px-2 py-0.5 rounded-lg text-xs font-medium">
+                  {tComida(receta.tipo_comida)}
+                </span>
+                {receta._fuente === 'online' && (
+                  <span className="bg-blue-400/30 px-2 py-0.5 rounded-lg text-xs font-medium">
+                    <i className="fas fa-globe mr-1"></i>Receta de Internet
                   </span>
-                  {receta._fuente === 'online' && (
-                    <span className="bg-blue-400/30 px-2 py-0.5 rounded-lg text-xs font-medium">
-                      <i className="fas fa-globe mr-1"></i>Receta de Internet
-                    </span>
-                  )}
-                  {tieneThermomix && <span className="thermomix-badge"><i className="fas fa-blender mr-1"></i>TM6</span>}
-                </div>
+                )}
+                {tieneThermomix && <span className="thermomix-badge"><i className="fas fa-blender mr-1"></i>TM6</span>}
               </div>
-              <h2 className="font-bold leading-tight"
+              <h2 ref={titleRef} className="font-bold leading-tight"
                 style={{
                   fontSize: '1.05rem',
-                  transform: headerCompact ? 'scale(0.94)' : 'scale(1)',
                   transformOrigin: 'left center',
-                  transition: 'transform 220ms ' + easeOut,
-                  whiteSpace: headerCompact ? 'nowrap' : 'normal',
-                  overflow: headerCompact ? 'hidden' : 'visible',
-                  textOverflow: headerCompact ? 'ellipsis' : 'clip',
-                  willChange: 'transform'
+                  willChange: 'transform',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
                 }}>{getNombreReceta(receta)}</h2>
             </div>
             {/* A4: aria-label en botón cerrar */}
@@ -5840,8 +5877,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
             </button>
           </div>
           {/* Wrapper colapsable: macros, ajuste de sustituciones, escala, tiempos/costo, escalado por comensales y rating */}
-          <div style={collapsibleStyle}>
-           <div style={collapsibleInnerStyle}>
+          <div ref={collapsibleRef} style={collapsibleInitialStyle}>
             {/* N18 + A9: macro totals adjusted; aria-live anuncia cambios por sustitución */}
             <div className="grid grid-cols-4 gap-2 mt-4" aria-live="polite" aria-atomic="true">
               <div className="bg-white/12 rounded-xl p-2 text-center">
@@ -5912,7 +5948,6 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
                 </button>
               ))}
             </div>
-           </div>
           </div>
         </div>
 
