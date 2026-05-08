@@ -12902,11 +12902,16 @@ function ChatPanel({ darkMode, activeTab }) {
     var rm    = perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen;
     var calcs = rm && rm.calculados;
     var mg    = calcs && calcs.macrosGramos;
+    // Prioridad: perfil.caloriasObjetivo / perfil.macrosGramos (source of truth, refleja overrides
+    // manuales del chat). El snapshot calcs.* del roadmap puede quedar desactualizado tras
+    // aplicar_cambios_perfil con calorias_objetivo, causando que el coach hable contra un objetivo
+    // distinto al que muestra el dashboard.
+    var pmg = perfil.macrosGramos || {};
     var macrosObjetivo = {
-      kcal:          (calcs && (calcs.caloriasCorte || calcs.caloriasObjetivo)) || perfil.caloriasObjetivo || 0,
-      proteinas:     (mg && mg.proteina)       || 0,
-      carbohidratos: (mg && mg.carbohidratos)  || 0,
-      grasas:        (mg && mg.grasas)         || 0
+      kcal:          perfil.caloriasObjetivo || (calcs && (calcs.caloriasCorte || calcs.caloriasObjetivo)) || 0,
+      proteinas:     pmg.proteina      || pmg.proteinas_g     || (mg && mg.proteina)       || 0,
+      carbohidratos: pmg.carbohidratos || pmg.carbohidratos_g || (mg && mg.carbohidratos)  || 0,
+      grasas:        pmg.grasas        || pmg.grasas_g        || (mg && mg.grasas)         || 0
     };
     var hoy = _localDate();
     var extMap = {};
