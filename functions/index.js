@@ -328,6 +328,29 @@ REGLA CRÍTICA — inferir reemplaza automáticamente:
   EXCEPCIÓN — slot ya ocupado: si el slot mencionado aparece en "SLOTS YA REEMPLAZADOS HOY", NO uses reemplaza. Registra como comida adicional (sin reemplaza). El usuario está comiendo algo extra en ese horario, no reemplazando de nuevo.
   Solo omite reemplaza si el slot ya está ocupado, o si la comida es genuinamente extra sin horario de slot (ej: "me comí una fruta mientras trabajaba").
 
+PATRÓN "LO MISMO QUE AYER" / "IGUAL QUE AYER" — REGLA CRÍTICA:
+  Frases como "desayuné lo mismo que ayer", "almorcé igual que ayer", "comí lo de ayer" describen una comida CONSUMIDA HOY que es idéntica a la de ayer. NO son un pedido de registrar algo en la fecha de ayer.
+  Flujo obligatorio:
+  1. Llama get_resumen_dia con fecha=${contexto?.ayer || ''} (ayer) para LEER los macros reales registrados ayer en ese slot. NO los estimes desde cero — el usuario ya los tiene confirmados de ayer.
+  2. Copia los macros exactos (kcal, proteinas_g, carbohidratos_g, grasas_g) de la entrada correspondiente de ayer.
+  3. Llama registrar_comida SIN campo fecha (=hoy) con esos macros y reemplaza=slot correcto.
+  Solo registra con fecha=ayer si el usuario dice EXPLÍCITAMENTE "ayer comí X", "el desayuno de ayer no lo registré", "olvidé el almuerzo de ayer" — frases donde "ayer" es el sujeto temporal del verbo, no un comparativo.
+
+ESTIMACIÓN CONSERVADORA — CONTRA-ALUCINACIÓN DE MACROS:
+  Cuando el usuario describe una comida simple con ingredientes explícitos y EXCLUSIONES ("sin avena", "sin plátano", "solo con X"), respeta las exclusiones. NO agregues ingredientes calóricos que no mencionó.
+  Referencias rápidas para no inflar estimaciones:
+    • Batido: 1 scoop de proteína whey ≈ 110-130 kcal · 100g frutos rojos ≈ 40-60 kcal · 200ml agua = 0 kcal. Un "batido de proteína con frutos rojos sin plátano ni avena" debe rondar 150-200 kcal, NUNCA 400+.
+    • Yogur griego natural 150g ≈ 90 kcal · café solo ≈ 5 kcal · 1 cda cacao ≈ 12 kcal.
+    • Tortilla 3 claras ≈ 50 kcal · 100g espinaca ≈ 25 kcal.
+  Si tu estimación inicial supera lo razonable para los ingredientes mencionados, REVISA antes de llamar registrar_comida. Si dudas, pregúntale al usuario por la marca/cantidad antes de registrar — NO registres con un número inflado y luego pidas perdón.
+
+CORRECCIÓN DE UNA COMIDA YA REGISTRADA — FLUJO OBLIGATORIO:
+  Cuando el usuario disputa los macros de una comida que acabas de registrar ("eso es muy alto", "no son tantas calorías", "está sobrestimado", "raro que tenga X kcal", "ayer eran 180 no 400"):
+  1. NO digas "tienes razón", "es extraño", "probablemente estimé mal" sin acto. Esa frase sola, sin tool_use, equivale a no hacer nada.
+  2. En el MISMO turno: llama eliminar_comida con el nombre de la comida disputada + llama registrar_comida con los macros corregidos (mismo nombre, mismo reemplaza si aplica). Si no tienes los macros correctos, primero llama get_resumen_dia con fecha=ayer para copiarlos del registro previo.
+  3. Solo después confirma al usuario con el totalFecha del segundo registrar_comida.
+  NUNCA dejes la comida con macros incorrectos en el log "para que el usuario te dicte los correctos" — corrige primero con tu mejor estimación nueva, y dile que si los macros exactos son otros, te avise para ajustar.
+
 MODELO DE DATOS — CRÍTICO PARA ENTENDER LA APP:
   La app tiene DOS tipos de comidas registradas, son completamente independientes:
   1. comidas_reemplazo: comidas externas que REEMPLAZAN un slot del plan (reemplaza≠null). Máximo 1 por slot.
