@@ -2,31 +2,62 @@
    Calibrate — Perfiles múltiples (Fase 3.3)
    Gestiona "para cuántos se cocina" sin duplicar el plan.
    Aplica un multiplicador de porciones a ingredientes y costo.
-   Calorías/macros siguen correspondiendo a la porción de Camilo.
+   Calorías/macros siguen correspondiendo a la porción del dueño (usuario logueado).
    ============================================ */
 
 (function cargarPerfiles() {
 
   const STORAGE_KEY = 'nutriplan_perfiles_v1';
+  const OWNER_ID = 'camilo'; // id histórico; el nombre visible viene del auth
 
-  const DEFAULTS = {
-    comensales: [
-      { id: 'camilo', nombre: 'Camilo', tipo: 'adulto', factor: 1.0, activo: true }
-    ],
-    modo: 'individual' // 'individual' | 'familia'
-  };
+  function getOwnerName() {
+    try {
+      if (typeof firebase !== 'undefined' && firebase.auth) {
+        const u = firebase.auth().currentUser;
+        if (u) {
+          if (u.displayName) return u.displayName.split(' ')[0];
+          if (u.email) return u.email.split('@')[0];
+        }
+      }
+    } catch (_) {}
+    return 'Tú';
+  }
+
+  function ownerComensal() {
+    return { id: OWNER_ID, nombre: getOwnerName(), tipo: 'adulto', factor: 1.0, activo: true };
+  }
+
+  function defaultEstado() {
+    return { comensales: [ownerComensal()], modo: 'individual' };
+  }
+
+  // Si el comensal dueño tiene el nombre genérico legacy "Camilo" pero el usuario
+  // logueado es otro, sincronizamos. Si el usuario ya editó su nombre, lo respetamos.
+  function sincronizarNombreDueno(estado) {
+    if (!estado || !Array.isArray(estado.comensales)) return estado;
+    const idx = estado.comensales.findIndex(c => c.id === OWNER_ID);
+    if (idx < 0) return estado;
+    const actual = estado.comensales[idx].nombre;
+    const nuevo = getOwnerName();
+    if (actual === 'Camilo' && nuevo !== 'Camilo') {
+      estado.comensales[idx] = { ...estado.comensales[idx], nombre: nuevo };
+    } else if (!actual) {
+      estado.comensales[idx] = { ...estado.comensales[idx], nombre: nuevo };
+    }
+    return estado;
+  }
 
   function cargar() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { ...DEFAULTS, comensales: [...DEFAULTS.comensales] };
+      if (!raw) return defaultEstado();
       const parsed = JSON.parse(raw);
       if (!parsed.comensales || parsed.comensales.length === 0) {
-        parsed.comensales = [...DEFAULTS.comensales];
+        parsed.comensales = [ownerComensal()];
       }
-      return parsed;
+      return sincronizarNombreDueno(parsed);
     } catch (e) {
-      return { ...DEFAULTS, comensales: [...DEFAULTS.comensales] };
+      return defaultEstado();
     }
   }
 
@@ -57,7 +88,7 @@
   }
 
   // Aplica factor a ingredientes y costo SIN tocar calorías/macros
-  // (porque macros están calculadas para Camilo según su TDEE)
+  // (porque macros están calculadas para el dueño según su TDEE)
   function escalarPorComensales(comida, factor) {
     if (!comida || factor === 1) return comida;
     const ingredientesOrig = comida.ingredientes_escalados || comida.ingredientes || [];
@@ -74,30 +105,32 @@
     };
   }
 
-  // Preset rápidos para setup
-  const PRESETS = {
-    solo: [
-      { id: 'camilo', nombre: 'Camilo', tipo: 'adulto', factor: 1.0, activo: true }
-    ],
-    pareja: [
-      { id: 'camilo', nombre: 'Camilo', tipo: 'adulto', factor: 1.0, activo: true },
-      { id: 'pareja', nombre: 'Pareja', tipo: 'adulto', factor: 0.85, activo: true }
-    ],
-    familia_2_1: [
-      { id: 'camilo', nombre: 'Camilo', tipo: 'adulto', factor: 1.0, activo: true },
-      { id: 'adulto2', nombre: 'Adulto', tipo: 'adulto', factor: 0.85, activo: true },
-      { id: 'nino1', nombre: 'Niño/a', tipo: 'nino', factor: 0.5, activo: true }
-    ],
-    familia_2_2: [
-      { id: 'camilo', nombre: 'Camilo', tipo: 'adulto', factor: 1.0, activo: true },
-      { id: 'adulto2', nombre: 'Adulto', tipo: 'adulto', factor: 0.85, activo: true },
-      { id: 'nino1', nombre: 'Niño/a 1', tipo: 'nino', factor: 0.5, activo: true },
-      { id: 'nino2', nombre: 'Niño/a 2', tipo: 'nino', factor: 0.5, activo: true }
-    ]
-  };
+  // Preset rápidos para setup. Se construyen dinámicamente para que el dueño
+  // tome el nombre del usuario logueado, no un valor hardcoded.
+  function buildPresets() {
+    const owner = ownerComensal();
+    return {
+      solo: [owner],
+      pareja: [
+        owner,
+        { id: 'pareja', nombre: 'Pareja', tipo: 'adulto', factor: 0.85, activo: true }
+      ],
+      familia_2_1: [
+        owner,
+        { id: 'adulto2', nombre: 'Adulto', tipo: 'adulto', factor: 0.85, activo: true },
+        { id: 'nino1', nombre: 'Niño/a', tipo: 'nino', factor: 0.5, activo: true }
+      ],
+      familia_2_2: [
+        owner,
+        { id: 'adulto2', nombre: 'Adulto', tipo: 'adulto', factor: 0.85, activo: true },
+        { id: 'nino1', nombre: 'Niño/a 1', tipo: 'nino', factor: 0.5, activo: true },
+        { id: 'nino2', nombre: 'Niño/a 2', tipo: 'nino', factor: 0.5, activo: true }
+      ]
+    };
+  }
 
   function aplicarPreset(nombre) {
-    const preset = PRESETS[nombre];
+    const preset = buildPresets()[nombre];
     if (!preset) return null;
     const estado = {
       comensales: preset.map(p => ({ ...p })),
@@ -123,7 +156,7 @@
   }
 
   function quitarComensal(estado, id) {
-    if (id === 'camilo') return estado; // no se puede quitar al dueño
+    if (id === OWNER_ID) return estado; // no se puede quitar al dueño
     estado.comensales = estado.comensales.filter(c => c.id !== id);
     estado.modo = estado.comensales.length > 1 ? 'familia' : 'individual';
     guardar(estado);
@@ -148,7 +181,8 @@
     agregarComensal,
     quitarComensal,
     actualizarComensal,
-    PRESETS
+    getOwnerName,
+    get PRESETS() { return buildPresets(); }
   };
 
   console.log('[Perfiles Múltiples] Gestor cargado');
