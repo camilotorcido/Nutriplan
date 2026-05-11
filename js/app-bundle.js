@@ -3872,7 +3872,7 @@ function ReverseSearch({ darkMode, onRecipeClick, plan }) {
     if (ingredientesSeleccionados.length === 0 || typeof window.buscarRecetasPorIngredientes !== 'function') return [];
     return window.buscarRecetasPorIngredientes(
       ingredientesSeleccionados.map(i => i.normalizado),
-      { minimoMatch: minMatch, maxResultados: 30 }
+      { minimoMatch: minMatch, maxResultados: 50 }
     );
   }, [ingredientesSeleccionados, minMatch]);
 

@@ -15,7 +15,16 @@
       .trim();
   }
 
+  // Partes cortas o demasiado genéricas que NO deben generar match por sí solas
+  // (evita que "carne" matchee "caldo_carne", o que "leche" matchee "leche_de_magnesia", etc.)
+  const PARTES_IGNORADAS_OVERLAP = new Set([
+    'caldo', 'salsa', 'pasta', 'crema', 'polvo', 'rallado', 'rallada', 'molido', 'molida',
+    'fresco', 'fresca', 'seco', 'seca', 'cocido', 'cocida', 'crudo', 'cruda',
+    'entero', 'entera', 'magra', 'magro', 'light', 'natural'
+  ]);
+
   // Match por substring bidireccional (ej. "pollo" ↔ "pechuga_pollo")
+  // + overlap por partes ≥4 chars (ej. "carne_res" ↔ "carne_molida" comparten "carne")
   // pero evitando falsos positivos cortos (ej. "ajo" ≠ "zanahoria"/"ajonjoli")
   function esMatch(userToken, recetaToken) {
     if (userToken === recetaToken) return true;
@@ -25,6 +34,17 @@
     if (pat.test(recetaToken)) return true;
     const pat2 = new RegExp('(^|_)' + recetaToken + '(_|$)');
     if (pat2.test(userToken)) return true;
+    // Overlap por partes: si comparten una parte significativa (≥4 chars), es match.
+    // Captura familias: carne_res ↔ carne_molida, leche_almendra ↔ leche_coco, etc.
+    if (userToken.includes('_') || recetaToken.includes('_')) {
+      const userParts = userToken.split('_').filter(p => p.length >= 4 && !PARTES_IGNORADAS_OVERLAP.has(p));
+      const recetaParts = recetaToken.split('_').filter(p => p.length >= 4 && !PARTES_IGNORADAS_OVERLAP.has(p));
+      for (const up of userParts) {
+        for (const rp of recetaParts) {
+          if (up === rp) return true;
+        }
+      }
+    }
     return false;
   }
 
