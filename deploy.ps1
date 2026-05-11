@@ -18,7 +18,7 @@ $compiledSize = (Get-Item 'js\app-bundle.compiled.js').Length
 Write-Host ('Bundle compilado: ' + [math]::Round($compiledSize/1024,1) + ' KB') -ForegroundColor Green
 
 # Hash de versión: incluye bundle COMPILADO (lo que sirve a producción)
-$archivos = @("js\app-bundle.compiled.js","js\storage.js","js\cloud-storage.js","js\nutritionEngine.js","js\recipes.js","js\auth.js","js\perfiles.js","css\style.css","css\tailwind-compiled.css") | Where-Object { Test-Path $_ }
+$archivos = @("js\app-bundle.compiled.js","js\storage.js","js\cloud-storage.js","js\nutritionEngine.js","js\recipes.js","js\auth.js","js\perfiles.js","js\busqueda-inversa.js","css\style.css","css\tailwind-compiled.css") | Where-Object { Test-Path $_ }
 $contenido = ($archivos | ForEach-Object { Get-Content $_ -Raw }) -join "|"
 $bytes   = [System.Text.Encoding]::UTF8.GetBytes($contenido)
 $hash    = [System.Security.Cryptography.MD5]::Create().ComputeHash($bytes)
