@@ -10,7 +10,7 @@
 (function cargarLazyLoader() {
   var cargado = false;
   var promesaCarga = null;
-  var VERSION = 'v=20260425bm';
+  var VERSION = 'v=20260511proteinas';
 
   function cargarScript(src) {
     return new Promise(function(resolve, reject) {
@@ -36,6 +36,7 @@
     console.log('[Lazy Recipes] Cargando recipes-extra + upgrades...');
 
     promesaCarga = cargarScript('js/recipes-extra.js?' + VERSION)
+      .then(function() { return cargarScript('js/recipes-extra-2.js?' + VERSION); })
       .then(function() { return cargarScript('js/recipes-thermomix-upgrade.js?' + VERSION); })
       .then(function() { return cargarScript('js/recipes-metadata-upgrade.js?' + VERSION); })
       .then(function() {
