@@ -13047,9 +13047,24 @@ function ChatPanel({ darkMode, activeTab }) {
     var _antD  = new Date(); _antD.setDate(_antD.getDate() - 2);
     var ayer     = _localDate(_ayerD);
     var anteayer = _localDate(_antD);
+    // Hora actual y momento del día — clave para que el coach ancle "hoy" en el momento real
+    // de esta conversación y no en la fecha del último log persistido.
+    var _now = new Date();
+    var _hh = String(_now.getHours()).padStart(2, '0');
+    var _mm = String(_now.getMinutes()).padStart(2, '0');
+    var horaActual = _hh + ':' + _mm;
+    var h = _now.getHours();
+    var momentoDelDia = h < 6 ? 'madrugada'
+                      : h < 12 ? 'mañana'
+                      : h < 14 ? 'mediodía'
+                      : h < 19 ? 'tarde'
+                      : h < 22 ? 'noche'
+                      : 'noche tarde';
+    var timestampISO = _now.toISOString();
     // Exponer qué slots ya están reemplazados hoy para que el coach no doble-reemplace
     // IA redesign: activeTab le dice al modelo en qué pantalla está el usuario para adaptar el primer mensaje
     return { perfil, planHoy, macrosObjetivo, macrosConsumidos, diaActual, fechaHoy, ayer, anteayer,
+             horaActual, momentoDelDia, timestampISO,
              slotsReemplazados: tiposReemplazadosHoy,
              activeTab: activeTab || 'hoy' };
   }

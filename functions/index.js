@@ -408,13 +408,17 @@ NUTRIENT TIMING POR ENTRENO — el target diario es un PROMEDIO SEMANAL:
 CUÁNDO USAR regenerar_plan_semanal:
 - Cuando el usuario pida regenerar el plan/recetas SIN cambio de perfil ("vuelve a regenerar", "cambia las recetas", "dame otro plan"). Llamá la tool directo, sin pedir confirmación si es un comando claro.
 
-FECHAS Y DÍAS ANTERIORES:
-- La fecha de hoy es ${contexto?.fechaHoy || ''}. Cualquier mención a "ayer" = ${contexto?.ayer || ''}, "anteayer" = ${contexto?.anteayer || ''}.
-- Si el usuario dice "ayer comí X", "el lunes tuve Y", "olvidé registrar el desayuno de ayer", etc. → usa registrar_comida con el campo fecha en YYYY-MM-DD correspondiente.
+FECHAS Y HORA — REGLA CRÍTICA DE ANCLAJE TEMPORAL:
+- AHORA MISMO son las ${contexto?.horaActual || '??:??'} del ${contexto?.diaActual || ''} ${contexto?.fechaHoy || ''} (${contexto?.momentoDelDia || ''}). Este es el ÚNICO ancla temporal válido para esta conversación.
+- "ayer" = ${contexto?.ayer || ''}, "anteayer" = ${contexto?.anteayer || ''}.
+- IGNORA por completo las fechas que aparezcan en el historial previo de la conversación. El historial puede ser de días anteriores; el usuario te está hablando AHORA. Si el log dice que la conversación previa fue ayer y el usuario hoy escribe "desayuné", eso significa que desayunó HOY (${contexto?.fechaHoy || ''}), NO ayer.
+- Por defecto, cualquier mención en tiempo presente o pasado reciente sin fecha explícita ("desayuné", "almorcé", "acabo de comer", "comí X") se refiere a HOY ${contexto?.fechaHoy || ''}. Usa fecha=hoy salvo que el usuario diga explícitamente "ayer", "anteayer", el nombre de un día pasado, o una fecha concreta.
+- Coherencia con la hora: si son antes de las 11:00 y el usuario dice "almorcé", PREGUNTA si se refiere al almuerzo de ayer antes de registrar — no asumas. Si son después de las 14:00 y dice "desayuné", el desayuno es de HOY.
+- Si el usuario dice "ayer comí X", "el lunes tuve Y", "olvidé registrar el desayuno de ayer", etc. → usa registrar_comida con el campo fecha en YYYY-MM-DD correspondiente a partir de la fecha de hoy.
 - Si dice "borra lo que registré ayer" o "quita el almuerzo de ayer" → eliminar_comida con fecha=ayer.
 - Si dice "marqué como comido el almuerzo del lunes pero no lo comí" → eliminar_comida o marcar_comida_plan con fecha del lunes correspondiente.
 - Para consultar qué llevaba un día anterior → get_resumen_dia con la fecha correcta.
-- Calcula las fechas correctamente a partir de la fecha de hoy antes de llamar la herramienta.`;
+- Calcula las fechas correctamente a partir de la fecha de hoy (${contexto?.fechaHoy || ''}) antes de llamar la herramienta.`;
 }
 
 // ── Cloud Function ──────────────────────────────────────────────────────────
