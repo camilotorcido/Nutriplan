@@ -6535,6 +6535,8 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
         )}
       </div>
 
+      <EsencialesRecurrentes darkMode={darkMode} />
+
       <div className="mt-6">
         <button onClick={onNavigateToShopping}
           className="w-full py-3.5 rounded-xl font-semibold text-base transition active:scale-[0.98] flex items-center justify-center gap-2"
@@ -6933,6 +6935,8 @@ function ShoppingList({ plan, darkMode }) {
         )}
       </div>
 
+      <EsencialesRecurrentes darkMode={darkMode} />
+
       {Object.values(comprados).some(v => v) && (
         <div className={`flex items-center justify-between rounded-xl p-3 mb-3 ${darkMode ? 'bg-green-900/30 border border-green-800' : 'bg-green-50 border border-green-100'}`}>
           <span className="text-sm text-green-600 font-medium">
@@ -7024,8 +7028,6 @@ function ShoppingList({ plan, darkMode }) {
           </div>
         )}
       </div>
-
-      <EsencialesRecurrentes darkMode={darkMode} />
 
       <button onClick={copiarAlPortapapeles}
         className={`w-full py-4 rounded-2xl font-semibold text-lg transition active:scale-[0.98] ${
