@@ -4299,7 +4299,7 @@ function obtenerSobrasDisponibles(planMulti, diaHoy, semanaActiva) {
 // =============================================
 // COMPONENTE: WeeklyPlan (MEJORAS 2 y 3)
 // =============================================
-function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, onRestoreRecipe, onVetoRecipe, onRegenDay, onCompartir, historialSlots, darkMode, swapping }) {
+function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, onRestoreRecipe, onVetoRecipe, onRegenDay, onCompartir, onPlanificarProximaSemana, historialSlots, darkMode, swapping }) {
   // Multi-semana: normalizar plan
   const planNorm = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(plan) : plan;
   const numSemanas = planNorm._numSemanas || 1;
@@ -4651,11 +4651,11 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
         </div>
       )}
 
-      {/* Selector de semanas (solo si hay más de 1) */}
-      {numSemanas > 1 && (
+      {/* Selector de semanas + botón para planificar la próxima */}
+      {(numSemanas > 1 || numSemanas < 4) && (
         <div className="mb-4">
-          <div className="flex gap-2">
-            {Array.from({length: numSemanas}, (_, i) => i + 1).map(n => (
+          <div className="flex gap-2 flex-wrap">
+            {numSemanas > 1 && Array.from({length: numSemanas}, (_, i) => i + 1).map(n => (
               <button key={n} onClick={() => setSemanaActiva(n)}
                 className={`flex-1 py-2.5 rounded-xl font-medium text-sm transition ${
                   semanaActiva === n
@@ -4665,6 +4665,15 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                 <i className="fas fa-calendar-week mr-1.5 text-xs"></i>{t('Semana','Week')} {n}
               </button>
             ))}
+            {numSemanas < 4 && typeof onPlanificarProximaSemana === 'function' && (
+              <button onClick={onPlanificarProximaSemana}
+                title={t('Genera otra semana de recetas para adelantar las compras','Generate another week of recipes to plan ahead')}
+                className={`${numSemanas > 1 ? '' : 'flex-1'} py-2.5 px-4 rounded-xl font-medium text-sm transition border border-dashed ${
+                  darkMode ? 'bg-gray-800 text-emerald-600 border-emerald-700 hover:bg-gray-700' : 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
+                }`}>
+                <i className="fas fa-plus mr-1.5 text-xs"></i>{t('Planificar próxima semana','Plan next week')}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -6206,7 +6215,12 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
 // =============================================
 function Pantry({ plan, onNavigateToShopping, darkMode }) {
   const [soloRestantes, setSoloRestantes] = React.useState(false);
-  const ingredientesConsolidados = React.useMemo(() => consolidarIngredientesFiltrado(plan, soloRestantes), [plan, soloRestantes]);
+  const numSemanasPlan = React.useMemo(() => {
+    const pn = (typeof _normalizarPlanMulti === 'function') ? _normalizarPlanMulti(plan) : plan;
+    return (pn && pn._numSemanas) || 1;
+  }, [plan]);
+  const [semanaSel, setSemanaSel] = React.useState(0); // 0 = todas las semanas
+  const ingredientesConsolidados = React.useMemo(() => consolidarIngredientesFiltrado(plan, soloRestantes, semanaSel), [plan, soloRestantes, semanaSel]);
   const [despensa, setDespensa] = React.useState(() => cargarDespensa());
   const [busqueda, setBusqueda] = React.useState("");
   const [ingredientesManual, setIngredientesManual] = React.useState(() => {
@@ -6346,7 +6360,30 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
         </div>
       </div>
 
-      {diasRestantes.length > 0 && (
+      {numSemanasPlan > 1 && (
+        <div className="flex gap-2 flex-wrap mb-4">
+          <button onClick={() => setSemanaSel(0)}
+            className={`py-2 px-3 rounded-xl font-medium text-xs transition ${
+              semanaSel === 0
+                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
+                : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+            }`}>
+            {t('Todas','All')}
+          </button>
+          {Array.from({length: numSemanasPlan}, (_, i) => i + 1).map(n => (
+            <button key={n} onClick={() => setSemanaSel(n)}
+              className={`py-2 px-3 rounded-xl font-medium text-xs transition ${
+                semanaSel === n
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
+                  : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+              }`}>
+              <i className="fas fa-calendar-week mr-1.5 text-xs"></i>{t('Semana','Week')} {n}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {diasRestantes.length > 0 && (semanaSel === 0 || semanaSel === 1) && (
         <div className={`rounded-2xl shadow-sm border p-4 mb-4 surface-card`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -6650,6 +6687,11 @@ function ShoppingList({ plan, darkMode }) {
   const [copiado, setCopiado] = React.useState(false);
   const [agrupado, setAgrupado] = React.useState(true);
   const [soloRestantes, setSoloRestantes] = React.useState(false);
+  const numSemanasPlan = React.useMemo(() => {
+    const pn = (typeof _normalizarPlanMulti === 'function') ? _normalizarPlanMulti(plan) : plan;
+    return (pn && pn._numSemanas) || 1;
+  }, [plan]);
+  const [semanaSel, setSemanaSel] = React.useState(0); // 0 = todas las semanas
   const [despensa, setDespensa] = React.useState(() => cargarDespensa());
   const [comprados, setComprados] = React.useState(() => {
     try { return JSON.parse(localStorage.getItem('nutriplan_comprados') || '{}'); } catch { return {}; }
@@ -6664,7 +6706,7 @@ function ShoppingList({ plan, darkMode }) {
     window.addEventListener('perfiles-change', handler);
     return () => window.removeEventListener('perfiles-change', handler);
   }, []);
-  const ingredientesRaw = React.useMemo(() => consolidarIngredientesFiltrado(plan, soloRestantes), [plan, soloRestantes]);
+  const ingredientesRaw = React.useMemo(() => consolidarIngredientesFiltrado(plan, soloRestantes, semanaSel), [plan, soloRestantes, semanaSel]);
   const ingredientesConsolidados = React.useMemo(() => {
     if (factorComensales === 1) return ingredientesRaw;
     return ingredientesRaw.map(ing => ({
@@ -6796,15 +6838,43 @@ function ShoppingList({ plan, darkMode }) {
     }
   };
 
+  const selectorSemanas = numSemanasPlan > 1 ? (
+    <div className="flex gap-2 flex-wrap mb-4">
+      <button onClick={() => setSemanaSel(0)}
+        className={`py-2 px-3 rounded-xl font-medium text-xs transition ${
+          semanaSel === 0
+            ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
+            : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+        }`}>
+        {t('Todas','All')}
+      </button>
+      {Array.from({length: numSemanasPlan}, (_, i) => i + 1).map(n => (
+        <button key={n} onClick={() => setSemanaSel(n)}
+          className={`py-2 px-3 rounded-xl font-medium text-xs transition ${
+            semanaSel === n
+              ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
+              : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+          }`}>
+          <i className="fas fa-calendar-week mr-1.5 text-xs"></i>{t('Semana','Week')} {n}
+        </button>
+      ))}
+    </div>
+  ) : null;
+
   if (ingredientesFaltantes.length === 0) {
     return (
       <div className="animate-fadeIn">
+        {selectorSemanas}
         <div className="text-center py-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
             <i className="fas fa-check-circle text-green-500 text-4xl"></i>
           </div>
           <h3 className={`text-xl font-bold mb-2 text-ink`}>{t('¡Tienes todo!', 'You have everything!')}</h3>
-          <p className="text-gray-500 mb-6">{t('Tu despensa está completa para la semana.', 'Your pantry is complete for the week.')}</p>
+          <p className="text-gray-500 mb-6">
+            {numSemanasPlan > 1 && semanaSel > 0
+              ? t('No falta nada para la Semana ' + semanaSel + '.', 'Nothing missing for Week ' + semanaSel + '.')
+              : t('Tu despensa está completa para la semana.', 'Your pantry is complete for the week.')}
+          </p>
         </div>
         <EsencialesRecurrentes darkMode={darkMode} />
       </div>
@@ -6813,10 +6883,14 @@ function ShoppingList({ plan, darkMode }) {
 
   return (
     <div className="animate-fadeIn">
+      {selectorSemanas}
       <div className={`rounded-2xl shadow-sm border p-5 mb-6 surface-card`}>
         <div className="flex items-center justify-between mb-3">
           <h3 className={`font-semibold text-lg flex items-center gap-2 text-ink`}>
             <i className="fas fa-shopping-cart text-amber-500"></i>{t('Lista de Compras','Shopping List')}
+            {numSemanasPlan > 1 && semanaSel > 0 && (
+              <span className="text-xs font-medium text-ink-faint">· {t('Semana','Week')} {semanaSel}</span>
+            )}
           </h3>
           <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm font-medium">{ingredientesFaltantes.length} items</span>
         </div>
@@ -6830,7 +6904,7 @@ function ShoppingList({ plan, darkMode }) {
             <i className="fas fa-list mr-1"></i>{t('Lista simple','Simple list')}
           </button>
         </div>
-        {diasRestantes.length > 0 && (
+        {diasRestantes.length > 0 && (semanaSel === 0 || semanaSel === 1) && (
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100" style={{borderColor: darkMode ? '#374151' : undefined}}>
             <div className="flex items-center gap-2">
               <i className={`fas fa-calendar-alt text-sm ${soloRestantes ? 'text-blue-500' : 'text-gray-400'}`}></i>
@@ -15754,6 +15828,34 @@ function App() {
     }
   };
 
+  // ─── Planificar la próxima semana (agrega 1 semana sin tocar las actuales) ───
+  const handlePlanificarProximaSemana = async () => {
+    if (!perfil || !planSemanal) return;
+    const planN = (typeof _normalizarPlanMulti === 'function') ? _normalizarPlanMulti(planSemanal) : planSemanal;
+    if ((planN._numSemanas || 1) >= 4) {
+      mostrarToast(t('Ya planificaste el máximo de 4 semanas', 'You already planned the maximum of 4 weeks'), 'info');
+      return;
+    }
+    setCargando(true);
+    setMensajeCarga(t('Planificando próxima semana...', 'Planning next week...'));
+    try {
+      if (window.lazyRecipes && !window.lazyRecipes.estaCargado()) {
+        try { await window.lazyRecipes.cargar(); } catch (e) { console.warn('[NP] lazyRecipes.cargar falló:', e); }
+      }
+      const prefs = preferenciasGenRef.current || { cocina: 'cualquiera', altaProteina: false, rapido: false };
+      const actualizado = await agregarSemanaAlPlan(planSemanal, perfil, perfil.caloriasObjetivo, (msg) => setMensajeCarga(msg), prefs);
+      setPlanSemanal(actualizado);
+      guardarPlanSemanal(actualizado);
+      mostrarToast(t('¡Próxima semana planificada! 🗓️', 'Next week planned! 🗓️'));
+    } catch (e) {
+      console.error('Error planificando próxima semana:', e);
+      mostrarToast(t('No se pudo planificar la próxima semana', 'Could not plan next week'), 'error');
+    } finally {
+      setCargando(false);
+      window.scrollTo(0, 0);
+    }
+  };
+
   const handleRegenDay = async (dia, numSemana) => {
     numSemana = numSemana || 1;
     if (!perfil || !planSemanal) return;
@@ -16136,6 +16238,7 @@ function App() {
               onVetoRecipe={handleVetoRecipe}
               onRegenDay={handleRegenDay}
               onCompartir={handleCompartirPlan}
+              onPlanificarProximaSemana={handlePlanificarProximaSemana}
               historialSlots={historialSlots}
               darkMode={darkMode}
               swapping={swapping} />
