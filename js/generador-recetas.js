@@ -840,17 +840,20 @@
       });
     }
 
-    // Salsa
+    // Salsa — derivar presentación de la unidad (consistente con recetas locales/online)
+    // en vez de hardcodear "unidades"/1, que rompía la consolidación (p. ej. aceite_oliva).
     (salsa.ingredientes || []).forEach(ing => {
+      const esG = ing.unidad === "g";
+      const esMl = ing.unidad === "ml";
       ingredientes.push({
         nombre: ing.display,
         nombre_normalizado: ing.id,
         nombre_display: ing.display,
         cantidad_base: ing.cantidad,
         unidad: ing.unidad,
-        unidad_compra: "unidades",
-        factor_conversion: 1,
-        descripcion_compra: "según envase habitual"
+        unidad_compra: esG ? "paquetes" : esMl ? "botellas" : "unidades",
+        factor_conversion: esG ? 500 : esMl ? 500 : 1,
+        descripcion_compra: esG ? "paquete de 500g" : esMl ? "botella de 500ml" : "según envase habitual"
       });
     });
 

@@ -739,12 +739,28 @@ const _DISPLAY_PREFERIDO = {
   'hummus': 'Hummus', 'quesillo': 'Quesillo'
 };
 
+// Canoniza una clave de ingrediente: elimina conectores ("de/del/la/...") y aplica
+// el mapa de consolidación. Así "aceite_de_oliva" (recetas online) y "aceite_oliva"
+// (recetas locales) colapsan a la MISMA clave y no se duplican en la lista de compras.
+function _canonizarClave(norm) {
+  if (!norm) return norm;
+  // Si la variante exacta ya está mapeada, respetarla
+  if (_CONSOLIDAR_NOMBRE[norm]) return _CONSOLIDAR_NOMBRE[norm];
+  // Quitar conectores cuando son una "palabra" completa entre underscores
+  let c = norm
+    .replace(/_(de|del|la|las|los)(?=_)/g, '')
+    .replace(/_(de|del)$/g, '')
+    .replace(/__+/g, '_')
+    .replace(/^_|_$/g, '');
+  return _CONSOLIDAR_NOMBRE[c] || c;
+}
+
 // Resuelve un ingrediente (posiblemente de un plan guardado viejo)
 // a su nombre_normalizado canónico usando el lookup de RECETAS_DB
 function _resolverIngrediente(ing) {
   // 1. Si ya tiene nombre_normalizado, consolidar variantes
   if (ing.nombre_normalizado) {
-    const claveConsolidada = _CONSOLIDAR_NOMBRE[ing.nombre_normalizado] || ing.nombre_normalizado;
+    const claveConsolidada = _canonizarClave(ing.nombre_normalizado);
     return {
       clave: claveConsolidada,
       display: _DISPLAY_PREFERIDO[claveConsolidada] || ing.nombre_display || ing.nombre,
@@ -758,7 +774,7 @@ function _resolverIngrediente(ing) {
   const nombreLower = (ing.nombre || "").toLowerCase().trim();
   const found = _INGREDIENTE_LOOKUP[nombreLower];
   if (found) {
-    const claveF = _CONSOLIDAR_NOMBRE[found.nombre_normalizado] || found.nombre_normalizado;
+    const claveF = _canonizarClave(found.nombre_normalizado);
     return {
       clave: claveF,
       display: _DISPLAY_PREFERIDO[claveF] || found.nombre_display,
@@ -789,7 +805,7 @@ function _resolverIngrediente(ing) {
     }
   }
   if (mejorMatch) {
-    const claveM = _CONSOLIDAR_NOMBRE[mejorMatch.nombre_normalizado] || mejorMatch.nombre_normalizado;
+    const claveM = _canonizarClave(mejorMatch.nombre_normalizado);
     return {
       clave: claveM,
       display: _DISPLAY_PREFERIDO[claveM] || mejorMatch.nombre_display,
@@ -818,7 +834,7 @@ function _resolverIngrediente(ing) {
     .replace(/[^a-z0-9_]/g, '');
   
   // Aplicar consolidación incluso en fallback
-  const claveFinal = _CONSOLIDAR_NOMBRE[normalizado] || normalizado;
+  const claveFinal = _canonizarClave(normalizado);
   
   return {
     clave: claveFinal,
