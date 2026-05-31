@@ -755,6 +755,40 @@ function _canonizarClave(norm) {
   return _CONSOLIDAR_NOMBRE[c] || c;
 }
 
+// ─── Presentación canónica de compra por clave ───
+// Fuerza una sola unidad de compra / factor / descripción al consolidar, sin importar
+// de qué receta venga el ingrediente. `unidad_base` es la unidad en la que se ACUMULAN
+// las cantidades; `equiv` mapea otras unidades a la base (cantidad * factor = base).
+// Solo se incluyen ingredientes con conversión segura: masa/volumen (g↔ml ≈ 1:1 para
+// compra). Los de conteo ambiguo (ajo, limón, mango) se omiten a propósito —
+// convertir "unidad"↔gramos sin una equivalencia confiable daría compras absurdas.
+const _PRESENTACION_CANONICA = {
+  aceite_oliva:   { unidad_base: 'ml', unidad_compra: 'botellas', factor_conversion: 500,  descripcion_compra: 'botella de 500ml' },
+  aceite_vegetal: { unidad_base: 'ml', unidad_compra: 'botellas', factor_conversion: 1000, descripcion_compra: 'botella de 1L' },
+  aceite_maravilla: { unidad_base: 'ml', unidad_compra: 'botellas', factor_conversion: 1000, descripcion_compra: 'botella de 1L' },
+  aceite_girasol: { unidad_base: 'ml', unidad_compra: 'botellas', factor_conversion: 1000, descripcion_compra: 'botella de 1L' },
+  aceite_coco:    { unidad_base: 'g',  unidad_compra: 'frascos',  factor_conversion: 400,  descripcion_compra: 'frasco de 400g' },
+  aceite_sesamo:  { unidad_base: 'ml', unidad_compra: 'botellas', factor_conversion: 250,  descripcion_compra: 'botella de 250ml' },
+  sal:            { unidad_base: 'g',  unidad_compra: 'paquetes', factor_conversion: 1000, descripcion_compra: 'paquete de 1kg' },
+  azucar:         { unidad_base: 'g',  unidad_compra: 'paquetes', factor_conversion: 1000, descripcion_compra: 'paquete de 1kg' },
+  harina:         { unidad_base: 'g',  unidad_compra: 'paquetes', factor_conversion: 1000, descripcion_compra: 'paquete de 1kg' },
+  vinagre:        { unidad_base: 'ml', unidad_compra: 'botellas', factor_conversion: 500,  descripcion_compra: 'botella de 500ml' },
+  salsa_soya:     { unidad_base: 'ml', unidad_compra: 'botellas', factor_conversion: 500,  descripcion_compra: 'botella de 500ml' },
+  miel:           { unidad_base: 'g',  unidad_compra: 'frascos',  factor_conversion: 500,  descripcion_compra: 'frasco de 500g' }
+};
+
+// Convierte una cantidad a la unidad_base canónica de su clave.
+function _convertirAUnidadBase(cant, unidad, canon) {
+  if (!unidad || unidad === canon.unidad_base) return cant;
+  const equiv = canon.equiv || {};
+  if (equiv[unidad] != null) return cant * equiv[unidad];
+  // g y ml se tratan como equivalentes 1:1 para efectos de compra
+  const esMasaVol = (u) => u === 'g' || u === 'gr' || u === 'ml';
+  if (esMasaVol(unidad) && esMasaVol(canon.unidad_base)) return cant;
+  // Unidad no convertible con seguridad: no forzar conversión
+  return cant;
+}
+
 // Resuelve un ingrediente (posiblemente de un plan guardado viejo)
 // a su nombre_normalizado canónico usando el lookup de RECETAS_DB
 function _resolverIngrediente(ing) {
@@ -871,19 +905,25 @@ function consolidarIngredientes(planInput) {
             ing = Object.assign({}, ing, { cantidad_escalada: _origCantidad * multiplicador });
             const resuelto = _resolverIngrediente(ing);
             const clave = resuelto.clave;
-            
+
+            // Presentación canónica: unifica unidad de compra/factor/descripción y
+            // acumula en una sola unidad_base (evita sumar g+ml y presentaciones mixtas).
+            const canon = _PRESENTACION_CANONICA[clave];
+            const unidadInterna = canon ? canon.unidad_base : ing.unidad;
+            const cantidad = canon ? _convertirAUnidadBase(ing.cantidad_escalada, ing.unidad, canon) : ing.cantidad_escalada;
+
             if (consolidado[clave]) {
-              consolidado[clave].cantidad_total_interna += ing.cantidad_escalada;
+              consolidado[clave].cantidad_total_interna += cantidad;
             } else {
               consolidado[clave] = {
                 nombre_normalizado: clave,
                 nombre_display: resuelto.display,
                 nombre: resuelto.display,
-                unidad_interna: ing.unidad,
-                cantidad_total_interna: ing.cantidad_escalada,
-                unidad_compra: resuelto.unidad_compra,
-                factor_conversion: resuelto.factor_conversion,
-                descripcion_compra: resuelto.descripcion_compra
+                unidad_interna: unidadInterna,
+                cantidad_total_interna: cantidad,
+                unidad_compra: canon ? canon.unidad_compra : resuelto.unidad_compra,
+                factor_conversion: canon ? canon.factor_conversion : resuelto.factor_conversion,
+                descripcion_compra: canon ? canon.descripcion_compra : resuelto.descripcion_compra
               };
             }
           });
