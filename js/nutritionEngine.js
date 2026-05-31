@@ -300,13 +300,18 @@ function _enforceProteinDia(comidasDia, caloriasObjetivo, porTipo, recetasUsadas
       const densidadActual = comidaActual.calorias_escaladas > 0
         ? comidaActual.proteinas_escaladas / comidaActual.calorias_escaladas : 0;
 
-      // Receta con mayor densidad proteica disponible (distinta a la actual)
-      const candidatasSwap = disponibles
-        .filter(r => r.id !== comidaActual.id)
-        .sort((a, b) =>
-          (b.calorias_base > 0 ? b.proteinas_g / b.calorias_base : 0) -
-          (a.calorias_base > 0 ? a.proteinas_g / a.calorias_base : 0)
-        );
+      // Receta con mayor densidad proteica disponible (distinta a la actual).
+      // Preferir recetas NO usadas aún en el plan para no repetir la misma receta
+      // de alta proteína todos los días; solo caer en las usadas si no hay frescas.
+      const ordenarPorDensidad = (arr) => arr.slice().sort((a, b) =>
+        (b.calorias_base > 0 ? b.proteinas_g / b.calorias_base : 0) -
+        (a.calorias_base > 0 ? a.proteinas_g / a.calorias_base : 0)
+      );
+      let base = disponibles.filter(r => r.id !== comidaActual.id);
+      // En la cena, no reintroducir la proteína principal del almuerzo del día
+      base = _evitarProteinaDelDia(base, comidasDia, tipoComida);
+      const frescas = base.filter(r => !recetasUsadasGlobal.has(r.id));
+      const candidatasSwap = ordenarPorDensidad(frescas.length > 0 ? frescas : base);
       if (candidatasSwap.length === 0) continue;
 
       const mejor = candidatasSwap[0];
