@@ -15805,7 +15805,12 @@ function App() {
   const handleRegenerarConPreferencias = async (prefs) => {
     setShowPrefModal(false);
     setPreferenciasGen(prefs);
-    if (!perfil) return;
+    // Releer el perfil persistido: caloriasObjetivo pudo cambiar (p. ej. al sincronizar
+    // con la fase de fat loss vía NP_FatLoss.sincronizar) sin que el state de React lo
+    // reflejara aún. Si no, se regeneraría con el target viejo y quedaría desincronizado.
+    const perfilActual = (typeof cargarPerfil === 'function' ? cargarPerfil() : null) || perfil;
+    if (!perfilActual) return;
+    if (perfilActual !== perfil) setPerfil(perfilActual);
     setCargando(true);
     setMensajeCarga("Regenerando plan con recetas frescas...");
     try {
@@ -15813,7 +15818,7 @@ function App() {
       if (window.lazyRecipes && !window.lazyRecipes.estaCargado()) {
         await window.lazyRecipes.cargar();
       }
-      const nuevoPlan = await generarPlanSemanalAsync(perfil, perfil.caloriasObjetivo, (msg) => setMensajeCarga(msg), prefs);
+      const nuevoPlan = await generarPlanSemanalAsync(perfilActual, perfilActual.caloriasObjetivo, (msg) => setMensajeCarga(msg), prefs);
       setPlanSemanal(nuevoPlan);
       guardarPlanSemanal(nuevoPlan);
       if (nuevoPlan._buscoOnline && nuevoPlan._recetasOnlineUsadas > 0) {
@@ -15823,7 +15828,7 @@ function App() {
       }
     } catch (e) {
       console.error("Error regenerando plan:", e);
-      const nuevoPlan = generarPlanSemanal(perfil, perfil.caloriasObjetivo, prefs);
+      const nuevoPlan = generarPlanSemanal(perfilActual, perfilActual.caloriasObjetivo, prefs);
       setPlanSemanal(nuevoPlan);
       guardarPlanSemanal(nuevoPlan);
       mostrarToast("Plan regenerado (modo offline)", "info");

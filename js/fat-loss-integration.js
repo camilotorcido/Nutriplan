@@ -76,11 +76,15 @@ function recalcularRoadmap(overrides) {
   perfil.proteinaFloor = roadmap.calculados.proteinaTarget;
   perfil.macrosGramos = roadmap.calculados.macrosGramos || null;
 
-  // Aplicar calorías de la fase actual (puede haber avanzado en el tiempo)
+  // Aplicar calorías de la fase actual (puede haber avanzado en el tiempo), incluyendo
+  // el ajuste por pasos objetivo real. Sin este ajuste, el plan se generaría con la kcal
+  // sin ajustar y la tarjeta marcaría "Plan desincronizado" apenas se regenera.
   const fase = window.NP_Roadmap.faseActual(roadmap);
   if (fase && fase.calorias) {
-    perfil.caloriasManual  = fase.calorias;
-    perfil.caloriasObjetivo = fase.calorias;
+    const pesoRef = perfil.peso != null ? perfil.peso : (nuevosInputs.peso || null);
+    const kcalAjustada = Math.max(800, fase.calorias + _kcalDeltaPasos(fase.targetPasos, pesoRef));
+    perfil.caloriasManual  = kcalAjustada;
+    perfil.caloriasObjetivo = kcalAjustada;
   }
 
   if (typeof guardarPerfil === 'function') guardarPerfil(perfil);
@@ -320,7 +324,12 @@ function sincronizarConFaseActual() {
   const fase = faseActualPerfil();
   if (!fase) return null;
 
+  // faseActualPerfil ya incluye el ajuste por pasos objetivo real. Sincronizar AMBOS
+  // campos: caloriasManual (lo que compara la detección) y caloriasObjetivo (con lo que
+  // se regenera el plan). Si solo se actualiza caloriasManual, el plan se regenera con el
+  // caloriasObjetivo viejo y vuelve a marcar "Plan desincronizado".
   perfil.caloriasManual = fase.calorias;
+  perfil.caloriasObjetivo = fase.calorias;
   if (typeof guardarPerfil === 'function') guardarPerfil(perfil);
   return perfil;
 }
