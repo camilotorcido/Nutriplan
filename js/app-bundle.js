@@ -4319,7 +4319,7 @@ function obtenerSobrasDisponibles(planMulti, diaHoy, semanaActiva) {
 // =============================================
 // COMPONENTE: WeeklyPlan (MEJORAS 2 y 3)
 // =============================================
-function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, onRestoreRecipe, onVetoRecipe, onRegenDay, onCompartir, onPlanificarProximaSemana, historialSlots, darkMode, swapping }) {
+function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, onRestoreRecipe, onVetoRecipe, onRegenDay, onCompartir, onPlanificarProximaSemana, onSincronizarFase, historialSlots, darkMode, swapping }) {
   // Multi-semana: normalizar plan
   const planNorm = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(plan) : plan;
   const numSemanas = planNorm._numSemanas || 1;
@@ -4642,7 +4642,9 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                   <b>{t('Plan desincronizado.','Plan out of sync.')}</b> {t('La fase pide','Phase requires')} {desincronizacion.caloriasNuevaFase} kcal, {t('el plan tiene','plan has')} {desincronizacion.caloriasActuales}.
                 </div>
                 <button onClick={() => {
-                  if (window.NP_FatLoss) {
+                  if (typeof onSincronizarFase === 'function') {
+                    onSincronizarFase();
+                  } else if (window.NP_FatLoss) {
                     window.NP_FatLoss.sincronizar();
                     if (typeof onRegenerate === 'function') onRegenerate();
                   }
@@ -15802,6 +15804,20 @@ function App() {
     }
   };
 
+  // Botón "Regenerar" del banner de desincronización de Fat Loss: sincroniza las
+  // calorías del perfil con la fase efectiva (incluye ajuste de pasos) y regenera el
+  // plan DIRECTO, sin abrir el modal de preferencias, para que la alerta desaparezca.
+  const handleSincronizarFase = async () => {
+    if (window.NP_FatLoss && typeof window.NP_FatLoss.sincronizar === 'function') {
+      try {
+        window.NP_FatLoss.sincronizar(); // caloriasManual + caloriasObjetivo = fase efectiva
+        const fresh = (typeof cargarPerfil === 'function') ? cargarPerfil() : null;
+        if (fresh) setPerfil(fresh);
+      } catch (e) { console.warn('[NP] sincronizar fase falló:', e); }
+    }
+    await regenerarPlanSilencioso();
+  };
+
   const handleRegenerarConPreferencias = async (prefs) => {
     setShowPrefModal(false);
     setPreferenciasGen(prefs);
@@ -16249,6 +16265,7 @@ function App() {
               onRegenDay={handleRegenDay}
               onCompartir={handleCompartirPlan}
               onPlanificarProximaSemana={handlePlanificarProximaSemana}
+              onSincronizarFase={handleSincronizarFase}
               historialSlots={historialSlots}
               darkMode={darkMode}
               swapping={swapping} />
