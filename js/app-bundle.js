@@ -197,16 +197,36 @@ function _esDiaVacaciones(fecha) {
   var arr = _vacacionesGet();
   return arr.some(function(v) { return v.inicio <= fecha && fecha <= v.fin; });
 }
-// Convierte nombre de día + semana activa → ISO date usando _fechaCreacion del plan.
-// Fallback: semana calendario actual (lunes=0 … domingo=6).
+// Lunes (00:00) de la semana calendario que contiene la fecha dada (lunes=inicio de semana).
+function _lunesDe(d) {
+  var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); // retroceder al lunes
+  return x;
+}
+// Semana del plan que corresponde a HOY, por semana CALENDARIO (lunes→domingo).
+// semana_1 = la semana calendario en que se creó el plan; cada semana avanza un lunes.
+// Ej.: plan creado un domingo → ese domingo es el último día de la semana 1, y el
+// lunes siguiente ya es la semana 2. Sin _fechaCreacion (planes viejos) → semana 1.
+function _calcSemanaVigente(planNorm) {
+  if (!planNorm) return 1;
+  var num = Object.keys(planNorm).filter(function(k){ return k.indexOf('semana_') === 0; }).length;
+  if (num <= 1 || !planNorm._fechaCreacion) return 1;
+  var lunesInicio = _lunesDe(new Date(planNorm._fechaCreacion + 'T00:00:00'));
+  var lunesHoy = _lunesDe(new Date());
+  var sem = Math.round((lunesHoy.getTime() - lunesInicio.getTime()) / (7 * 86400000)) + 1;
+  return Math.min(num, Math.max(1, sem));
+}
+// Convierte nombre de día + semana activa → ISO date, anclado al lunes de la semana
+// calendario de creación del plan. Fallback: semana calendario actual.
 function diaToIso(diaNombre, semanaActiva, planNorm) {
   var DIAS = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
   var idx = DIAS.indexOf(diaNombre);
   if (idx < 0) return _localDate();
   if (planNorm && planNorm._fechaCreacion) {
-    var inicio = new Date(planNorm._fechaCreacion + 'T00:00:00');
-    inicio.setDate(inicio.getDate() + ((semanaActiva || 1) - 1) * 7 + idx);
-    return _localDate(inicio);
+    var lunesInicio = _lunesDe(new Date(planNorm._fechaCreacion + 'T00:00:00'));
+    var fecha = new Date(lunesInicio);
+    fecha.setDate(lunesInicio.getDate() + ((semanaActiva || 1) - 1) * 7 + idx);
+    return _localDate(fecha);
   }
   // Sin _fechaCreacion: semana calendario actual
   var hoy = new Date();
@@ -4303,7 +4323,8 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
   // Multi-semana: normalizar plan
   const planNorm = typeof _normalizarPlanMulti === 'function' ? _normalizarPlanMulti(plan) : plan;
   const numSemanas = planNorm._numSemanas || 1;
-  const [semanaActiva, setSemanaActiva] = React.useState(1);
+  // Arrancar en la semana que corresponde a HOY (por semana calendario), no siempre la 1
+  const [semanaActiva, setSemanaActiva] = React.useState(() => _calcSemanaVigente(planNorm));
   // IA redesign: toggle Comidas/Entrenos en vista semanal
   const tieneEntrenamientoSemanal = !!(perfil && (perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen));
   const [vistaSemanal, setVistaSemanal] = React.useState('comidas');
@@ -4343,14 +4364,10 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
   });
   // ISO date del día seleccionado → clave de almacenamiento de comidas externas
   const fechaHoyIsoWP = _localDate();
-  const semanaHoyIdx = React.useMemo(() => {
-    const keys = Object.keys(planNorm).filter(k => k.startsWith('semana_')).sort();
-    if (keys.length <= 1 || !planNorm._fechaCreacion) return 1;
-    const creadoMs = new Date(planNorm._fechaCreacion + 'T00:00:00').getTime();
-    const hoyMs = new Date().setHours(0, 0, 0, 0);
-    const diasTranscurridos = Math.max(0, Math.floor((hoyMs - creadoMs) / 86400000));
-    return Math.min(keys.length, Math.floor(diasTranscurridos / 7) + 1);
-  }, [planNorm]);
+  const semanaHoyIdx = React.useMemo(() => _calcSemanaVigente(planNorm), [planNorm]);
+  // Si cambia la semana vigente (nuevo plan, o cruzó el lunes), saltar a ella.
+  // No pisa la navegación manual: solo se dispara cuando el valor calculado cambia.
+  React.useEffect(() => { setSemanaActiva(semanaHoyIdx); }, [semanaHoyIdx]);
   // fechaDiaIso: fecha real del día seleccionado en la semana activa
   const fechaDiaIso = React.useMemo(() => diaToIso(diaSeleccionado, semanaActiva, planNorm), [diaSeleccionado, semanaActiva, planNorm]);
   // Comidas externas del día seleccionado (no solo hoy)
@@ -4744,7 +4761,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                   const tipo = planEntreno.schedule[dow];
                   const esDescanso = tipo === 'descanso';
                   const tipoInfo = !esDescanso && planEntreno.tipos.find(x => x.k === tipo);
-                  const esHoy = dow === hoyDow && semanaActiva === 1;
+                  const esHoy = dow === hoyDow && semanaActiva === semanaHoyIdx;
                   return (
                     <div key={dia}
                       className={`flex flex-col items-center gap-1 py-2 px-1 rounded-xl transition ${
@@ -4836,7 +4853,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
       <div className="mb-6 overflow-x-auto pb-2">
         <div className="flex gap-2 min-w-max">
           {DIAS_SEMANA.map((dia) => {
-            const esHoy = dia === diaActual && semanaActiva === 1;
+            const esHoy = dia === diaActual && semanaActiva === semanaHoyIdx;
             const resumenDia = calcularResumenDiario(semanaData[dia] || {});
             return (
               <button key={dia} onClick={() => setDiaSeleccionado(dia)}
@@ -8518,28 +8535,14 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
   const saludo = hora < 12 ? t('Buenos días','Good morning') : hora < 19 ? t('Buenas tardes','Good afternoon') : t('Buenas noches','Good evening');
   const nombreCorto = perfil && perfil.nombre ? perfil.nombre.split(' ')[0] : '';
 
-  // N24: detectar la semana actual según fecha de creación del plan
+  // N24: detectar la semana actual según la semana calendario de creación del plan
+  const numSemanaActual = React.useMemo(() => _calcSemanaVigente(planSemanal), [planSemanal]);
   const semanaData = React.useMemo(() => {
     if (!planSemanal) return null;
-    const keys = Object.keys(planSemanal).filter(k => k.startsWith('semana_')).sort();
+    const keys = Object.keys(planSemanal).filter(k => k.startsWith('semana_'));
     if (keys.length === 0) return null;
-    if (keys.length === 1 || !planSemanal._fechaCreacion) return planSemanal[keys[0]];
-    const creadoMs = new Date(planSemanal._fechaCreacion + 'T00:00:00').getTime();
-    const hoyMs = new Date().setHours(0, 0, 0, 0);
-    const diasTranscurridos = Math.max(0, Math.floor((hoyMs - creadoMs) / 86400000));
-    const semanaIdx = Math.min(keys.length - 1, Math.floor(diasTranscurridos / 7));
-    return planSemanal[keys[semanaIdx]];
-  }, [planSemanal]);
-
-  const numSemanaActual = React.useMemo(() => {
-    if (!planSemanal) return 1;
-    const keys = Object.keys(planSemanal).filter(k => k.startsWith('semana_')).sort();
-    if (keys.length <= 1 || !planSemanal._fechaCreacion) return 1;
-    const creadoMs = new Date(planSemanal._fechaCreacion + 'T00:00:00').getTime();
-    const hoyMs = new Date().setHours(0, 0, 0, 0);
-    const diasTranscurridos = Math.max(0, Math.floor((hoyMs - creadoMs) / 86400000));
-    return Math.min(keys.length, Math.floor(diasTranscurridos / 7) + 1);
-  }, [planSemanal]);
+    return planSemanal['semana_' + numSemanaActual] || planSemanal[keys.sort()[0]];
+  }, [planSemanal, numSemanaActual]);
 
   const comidasHoy = semanaData ? (semanaData[diaActual] || {}) : {};
   const fechaHoyIso = _localDate(hoy); // fecha de la vista, no siempre "hoy"

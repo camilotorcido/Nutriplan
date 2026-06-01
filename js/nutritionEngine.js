@@ -498,6 +498,7 @@ function generarPlanSemanal(perfil, caloriasObjetivo, preferencias) {
 
   // 7. Metadata
   planMulti._advertencia = advertenciaRecetas;
+  planMulti._fechaCreacion = _localDate(); // ancla la semana 1 a la semana calendario actual
 
   return planMulti;
 }
@@ -1702,6 +1703,7 @@ async function generarPlanSemanalAsync(perfil, caloriasObjetivo, onProgreso, pre
   planMulti._advertencia = advertenciaRecetas;
   planMulti._buscoOnline = buscoOnline;
   planMulti._recetasOnlineUsadas = recetasOnlineNuevas.length;
+  planMulti._fechaCreacion = _localDate(); // ancla la semana 1 a la semana calendario actual
 
   return planMulti;
 }
