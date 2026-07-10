@@ -278,6 +278,161 @@ function _macrosConsumidosFecha(fecha) {
   } catch(e2) {}
   return { kcal: Math.round(kcal), proteinas: Math.round(prot), carbohidratos: Math.round(carb), grasas: Math.round(fat) };
 }
+// ─── Confirm propio (reemplaza window.confirm — coherente con la estética y sin bloquear iOS) ───
+// opts: { detalle?, confirmar?, cancelar?, destructivo? }
+function NP_confirm(mensaje, opts) {
+  opts = opts || {};
+  return new Promise(function(resolve) {
+    var dark = document.documentElement.classList.contains('dark');
+    var ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,0.45);display:flex;align-items:center;justify-content:center;padding:24px;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);animation:fadeIn 0.15s ease';
+    var card = document.createElement('div');
+    card.style.cssText = 'max-width:340px;width:100%;border-radius:18px;padding:22px 20px 16px;box-shadow:0 24px 60px rgba(0,0,0,0.35);background:' + (dark ? '#1f2937' : '#ffffff') + ';color:' + (dark ? '#e5e7eb' : '#111827') + ';font-family:inherit';
+    var h = document.createElement('div');
+    h.style.cssText = 'font-size:15px;font-weight:700;line-height:1.35';
+    h.textContent = mensaje;
+    card.appendChild(h);
+    if (opts.detalle) {
+      var p = document.createElement('div');
+      p.style.cssText = 'font-size:13px;margin-top:8px;line-height:1.5;color:' + (dark ? '#9ca3af' : '#6b7280');
+      p.textContent = opts.detalle;
+      card.appendChild(p);
+    }
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:10px;justify-content:flex-end;margin-top:18px';
+    function cerrar(v) {
+      try { document.body.removeChild(ov); } catch(e) {}
+      resolve(v);
+    }
+    var btnC = document.createElement('button');
+    btnC.textContent = opts.cancelar || 'Cancelar';
+    btnC.style.cssText = 'border:none;cursor:pointer;font-weight:600;font-size:13px;padding:9px 16px;border-radius:10px;background:' + (dark ? '#374151' : '#f3f4f6') + ';color:' + (dark ? '#d1d5db' : '#4b5563');
+    btnC.onclick = function() { cerrar(false); };
+    var btnOk = document.createElement('button');
+    btnOk.textContent = opts.confirmar || 'Confirmar';
+    btnOk.style.cssText = 'border:none;cursor:pointer;font-weight:700;font-size:13px;padding:9px 16px;border-radius:10px;color:#fff;background:' + (opts.destructivo ? '#dc2626' : 'var(--color-accent, #C8943A)');
+    btnOk.onclick = function() { cerrar(true); };
+    row.appendChild(btnC);
+    row.appendChild(btnOk);
+    card.appendChild(row);
+    ov.appendChild(card);
+    ov.addEventListener('click', function(e) { if (e.target === ov) cerrar(false); });
+    document.body.appendChild(ov);
+  });
+}
+if (typeof window !== 'undefined') window.NP_confirm = NP_confirm;
+
+// =============================================
+// COMPONENTE: BottomNav (C1) — navegación fija móvil + botón "+" central
+// En desktop (≥1024px) se oculta y se usa la pill-bar superior.
+// =============================================
+function BottomNav({ pantalla, onNavigate }) {
+  const [plusOpen, setPlusOpen] = React.useState(false);
+  const [pesoQuick, setPesoQuick] = React.useState('');
+  const [pesoOk, setPesoOk] = React.useState(false);
+
+  const TABS_IZQ = [
+    { id: 'hoy', label: t('Hoy','Today'), icon: 'fa-house' },
+    { id: 'plan', label: t('Plan','Plan'), icon: 'fa-calendar-days' }
+  ];
+  const TABS_DER = [
+    { id: 'progreso', label: t('Progreso','Progress'), icon: 'fa-chart-line' },
+    { id: 'cocinar', label: t('Recetas','Recipes'), icon: 'fa-utensils' }
+  ];
+  const isActive = (id) =>
+    pantalla === id ||
+    (id === 'cocinar' && pantalla === 'despensa') ||
+    (id === 'plan' && pantalla === 'compras');
+
+  function accion(fn) { setPlusOpen(false); fn(); }
+  function guardarPesoQuick() {
+    const val = parseFloat(String(pesoQuick).replace(',', '.'));
+    if (isNaN(val) || val < 20 || val > 300 || !window.NP_BodyComp) return;
+    let genero = 'M', altura = null;
+    try {
+      const p = typeof cargarPerfil === 'function' ? cargarPerfil() : null;
+      if (p) { genero = p.genero === 'femenino' ? 'F' : 'M'; altura = p.altura; }
+    } catch(e) {}
+    window.NP_BodyComp.registrar({ fecha: _localDate(), peso: val, _genero: genero, _altura: altura });
+    try { window.dispatchEvent(new CustomEvent('calibrate_proactive_ping', { detail: { razon: 'peso', peso: val } })); } catch(e) {}
+    setPesoOk(true);
+    setTimeout(() => { setPlusOpen(false); setPesoOk(false); setPesoQuick(''); }, 900);
+  }
+
+  const item = (tab) => (
+    <button key={tab.id} onClick={() => onNavigate(tab.id)}
+      className={'cal-bottom-nav__item' + (isActive(tab.id) ? ' is-active' : '')}>
+      <i className={`fas ${tab.icon}`}></i>
+      {tab.label}
+    </button>
+  );
+
+  return (
+    <>
+      <nav className="cal-bottom-nav no-print">
+        {TABS_IZQ.map(item)}
+        <button className="cal-bottom-nav__plus" aria-label={t('Registrar','Log')}
+          onClick={() => setPlusOpen(o => !o)}>
+          <i className={`fas ${plusOpen ? 'fa-xmark' : 'fa-plus'}`}></i>
+        </button>
+        {TABS_DER.map(item)}
+      </nav>
+      {plusOpen && (
+        <div className="cal-quick-sheet-overlay no-print" onClick={() => setPlusOpen(false)}>
+          <div className="cal-quick-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="cal-quick-sheet__title">{t('Registrar','Log')}</div>
+            <button className="cal-quick-sheet__action"
+              onClick={() => accion(() => {
+                onNavigate('hoy');
+                setTimeout(() => { try { window.dispatchEvent(new CustomEvent('calibrate_quick_add')); } catch(e) {} }, 80);
+              })}>
+              <i className="fas fa-utensils"></i>
+              <span>{t('Comida fuera del plan','Meal off plan')}</span>
+              <small>{t('Foto, texto o búsqueda','Photo, text or search')}</small>
+            </button>
+            <button className="cal-quick-sheet__action"
+              onClick={() => accion(() => {
+                onNavigate('hoy');
+                setTimeout(() => { try { window.dispatchEvent(new CustomEvent('calibrate_quick_add', { detail: { tipo: 'scanner' } })); } catch(e) {} }, 80);
+              })}>
+              <i className="fas fa-barcode"></i>
+              <span>{t('Escanear código','Scan barcode')}</span>
+              <small>{t('Producto envasado','Packaged product')}</small>
+            </button>
+            <button className="cal-quick-sheet__action"
+              onClick={() => accion(() => { try { window.dispatchEvent(new CustomEvent('calibrate_open_chat')); } catch(e) {} })}>
+              <i className="fas fa-comment-dots"></i>
+              <span>{t('Contarle al coach','Tell the coach')}</span>
+              <small>{t('Escríbele "me comí una empanada" y la registra','Type "I had a snack" and it gets logged')}</small>
+            </button>
+            <button className="cal-quick-sheet__action"
+              onClick={() => accion(() => {
+                onNavigate('hoy');
+                setTimeout(() => { try { window.dispatchEvent(new CustomEvent('calibrate_open_vacation')); } catch(e) {} }, 80);
+              })}>
+              <i className="fas fa-umbrella-beach"></i>
+              <span>{t('Modo vacaciones','Vacation mode')}</span>
+              <small>{t('Pausa el conteo por un rango de fechas','Pause tracking for a date range')}</small>
+            </button>
+            <div className="cal-quick-sheet__peso">
+              <i className="fas fa-weight-scale"></i>
+              {pesoOk ? (
+                <span style={{ fontWeight: 600 }}>{t('Peso registrado ✓','Weight logged ✓')}</span>
+              ) : (
+                <>
+                  <input type="number" inputMode="decimal" placeholder={t('Peso de hoy (kg)','Today\'s weight (kg)')}
+                    value={pesoQuick} onChange={(e) => setPesoQuick(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') guardarPesoQuick(); }} />
+                  <button onClick={guardarPesoQuick}>{t('Guardar','Save')}</button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 // ─── Alimentos de referencia para recomendaciones diarias ───────────────────
 var _ALIMENTOS_RECOM = [
@@ -1116,7 +1271,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 { l: 'BF% actual estimado', v: calc.bfActual != null ? calc.bfActual + '%' : 'Sin medidas', icon: 'fa-person', c: 'text-purple-500' },
                 { l: 'Duración estimada', v: calc.mesesTotales ? calc.mesesTotales + ' meses' : '—', icon: 'fa-calendar', c: 'text-green-500' },
               ].map(x => (
-                <div key={x.l} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                <div key={x.l} className={`p-3 rounded-xl cal-card-sub`}>
                   <i className={`fas ${x.icon} ${x.c} text-sm mb-1.5`}></i>
                   <div className={`text-xs text-ink-faint`}>{x.l}</div>
                   <div className={`text-base font-bold text-ink`}>{x.v}</div>
@@ -1124,7 +1279,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               ))}
             </div>
             {_resolverMacros(calc, obj) && (() => { const _mg = _resolverMacros(calc, obj); return (
-              <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+              <div className={`p-3 rounded-xl cal-card-sub`}>
                 <p className={`text-xs font-semibold mb-2 text-ink-muted`}>Distribución de macros diarios</p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
@@ -1157,7 +1312,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 { l: 'TDEE calculado', v: calc.tdee + ' kcal', icon: 'fa-calculator', c: 'text-purple-500' },
                 { l: 'BF% estimado', v: calc.bfActual != null ? calc.bfActual + '%' : 'Sin medidas', icon: 'fa-person', c: 'text-amber-500' },
               ].map(x => (
-                <div key={x.l} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                <div key={x.l} className={`p-3 rounded-xl cal-card-sub`}>
                   <i className={`fas ${x.icon} ${x.c} text-sm mb-1.5`}></i>
                   <div className={`text-xs text-ink-faint`}>{x.l}</div>
                   <div className={`text-base font-bold text-ink`}>{x.v}</div>
@@ -1165,7 +1320,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               ))}
             </div>
             {_resolverMacros(calc, obj) && (() => { const _mg = _resolverMacros(calc, obj); return (
-              <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+              <div className={`p-3 rounded-xl cal-card-sub`}>
                 <p className={`text-xs font-semibold mb-2 text-ink-muted`}>Macros diarios</p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
@@ -1199,7 +1354,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 { l: 'Superávit', v: '+' + (calc.caloriasObjetivo - calc.tdee) + ' kcal/día', icon: 'fa-arrow-trend-up', c: 'text-green-500' },
                 { l: 'Duración est.', v: calc.mesesEstimados ? calc.mesesEstimados + ' meses' : '—', icon: 'fa-calendar', c: 'text-purple-500' },
               ].map(x => (
-                <div key={x.l} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                <div key={x.l} className={`p-3 rounded-xl cal-card-sub`}>
                   <i className={`fas ${x.icon} ${x.c} text-sm mb-1.5`}></i>
                   <div className={`text-xs text-ink-faint`}>{x.l}</div>
                   <div className={`text-base font-bold text-ink`}>{x.v}</div>
@@ -1207,7 +1362,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               ))}
             </div>
             {_resolverMacros(calc, obj) && (() => { const _mg = _resolverMacros(calc, obj); return (
-              <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+              <div className={`p-3 rounded-xl cal-card-sub`}>
                 <p className={`text-xs font-semibold mb-2 text-ink-muted`}>Macros diarios</p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
@@ -1362,14 +1517,14 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
       // Nivel C: evidencia científica
       const nivelC = () => (
         <div className="space-y-3">
-          <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+          <div className={`p-3 rounded-xl cal-card-sub`}>
             <p className={`text-xs font-bold mb-2 text-ink`}>Ecuación BMR: Mifflin-St Jeor (1990)</p>
             <p className={`text-[11px] leading-relaxed text-ink-muted`}>
               Considerada la fórmula más precisa para población general moderna. Error típico ±10% vs calorimetría indirecta. Superior a Harris-Benedict en individuos con sobrepeso.
             </p>
             <p className={`text-[10px] mt-1.5 text-ink-faint`}>Mifflin MD et al. Am J Clin Nutr. 1990;51(2):241-7.</p>
           </div>
-          <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+          <div className={`p-3 rounded-xl cal-card-sub`}>
             <p className={`text-xs font-bold mb-2 text-ink`}>Proteína alta en déficit: Helms et al. (2014)</p>
             <p className={`text-[11px] leading-relaxed text-ink-muted`}>
               En contexto de déficit calórico, 2.3–3.1 g/kg de LBM minimiza pérdida de masa magra. El punto de 2.63 g/kg representa el centro del rango recomendado para atletas naturales.
@@ -1377,7 +1532,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             <p className={`text-[10px] mt-1.5 text-ink-faint`}>Helms ER et al. Int J Sport Nutr Exerc Metab. 2014;24(2):127-38.</p>
           </div>
           {obj === 'perdida' && (
-            <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+            <div className={`p-3 rounded-xl cal-card-sub`}>
               <p className={`text-xs font-bold mb-2 text-ink`}>Diet breaks: Peos et al. (2019)</p>
               <p className={`text-[11px] leading-relaxed text-ink-muted`}>
                 Pausas de 2 semanas a TDEE cada 10 semanas de déficit restauran leptina, cortisol y T3. El grupo con diet breaks perdió igual grasa que el continuo pero preservó más masa magra y tuvo mejor adherencia a 6 meses.
@@ -1385,7 +1540,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               <p className={`text-[10px] mt-1.5 text-ink-faint`}>Peos JJ et al. Int J Obes. 2019;43(10):2017-2026.</p>
             </div>
           )}
-          <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+          <div className={`p-3 rounded-xl cal-card-sub`}>
             <p className={`text-xs font-bold mb-2 text-ink`}>BF% método Navy (Hodgdon & Beckett, 1984)</p>
             <p className={`text-[11px] leading-relaxed text-ink-muted`}>
               Correlación r=0.89 con DEXA en hombres, r=0.84 en mujeres. Equivalente a bioimpedancia de consumo en precisión. El error típico es ±3–4% de BF absoluto.
@@ -1393,7 +1548,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             <p className={`text-[10px] mt-1.5 text-ink-faint`}>Hodgdon JA, Beckett MB. Naval Health Research Center. 1984.</p>
           </div>
           {obj === 'volumen' && (
-            <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+            <div className={`p-3 rounded-xl cal-card-sub`}>
               <p className={`text-xs font-bold mb-2 text-ink`}>Lean bulk — límite de ganancia muscular (Lyle McDonald)</p>
               <p className={`text-[11px] leading-relaxed text-ink-muted`}>
                 Un hombre principiante puede ganar ~0.9 kg/mes de músculo real; un intermedio ~0.45 kg. Superávits &gt;500 kcal aumentan grasa sin acelerar la síntesis proteica. El rango 200–400 kcal optimiza la ratio músculo/grasa.
@@ -1405,7 +1560,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
       );
 
       return (
-        <div className={`min-h-screen py-6 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`}>
+        <div className={`min-h-screen py-6 px-4 bg-base`}>
           <div className="max-w-3xl mx-auto">
             {/* Header gradient */}
             <div className={`bg-gradient-to-br ${objColor.from} ${objColor.to} rounded-2xl p-5 text-white mb-5 shadow-lg`}>
@@ -1456,7 +1611,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     }
 
     return (
-      <div className={`min-h-screen py-6 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`} onKeyDown={handleWizardKey}>
+      <div className={`min-h-screen py-6 px-4 bg-base`} onKeyDown={handleWizardKey}>
         <div className="max-w-3xl mx-auto">
 
           {/* ── Header ── */}
@@ -1515,7 +1670,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 <div>
                   <label className={`block text-sm font-medium mb-1 text-ink-muted`}>{t('Edad (años)','Age (years)')}</label>
                   <input type="number" value={perfil.edad} onChange={(e) => handleChange('edad', e.target.value)}
-                    className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} ${errores.edad ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
+                    className={`w-full px-4 py-3 rounded-xl border transition-colors cal-input ${errores.edad ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
                     placeholder="25" min="15" max="100" autoFocus />
                   {errores.edad && <p className="text-red-500 text-xs mt-1">{errores.edad}</p>}
                 </div>
@@ -1542,14 +1697,14 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 <div>
                   <label className={`block text-sm font-medium mb-1 text-ink-muted`}>{t('Peso (kg)','Weight (kg)')}</label>
                   <input type="number" step="0.1" value={perfil.peso} onChange={(e) => handleChange('peso', e.target.value)}
-                    className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} ${errores.peso ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
+                    className={`w-full px-4 py-3 rounded-xl border transition-colors cal-input ${errores.peso ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
                     placeholder="70" min="30" max="300" />
                   {errores.peso && <p className="text-red-500 text-xs mt-1">{errores.peso}</p>}
                 </div>
                 <div>
                   <label className={`block text-sm font-medium mb-1 text-ink-muted`}>{t('Altura (cm)','Height (cm)')}</label>
                   <input type="number" value={perfil.altura} onChange={(e) => handleChange('altura', e.target.value)}
-                    className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} ${errores.altura ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
+                    className={`w-full px-4 py-3 rounded-xl border transition-colors cal-input ${errores.altura ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
                     placeholder="170" min="100" max="250" />
                   {errores.altura && <p className="text-red-500 text-xs mt-1">{errores.altura}</p>}
                 </div>
@@ -1628,24 +1783,24 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                     <div>
                       <label className={`block text-xs mb-1 text-ink-faint`}>Cintura (cm)</label>
                       <input type="number" step="0.5" value={perfil.cintura || ''} onChange={(e) => handleChange('cintura', e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="85" />
+                        className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="85" />
                     </div>
                     <div>
                       <label className={`block text-xs mb-1 text-ink-faint`}>Cuello (cm)</label>
                       <input type="number" step="0.5" value={perfil.cuello || ''} onChange={(e) => handleChange('cuello', e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="40" />
+                        className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="40" />
                     </div>
                     {perfil.genero === 'femenino' && (
                       <div>
                         <label className={`block text-xs mb-1 text-ink-faint`}>Cadera (cm)</label>
                         <input type="number" step="0.5" value={perfil.cadera || ''} onChange={(e) => handleChange('cadera', e.target.value)}
-                          className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
+                          className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="95" />
                       </div>
                     )}
                     <div>
                       <label className={`block text-xs mb-1 text-ink-faint`}>BF% manual (opcional)</label>
                       <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange('bfOverride', e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Sino: Navy auto" />
+                        className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="Sino: Navy auto" />
                     </div>
                   </div>
                   <p className={`text-[11px] mt-1.5 text-ink-faint`}>
@@ -1659,12 +1814,12 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                     <div>
                       <label className={`block text-xs mb-1 text-ink-faint`}>Peso target (kg)</label>
                       <input type="number" step="0.1" value={perfil.pesoTarget || ''} onChange={(e) => handleChange('pesoTarget', e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="72" />
+                        className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="72" />
                     </div>
                     <div>
                       <label className={`block text-xs mb-1 text-ink-faint`}>BF% target</label>
                       <input type="number" step="0.1" value={perfil.bfTarget || ''} onChange={(e) => handleChange('bfTarget', e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="10" />
+                        className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="10" />
                     </div>
                   </div>
                   <p className={`text-[11px] mt-1 text-ink-faint`}>Basta con uno de los dos. El otro se calcula asumiendo que preservás masa magra.</p>
@@ -1738,24 +1893,24 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                     <div>
                       <label className={`block text-xs mb-1 text-ink-faint`}>Cintura (cm)</label>
                       <input type="number" step="0.5" value={perfil.cintura || ''} onChange={(e) => handleChange('cintura', e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="85" />
+                        className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="85" />
                     </div>
                     <div>
                       <label className={`block text-xs mb-1 text-ink-faint`}>Cuello (cm)</label>
                       <input type="number" step="0.5" value={perfil.cuello || ''} onChange={(e) => handleChange('cuello', e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="40" />
+                        className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="40" />
                     </div>
                     {perfil.genero === 'femenino' && (
                       <div>
                         <label className={`block text-xs mb-1 text-ink-faint`}>Cadera (cm)</label>
                         <input type="number" step="0.5" value={perfil.cadera || ''} onChange={(e) => handleChange('cadera', e.target.value)}
-                          className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
+                          className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="95" />
                       </div>
                     )}
                     <div>
                       <label className={`block text-xs mb-1 text-ink-faint`}>BF% manual (opcional)</label>
                       <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange('bfOverride', e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Sino: Navy auto" />
+                        className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="Sino: Navy auto" />
                     </div>
                   </div>
                   <p className={`text-[11px] mt-1.5 text-ink-faint`}>
@@ -1824,24 +1979,24 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                     <div>
                       <label className={`block text-xs mb-1 text-ink-faint`}>Cintura (cm)</label>
                       <input type="number" step="0.5" value={perfil.cintura || ''} onChange={(e) => handleChange('cintura', e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="85" />
+                        className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="85" />
                     </div>
                     <div>
                       <label className={`block text-xs mb-1 text-ink-faint`}>Cuello (cm)</label>
                       <input type="number" step="0.5" value={perfil.cuello || ''} onChange={(e) => handleChange('cuello', e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="40" />
+                        className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="40" />
                     </div>
                     {perfil.genero === 'femenino' && (
                       <div>
                         <label className={`block text-xs mb-1 text-ink-faint`}>Cadera (cm)</label>
                         <input type="number" step="0.5" value={perfil.cadera || ''} onChange={(e) => handleChange('cadera', e.target.value)}
-                          className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
+                          className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="95" />
                       </div>
                     )}
                     <div>
                       <label className={`block text-xs mb-1 text-ink-faint`}>BF% manual (opcional)</label>
                       <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange('bfOverride', e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Sino: Navy auto" />
+                        className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="Sino: Navy auto" />
                     </div>
                   </div>
                 </div>
@@ -1873,7 +2028,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 <div>
                   <label className={`block text-xs mb-1 text-ink-faint`}>Peso objetivo (kg) <span className="font-normal opacity-70">— opcional</span></label>
                   <input type="number" step="0.5" value={perfil.pesoObjetivoVol || ''} onChange={(e) => handleChange('pesoObjetivoVol', e.target.value)}
-                    className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
+                    className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`}
                     placeholder={`Ej: ${perfil.peso ? Math.round(Number(perfil.peso) + 5) : 80}`} />
                   <p className={`text-[11px] mt-1 text-ink-faint`}>Se calcula el tiempo estimado para alcanzarlo con tu tasa seleccionada.</p>
                 </div>
@@ -2008,7 +2163,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   <label className={`block text-xs mb-1 text-ink-faint`}>Ingredientes a excluir (opcional, separados por comas)</label>
                   <textarea value={perfil.ingredientesExcluidosTexto}
                     onChange={(e) => handleChange('ingredientesExcluidosTexto', e.target.value)}
-                    className={`w-full px-3 py-2 rounded-xl border transition-colors resize-none text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} focus:border-green-500`}
+                    className={`w-full px-3 py-2 rounded-xl border transition-colors resize-none text-sm cal-input focus:border-green-500`}
                     rows="2" placeholder="Ej: maní, camarones, apio..." />
                 </div>
                 {/* Ritmo de cocina */}
@@ -2118,6 +2273,15 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </button>
           </div>
 
+          {/* C11: pasos 5-6 son opcionales — comunicarlo (usan defaults sensatos) */}
+          {(pasoWizard === 5 || pasoWizard === 6) && pasoWizard !== TOTAL_PASOS && (
+            <button type="button" onClick={avanzar}
+              className={`w-full mt-2 py-2 text-xs font-medium cursor-pointer text-ink-faint hover:text-ink`}
+              style={{ background: 'none', border: 'none' }}>
+              {t('Omitir este paso — puedes ajustarlo después en tu perfil','Skip this step — you can adjust it later in your profile')}
+            </button>
+          )}
+
         </div>
       </div>
     );
@@ -2163,7 +2327,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             {rows.map(x => (
-              <div key={x.l} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+              <div key={x.l} className={`p-3 rounded-xl cal-card-sub`}>
                 <i className={`fas ${x.i} ${x.c} text-sm mb-1.5`}></i>
                 <div className={`text-xs text-ink-faint`}>{x.l}</div>
                 <div className={`text-base font-bold text-ink`}>{x.v}</div>
@@ -2171,7 +2335,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             ))}
           </div>
           {_resolverMacros(calc, obj) && (() => { const _mg = _resolverMacros(calc, obj); return (
-            <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+            <div className={`p-3 rounded-xl cal-card-sub`}>
               <p className={`text-xs font-semibold mb-2 text-ink-muted`}>Macros diarios</p>
               <div className="grid grid-cols-3 gap-2">
                 {[{ l: 'Proteínas', v: _mg.proteina + 'g', c: 'bg-blue-500' },
@@ -2191,7 +2355,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             const _ent = _fa && _fa.entrenamiento;
             if (!_ent) return null;
             return (
-              <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+              <div className={`p-3 rounded-xl cal-card-sub`}>
                 <div className="flex items-center justify-between mb-2">
                   <p className={`text-xs font-semibold text-ink-muted`}>
                     <i className="fas fa-dumbbell mr-1.5 opacity-70"></i>Entrenamiento — {_fa.nombre || 'fase actual'}
@@ -2223,7 +2387,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     };
 
     return (
-      <div className={`min-h-screen py-6 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`}>
+      <div className={`min-h-screen py-6 px-4 bg-base`}>
         <div className="max-w-3xl mx-auto">
           <button onClick={() => setVerMetodologia(false)}
             className={`mb-4 flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors ${darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}>
@@ -2259,7 +2423,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                     { step: '07', t: 'Series, repeticiones e intensidad', b: 'Series base: 6 a 9 por grupo muscular en cada sesión, al 70-80% de tu peso máximo · 4 días por semana (rutina A/B/C/D) · Repeticiones: 8-12 en Fundación e Intermedia (más hipertrofia) · 6-10 en Last Mile y Diet Break (más fuerza, menos estrés del cortisol) · El protocolo escala las series automáticamente según la fase', r: null },
                     { step: '08', t: 'Cuánto cardio hacer (y de dónde sale)', b: 'El protocolo te da ~45 min de cardio por semana (rowing del día C + intervalos del día D + treadmill del día D) · Totales objetivo por fase: Fundación 90 min/sem (suma 45 min extra de caminata) · Intermedia 60 min/sem (suma 15) · Last Mile 30 min/sem (solo el protocolo recortado) · Diet Break 50 min/sem (solo protocolo) · Cardio suave o intervalos cortos: ambos funcionan igual si gastas las mismas calorías', r: null },
                     { step: '09', t: 'Energía mínima disponible', b: 'Energía disponible = (calorías − calorías quemadas en ejercicio) / kg de masa magra · ≥ 45 kcal/kg = óptimo · 30 a 40 = aceptable solo en períodos cortos · Bajo 30 = zona de riesgo (afecta hormonas, sueño, libido) · Mínimos por fase: Fundación ≥ 40 · Intermedia ≥ 38 · Last Mile ≥ 35 · Diet Break ≥ 45 (estás a mantenimiento)', r: null },
-                    { step: '10', t: 'Conexión con tu plan nutricional', b: 'Las calorías del día varían según si entrenas o descansas: días de entreno (Lun/Mar/Jue/Sáb) tienen +5% extra · días de descanso (Mié/Vie/Dom) tienen −5% · El promedio semanal coincide con la meta calórica de tu fase · Si cambias de fase, el plan nutricional debe regenerarse para reflejar la nueva meta', r: null },
+                    { step: '10', t: 'Conexión con tu plan nutricional', b: 'Las calorías del día varían según si entrenas o descansas: días de entreno tienen +5% extra y los de descanso compensan a la baja según tu split real, de modo que el promedio semanal coincide EXACTO con la meta calórica de tu fase · Si cambias de fase, el plan nutricional debe regenerarse para reflejar la nueva meta', r: null },
                   ] : []),
                 ].map(row => (
                   <div key={row.t} className={`rounded-2xl overflow-hidden border surface-card-shadow`}>
@@ -2313,7 +2477,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   ] : []),
                   { t: 'Hodgdon & Beckett (1984) — Navy BF%', b: 'Correlación r=0.89 con DEXA en hombres. Error típico ±3–4% de BF absoluto. Equivalente a bioimpedancia de consumo.', ref: 'Hodgdon JA, Beckett MB. Naval Health Research Center. 1984.' },
                 ].map(row => (
-                  <div key={row.t} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                  <div key={row.t} className={`p-3 rounded-xl cal-card-sub`}>
                     <p className={`text-xs font-bold mb-1 text-ink`}>{row.t}</p>
                     <p className={`text-[11px] leading-relaxed text-ink-muted`}>{row.b}</p>
                     <p className={`text-[10px] mt-1.5 text-ink-faint`}>{row.ref}</p>
@@ -2328,7 +2492,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
   }
 
   return (
-    <div className={`min-h-screen py-8 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`}>
+    <div className={`min-h-screen py-8 px-4 bg-base`}>
       <div className="max-w-3xl mx-auto animate-fadeIn">
         <div className="text-center mb-8">
           <div className="flex justify-between mb-4">
@@ -2388,7 +2552,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               <div>
                 <label className={`block text-sm font-medium mb-1 text-ink-muted`}>Edad (años)</label>
                 <input type="number" value={perfil.edad} onChange={(e) => handleChange("edad", e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} ${errores.edad ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
+                  className={`w-full px-4 py-3 rounded-xl border transition-colors cal-input ${errores.edad ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
                   placeholder="25" min="15" max="100" />
                 {errores.edad && <p className="text-red-500 text-xs mt-1">{errores.edad}</p>}
               </div>
@@ -2403,14 +2567,14 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               <div>
                 <label className={`block text-sm font-medium mb-1 text-ink-muted`}>Peso (kg)</label>
                 <input type="number" step="0.1" value={perfil.peso} onChange={(e) => handleChange("peso", e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} ${errores.peso ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
+                  className={`w-full px-4 py-3 rounded-xl border transition-colors cal-input ${errores.peso ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
                   placeholder="70" min="30" max="300" />
                 {errores.peso && <p className="text-red-500 text-xs mt-1">{errores.peso}</p>}
               </div>
               <div>
                 <label className={`block text-sm font-medium mb-1 text-ink-muted`}>Altura (cm)</label>
                 <input type="number" value={perfil.altura} onChange={(e) => handleChange("altura", e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} ${errores.altura ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
+                  className={`w-full px-4 py-3 rounded-xl border transition-colors cal-input ${errores.altura ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
                   placeholder="170" min="100" max="250" />
                 {errores.altura && <p className="text-red-500 text-xs mt-1">{errores.altura}</p>}
               </div>
@@ -2495,24 +2659,24 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   <div>
                     <label className={`block text-xs mb-1 text-ink-faint`}>Cintura (cm)</label>
                     <input type="number" step="0.5" value={perfil.cintura || ''} onChange={(e) => handleChange("cintura", e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="85" />
+                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="85" />
                   </div>
                   <div>
                     <label className={`block text-xs mb-1 text-ink-faint`}>Cuello (cm)</label>
                     <input type="number" step="0.5" value={perfil.cuello || ''} onChange={(e) => handleChange("cuello", e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="40" />
+                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="40" />
                   </div>
                   {perfil.genero === 'femenino' && (
                     <div>
                       <label className={`block text-xs mb-1 text-ink-faint`}>Cadera (cm)</label>
                       <input type="number" step="0.5" value={perfil.cadera || ''} onChange={(e) => handleChange("cadera", e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
+                        className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="95" />
                     </div>
                   )}
                   <div>
                     <label className={`block text-xs mb-1 text-ink-faint`}>BF% manual (opcional)</label>
                     <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange("bfOverride", e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Sino: Navy auto" />
+                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="Sino: Navy auto" />
                   </div>
                 </div>
                 <p className={`text-[11px] mt-1 text-ink-faint`}>
@@ -2527,12 +2691,12 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   <div>
                     <label className={`block text-xs mb-1 text-ink-faint`}>Peso target (kg)</label>
                     <input type="number" step="0.1" value={perfil.pesoTarget || ''} onChange={(e) => handleChange("pesoTarget", e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="72" />
+                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="72" />
                   </div>
                   <div>
                     <label className={`block text-xs mb-1 text-ink-faint`}>BF% target</label>
                     <input type="number" step="0.1" value={perfil.bfTarget || ''} onChange={(e) => handleChange("bfTarget", e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="10" />
+                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="10" />
                   </div>
                 </div>
                 <p className={`text-[11px] mt-1 text-ink-faint`}>Basta con uno de los dos. El otro se calcula asumiendo que preservás masa magra.</p>
@@ -2564,7 +2728,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               <div>
                 <label className={`block text-xs font-semibold mb-1 uppercase tracking-wide text-ink-faint`}>Timeline deseado (meses, opcional)</label>
                 <input type="number" min="2" max="24" step="1" value={perfil.timelineMesesDeseado || ''} onChange={(e) => handleChange("timelineMesesDeseado", e.target.value)}
-                  className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Ej: 10. Vacío = cálculo automático." />
+                  className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="Ej: 10. Vacío = cálculo automático." />
                 <p className={`text-[11px] mt-1 text-ink-faint`}>El motor ajusta el déficit para cumplirlo dentro de rangos seguros (200–800 kcal/día).</p>
               </div>
               {/* Fuente proteica de rescate */}
@@ -2678,24 +2842,24 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   <div>
                     <label className={`block text-xs mb-1 text-ink-faint`}>Cintura (cm)</label>
                     <input type="number" step="0.5" value={perfil.cintura || ''} onChange={(e) => handleChange("cintura", e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="85" />
+                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="85" />
                   </div>
                   <div>
                     <label className={`block text-xs mb-1 text-ink-faint`}>Cuello (cm)</label>
                     <input type="number" step="0.5" value={perfil.cuello || ''} onChange={(e) => handleChange("cuello", e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="40" />
+                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="40" />
                   </div>
                   {perfil.genero === 'femenino' && (
                     <div>
                       <label className={`block text-xs mb-1 text-ink-faint`}>Cadera (cm)</label>
                       <input type="number" step="0.5" value={perfil.cadera || ''} onChange={(e) => handleChange("cadera", e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
+                        className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="95" />
                     </div>
                   )}
                   <div>
                     <label className={`block text-xs mb-1 text-ink-faint`}>BF% manual (opcional)</label>
                     <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange("bfOverride", e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Sino: Navy auto" />
+                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="Sino: Navy auto" />
                   </div>
                 </div>
               </div>
@@ -2761,24 +2925,24 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   <div>
                     <label className={`block text-xs mb-1 text-ink-faint`}>Cintura (cm)</label>
                     <input type="number" step="0.5" value={perfil.cintura || ''} onChange={(e) => handleChange("cintura", e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="85" />
+                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="85" />
                   </div>
                   <div>
                     <label className={`block text-xs mb-1 text-ink-faint`}>Cuello (cm)</label>
                     <input type="number" step="0.5" value={perfil.cuello || ''} onChange={(e) => handleChange("cuello", e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="40" />
+                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="40" />
                   </div>
                   {perfil.genero === 'femenino' && (
                     <div>
                       <label className={`block text-xs mb-1 text-ink-faint`}>Cadera (cm)</label>
                       <input type="number" step="0.5" value={perfil.cadera || ''} onChange={(e) => handleChange("cadera", e.target.value)}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
+                        className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="95" />
                     </div>
                   )}
                   <div>
                     <label className={`block text-xs mb-1 text-ink-faint`}>BF% manual (opcional)</label>
                     <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange("bfOverride", e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`} placeholder="Sino: Navy auto" />
+                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="Sino: Navy auto" />
                   </div>
                 </div>
               </div>
@@ -2807,7 +2971,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               <div>
                 <label className={`block text-xs mb-1 text-ink-faint`}>Peso objetivo (kg) <span className="font-normal opacity-60">— opcional</span></label>
                 <input type="number" step="0.5" value={perfil.pesoObjetivoVol || ''} onChange={(e) => handleChange('pesoObjetivoVol', e.target.value)}
-                  className={`w-full px-3 py-2 rounded-lg border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
+                  className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`}
                   placeholder={`Ej: ${perfil.peso ? Math.round(Number(perfil.peso) + 5) : 80}`} />
                 <p className={`text-[11px] mt-1 text-ink-faint`}>Se estima el tiempo para alcanzarlo con tu tasa seleccionada.</p>
               </div>
@@ -2887,7 +3051,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   </label>
                   <input type="number" value={perfil.caloriasManual}
                     onChange={(e) => handleChange("caloriasManual", e.target.value)}
-                    className={`w-full px-4 py-3 rounded-xl border transition-colors text-lg font-semibold ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} ${errores.caloriasManual ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
+                    className={`w-full px-4 py-3 rounded-xl border transition-colors text-lg font-semibold cal-input ${errores.caloriasManual ? 'border-red-400 bg-red-50' : ''} focus:border-green-500`}
                     placeholder="Ej: 2000" min="800" max="6000" />
                   {errores.caloriasManual && <p className="text-red-500 text-xs mt-1">{errores.caloriasManual}</p>}
                   <p className={`text-xs mt-2 text-ink-faint`}>
@@ -2920,21 +3084,21 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-1"></span>Proteínas (%)
                 </label>
                 <input type="number" value={perfil.macros.proteinas} onChange={(e) => handleMacroChange("proteinas", e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'} focus:border-blue-500`} min="10" max="60" />
+                  className={`w-full px-4 py-3 rounded-xl border transition-colors cal-input focus:border-blue-500`} min="10" max="60" />
               </div>
               <div>
                 <label className={`block text-sm font-medium mb-1 text-ink-muted`}>
                   <span className="inline-block w-3 h-3 bg-amber-500 rounded-full mr-1"></span>Carbohidratos (%)
                 </label>
                 <input type="number" value={perfil.macros.carbohidratos} onChange={(e) => handleMacroChange("carbohidratos", e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'} focus:border-amber-500`} min="10" max="70" />
+                  className={`w-full px-4 py-3 rounded-xl border transition-colors cal-input focus:border-amber-500`} min="10" max="70" />
               </div>
               <div>
                 <label className={`block text-sm font-medium mb-1 text-ink-muted`}>
                   <span className="inline-block w-3 h-3 bg-rose-500 rounded-full mr-1"></span>Grasas (%)
                 </label>
                 <input type="number" value={perfil.macros.grasas} onChange={(e) => handleMacroChange("grasas", e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'} focus:border-rose-500`} min="10" max="50" />
+                  className={`w-full px-4 py-3 rounded-xl border transition-colors cal-input focus:border-rose-500`} min="10" max="50" />
               </div>
             </div>
             {/* A12: role+aria-label — no usar solo color para identificar macros */}
@@ -2986,7 +3150,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               </label>
               <textarea value={perfil.ingredientesExcluidosTexto}
                 onChange={(e) => handleChange("ingredientesExcluidosTexto", e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl border transition-colors resize-none ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} focus:border-green-500`}
+                className={`w-full px-4 py-3 rounded-xl border transition-colors resize-none cal-input focus:border-green-500`}
                 rows="2" placeholder="Ej: maní, camarones, apio..." />
             </div>
 
@@ -4117,32 +4281,36 @@ function SlotAcciones({
 }) {
   const [showHist, setShowHist] = React.useState(false);
   const [showSobras, setShowSobras] = React.useState(false);
+  const [showMenu, setShowMenu] = React.useState(false);
   const [dropdownPos, setDropdownPos] = React.useState({ top: 0, left: 0 });
   const containerRef = React.useRef(null);
   const histDropRef = React.useRef(null);
   const sobrasDropRef = React.useRef(null);
+  const menuDropRef = React.useRef(null);
 
   React.useEffect(() => {
-    if (!showHist && !showSobras) return;
+    if (!showHist && !showSobras && !showMenu) return;
     // Click-outside: revisar containerRef Y los refs de los portals (están en document.body)
     function handleOutside(e) {
       const inContainer = containerRef.current && containerRef.current.contains(e.target);
       const inHist = histDropRef.current && histDropRef.current.contains(e.target);
       const inSobras = sobrasDropRef.current && sobrasDropRef.current.contains(e.target);
-      if (!inContainer && !inHist && !inSobras) {
+      const inMenu = menuDropRef.current && menuDropRef.current.contains(e.target);
+      if (!inContainer && !inHist && !inSobras && !inMenu) {
         setShowHist(false);
         setShowSobras(false);
+        setShowMenu(false);
       }
     }
     // Scroll: cerrar para que el dropdown fixed no quede flotando desalineado
-    function handleScroll() { setShowHist(false); setShowSobras(false); }
+    function handleScroll() { setShowHist(false); setShowSobras(false); setShowMenu(false); }
     document.addEventListener('mousedown', handleOutside);
     window.addEventListener('scroll', handleScroll, true);
     return () => {
       document.removeEventListener('mousedown', handleOutside);
       window.removeEventListener('scroll', handleScroll, true);
     };
-  }, [showHist, showSobras]);
+  }, [showHist, showSobras, showMenu]);
 
   const slotKey = diaSeleccionado + '_' + tipo + '_' + semanaActiva;
   const slotHist = (historialSlots && historialSlots[slotKey]) || [];
@@ -4187,24 +4355,68 @@ function SlotAcciones({
         </button>
       )}
 
-      {/* ─── Historial de alternativas (Portal) ─── */}
+      {/* Ver receta */}
+      <button onClick={() => onRecipeClick()} aria-label={`${t('Ver receta de','View recipe for')} ${getNombreReceta(comida) || tComida(tipo)}`}
+        style={{ width: 32, height: 32, minWidth: 32 }}
+        className="flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+        <i className="fas fa-chevron-right text-sm"></i>
+      </button>
+
+      {/* ─── Menú "⋯": swap, alternativas, sobras y vetar en un solo lugar ─── */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!showMenu) setDropdownPos(calcPos(e, 230));
+          setShowMenu(m => !m); setShowHist(false); setShowSobras(false);
+        }}
+        aria-label={t('Más acciones','More actions')}
+        style={{ width: 32, height: 32, minWidth: 32 }}
+        className={`flex items-center justify-center rounded-lg transition cursor-pointer ${
+          showMenu
+            ? (darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700')
+            : (darkMode ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100')
+        }`}>
+        <i className={`fas ${isSwappingThis ? 'fa-spinner fa-spin' : 'fa-ellipsis'} text-sm`}></i>
+      </button>
+      {showMenu && ReactDOM.createPortal(
+        <div ref={menuDropRef} onClick={(e) => e.stopPropagation()}
+          style={{ ...portalDropStyle, minWidth: '200px', maxWidth: '230px' }}>
+          {[
+            { icon: 'fa-shuffle', label: t('Cambiar receta','Swap recipe'), accion: (e) => { setShowMenu(false); onSwap(e); } },
+            slotHist.length > 0 && { icon: 'fa-clock-rotate-left', label: t('Alternativas anteriores','Previous alternatives'), accion: () => { setShowMenu(false); setShowHist(true); } },
+            sobras.length > 0 && { icon: 'fa-recycle', label: t('Usar sobra','Use leftovers'), accion: () => { setShowMenu(false); setShowSobras(true); } },
+            { icon: 'fa-ban', label: t('Vetar esta receta','Ban this recipe'), destructivo: true, accion: async () => {
+              setShowMenu(false);
+              const ok = await NP_confirm(
+                t(`¿Vetar "${getNombreReceta(comida)}"?`, `Ban "${getNombreReceta(comida)}"?`),
+                { detalle: t('No volverá a aparecer en tu plan.','It will not appear in your plan again.'), confirmar: t('Vetar','Ban'), destructivo: true }
+              );
+              if (ok) onVetoRecipe();
+            } }
+          ].filter(Boolean).map((item, idx) => (
+            <button key={item.label}
+              onClick={(e) => { e.stopPropagation(); item.accion(e); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px', width: '100%', textAlign: 'left',
+                padding: '10px 14px', border: 'none', backgroundColor: itemSolid,
+                cursor: 'pointer', transition: 'background-color 0.12s',
+                borderTop: idx > 0 ? `1px solid ${itemDivider}` : 'none',
+                fontSize: '13px', fontWeight: 500,
+                color: item.destructivo ? (darkMode ? '#f87171' : '#dc2626') : (darkMode ? '#e5e7eb' : '#111827')
+              }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = itemHover}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = itemSolid}>
+              <i className={`fas ${item.icon}`} style={{ fontSize: 12, width: 16, textAlign: 'center', opacity: 0.75 }}></i>
+              {item.label}
+            </button>
+          ))}
+        </div>,
+        document.body
+      )}
+
+      {/* ─── Historial de alternativas (Portal, se abre desde el menú) ─── */}
       {slotHist.length > 0 && (
         <>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!showHist) setDropdownPos(calcPos(e, 260));
-              setShowHist(h => !h); setShowSobras(false);
-            }}
-            aria-label="Ver alternativas anteriores"
-            style={{ width: 32, height: 32, minWidth: 32 }}
-            className={`flex items-center justify-center rounded-lg transition cursor-pointer ${
-              showHist
-                ? (darkMode ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600')
-                : (darkMode ? 'text-gray-500 hover:text-indigo-400 hover:bg-gray-700' : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50')
-            }`}>
-            <i className="fas fa-clock-rotate-left text-xs"></i>
-          </button>
           {showHist && ReactDOM.createPortal(
             <div ref={histDropRef} onClick={(e) => e.stopPropagation()}
               style={{ ...portalDropStyle, minWidth: '200px', maxWidth: '260px' }}>
@@ -4232,24 +4444,9 @@ function SlotAcciones({
         </>
       )}
 
-      {/* ─── Sobras (Portal) ─── */}
+      {/* ─── Sobras (Portal, se abre desde el menú) ─── */}
       {sobras.length > 0 && (
         <>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!showSobras) setDropdownPos(calcPos(e, 290));
-              setShowSobras(s => !s); setShowHist(false);
-            }}
-            aria-label="Usar sobra de días anteriores"
-            style={{ width: 32, height: 32, minWidth: 32 }}
-            className={`flex items-center justify-center rounded-lg transition cursor-pointer ${
-              showSobras
-                ? (darkMode ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-50 text-amber-600')
-                : (darkMode ? 'text-gray-500 hover:text-amber-400 hover:bg-gray-700' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50')
-            }`}>
-            <i className="fas fa-recycle text-xs"></i>
-          </button>
           {showSobras && ReactDOM.createPortal(
             <div ref={sobrasDropRef} onClick={(e) => e.stopPropagation()}
               style={{ ...portalDropStyle, minWidth: '220px', maxWidth: '290px' }}>
@@ -4284,33 +4481,6 @@ function SlotAcciones({
         </>
       )}
 
-      {/* Swap button */}
-      <button onClick={(e) => { setShowHist(false); setShowSobras(false); onSwap(e); }}
-        disabled={!!isSwappingThis}
-        aria-label={`${t('Cambiar receta de','Change recipe for')} ${tComida(tipo)}`}
-        style={{ width: 32, height: 32, minWidth: 32 }}
-        className={`flex items-center justify-center rounded-lg transition ${
-          isSwappingThis
-            ? 'text-green-500 cursor-wait'
-            : darkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-400 hover:text-green-600 hover:bg-white'
-        }`}>
-        <i className={`fas ${isSwappingThis ? 'fa-spinner fa-spin' : 'fa-shuffle'} text-sm`}></i>
-      </button>
-      {/* Veto button */}
-      <button
-        onClick={(e) => { e.stopPropagation(); if (window.confirm(`¿Vetar "${getNombreReceta(comida)}"? No volverá a aparecer en tu plan.`)) { onVetoRecipe(); } }}
-        aria-label={`Vetar receta ${getNombreReceta(comida)}`}
-        style={{ width: 32, height: 32, minWidth: 32 }}
-        className={`flex items-center justify-center rounded-lg transition cursor-pointer ${
-          darkMode ? 'text-gray-600 hover:text-red-400 hover:bg-gray-700' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'
-        }`}>
-        <i className="fas fa-ban text-xs"></i>
-      </button>
-      {/* Ver receta */}
-      <button onClick={() => onRecipeClick()} aria-label={`${t('Ver receta de','View recipe for')} ${getNombreReceta(comida) || tComida(tipo)}`}
-        className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer rounded">
-        <i className="fas fa-chevron-right text-sm"></i>
-      </button>
     </div>
   );
 }
@@ -6333,8 +6503,8 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
     ingredientesConsolidados.forEach(ing => { n[ing.id] = true; });
     setDespensa(n);
   };
-  const desmarcarTodos = () => {
-    if (!window.confirm('¿Desmarcar todos los ingredientes de la despensa?')) return;
+  const desmarcarTodos = async () => {
+    if (!(await NP_confirm(t('¿Desmarcar todos los ingredientes de la despensa?','Uncheck all pantry ingredients?'), { confirmar: t('Desmarcar','Uncheck') }))) return;
     const n = { ...despensa };
     ingredientesConsolidados.forEach(ing => { n[ing.id] = false; });
     setDespensa(n);
@@ -6507,7 +6677,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
           <div className="flex gap-2 mt-3">
             <input type="text" value={nuevoIngrediente} onChange={(e) => setNuevoIngrediente(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && agregarIngredienteManual()}
-              className={`flex-1 px-3 py-2 rounded-xl border text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'} focus:border-green-500`}
+              className={`flex-1 px-3 py-2 rounded-xl border text-sm cal-input focus:border-green-500`}
               placeholder={t('Ej: Pan, Mantequilla, etc.', 'E.g. Bread, Butter, etc.')} />
             <button aria-label="Agregar" onClick={agregarIngredienteManual}
               className="px-4 py-2 bg-green-500 text-white rounded-xl text-sm font-medium hover:bg-green-600 transition-colors"><i className="fas fa-plus"></i></button>
@@ -6814,8 +6984,8 @@ function ShoppingList({ plan, darkMode }) {
     // También quitar de comprados
     setComprados(prev => { const n = { ...prev }; delete n[id]; return n; });
   };
-  const limpiarComprados = () => {
-    if (!window.confirm('¿Limpiar todos los ítems marcados como comprados?')) return;
+  const limpiarComprados = async () => {
+    if (!(await NP_confirm(t('¿Limpiar todos los ítems marcados como comprados?','Clear all items marked as purchased?'), { confirmar: t('Limpiar','Clear') }))) return;
     setComprados({});
   };
   const diasRestantes = React.useMemo(() => obtenerDiasRestantes(), []);
@@ -7007,7 +7177,7 @@ function ShoppingList({ plan, darkMode }) {
 
       <div className={`rounded-2xl shadow-sm border overflow-hidden mb-6 surface-card`}>
         {agrupado ? (
-          <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
+          <div className={`divide-y cal-divide`}>
             {/* ST1: FA icons en lugar de emojis para cabeceras de categoría */}
             {/* L3: sticky top-[52px] descuenta la altura del header fijo de la app */}
             {categorias.map(([cat, items]) => {
@@ -7023,7 +7193,7 @@ function ShoppingList({ plan, darkMode }) {
                 <div className={`px-4 py-3 font-semibold text-sm sticky top-[52px] flex items-center gap-2 ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-50 text-gray-700'}`}>
                   <i className={`fas ${faIcon} text-xs opacity-70`}></i>{catLabel}
                 </div>
-                <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
+                <div className={`divide-y cal-divide`}>
                   {items.map(ing => (
                     <div key={ing.id} className={`flex items-center justify-between px-4 py-3 transition ${
                       comprados[ing.id] ? (darkMode ? 'bg-green-900/20 opacity-60' : 'bg-green-50/50 opacity-60') : (darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50')
@@ -7056,7 +7226,7 @@ function ShoppingList({ plan, darkMode }) {
             })}
           </div>
         ) : (
-          <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
+          <div className={`divide-y cal-divide`}>
             {ingredientesFaltantes.map(ing => (
               <div key={ing.id} className={`flex items-center justify-between px-4 py-3 transition ${
                 comprados[ing.id] ? (darkMode ? 'bg-green-900/20 opacity-60' : 'bg-green-50/50 opacity-60') : (darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50')
@@ -8911,6 +9081,17 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     return function() { window.removeEventListener('calibrate_open_vacation', onOpenVacation); };
   }, []);
 
+  // Registro rápido desde el "+" de la bottom nav (C1)
+  React.useEffect(function() {
+    function onQuickAdd(e) {
+      var tipoQuick = e && e.detail && e.detail.tipo;
+      if (tipoQuick === 'scanner') setShowScanner(true);
+      else setShowModalExt(true);
+    }
+    window.addEventListener('calibrate_quick_add', onQuickAdd);
+    return function() { window.removeEventListener('calibrate_quick_add', onQuickAdd); };
+  }, []);
+
   // IA redesign: Push notification "Meseta detectada" — proactivo, en horario de pesarse (~8am)
   React.useEffect(function() {
     if (!('Notification' in window) || !window.NP_Plateau) return;
@@ -9261,6 +9442,54 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               {_msg && (
                 <p className="text-sm text-ink-muted mt-3" style={{ lineHeight: 1.5 }}>{_msg}</p>
               )}
+
+              {/* ── Siguiente comida (C2): la acción más probable, arriba de todo ── */}
+              {(() => {
+                if (!esHoy || !comidasHoy) return null;
+                const TIPOS_ORD = ['desayuno', 'snack_am', 'almuerzo', 'snack_pm', 'cena'];
+                let sig = null;
+                try {
+                  for (const tp of TIPOS_ORD) {
+                    const c = comidasHoy[tp];
+                    if (!c) continue;
+                    const st = (window.adherencia && window.adherencia.estado) ? window.adherencia.estado(diaActual, tp, 1) : null;
+                    const reempl = comidasExt && comidasExt.some(x => x.reemplaza === tp && !x.pendiente);
+                    if (!(st && st.comido) && !reempl) { sig = { tipo: tp, comida: c }; break; }
+                  }
+                } catch(e) {}
+                if (!sig) return null;
+                return (
+                  <div className="mt-4 flex items-center gap-3 rounded-xl px-3.5 py-3 surface-subtle">
+                    <i className={`fas ${iconosComida[sig.tipo] || 'fa-utensils'} text-sm w-4 text-center`} style={{ color: 'var(--color-accent-dark)' }}></i>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-ink-faint">
+                        {t('Siguiente','Next up')} · {nombresComida[sig.tipo]}
+                      </div>
+                      <div className="text-sm font-semibold truncate text-ink">
+                        {getNombreReceta(sig.comida)} <span className="font-normal text-ink-faint">· {sig.comida.calorias_escaladas || sig.comida.calorias} kcal</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (window.adherencia && window.adherencia.marcar) {
+                          window.adherencia.marcar(diaActual, sig.tipo, true, {
+                            id: sig.comida.id || sig.comida.recetaId || null,
+                            kcal_plan: sig.comida.calorias_escaladas || sig.comida.calorias,
+                            proteinas_plan: sig.comida.proteinas_escaladas || sig.comida.proteinas,
+                            carbohidratos_plan: sig.comida.carbohidratos_escalados || sig.comida.carbohidratos || 0,
+                            grasas_plan: sig.comida.grasas_escaladas || sig.comida.grasas || 0,
+                            nombre: sig.comida.nombre
+                          });
+                          setRefresh(r => r + 1);
+                        }
+                      }}
+                      className="flex-shrink-0 text-xs font-bold px-3.5 py-2 rounded-full cursor-pointer"
+                      style={{ background: 'var(--color-accent)', color: '#fff', border: 'none' }}>
+                      <i className="fas fa-check mr-1" style={{ fontSize: 10 }}></i>{t('Ya la comí','I ate it')}
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         );
@@ -9335,12 +9564,13 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           const esFuturo = fecha > hoyFecha;
           const isHoy = fecha === hoyFecha;
           const esVac = _esDiaVacaciones(fecha);
+          const esLibre = !esVac && window.adherencia.esDiaLibre && window.adherencia.esDiaLibre(fecha);
           const diaData = adherData[fecha] || {};
           let total = 0, cumplidos = 0;
-          if (!esVac) {
+          if (!esVac && !esLibre) {
             Object.values(diaData).forEach(e => { total++; if (e.comido) cumplidos++; });
           }
-          return { label, fecha, esFuturo, isHoy, total, cumplidos, esVac };
+          return { label, fecha, esFuturo, isHoy, total, cumplidos, esVac, esLibre };
         });
 
         const hayDatos = semana.some(d => !d.esFuturo && (d.total > 0 || d.esVac));
@@ -9362,9 +9592,11 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                 }
                 return (
                   <div key={d.fecha} className="flex flex-col items-center gap-1"
-                    title={d.esVac ? '🏖 Vacaciones' : d.esFuturo ? d.label : `${d.label}: ${d.cumplidos}/${d.total}`}>
+                    title={d.esVac ? '🏖 Vacaciones' : d.esLibre ? '🍷 Día libre' : d.esFuturo ? d.label : `${d.label}: ${d.cumplidos}/${d.total}`}>
                     {d.esVac ? (
                       <span className="text-[11px]" style={{ lineHeight: 1, opacity: d.isHoy ? 1 : 0.7 }}>🏖</span>
+                    ) : d.esLibre ? (
+                      <span className="text-[11px]" style={{ lineHeight: 1, opacity: d.isHoy ? 1 : 0.7 }}>🍷</span>
                     ) : (
                       <span className={dotClass}
                         style={d.isHoy ? { boxShadow: '0 0 0 2px var(--color-accent)', opacity: 1 } : d.esFuturo ? { opacity: 0.25 } : {}}></span>
@@ -9618,10 +9850,17 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>
               <i className="fas fa-utensils mr-2"></i>{t('Comidas de hoy','Today\'s meals')}
             </h3>
-            <button onClick={() => onNavigate('plan')}
-              className="text-xs text-green-500 font-semibold hover:text-green-600">
-              {t('Ver plan →','View plan →')}
-            </button>
+            <div className="flex items-center gap-3">
+              <button onClick={() => onNavigate('compras')}
+                className="text-xs font-semibold text-ink-muted hover:text-ink cursor-pointer"
+                style={{ background: 'none', border: 'none' }}>
+                <i className="fas fa-cart-shopping mr-1" style={{ fontSize: 10 }}></i>{t('Compras','Groceries')}
+              </button>
+              <button onClick={() => onNavigate('plan')}
+                className="text-xs text-green-500 font-semibold hover:text-green-600">
+                {t('Ver plan →','View plan →')}
+              </button>
+            </div>
           </div>
           {resumenTotal.calorias > 0 && (
             <div className={`px-5 py-2.5 border-b ${darkMode ? 'border-gray-700' : 'border-gray-50 bg-gray-50'}`}>
@@ -9642,7 +9881,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               )}
             </div>
           )}
-          <div className={`divide-y stagger-children ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
+          <div className={`divide-y stagger-children cal-divide`}>
             {tiposOrden.map(tipo => {
               const comida = comidasHoy[tipo];
               // Comida reemplazada por entrada externa (puede existir aunque no haya plan en ese slot)
@@ -9885,7 +10124,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                   {t('Registra tus comidas del plan para ver sugerencias.','Log your plan meals to see suggestions.')}
                 </div>
               ) : (
-                <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
+                <div className={`divide-y cal-divide`}>
                   {recom.map(function(food, idx) {
                     return (
                       <div key={idx} className={`px-5 py-2.5 flex items-center gap-3 transition-colors ${darkMode ? 'hover:bg-gray-700/30' : 'hover:bg-gray-50/80'}`}>
@@ -10591,16 +10830,16 @@ function CocinarTab({ darkMode, onRecipeClick, plan, factorComensales }) {
     { k: 'crear',  l: t('Crear receta','Create recipe'), icon: 'fa-wand-magic-sparkles' },
     ...(tienePlan ? [{ k: 'preparar', l: t('Preparar','Prepare'), icon: 'fa-pot-food' }] : [])
   ];
-  const cols = subs.length === 3 ? 'grid-cols-3' : 'grid-cols-2';
   return (
     <div className="animate-fadeIn">
-      <div className={`grid ${cols} gap-2 mb-4`}>
+      {/* C7: mismo patrón segmentado que ProgresoTab — un solo lenguaje de sub-navegación */}
+      <div className={`flex gap-1.5 mb-4 p-1 rounded-xl overflow-x-auto ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
         {subs.map(s => (
           <button key={s.k} onClick={() => setSubVista(s.k)}
-            className={`py-2.5 px-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition ${
+            className={`flex-1 flex-shrink-0 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition whitespace-nowrap ${
               subVista === s.k
-                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
-                : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                ? 'nav-pill-active'
+                : darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-white'
             }`}>
             <i className={`fas ${s.icon}`}></i>{s.l}
           </button>
@@ -10823,7 +11062,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
           <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>{t('Fases del plan','Plan phases')}</h3>
           <p className={`text-xs mt-0.5 text-ink-faint`}>{roadmap.calculados.semanasTotales} {t('semanas totales','total weeks')} · {roadmap.calculados.cantDietBreaks} diet breaks · ~{roadmap.calculados.mesesTotales} {t('meses','months')}</p>
         </div>
-        <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
+        <div className={`divide-y cal-divide`}>
           {roadmap.fases.map((f, idx) => {
             const esActiva = faseInfo && faseInfo.numeroFase === f.numero;
             const esCompletada = faseInfo && f.numero < faseInfo.numeroFase;
@@ -11083,7 +11322,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
           <div className="flex gap-2 mt-2">
             <input type="number" step="0.1" value={pesoInput} onChange={e => setPesoInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') registrarPeso(); }}
-              className={`flex-1 px-4 py-3 rounded-xl border text-lg font-semibold tabular-nums ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
+              className={`flex-1 px-4 py-3 rounded-xl border text-lg font-semibold tabular-nums cal-input`}
               placeholder={t('Ej: 82.3', 'E.g. 82.3')} />
             <button aria-label="Confirmar" onClick={registrarPeso} disabled={!pesoInput}
               className="px-5 py-3 rounded-xl font-semibold transition active:scale-[0.98]"
@@ -11167,29 +11406,29 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
               <div>
                 <label className={`text-xs text-ink-faint`}>{t('Cintura (cm)', 'Waist (cm)')}</label>
                 <input type="number" step="0.5" value={medidas.cintura} onChange={e => setMedidas({...medidas, cintura: e.target.value})}
-                  className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder={perfil.cintura || '85'} />
+                  className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 cal-input`} placeholder={perfil.cintura || '85'} />
               </div>
               <div>
                 <label className={`text-xs text-ink-faint`}>{t('Cuello (cm)', 'Neck (cm)')}</label>
                 <input type="number" step="0.5" value={medidas.cuello} onChange={e => setMedidas({...medidas, cuello: e.target.value})}
-                  className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder={perfil.cuello || '40'} />
+                  className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 cal-input`} placeholder={perfil.cuello || '40'} />
               </div>
               {perfil.genero === 'femenino' && (
                 <div>
                   <label className={`text-xs text-ink-faint`}>{t('Cadera (cm)', 'Hip (cm)')}</label>
                   <input type="number" step="0.5" value={medidas.cadera} onChange={e => setMedidas({...medidas, cadera: e.target.value})}
-                    className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="95" />
+                    className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 cal-input`} placeholder="95" />
                 </div>
               )}
               <div>
                 <label className={`text-xs text-ink-faint`}>{t('Muslo (cm)', 'Thigh (cm)')}</label>
                 <input type="number" step="0.5" value={medidas.muslo} onChange={e => setMedidas({...medidas, muslo: e.target.value})}
-                  className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="55" />
+                  className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 cal-input`} placeholder="55" />
               </div>
               <div className="col-span-2">
                 <label className={`text-xs text-ink-faint`}>{t('BF% manual (opcional — sino se calcula Navy)', 'BF% manual (optional — Navy formula if blank)')}</label>
                 <input type="number" step="0.1" value={bfManualInput} onChange={e => setBfManualInput(e.target.value)}
-                  className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'}`} placeholder="Ej: 18.5" />
+                  className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 cal-input`} placeholder="Ej: 18.5" />
               </div>
             </div>
             <button aria-label="Confirmar" onClick={registrarMedidas}
@@ -11237,7 +11476,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
           <div className={`px-5 py-3 border-b border-default`}>
             <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>{t('Últimas 14 entradas', 'Last 14 entries')}</h3>
           </div>
-          <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
+          <div className={`divide-y text-sm cal-divide`}>
             {ultimas14.map((e, i) => (
               <div key={i} className={`px-5 py-2 flex items-center justify-between text-ink-muted`}>
                 <span className="text-xs text-gray-400">{e.fecha}</span>
@@ -11245,7 +11484,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
                   {e.peso != null && <span><b>{e.peso}</b> kg</span>}
                   {e.bf != null && <span className="text-xs text-gray-400">{e.bf}% BF</span>}
                   {e.cintura != null && <span className="text-xs text-gray-400">C:{e.cintura}</span>}
-                  <button onClick={() => { if (window.confirm(t('¿Borrar el registro del ','Delete entry for ') + e.fecha + '?')) { window.NP_BodyComp.eliminar(e.fecha); onRefresh(); } }}
+                  <button onClick={async () => { if (await NP_confirm(t('¿Borrar el registro del ','Delete entry for ') + e.fecha + '?', { confirmar: t('Borrar','Delete'), destructivo: true })) { window.NP_BodyComp.eliminar(e.fecha); onRefresh(); } }}
                     className="text-xs text-red-400 hover:text-red-600">
                     <i className="fas fa-times"></i>
                   </button>
@@ -11306,14 +11545,14 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
     window.NP_Plateau.avanzarPaso();
     onRefresh();
   };
-  const resolver = () => {
-    if (window.confirm(t('¿Este paso rompió la meseta? Se archivará como "funcionó" y saldrás del protocolo.', 'Did this step break the plateau? It will be archived as "worked" and you\'ll exit the protocol.'))) {
+  const resolver = async () => {
+    if (await NP_confirm(t('¿Este paso rompió la meseta?','Did this step break the plateau?'), { detalle: t('Se archivará como "funcionó" y saldrás del protocolo.','It will be archived as "worked" and you\'ll exit the protocol.'), confirmar: t('Sí, funcionó','Yes, it worked') })) {
       window.NP_Plateau.marcarResuelto();
       onRefresh();
     }
   };
-  const cancelar = () => {
-    if (window.confirm(t('¿Cancelar seguimiento del protocolo sin marcarlo como resuelto?', 'Cancel protocol tracking without marking it as resolved?'))) {
+  const cancelar = async () => {
+    if (await NP_confirm(t('¿Cancelar seguimiento del protocolo?','Cancel protocol tracking?'), { detalle: t('Saldrás sin marcarlo como resuelto.','You\'ll exit without marking it as resolved.'), confirmar: t('Cancelar protocolo','Cancel protocol') })) {
       window.NP_Plateau.cancelar();
       onRefresh();
     }
@@ -11492,12 +11731,12 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
                 </div>
                 <div className={`text-ink-muted text-sm leading-relaxed`}>{p.detalle}</div>
                 {!esActivo && !esHistorico && hayPasoActivo && p.paso > est.pasoActual && (
-                  <button onClick={() => {
+                  <button onClick={async () => {
                     const omitidos = p.paso - est.pasoActual - 1;
-                    const msg = omitidos > 0
-                      ? `¿Saltar al paso ${p.paso}? Se omitirán ${omitidos} paso${omitidos > 1 ? 's' : ''} del protocolo (${est.pasoActual + 1}${omitidos > 1 ? `–${p.paso - 1}` : ''}).`
-                      : `¿Saltar al paso ${p.paso}?`;
-                    if (window.confirm(msg)) { window.NP_Plateau.aplicarPaso(p.paso); onRefresh(); }
+                    const detalle = omitidos > 0
+                      ? `Se omitirán ${omitidos} paso${omitidos > 1 ? 's' : ''} del protocolo (${est.pasoActual + 1}${omitidos > 1 ? `–${p.paso - 1}` : ''}).`
+                      : null;
+                    if (await NP_confirm(`¿Saltar al paso ${p.paso}?`, { detalle: detalle, confirmar: t('Saltar','Jump') })) { window.NP_Plateau.aplicarPaso(p.paso); onRefresh(); }
                   }}
                     className={`mt-2 text-xs px-3 py-1.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                     {t('Saltar a este paso →', 'Jump to this step →')}
@@ -11707,7 +11946,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
             <div className={`px-4 py-2 border-b text-xs uppercase font-bold tracking-wider ${darkMode ? 'bg-gray-700/30 border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>
               {t('Log 7d', 'Log 7d')}
             </div>
-            <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
+            <div className={`divide-y cal-divide`}>
               {resumen.entries.slice().reverse().map(e => (
                 <div key={e.id} className={`px-4 py-2.5 flex items-center justify-between text-ink-muted`}>
                   <div className="flex-1 min-w-0">
@@ -11717,7 +11956,7 @@ function AlcoholCard({ darkMode, refresh, onRefresh }) {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`text-sm font-bold text-ink`}>{e.kcal} kcal</span>
-                    <button onClick={() => { if (window.confirm(t('¿Borrar este registro de ','Delete this entry for ') + e.bebida + '?')) { window.NP_Alcohol.eliminar(e.id); onRefresh(); } }}
+                    <button onClick={async () => { if (await NP_confirm(t('¿Borrar este registro de ','Delete this entry for ') + e.bebida + '?', { confirmar: t('Borrar','Delete'), destructivo: true })) { window.NP_Alcohol.eliminar(e.id); onRefresh(); } }}
                       className="text-red-400 hover:text-red-600 text-sm">
                       <i className="fas fa-times"></i>
                     </button>
@@ -11977,7 +12216,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
                     <input type="number" inputMode="numeric" min="0" max="50000" value={pasosObjEdit}
                       onChange={e => setPasosObjEdit(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter' && _dirty) { guardarPasosObj(pasosObjEdit); e.target.blur(); } }}
-                      className={`flex-1 px-4 py-2.5 rounded-xl border text-sm tabular-nums ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-200'}`}
+                      className={`flex-1 px-4 py-2.5 rounded-xl border text-sm tabular-nums cal-input`}
                       placeholder={t('ej: 4000', 'e.g. 4000')} />
                     <button onMouseDown={e => e.preventDefault()}
                       onClick={() => _dirty && guardarPasosObj(pasosObjEdit)}
@@ -12070,7 +12309,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
               {t('Últimos 14 días', 'Last 14 days')}
             </span>
           </div>
-          <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}
+          <div className={`divide-y text-sm cal-divide`}
             style={{ maxHeight: '24rem', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
             {ultimos.slice().reverse().map((e, i) => {
               const tgt = e.target || 8000;
@@ -12521,8 +12760,8 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
     onRefresh();
   };
 
-  const limpiarSesion = () => {
-    if (window.confirm(t('¿Borrar el registro de este entreno?', 'Delete the log for this workout?'))) {
+  const limpiarSesion = async () => {
+    if (await NP_confirm(t('¿Borrar el registro de este entreno?', 'Delete the log for this workout?'), { confirmar: t('Borrar','Delete'), destructivo: true })) {
       window.NP_Training.eliminar(hoy, tipoDia);
       onRefresh();
     }
@@ -12986,7 +13225,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
           <div className={`px-5 py-3 border-b border-default`}>
             <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>{t('Últimas sesiones', 'Recent sessions')}</h3>
           </div>
-          <div className={`divide-y text-sm ${darkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
+          <div className={`divide-y text-sm cal-divide`}>
             {ultimas.map((s, i) => {
               const hechos = s.ejercicios.filter(e => e.done).length;
               const tot = s.ejercicios.length;
@@ -14693,6 +14932,7 @@ function ChatPanel({ darkMode, activeTab }) {
     React.createElement('button', {
       onClick: function() { setOpen(function(o) { return !o; }); setBadge(false); },
       title: 'Asistente IA',
+      className: 'cal-chat-fab',
       style: {
         position:'fixed',
         bottom:'calc(24px + env(safe-area-inset-bottom, 0px))',
@@ -16380,7 +16620,11 @@ function App() {
   const handleEditarPerfil = () => { setPantalla("perfil"); window.scrollTo(0, 0); };
   const handleVolverAlPlan = () => { setPantalla("plan"); window.scrollTo(0, 0); };
   const handleReiniciar = async () => {
-    if (!window.confirm('¿Reiniciar Calibrate? Se borrarán tu perfil, plan semanal y todos los registros. Esta acción no se puede deshacer.')) return;
+    if (!(await NP_confirm(t('¿Reiniciar Calibrate?','Reset Calibrate?'), {
+      detalle: t('Se borrarán tu perfil, plan semanal y todos los registros. Esta acción no se puede deshacer.','Your profile, weekly plan and all records will be deleted. This cannot be undone.'),
+      confirmar: t('Reiniciar todo','Reset everything'),
+      destructivo: true
+    }))) return;
     limpiarTodo(); // Limpia localStorage (con proxy: solo borra claves del usuario actual)
     // También borrar datos en Firestore
     if (window.NP_CloudStorage && window.NP_CloudStorage.active) {
@@ -16479,7 +16723,7 @@ function App() {
   // ─── Pantalla de carga mientras Firebase inicializa auth ───
   if (authUser === undefined) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`}>
+      <div className={`min-h-screen flex items-center justify-center bg-base`}>
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl mb-4 shadow-lg" style={{animation: 'pulse-soft 1.5s infinite'}}>
             <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
@@ -16497,7 +16741,7 @@ function App() {
 
   if (pantalla === "loading") {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 via-white to-emerald-50'}`}>
+      <div className={`min-h-screen flex items-center justify-center bg-base`}>
         <div className="text-center" style={{animation: 'pulse-soft 1.5s infinite'}}>
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl mb-4 shadow-lg">
             <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
@@ -16580,7 +16824,7 @@ function App() {
         </div>
       </header>
 
-      <nav className={`border-b no-print surface-card`}>
+      <nav className={`cal-top-nav border-b no-print surface-card`}>
         <div className="max-w-3xl mx-auto px-4 overflow-x-auto">
           <div className="flex gap-1 py-2 min-w-max sm:min-w-0">
             {[
@@ -16754,6 +16998,11 @@ function App() {
         <div className="fixed inset-0 z-40 overflow-y-auto" style={{ background: 'var(--color-base)' }}>
           <AdminScreen darkMode={darkMode} onClose={() => setShowAdmin(false)} />
         </div>
+      )}
+
+      {/* Bottom nav móvil (C1) — oculta en desktop y en pantallas full-screen */}
+      {pantalla !== 'loading' && pantalla !== 'onboarding' && pantalla !== 'perfil' && (
+        <BottomNav pantalla={pantalla} onNavigate={navegarA} />
       )}
 
       {/* Asistente IA — siempre disponible, contextual al tab activo */}
