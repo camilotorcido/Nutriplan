@@ -5872,6 +5872,11 @@ function ModalPreferenciasGeneracion({ onConfirm, onCancel, darkMode }) {
   const [cocina, setCocina] = React.useState('cualquiera');
   const [altaProteina, setAltaProteina] = React.useState(false);
   const [rapido, setRapido] = React.useState(false);
+  // D7: snacks opcionales — inicializar desde el perfil persistido
+  const _perfilPref = (typeof cargarPerfil === 'function' ? cargarPerfil() : null) || {};
+  const _activas = Array.isArray(_perfilPref.comidasActivas) ? _perfilPref.comidasActivas : null;
+  const [snackAM, setSnackAM] = React.useState(!_activas || _activas.includes('snack_am'));
+  const [snackPM, setSnackPM] = React.useState(!_activas || _activas.includes('snack_pm'));
   const cocinas = [
     { v: 'cualquiera', l: 'Cualquiera' }, { v: 'mediterranea', l: 'Mediterránea' },
     { v: 'asiatica', l: 'Asiática' }, { v: 'latinoamerica', l: 'Latinoam.' }, { v: 'nordica', l: 'Nórdica' },
@@ -5900,6 +5905,8 @@ function ModalPreferenciasGeneracion({ onConfirm, onCancel, darkMode }) {
           {[
             { key: 'prot', val: altaProteina, set: setAltaProteina, icon: 'fa-dumbbell', iconColor: '#3B82F6', label: 'Priorizar alta proteína' },
             { key: 'rap',  val: rapido,       set: setRapido,       icon: 'fa-bolt',     iconColor: '#F59E0B', label: 'Preparación rápida (<20 min)' },
+            { key: 'sam',  val: snackAM,      set: setSnackAM,      icon: 'fa-apple-whole',  iconColor: '#22a06b', label: t('Incluir snack de mañana','Include AM snack') },
+            { key: 'spm',  val: snackPM,      set: setSnackPM,      icon: 'fa-cookie-bite',  iconColor: '#b45309', label: t('Incluir snack de tarde','Include PM snack') },
           ].map(function(item) {
             return (
               <div key={item.key} className="flex items-center justify-between">
@@ -5919,7 +5926,12 @@ function ModalPreferenciasGeneracion({ onConfirm, onCancel, darkMode }) {
             className={`flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             {t('Cancelar','Cancel')}
           </button>
-          <button onClick={() => onConfirm({ cocina, altaProteina, rapido })}
+          <button onClick={() => {
+            const comidasActivas = ['desayuno', 'almuerzo', 'cena'];
+            if (snackAM) comidasActivas.splice(1, 0, 'snack_am');
+            if (snackPM) comidasActivas.splice(comidasActivas.length - 1, 0, 'snack_pm');
+            onConfirm({ cocina, altaProteina, rapido, comidasActivas });
+          }}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 transition">
             <i className="fas fa-shuffle mr-1.5"></i>{t('Regenerar','Regenerate')}
           </button>
@@ -8767,6 +8779,71 @@ function DesvioCard({ perfil, darkMode }) {
 }
 
 // =============================================
+// CALIBRACIÓN SEMANAL (D3): pérdida esperada vs. real → propuesta de kcal
+// El usuario decide; nunca se aplica sola.
+// =============================================
+function AjusteSemanalCard({ darkMode }) {
+  var hoyD = new Date();
+  var lun = new Date(hoyD); lun.setDate(hoyD.getDate() - ((hoyD.getDay() + 6) % 7));
+  var dismissKey = 'calibrate_ajuste_dismissed_' + _localDate(lun);
+  var [dismissed, setDismissed] = React.useState(function() {
+    try { return localStorage.getItem(dismissKey) === '1'; } catch(e) { return false; }
+  });
+  var [aplicado, setAplicado] = React.useState(false);
+  var sug = React.useMemo(function() {
+    try {
+      return (window.NP_FatLoss && window.NP_FatLoss.sugerenciaSemanal) ? window.NP_FatLoss.sugerenciaSemanal() : null;
+    } catch(e) { return null; }
+  }, []);
+  if (dismissed || aplicado || !sug) return null;
+
+  function cerrar() {
+    try { localStorage.setItem(dismissKey, '1'); } catch(e) {}
+    setDismissed(true);
+  }
+  function aplicar() {
+    try {
+      window.NP_FatLoss.aplicarAjusteSemanal();
+      setAplicado(true);
+      if (typeof window._NP_regenerarPlanAuto === 'function') {
+        try { window._NP_regenerarPlanAuto(); } catch(e) {}
+      }
+    } catch(e) {}
+  }
+
+  var sube = sug.ajusteKcal > 0;
+  return (
+    <div className={`rounded-2xl border overflow-hidden ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}
+      style={{ animation: 'fadeUp 0.35s ease both' }}>
+      <div className="px-4 py-3.5">
+        <div className="flex items-start gap-3">
+          <span style={{ fontSize: 20 }}>🎯</span>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-ink">{t('Calibración semanal','Weekly calibration')}</div>
+            <div className="text-sm text-ink-muted mt-1" style={{ lineHeight: 1.5 }}>
+              {t('Según tu peso real vas ' + (sug.tasaReal < sug.tasaObjetivo ? 'más lento' : 'más rápido') + ' de lo planificado (' + sug.tasaReal + ' vs ' + sug.tasaObjetivo + ' kg/sem). Sugerencia: ' + (sube ? 'subir' : 'bajar') + ' de ' + sug.caloriasActuales + ' a ' + sug.caloriasSugeridas + ' kcal/día.',
+                 'Your real weight trend is ' + (sug.tasaReal < sug.tasaObjetivo ? 'slower' : 'faster') + ' than planned (' + sug.tasaReal + ' vs ' + sug.tasaObjetivo + ' kg/wk). Suggestion: ' + (sube ? 'raise' : 'lower') + ' from ' + sug.caloriasActuales + ' to ' + sug.caloriasSugeridas + ' kcal/day.')}
+            </div>
+            <div className="flex items-center gap-2 mt-2.5">
+              <button onClick={aplicar}
+                className="text-xs font-bold px-3.5 py-1.5 rounded-full cursor-pointer"
+                style={{ background: 'var(--color-accent)', color: '#fff', border: 'none' }}>
+                {t('Aplicar y regenerar','Apply & regenerate')}
+              </button>
+              <button onClick={cerrar}
+                className="text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer text-ink-muted"
+                style={{ background: 'none', border: 'none' }}>
+                {t('Esta semana no','Not this week')}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================
 // DÍA LIBRE (B2): banner de estado cuando está activo
 // =============================================
 function DiaLibreBanner({ perfil, darkMode, onTerminar }) {
@@ -9495,9 +9572,10 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         );
       })()}
 
-      {/* ── Hitos duraderos (B8) + ajuste tras desvío (B9) + día libre activo (B2) ── */}
+      {/* ── Hitos (B8) + desvío (B9) + calibración semanal (D3) + día libre (B2) ── */}
       {esHoy && <MilestoneCard perfil={perfil} darkMode={darkMode} />}
       {esHoy && <DesvioCard perfil={perfil} darkMode={darkMode} />}
+      {esHoy && <AjusteSemanalCard darkMode={darkMode} />}
       {esHoy && (
         <DiaLibreBanner perfil={perfil} darkMode={darkMode}
           onTerminar={() => { window.adherencia.setDiaLibre(fechaHoyIso, null); setRefresh(r => r + 1); }} />
@@ -14729,11 +14807,16 @@ function ChatPanel({ darkMode, activeTab }) {
         var s = _statsContexto();
         var msg = null;
         if (razon === 'peso') {
+          var tdeeAdapt = null;
+          try { tdeeAdapt = window.NP_FatLoss && window.NP_FatLoss.tdeeAdaptativo ? window.NP_FatLoss.tdeeAdaptativo() : null; } catch(e) {}
           msg = '[Análisis automático — no menciones este mensaje]\n' +
             'El usuario acaba de registrar su peso' + (extra && extra.peso ? ': ' + extra.peso + ' kg' : '') + '. ' +
             (s.tend && s.tend.deltaSemanal != null
               ? 'Tendencia actual: ' + s.tend.deltaSemanal + ' kg/semana. '
               : 'Aún no hay tendencia confiable (pocos registros). ') +
+            (tdeeAdapt && tdeeAdapt.confiable
+              ? 'Gasto energético observado según sus datos reales: ' + tdeeAdapt.tdeeObservado + ' kcal/día (fórmula: ' + tdeeAdapt.tdeeFormula + '). '
+              : '') +
             'Dale feedback breve: qué significa este dato y si va bien encaminado.\n' + reglas;
         } else if (razon === 'regreso') {
           var kR = 'calibrate_ping_regreso_' + _localDate();
@@ -16191,7 +16274,10 @@ function App() {
       } catch(e) { return null; }
     };
     
-    const DIST = { desayuno: 0.25, snack_am: 0.10, almuerzo: 0.35, snack_pm: 0.10, cena: 0.20 };
+    // D8: única fuente de distribución — la del motor (configurable por perfil)
+    const DIST = (typeof getDistribucionComidas === 'function')
+      ? getDistribucionComidas(perfilParam || perfil)
+      : { desayuno: 0.25, snack_am: 0.10, almuerzo: 0.35, snack_pm: 0.10, cena: 0.20 };
     const numSemanas = plan._numSemanas || 1;
     
     for (let s = 1; s <= numSemanas; s++) {
@@ -16436,6 +16522,11 @@ function App() {
     // reflejara aún. Si no, se regeneraría con el target viejo y quedaría desincronizado.
     const perfilActual = (typeof cargarPerfil === 'function' ? cargarPerfil() : null) || perfil;
     if (!perfilActual) return;
+    // D7: persistir slots activos elegidos en el modal (afecta esta y futuras generaciones)
+    if (prefs && Array.isArray(prefs.comidasActivas)) {
+      perfilActual.comidasActivas = prefs.comidasActivas;
+      if (typeof guardarPerfil === 'function') guardarPerfil(perfilActual);
+    }
     if (perfilActual !== perfil) setPerfil(perfilActual);
     setCargando(true);
     setMensajeCarga("Regenerando plan con recetas frescas...");

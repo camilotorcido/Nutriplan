@@ -21,6 +21,9 @@ const FACTORES_ACTIVIDAD = {
 };
 
 // ─── Ajustes calóricos según objetivo ───
+// D8: este motor "clásico" es SOLO fallback/preview para perfiles sin roadmap.
+// Cuando el perfil tiene roadmap (pérdida/mantenimiento/volumen), la fuente de
+// verdad de kcal y macros es roadmap-generator.js vía fat-loss-integration.js.
 const AJUSTES_OBJETIVO = {
   perdida: { valor: -500, label: "Pérdida de peso" },
   mantenimiento: { valor: 0, label: "Mantenimiento" },
@@ -50,6 +53,34 @@ const NOMBRES_COMIDAS = {
   snack_pm: "Snack PM",
   cena: "Cena"
 };
+
+// ─── D6/D7: distribución configurable + slots activos ───
+// perfil.distribucionComidas: { desayuno: 25, ... } en % (suma 100) o fracciones (suma 1).
+// perfil.comidasActivas: subset de slots; desayuno/almuerzo/cena son obligatorios.
+// Devuelve SIEMPRE fracciones normalizadas que suman 1 sobre los slots activos.
+function getDistribucionComidas(perfil) {
+  let fuente = DISTRIBUCION_COMIDAS;
+  if (perfil && perfil.distribucionComidas && typeof perfil.distribucionComidas === 'object') {
+    const d = perfil.distribucionComidas;
+    const suma = Object.keys(DISTRIBUCION_COMIDAS).reduce((s, k) => s + (Number(d[k]) || 0), 0);
+    if (suma > 0 && (Math.abs(suma - 100) <= 2 || Math.abs(suma - 1) <= 0.02)) {
+      const divisor = suma > 2 ? 100 : 1;
+      fuente = {};
+      Object.keys(DISTRIBUCION_COMIDAS).forEach(k => { fuente[k] = (Number(d[k]) || 0) / divisor; });
+    }
+  }
+  let activos = Object.keys(DISTRIBUCION_COMIDAS);
+  if (perfil && Array.isArray(perfil.comidasActivas) && perfil.comidasActivas.length >= 3) {
+    const set = new Set(perfil.comidasActivas.concat(['desayuno', 'almuerzo', 'cena']));
+    activos = Object.keys(DISTRIBUCION_COMIDAS).filter(k => set.has(k));
+  }
+  let sumaActiva = 0;
+  activos.forEach(k => { sumaActiva += fuente[k] || 0; });
+  if (sumaActiva <= 0) return Object.assign({}, DISTRIBUCION_COMIDAS);
+  const out = {};
+  activos.forEach(k => { out[k] = (fuente[k] || 0) / sumaActiva; });
+  return out;
+}
 
 const DIAS_SEMANA = [
   "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"
@@ -113,6 +144,30 @@ function _sortPorRating(candidatas) {
     var rb = ratings[b.id] || 0;
     if (rb !== ra) return rb - ra;
     return Math.random() - 0.5; // aleatoriedad para ratings iguales
+  });
+}
+
+// ─── D5: rating primero; a igual rating, mejor fit con el split de macros del usuario ───
+// El escalado por kcal preserva el perfil de macros de la receta — elegir recetas cuyo
+// split se parece al target reduce el desvío del plan sin sacrificar variedad.
+function _sortPorRatingYFit(candidatas, targetPct) {
+  var ratings = (typeof cargarRatings === 'function') ? cargarRatings() : {};
+  function fit(r) {
+    if (!targetPct || !r.calorias_base) return 0;
+    var p = ((r.proteinas_g || 0) * 4 / r.calorias_base) * 100;
+    var c = ((r.carbohidratos_g || 0) * 4 / r.calorias_base) * 100;
+    var g = ((r.grasas_g || 0) * 9 / r.calorias_base) * 100;
+    return Math.abs(p - (targetPct.proteinas || 0)) +
+           Math.abs(c - (targetPct.carbohidratos || 0)) +
+           Math.abs(g - (targetPct.grasas || 0));
+  }
+  return candidatas.slice().sort(function(a, b) {
+    var ra = ratings[a.id] || 0;
+    var rb = ratings[b.id] || 0;
+    if (rb !== ra) return rb - ra;
+    var fa = fit(a), fb = fit(b);
+    if (Math.abs(fa - fb) > 2) return fa - fb;
+    return Math.random() - 0.5;
   });
 }
 
@@ -234,8 +289,8 @@ function seleccionarAleatorio(array, cantidad) {
 }
 
 // ─── Fase 4 - Punto 16: aplicar modo sobras a una semana ya generada ───
-function _aplicarModoSobras(planSemana, caloriasObjetivo) {
-  const kcalAlmuerzo = Math.round(caloriasObjetivo * DISTRIBUCION_COMIDAS.almuerzo);
+function _aplicarModoSobras(planSemana, caloriasObjetivo, dist) {
+  const kcalAlmuerzo = Math.round(caloriasObjetivo * ((dist && dist.almuerzo) || DISTRIBUCION_COMIDAS.almuerzo));
   for (let i = 1; i < DIAS_SEMANA.length; i++) {
     const diaAnterior = DIAS_SEMANA[i - 1];
     const diaActual = DIAS_SEMANA[i];
@@ -290,7 +345,7 @@ function _filtrarPorProteinaMinima(candidatas, minDensidad) {
 // Si el día no alcanza el 95% del target, encuentra la comida de menor densidad
 // proteica y la reemplaza con la mejor alternativa disponible del pool.
 // Repite hasta MAX_SWAPS veces o hasta alcanzar la tolerancia.
-function _enforceProteinDia(comidasDia, caloriasObjetivo, porTipo, recetasUsadasGlobal, proteinaTarget) {
+function _enforceProteinDia(comidasDia, caloriasObjetivo, porTipo, recetasUsadasGlobal, proteinaTarget, dist) {
   if (!proteinaTarget || proteinaTarget <= 0) return;
   const TOLERANCIA = 0.95;
   const MAX_SWAPS = 5;
@@ -312,7 +367,8 @@ function _enforceProteinDia(comidasDia, caloriasObjetivo, porTipo, recetasUsadas
 
     let mejora = false;
     for (const [tipoComida, comidaActual] of meals) {
-      const caloriasComida = Math.round(caloriasObjetivo * DISTRIBUCION_COMIDAS[tipoComida]);
+      const caloriasComida = Math.round(caloriasObjetivo * ((dist && dist[tipoComida]) || DISTRIBUCION_COMIDAS[tipoComida] || 0));
+      if (caloriasComida <= 0) continue;
       const disponibles = porTipo[tipoComida] || [];
       if (disponibles.length === 0) continue;
 
@@ -404,12 +460,14 @@ function _evitarProteinaDelDia(candidatas, planSemanaDia, tipoComida) {
 // y agregarSemanaAlPlan. ctx muta recetasUsadasGlobal para evitar repeticiones.
 function _construirSemana(porTipo, ctx) {
   const planSemana = {};
+  // D6/D7: distribución configurable y slots activos del perfil
+  const dist = ctx.dist || getDistribucionComidas(ctx.perfil);
 
   DIAS_SEMANA.forEach(dia => {
     planSemana[dia] = {};
 
-    Object.keys(DISTRIBUCION_COMIDAS).forEach(tipoComida => {
-      const caloriasComida = Math.round(ctx.caloriasObjetivo * _multiplicadorDia(dia, ctx.perfil) * DISTRIBUCION_COMIDAS[tipoComida]);
+    Object.keys(dist).forEach(tipoComida => {
+      const caloriasComida = Math.round(ctx.caloriasObjetivo * _multiplicadorDia(dia, ctx.perfil) * dist[tipoComida]);
       const recetasDisponibles = porTipo[tipoComida];
 
       if (recetasDisponibles.length > 0) {
@@ -432,7 +490,8 @@ function _construirSemana(porTipo, ctx) {
         // Compliance proteína: filtrar por densidad mínima (Tier 1 estricto → Tier 2 top-50%)
         candidatas = _filtrarPorProteinaMinima(candidatas, ctx.minDensidad);
         candidatas = _filtrarPorCocina(candidatas, ctx.preferencias);
-        candidatas = _sortPorRating(candidatas);
+        // D5: a igual rating, priorizar recetas cuyo split de macros se acerca al target
+        candidatas = _sortPorRatingYFit(candidatas, ctx.perfil && ctx.perfil.macros);
 
         // Selección ponderada: recetas mejor valoradas tienen más peso
         const idx = Math.floor(Math.random() * Math.max(1, Math.ceil(candidatas.length * 0.6)));
@@ -446,11 +505,11 @@ function _construirSemana(porTipo, ctx) {
     });
 
     // Compliance proteína: pase de corrección post-selección
-    _enforceProteinDia(planSemana[dia], ctx.caloriasObjetivo, porTipo, ctx.recetasUsadasGlobal, ctx.proteinaTarget);
+    _enforceProteinDia(planSemana[dia], ctx.caloriasObjetivo, porTipo, ctx.recetasUsadasGlobal, ctx.proteinaTarget, dist);
   });
 
   // Fase 4 - Punto 16: modo sobras (cena día N → almuerzo día N+1)
-  if (ctx.perfil.modoSobras) _aplicarModoSobras(planSemana, ctx.caloriasObjetivo);
+  if (ctx.perfil.modoSobras) _aplicarModoSobras(planSemana, ctx.caloriasObjetivo, dist);
 
   return planSemana;
 }
@@ -592,9 +651,10 @@ function cambiarRecetaIndividual(planMulti, dia, tipoComida, perfil, caloriasObj
 
   // Ordenar por rating + aleatorio (ratings iguales ya son random en _sortPorRating)
   // Usar pool COMPLETO en vez de top 60% — el 60% era la causa directa del loop de 4-5
-  candidatas = _sortPorRating(candidatas);
+  candidatas = _sortPorRatingYFit(candidatas, perfil && perfil.macros);
   const idx = Math.floor(Math.random() * candidatas.length);
-  const caloriasComida = Math.round(caloriasObjetivo * DISTRIBUCION_COMIDAS[tipoComida]);
+  const _distSwap = getDistribucionComidas(perfil);
+  const caloriasComida = Math.round(caloriasObjetivo * (_distSwap[tipoComida] || DISTRIBUCION_COMIDAS[tipoComida]));
   const nuevaReceta = escalarReceta(candidatas[idx], caloriasComida);
 
   // Actualizar plan multi-semana
@@ -1850,8 +1910,9 @@ async function cambiarRecetaIndividualAsync(planMulti, dia, tipoComida, perfil, 
   if (candidatas.length === 0) return plan;
 
   // Pool COMPLETO (no top 60%) — el 60% era la causa directa del loop de 4-5 opciones
-  candidatas = _sortPorRating(candidatas);
-  const caloriasComida = Math.round(caloriasObjetivo * DISTRIBUCION_COMIDAS[tipoComida]);
+  candidatas = _sortPorRatingYFit(candidatas, perfil && perfil.macros);
+  const _distSwapO = getDistribucionComidas(perfil);
+  const caloriasComida = Math.round(caloriasObjetivo * (_distSwapO[tipoComida] || DISTRIBUCION_COMIDAS[tipoComida]));
   const idx = Math.floor(Math.random() * candidatas.length);
   const nuevaReceta = escalarReceta(candidatas[idx], caloriasComida);
   

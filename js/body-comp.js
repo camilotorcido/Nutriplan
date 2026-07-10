@@ -98,6 +98,53 @@ function _epochDia(fechaIso) {
   return Math.round(new Date(fechaIso + 'T00:00:00').getTime() / 86400000);
 }
 
+// ─── Trend weight: media móvil EXPONENCIAL (estilo MacroFactor/Hacker's Diet) ───
+// alpha efectivo por día real transcurrido (huecos entre pesajes decaen más).
+// Devuelve [{ fecha, valor, trend }] con el trend en cada punto, o [] sin datos.
+const TREND_ALPHA_DIA = 0.25;
+function trendWeight(entries, campo) {
+  campo = campo || 'peso';
+  const conDato = (entries || []).filter(e => e && e[campo] != null && e.fecha)
+    .slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
+  if (conDato.length === 0) return [];
+  let trend = conDato[0][campo];
+  let prevEpoch = _epochDia(conDato[0].fecha);
+  const serie = [{ fecha: conDato[0].fecha, valor: conDato[0][campo], trend: trend }];
+  for (let i = 1; i < conDato.length; i++) {
+    const e = conDato[i];
+    const epoch = _epochDia(e.fecha);
+    const dias = Math.max(1, epoch - prevEpoch);
+    // alpha compuesto por días transcurridos: 1-(1-a)^dias
+    const alpha = 1 - Math.pow(1 - TREND_ALPHA_DIA, dias);
+    trend = trend + alpha * (e[campo] - trend);
+    serie.push({ fecha: e.fecha, valor: e[campo], trend: Math.round(trend * 100) / 100 });
+    prevEpoch = epoch;
+  }
+  return serie;
+}
+
+// ─── Trend actual (último valor de la EMA) ───
+function trendActual(entries, campo) {
+  const serie = trendWeight(entries, campo);
+  return serie.length > 0 ? serie[serie.length - 1].trend : null;
+}
+
+// ─── Tasa semanal según trend EMA: pendiente entre el trend de hace ~7d y el actual ───
+function trendTasaSemanal(entries, campo) {
+  const serie = trendWeight(entries, campo);
+  if (serie.length < 4) return null;
+  const ultimo = serie[serie.length - 1];
+  const epochUlt = _epochDia(ultimo.fecha);
+  // buscar el punto más cercano a 7 días atrás (entre 5 y 12 días)
+  let ref = null;
+  for (let i = serie.length - 2; i >= 0; i--) {
+    const d = epochUlt - _epochDia(serie[i].fecha);
+    if (d >= 5) { ref = { punto: serie[i], dias: d }; break; }
+  }
+  if (!ref || ref.dias > 12) return null;
+  return Math.round(((ultimo.trend - ref.punto.trend) / ref.dias) * 7 * 100) / 100;
+}
+
 // ─── Tendencia: promedio últimos 7d vs promedio ventana 14-21d atrás ───
 // La tasa semanal se calcula con la distancia REAL entre los puntos medios de las
 // ventanas (según las fechas de los registros usados), no asumiendo 14 días fijos.
@@ -160,7 +207,9 @@ function progresoVsRoadmap() {
   if (!perfil || !perfil.roadmap) return null;
 
   const entries = cargarBodyComp();
-  const pesoActual = promedioMovil(entries, 'peso', 7);
+  // Trend EMA como fuente primaria (menos ruido); promedio 7d como fallback
+  const pesoTrend = trendActual(entries, 'peso');
+  const pesoActual = pesoTrend != null ? pesoTrend : promedioMovil(entries, 'peso', 7);
 
   const roadmap = perfil.roadmap;
   const pesoInicial = roadmap.inputs.peso;
@@ -207,6 +256,9 @@ if (typeof window !== 'undefined') {
     eliminar: eliminarEntrada,
     promedio: promedioMovil,
     tendencia,
+    trend: trendWeight,
+    trendActual,
+    trendTasaSemanal,
     ultima: ultimaEntrada,
     progreso: progresoVsRoadmap,
     calcularBFNavy

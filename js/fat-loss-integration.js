@@ -137,11 +137,46 @@ function getPasosObjetivoReal() {
   } catch (e) { return null; }
 }
 
+// ─── D4: promedio real de pasos (últimos 7 días, mínimo 4 registros) ──────
+// Reconciliación factor de actividad ↔ pasos: si el usuario registra pasos reales,
+// el gasto se ajusta a lo que camina de verdad, no a lo que la fase prescribe.
+function _leerJSONLS(key, fallback) {
+  try {
+    if (typeof localStorage === 'undefined') return fallback;
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (e) { return fallback; }
+}
+
+function getPasosPromedioReal() {
+  const registros = _leerJSONLS('nutriplan_steps', []);
+  if (!Array.isArray(registros) || registros.length === 0) return null;
+  const hoy = new Date();
+  const limite = new Date(hoy);
+  limite.setDate(limite.getDate() - 7);
+  const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const recientes = registros.filter((e) => e && e.fecha >= iso(limite) && Number(e.pasos) >= 0);
+  if (recientes.length < 4) return null;
+  return Math.round(recientes.reduce((s, e) => s + Number(e.pasos), 0) / recientes.length);
+}
+
+// Pasos efectivos: override manual > promedio real registrado > default de fase
+function _pasosEfectivos() {
+  const manual = getPasosObjetivoReal();
+  if (manual != null) return manual;
+  return getPasosPromedioReal();
+}
+
 function _kcalDeltaPasos(faseDefaultPasos, peso) {
-  const override = getPasosObjetivoReal();
+  const override = _pasosEfectivos();
   if (override == null) return 0;
   const def = Number(faseDefaultPasos) > 0 ? Number(faseDefaultPasos) : 0;
-  return Math.round((override - def) * _kcalPorPaso(peso));
+  let delta = Math.round((override - def) * _kcalPorPaso(peso));
+  // Cuantizar a pasos de 50 kcal e ignorar deltas chicos: evita que el plan
+  // marque "desincronizado" cada vez que cambia el promedio de pasos en unas decenas
+  delta = Math.round(delta / 50) * 50;
+  if (Math.abs(delta) < 100) return 0;
+  return delta;
 }
 
 // Persiste el override y re-sincroniza perfil (caloriasManual + caloriasObjetivo).
@@ -188,12 +223,13 @@ function faseActualPerfil() {
   if (!window.NP_Roadmap || !window.NP_Roadmap.faseActual) return null;
   const fase = window.NP_Roadmap.faseActual(perfil.roadmap);
   if (!fase) return fase;
-  const override = getPasosObjetivoReal();
+  const override = _pasosEfectivos();
   if (override == null) return fase;
   const peso = (perfil.peso != null) ? perfil.peso
     : (perfil.roadmap && perfil.roadmap.inputs ? perfil.roadmap.inputs.peso : null);
   const defaultPasos = fase.targetPasos;
-  const delta = Math.round((override - (defaultPasos || 0)) * _kcalPorPaso(peso));
+  const delta = _kcalDeltaPasos(defaultPasos, peso);
+  if (delta === 0 && getPasosObjetivoReal() == null) return fase;
   // Piso de seguridad por género (1200 F / 1500 M); si la fase ya está bajo el piso, no inflar
   const _piso = Math.min(_pisoKcalPerfil(perfil), fase.calorias || Infinity);
   const caloriasAjust = Math.max(_piso, (fase.calorias || 0) + delta);
@@ -464,6 +500,167 @@ function migrarPerfilSiStale() {
   return migrado;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// D1 — TDEE ADAPTATIVO: recalibra el gasto con ingesta registrada + trend de peso
+// TDEE_observado = ingesta_media − (Δtrend_kg · 7700 / días)
+// Se mezcla con el TDEE de fórmula según la cantidad de datos (confianza).
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Kcal consumidas de una fecha: slots del plan marcados + comidas externas.
+// (Copia local de _macrosConsumidosFecha del bundle — archivos independientes.)
+function _kcalConsumidasFechaFL(fecha) {
+  const extM = _leerJSONLS('nutriplan_comidas_externas', {});
+  const extsF = extM[fecha] || [];
+  const tiposR = extsF.filter((c) => c && c.reemplaza).map((c) => c.reemplaza);
+  let kcal = 0;
+  extsF.forEach((c) => { if (c && !c.pendiente) kcal += c.kcal || 0; });
+  const adhD = _leerJSONLS('nutriplan_adherencia', {});
+  const adhF = adhD[fecha] || {};
+  Object.keys(adhF).forEach((k) => {
+    const e = adhF[k];
+    if (!e || !e.comido) return;
+    const tp = k.split(':')[1];
+    if (!tp || tp.indexOf('ext_') === 0 || tiposR.indexOf(tp) >= 0) return;
+    kcal += e.kcal_plan || 0;
+  });
+  return Math.round(kcal);
+}
+
+function calcularTDEEAdaptativo() {
+  if (typeof cargarPerfil !== 'function' || !window.NP_BodyComp) return null;
+  const perfil = cargarPerfil();
+  if (!perfil) return null;
+  const tdeeFormula = (perfil.roadmap && perfil.roadmap.calculados && perfil.roadmap.calculados.tdee)
+    || perfil.tdee || null;
+  if (!tdeeFormula) return null;
+
+  const VENTANA_DIAS = 21;
+  const libres = _leerJSONLS('nutriplan_dias_libres', {});
+  const vacas = _leerJSONLS('nutriplan_vacaciones', []);
+  const esLibre = (f) => !!libres[f] || (Array.isArray(vacas) && vacas.some((v) => v && v.inicio <= f && f <= v.fin));
+
+  // Ventana: [hace VENTANA_DIAS, ayer]
+  const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const fechas = [];
+  for (let i = VENTANA_DIAS; i >= 1; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    fechas.push(iso(d));
+  }
+
+  // Días con registro creíble (≥800 kcal registradas y sin día libre/vacaciones)
+  const kcalValidas = [];
+  fechas.forEach((f) => {
+    if (esLibre(f)) return;
+    const k = _kcalConsumidasFechaFL(f);
+    if (k >= 800) kcalValidas.push(k);
+  });
+  const diasValidos = kcalValidas.length;
+
+  // Trend de peso al inicio y fin de la ventana
+  const entries = window.NP_BodyComp.cargar();
+  const serie = (window.NP_BodyComp.trend ? window.NP_BodyComp.trend(entries, 'peso') : [])
+    .filter((p) => p.fecha >= fechas[0]);
+  const resultadoBase = {
+    tdeeFormula: Math.round(tdeeFormula),
+    tdeeObservado: null,
+    tdee: Math.round(tdeeFormula),
+    confianza: 0,
+    diasConIngesta: diasValidos,
+    pesajesVentana: serie.length,
+    confiable: false
+  };
+  if (diasValidos < 10 || serie.length < 6) return resultadoBase;
+
+  const primero = serie[0];
+  const ultimo = serie[serie.length - 1];
+  const diasSpan = Math.round((new Date(ultimo.fecha) - new Date(primero.fecha)) / 86400000);
+  if (diasSpan < 10) return resultadoBase;
+
+  const deltaKg = ultimo.trend - primero.trend;
+  const ingestaMedia = kcalValidas.reduce((s, k) => s + k, 0) / diasValidos;
+  const tdeeObservado = Math.round(ingestaMedia - (deltaKg * 7700) / diasSpan);
+
+  // Sanity: fuera de ±40% de la fórmula suele ser registro incompleto, no fisiología
+  if (tdeeObservado < tdeeFormula * 0.6 || tdeeObservado > tdeeFormula * 1.4) {
+    return Object.assign(resultadoBase, { tdeeObservado, confiable: false });
+  }
+
+  const confianza = Math.min(1, diasValidos / VENTANA_DIAS);
+  const tdeeBlend = Math.round(tdeeFormula + (tdeeObservado - tdeeFormula) * confianza * 0.7);
+  return {
+    tdeeFormula: Math.round(tdeeFormula),
+    tdeeObservado,
+    tdee: tdeeBlend,
+    confianza: Math.round(confianza * 100) / 100,
+    diasConIngesta: diasValidos,
+    pesajesVentana: serie.length,
+    deltaKgVentana: Math.round(deltaKg * 100) / 100,
+    confiable: true
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// D3 — AJUSTE SEMANAL SUGERIDO: pérdida esperada vs. real → propuesta de kcal
+// Nunca se aplica solo: la UI/coach lo sugiere y el usuario decide.
+// ═══════════════════════════════════════════════════════════════════════════
+function sugerenciaAjusteSemanal() {
+  if (typeof cargarPerfil !== 'function' || !window.NP_BodyComp) return null;
+  const perfil = cargarPerfil();
+  if (!perfil || !perfil.fatLossMode || !perfil.roadmap) return null;
+  const fase = faseActualPerfil();
+  if (!fase || fase.tipo !== 'corte' || fase.estado !== 'activa') return null;
+
+  const tasaObjetivo = perfil.roadmap.calculados.tasaSemanal; // kg/sem a perder (positivo)
+  if (!tasaObjetivo) return null;
+
+  const entries = window.NP_BodyComp.cargar();
+  const conPeso = entries.filter((e) => e.peso != null);
+  // Trend confiable: mínimo 8 pesajes en los últimos 21 días
+  const lim = new Date(); lim.setDate(lim.getDate() - 21);
+  const iso21 = lim.getFullYear() + '-' + String(lim.getMonth() + 1).padStart(2, '0') + '-' + String(lim.getDate()).padStart(2, '0');
+  if (conPeso.filter((e) => e.fecha >= iso21).length < 8) return null;
+
+  const tasaTrend = window.NP_BodyComp.trendTasaSemanal ? window.NP_BodyComp.trendTasaSemanal(entries, 'peso') : null;
+  if (tasaTrend == null) return null;
+  const perdidaReal = -tasaTrend; // positivo = está perdiendo
+
+  // Adherencia mínima para que el dato signifique algo
+  let adhPct = null;
+  try { adhPct = window.adherencia && window.adherencia.semanal ? window.adherencia.semanal().porcentaje : null; } catch (e) {}
+  if (adhPct != null && adhPct < 60) return null;
+
+  const diff = tasaObjetivo - perdidaReal; // positivo = pierde más lento de lo planificado
+  if (Math.abs(diff) < 0.15) return null;  // dentro del rango esperado
+
+  // Ajuste propuesto: cerrar ~70% de la brecha, en múltiplos de 25, tope ±200 kcal
+  let ajusteKcal = -Math.round((diff * 7700 / 7) * 0.7 / 25) * 25;
+  ajusteKcal = Math.max(-200, Math.min(200, ajusteKcal));
+  if (ajusteKcal === 0) return null;
+
+  const piso = _pisoKcalPerfil(perfil);
+  const caloriasSugeridas = Math.max(Math.min(piso, fase.calorias), fase.calorias + ajusteKcal);
+  if (caloriasSugeridas === fase.calorias) return null;
+
+  return {
+    tasaObjetivo: Math.round(tasaObjetivo * 100) / 100,
+    tasaReal: Math.round(perdidaReal * 100) / 100,
+    ajusteKcal: caloriasSugeridas - fase.calorias,
+    caloriasActuales: fase.calorias,
+    caloriasSugeridas,
+    numeroFase: fase.numero,
+    adherenciaPct: adhPct
+  };
+}
+
+// Aplica la sugerencia como override manual de la fase actual y re-sincroniza
+function aplicarAjusteSemanal() {
+  const s = sugerenciaAjusteSemanal();
+  if (!s) return null;
+  aplicarOverrideFase(s.numeroFase, { calorias: s.caloriasSugeridas });
+  return sincronizarConFaseActual();
+}
+
 // ─── Exponer a window ───
 if (typeof window !== 'undefined') {
   window.NP_FatLoss = {
@@ -482,6 +679,10 @@ if (typeof window !== 'undefined') {
     migrar: migrarPerfilSiStale,
     getPasosObjetivoReal,
     setPasosObjetivoReal,
-    kcalDeltaPasos: _kcalDeltaPasos
+    getPasosPromedioReal,
+    kcalDeltaPasos: _kcalDeltaPasos,
+    tdeeAdaptativo: calcularTDEEAdaptativo,
+    sugerenciaSemanal: sugerenciaAjusteSemanal,
+    aplicarAjusteSemanal
   };
 }
