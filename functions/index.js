@@ -879,6 +879,212 @@ exports.sendPlateauPush = onSchedule(
   }
 );
 
+// ============================================================================
+// RETENTION PUSHES (B5/B6/B7): racha en riesgo (20h), resumen semanal
+// (domingo 18h) y re-enganche tras ausencia (11h). Un solo scheduler horario.
+// ============================================================================
+
+function _isoAddDays(iso, n) {
+  const d = new Date(iso + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function _diffDias(isoA, isoB) {
+  return Math.round((new Date(isoA + 'T00:00:00Z') - new Date(isoB + 'T00:00:00Z')) / 86400000);
+}
+
+// ── Día de la semana local (0=domingo) ──
+function _localDowForTz(tz) {
+  try {
+    const fmt = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' });
+    return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(fmt.format(new Date()));
+  } catch (_) {
+    return new Date().getDay();
+  }
+}
+
+// ── Racha de adherencia desde ayer hacia atrás (espejo del cliente) ──
+function _streakServidor(adher, esLibre, fechaHoy) {
+  let streak = 0;
+  let f = _isoAddDays(fechaHoy, -1);
+  for (let i = 0; i < 90; i++) {
+    if (esLibre(f)) { streak++; f = _isoAddDays(f, -1); continue; }
+    const dia = adher[f] || {};
+    const entries = Object.values(dia);
+    const total = entries.length;
+    const cumplidos = entries.filter((e) => e && e.comido).length;
+    if (total === 0 || cumplidos / total < 0.8) break;
+    streak++;
+    f = _isoAddDays(f, -1);
+  }
+  return streak;
+}
+
+// ── Stats de los últimos 7 días (excluye días libres) ──
+function _statsSemanaServidor(adher, esLibre, fechaHoy) {
+  let registros = 0, cumplidos = 0, diasConRegistro = 0;
+  for (let i = 6; i >= 0; i--) {
+    const f = _isoAddDays(fechaHoy, -i);
+    if (esLibre(f)) continue;
+    const dia = adher[f];
+    if (!dia) continue;
+    const entries = Object.values(dia);
+    if (entries.length > 0) diasConRegistro++;
+    entries.forEach((e) => { registros++; if (e && e.comido) cumplidos++; });
+  }
+  return {
+    registros, cumplidos, diasConRegistro,
+    pct: registros > 0 ? Math.round((cumplidos / registros) * 100) : 0
+  };
+}
+
+// ── Delta de peso: promedio últimos 7d vs 7d anteriores ──
+function _deltaPeso7d(bc, fechaHoy) {
+  if (!Array.isArray(bc)) return null;
+  const conPeso = bc.filter((e) => e && e.peso != null && e.fecha);
+  const lim7 = _isoAddDays(fechaHoy, -7);
+  const lim14 = _isoAddDays(fechaHoy, -14);
+  const recientes = conPeso.filter((e) => e.fecha > lim7);
+  const anteriores = conPeso.filter((e) => e.fecha > lim14 && e.fecha <= lim7);
+  if (recientes.length === 0 || anteriores.length === 0) return null;
+  const avg = (arr) => arr.reduce((s, e) => s + e.peso, 0) / arr.length;
+  return Math.round((avg(recientes) - avg(anteriores)) * 10) / 10;
+}
+
+// ── Última fecha con al menos un registro de adherencia ──
+function _ultimaFechaConRegistro(adher) {
+  const fechas = Object.keys(adher || {}).filter((f) => {
+    const dia = adher[f];
+    return dia && Object.values(dia).some((e) => e && e.comido);
+  }).sort();
+  return fechas.length > 0 ? fechas[fechas.length - 1] : null;
+}
+
+// ── Resumen semanal redactado por el coach (Haiku); null si falla ──
+async function _resumenSemanalIA(stats, deltaPeso) {
+  const apiKey = ANTHROPIC_KEY.value();
+  if (!apiKey) return null;
+  const datos = 'Adherencia: ' + stats.pct + '% (' + stats.cumplidos + ' de ' + stats.registros + ' comidas), ' +
+    stats.diasConRegistro + ' días con registro' +
+    (deltaPeso != null ? ', peso ' + (deltaPeso > 0 ? '+' : '') + deltaPeso + ' kg vs semana anterior' : ', sin datos de peso') + '.';
+  const response = await callAnthropic(apiKey, {
+    model: 'claude-haiku-4-5',
+    max_tokens: 150,
+    messages: [{
+      role: 'user',
+      content: 'Eres el coach nutricional de la app Calibrate. Resumen de la semana del usuario: ' + datos + '\n' +
+        'Escribe UNA sola oración motivadora (máximo 150 caracteres) para una notificación push. ' +
+        'Español latinoamericano neutro, sin voseo ni regionalismos, sin emojis, sin comillas, jamás culpabilizador. ' +
+        'Menciona el dato más relevante y cierra con un micro-foco para la semana que empieza.'
+    }]
+  });
+  const texto = response && response.content && response.content[0] && response.content[0].text;
+  return texto ? texto.trim().replace(/^"|"$/g, '') : null;
+}
+
+exports.sendRetentionPushes = onSchedule(
+  {
+    schedule: '15 * * * *',
+    timeZone: 'UTC',
+    secrets: [VAPID_PRIVATE_KEY, ANTHROPIC_KEY],
+    region: 'us-central1'
+  },
+  async () => {
+    _setupWebPush();
+    const subsSnap = await admin.firestore().collectionGroup('pushSubscriptions').get();
+    const byUser = new Map();
+    subsSnap.forEach((doc) => {
+      const uid = doc.ref.parent.parent.id;
+      if (!byUser.has(uid)) byUser.set(uid, []);
+      byUser.get(uid).push(doc.data());
+    });
+    let sent = 0;
+    for (const [uid, subs] of byUser) {
+      try {
+        const tz = subs[0].tz || 'America/Santiago';
+        const hour = _localHourForTz(tz);
+        const dow = _localDowForTz(tz);
+        const esDomingo18 = hour === 18 && dow === 0;
+        if (hour !== 20 && hour !== 11 && !esDomingo18) continue;
+
+        const fechaHoy = _localDateForTz(tz);
+        const adher = await _readUserData(uid, 'nutriplan_adherencia') || {};
+        const libres = await _readUserData(uid, 'nutriplan_dias_libres') || {};
+        const vacas = await _readUserData(uid, 'nutriplan_vacaciones') || [];
+        const esLibre = (f) => !!libres[f] ||
+          (Array.isArray(vacas) && vacas.some((v) => v && v.inicio <= f && f <= v.fin));
+
+        if (hour === 20) {
+          // B5: racha en riesgo — hoy sin ningún registro y racha ≥ 3
+          if (esLibre(fechaHoy)) continue;
+          const hoyMarcadas = Object.values(adher[fechaHoy] || {}).filter((e) => e && e.comido).length;
+          if (hoyMarcadas > 0) continue;
+          const streak = _streakServidor(adher, esLibre, fechaHoy);
+          if (streak < 3) continue;
+          await _sendPushToUser(uid, {
+            title: '🔥 Racha de ' + streak + ' días en juego',
+            body: 'Aún no registras nada hoy. Un par de taps y la racha sigue viva.',
+            tag: 'calibrate-streak-' + fechaHoy,
+            icon: 'icons/icon.svg',
+            url: './',
+            nav: 'hoy'
+          });
+          sent++;
+        } else if (esDomingo18) {
+          // B6: resumen semanal
+          const stats = _statsSemanaServidor(adher, esLibre, fechaHoy);
+          if (!stats || stats.registros === 0) continue;
+          const bc = await _readUserData(uid, 'nutriplan_body_comp') || [];
+          const deltaPeso = _deltaPeso7d(bc, fechaHoy);
+          let texto = null;
+          try { texto = await _resumenSemanalIA(stats, deltaPeso); } catch (e) { texto = null; }
+          if (!texto) {
+            texto = 'Semana: ' + stats.pct + '% de adherencia (' + stats.cumplidos + '/' + stats.registros + ' comidas)' +
+              (deltaPeso != null ? ', peso ' + (deltaPeso > 0 ? '+' : '') + deltaPeso + ' kg' : '') +
+              '. Nueva semana, mismo plan.';
+          }
+          await _sendPushToUser(uid, {
+            title: 'Tu semana en Calibrate',
+            body: texto.slice(0, 178),
+            tag: 'calibrate-weekly-' + fechaHoy,
+            icon: 'icons/icon.svg',
+            url: './',
+            nav: 'progreso'
+          });
+          sent++;
+        } else if (hour === 11) {
+          // B7: re-enganche tras ≥3 días sin registros (máx. 1 push cada 3 días)
+          if (esLibre(fechaHoy)) continue;
+          const ultima = _ultimaFechaConRegistro(adher);
+          if (!ultima) continue;
+          const gap = _diffDias(fechaHoy, ultima);
+          if (gap < 3) continue;
+          const metaRef = admin.firestore().collection('users').doc(uid).collection('pushMeta').doc('state');
+          const metaSnap = await metaRef.get();
+          const lastReengage = metaSnap.exists ? metaSnap.data().lastReengage : null;
+          if (lastReengage && _diffDias(fechaHoy, lastReengage) < 3) continue;
+          await _sendPushToUser(uid, {
+            title: 'El plan te espera — Calibrate',
+            body: 'Hace ' + gap + ' días que no registras. Retomar cuesta un tap: marca tu próxima comida.',
+            tag: 'calibrate-reengage-' + fechaHoy,
+            icon: 'icons/icon.svg',
+            url: './',
+            nav: 'hoy'
+          });
+          await metaRef.set({ lastReengage: fechaHoy }, { merge: true });
+          sent++;
+        }
+      } catch (e) {
+        console.warn('[sendRetentionPushes] uid:', uid, 'error:', e.message);
+      }
+    }
+    if (sent > 0) await _bumpStatsCounter('retention_sent', sent);
+    console.log('[sendRetentionPushes] sent:', sent, 'of', byUser.size);
+    return null;
+  }
+);
+
 // ── Test push: dispara una notif inmediata al usuario que llama ──
 exports.sendTestPush = onCall(
   {

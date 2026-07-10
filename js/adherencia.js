@@ -80,6 +80,10 @@ var _localDate = window._localDate || function(d) {
       id: datosExtra?.id || null,
       kcal_plan: datosExtra?.kcal_plan || 0,
       proteinas_plan: datosExtra?.proteinas_plan || 0,
+      // Macros completos del plan (base del TDEE adaptativo: lo comido = lo planificado
+      // salvo registro externo que lo reemplace)
+      carbohidratos_plan: datosExtra?.carbohidratos_plan || 0,
+      grasas_plan: datosExtra?.grasas_plan || 0,
       nombre: datosExtra?.nombre || '',
       semana: numSemana || 1
     };
@@ -94,8 +98,35 @@ var _localDate = window._localDate || function(d) {
     return data[fecha]?.[key] || null;
   }
 
+  // ─── Días libres (B2): un día puntual sin conteo estricto ni castigo ───
+  // Estructura: { "YYYY-MM-DD": { tipo: 'libre'|'restaurante', timestamp } }
+  const DIAS_LIBRES_KEY = 'nutriplan_dias_libres';
+
+  function cargarDiasLibres() {
+    try {
+      const raw = localStorage.getItem(DIAS_LIBRES_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+
+  function esDiaLibre(fecha) {
+    const f = fecha || fechaISO(new Date());
+    return !!cargarDiasLibres()[f];
+  }
+
+  // tipo: 'libre' | 'restaurante' | null (null lo desactiva)
+  function setDiaLibre(fecha, tipo) {
+    const f = fecha || fechaISO(new Date());
+    const data = cargarDiasLibres();
+    if (tipo) data[f] = { tipo: tipo, timestamp: Date.now() };
+    else delete data[f];
+    try { localStorage.setItem(DIAS_LIBRES_KEY, JSON.stringify(data)); } catch (e) {}
+    return data;
+  }
+
   function calcularAdherenciaSemanal(numSemana) {
     const data = cargar();
+    const libres = cargarDiasLibres();
     const hoy = new Date();
     const diaActual = hoy.getDay();
     const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -111,6 +142,7 @@ var _localDate = window._localDate || function(d) {
       f.setDate(hoy.getDate() - i);
       if (numSemana && numSemana > 1) f.setDate(f.getDate() - (numSemana - 1) * 7);
       const fechaStr = fechaISO(f);
+      if (libres[fechaStr]) continue; // día libre: fuera del conteo, ni suma ni castiga
       const dia = data[fechaStr];
       if (!dia) continue;
 
@@ -138,6 +170,7 @@ var _localDate = window._localDate || function(d) {
   function obtenerHistorialDias(dias) {
     dias = dias || 7;
     const data = cargar();
+    const libres = cargarDiasLibres();
     const hoy = new Date();
     const resultado = [];
 
@@ -158,7 +191,8 @@ var _localDate = window._localDate || function(d) {
         dia_semana: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][f.getDay()],
         total: total,
         cumplidos: cumplidos,
-        porcentaje: total > 0 ? Math.round((cumplidos / total) * 100) : null
+        diaLibre: !!libres[fechaStr],
+        porcentaje: libres[fechaStr] ? null : (total > 0 ? Math.round((cumplidos / total) * 100) : null)
       });
     }
 
@@ -181,7 +215,10 @@ var _localDate = window._localDate || function(d) {
     semanal: calcularAdherenciaSemanal,
     historial: obtenerHistorialDias,
     limpiar: limpiarAdherencia,
-    fechaParaDia: fechaParaDia
+    fechaParaDia: fechaParaDia,
+    esDiaLibre: esDiaLibre,
+    setDiaLibre: setDiaLibre,
+    diasLibres: cargarDiasLibres
   };
 
   console.log('[Adherencia] Sistema de registro cargado');

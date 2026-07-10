@@ -252,6 +252,32 @@ function _eliminarAdherenciaExt(diaActual, comidaId) {
     }
   } catch(e) {}
 }
+// ─── Macros consumidos de una fecha: comidas externas + slots del plan marcados ───
+// (global; misma lógica que _macrosFecha del ChatPanel)
+function _macrosConsumidosFecha(fecha) {
+  var extM = {};
+  try { extM = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
+  var extsF = extM[fecha] || [];
+  var tiposR = extsF.filter(function(c) { return c.reemplaza; }).map(function(c) { return c.reemplaza; });
+  var kcal = 0, prot = 0, carb = 0, fat = 0;
+  extsF.forEach(function(c) {
+    if (c.pendiente) return;
+    kcal += c.kcal || 0; prot += c.proteinas_g || 0;
+    carb += c.carbohidratos_g || 0; fat += c.grasas_g || 0;
+  });
+  try {
+    var adhD = JSON.parse(localStorage.getItem('nutriplan_adherencia') || '{}');
+    var adhF = adhD[fecha] || {};
+    Object.keys(adhF).forEach(function(k) {
+      var e = adhF[k]; if (!e || !e.comido) return;
+      var tp = k.split(':')[1];
+      if (!tp || tp.startsWith('ext_') || tiposR.indexOf(tp) >= 0) return;
+      kcal += e.kcal_plan || 0; prot += e.proteinas_plan || 0;
+      carb += e.carbohidratos_plan || 0; fat += e.grasas_plan || 0;
+    });
+  } catch(e2) {}
+  return { kcal: Math.round(kcal), proteinas: Math.round(prot), carbohidratos: Math.round(carb), grasas: Math.round(fat) };
+}
 
 // ─── Alimentos de referencia para recomendaciones diarias ───────────────────
 var _ALIMENTOS_RECOM = [
@@ -5090,6 +5116,8 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                       id: comida.id || comida.recetaId || null,
                       kcal_plan: comida.calorias_escaladas,
                       proteinas_plan: comida.proteinas_escaladas,
+                      carbohidratos_plan: comida.carbohidratos_escalados || 0,
+                      grasas_plan: comida.grasas_escaladas || 0,
                       nombre: comida.nombre
                     }, semanaActiva);
                     setForceUpdate(x => x + 1);
@@ -5554,11 +5582,20 @@ function reescalarInstruccionesPorFactor(instrucciones, factor) {
 function calcularStreakAdherencia() {
   try {
     var data = JSON.parse(localStorage.getItem('nutriplan_adherencia') || '{}');
+    var libres = {};
+    try { libres = JSON.parse(localStorage.getItem('nutriplan_dias_libres') || '{}'); } catch(e0) {}
     var streak = 0;
     var d = new Date();
     d.setDate(d.getDate() - 1); // empezar desde ayer
     for (var i = 0; i < 90; i++) {
       var key = _localDate(d);
+      // Día libre o vacaciones: mantiene la racha (cuenta como día dentro del plan)
+      var esLibre = !!libres[key] || (typeof _esDiaVacaciones === 'function' && _esDiaVacaciones(key));
+      if (esLibre) {
+        streak++;
+        d.setDate(d.getDate() - 1);
+        continue;
+      }
       var dia = data[key] || {};
       var total = 0, cumplidos = 0;
       Object.values(dia).forEach(function(e) { total++; if (e.comido) cumplidos++; });
@@ -8387,6 +8424,211 @@ function EveningRatingCard({ semanaData, diaActual, numSemanaActual, darkMode, r
 }
 
 // =============================================
+// HITOS DURADEROS (B8): kg perdidos, fase completada, rachas, meseta rota
+// =============================================
+var _HITOS_KEY = 'nutriplan_hitos';
+function _hitosState() {
+  try { return JSON.parse(localStorage.getItem(_HITOS_KEY) || '{}'); } catch(e) { return {}; }
+}
+function _hitosSave(s) {
+  try { localStorage.setItem(_HITOS_KEY, JSON.stringify(s)); } catch(e) {}
+}
+// Devuelve el hito más importante no visto aún, o null.
+function _detectarHito(perfil) {
+  var state = _hitosState();
+  var vistos = state.vistos || {};
+
+  // 1) Meseta rota (la más significativa)
+  try {
+    if (window.NP_Plateau && window.NP_Plateau.estado) {
+      var hist = (window.NP_Plateau.estado().historial || []);
+      var ultima = hist.length > 0 ? hist[hist.length - 1] : null;
+      if (ultima && ultima.resultado === 'funciono') {
+        var clave = 'meseta_' + ultima.fin;
+        if (!vistos[clave]) return { clave: clave, emoji: '🧗', titulo: t('Rompiste la meseta','Plateau broken'),
+          detalle: t('El paso ' + ultima.paso + ' del protocolo funcionó. Tu peso volvió a moverse.','Step ' + ultima.paso + ' of the protocol worked. Your weight is moving again.') };
+      }
+    }
+  } catch(e) {}
+
+  // 2) Fase del roadmap completada
+  try {
+    if (perfil && perfil.roadmap && window.NP_Roadmap && window.NP_Roadmap.faseActual) {
+      var fase = window.NP_Roadmap.faseActual(perfil.roadmap);
+      if (fase && fase.indice > 0 && fase.estado === 'activa') {
+        var anterior = perfil.roadmap.fases[fase.indice - 1];
+        var claveF = 'fase_' + (fase.indice - 1);
+        if (anterior && !vistos[claveF]) return { clave: claveF, emoji: '🏁',
+          titulo: t('Completaste ' + anterior.nombre, anterior.nombre + ' completed'),
+          detalle: t('Ahora estás en ' + fase.nombre + '. ' + (fase.foco || ''), 'You are now in ' + fase.nombre + '.') };
+      }
+    }
+  } catch(e) {}
+
+  // 3) Kg perdidos (cada 2 kg)
+  try {
+    if (window.NP_BodyComp && window.NP_BodyComp.progreso) {
+      var prog = window.NP_BodyComp.progreso();
+      if (prog && prog.pesoActualEsReal && prog.kgPerdidos >= 2) {
+        var hitoKg = Math.floor(prog.kgPerdidos / 2) * 2;
+        var claveKg = 'kg_' + hitoKg;
+        if (!vistos[claveKg]) return { clave: claveKg, emoji: '⚖️',
+          titulo: t('−' + hitoKg + ' kg desde el inicio','−' + hitoKg + ' kg since you started'),
+          detalle: t('Quedan ' + Math.max(0, prog.kgRestantes) + ' kg para tu objetivo. Paso a paso.','' + Math.max(0, prog.kgRestantes) + ' kg to go. Step by step.') };
+      }
+    }
+  } catch(e) {}
+
+  // 4) Hitos de racha (7, 14, 30, 60, 90 días)
+  try {
+    var streak = calcularStreakAdherencia();
+    var niveles = [90, 60, 30, 14, 7];
+    for (var i = 0; i < niveles.length; i++) {
+      if (streak >= niveles[i]) {
+        var claveR = 'racha_' + niveles[i];
+        if (!vistos[claveR]) return { clave: claveR, emoji: '🔥',
+          titulo: t(niveles[i] + ' días dentro del plan',niveles[i] + ' days on plan'),
+          detalle: t('Racha de ' + streak + ' días con adherencia sobre 80%. Esto ya es un hábito.','' + streak + '-day streak above 80% adherence. This is a habit now.') };
+        break; // solo el nivel más alto alcanzado
+      }
+    }
+  } catch(e) {}
+
+  return null;
+}
+
+function MilestoneCard({ perfil, darkMode }) {
+  var [hito, setHito] = React.useState(function() { return _detectarHito(perfil); });
+  if (!hito) return null;
+
+  function cerrar() {
+    var state = _hitosState();
+    state.vistos = state.vistos || {};
+    state.vistos[hito.clave] = _localDate();
+    _hitosSave(state);
+    setHito(null);
+  }
+
+  return (
+    <div className="premium-shell">
+      <div className="surface-card-shadow relative overflow-hidden"
+        style={{ borderRadius: 'var(--radius-premium-lg)', padding: '1.1rem 1.25rem', animation: 'fadeUp 0.4s ease both' }}>
+        <div className="flex items-start gap-3">
+          <span style={{ fontSize: 30, lineHeight: 1, animation: 'celebrationPop 0.6s ease both' }}>{hito.emoji}</span>
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-accent-dark)' }}>
+              {t('Hito alcanzado','Milestone reached')}
+            </div>
+            <div className="text-base font-bold text-ink mt-0.5">{hito.titulo}</div>
+            <div className="text-sm text-ink-muted mt-1" style={{ lineHeight: 1.45 }}>{hito.detalle}</div>
+          </div>
+          <button onClick={cerrar} aria-label={t('Cerrar','Close')}
+            className="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full cursor-pointer text-ink-faint hover:text-ink"
+            style={{ background: 'none', border: 'none' }}>
+            <i className="fas fa-times" style={{ fontSize: 11 }}></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================
+// AJUSTE TRAS DESVÍO (B9): sin culpa, con compensación concreta
+// =============================================
+function DesvioCard({ perfil, darkMode }) {
+  var fechaHoy = _localDate();
+  var ayerD = new Date(); ayerD.setDate(ayerD.getDate() - 1);
+  var fechaAyer = _localDate(ayerD);
+  var dismissKey = 'calibrate_desvio_dismissed_' + fechaHoy;
+  var [dismissed, setDismissed] = React.useState(function() {
+    try { return localStorage.getItem(dismissKey) === '1'; } catch(e) { return false; }
+  });
+
+  var info = React.useMemo(function() {
+    try {
+      if (!perfil || !perfil.caloriasObjetivo) return null;
+      // Ayer fue día libre o vacaciones → sin análisis (esa es la gracia del día libre)
+      if (window.adherencia && window.adherencia.esDiaLibre && window.adherencia.esDiaLibre(fechaAyer)) return null;
+      if (typeof _esDiaVacaciones === 'function' && _esDiaVacaciones(fechaAyer)) return null;
+      var cons = _macrosConsumidosFecha(fechaAyer);
+      if (!cons || cons.kcal <= 0) return null;
+      var exceso = cons.kcal - perfil.caloriasObjetivo;
+      if (exceso < 250) return null;
+      var peso = perfil.peso ? Number(perfil.peso) : 75;
+      var kcalPorPaso = peso * 0.0005;
+      var pasosExtra = Math.min(4000, Math.ceil((exceso * 0.5) / kcalPorPaso / 500) * 500);
+      var recorteCena = Math.min(200, Math.round(exceso * 0.25 / 50) * 50);
+      return { exceso: Math.round(exceso), pasosExtra: pasosExtra, recorteCena: recorteCena };
+    } catch(e) { return null; }
+  }, [perfil]);
+
+  if (dismissed || !info) return null;
+
+  function cerrar() {
+    try { localStorage.setItem(dismissKey, '1'); } catch(e) {}
+    setDismissed(true);
+  }
+
+  return (
+    <div className={`rounded-2xl border overflow-hidden ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}
+      style={{ animation: 'fadeUp 0.35s ease both' }}>
+      <div className="px-4 py-3.5">
+        <div className="flex items-start gap-3">
+          <span style={{ fontSize: 20 }}>🧭</span>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-ink">
+              {t('Ayer quedaste +' + info.exceso + ' kcal sobre el plan','Yesterday you went +' + info.exceso + ' kcal over plan')}
+            </div>
+            <div className="text-sm text-ink-muted mt-1" style={{ lineHeight: 1.5 }}>
+              {t('Un día no define nada — hoy se compensa solo: suma ~' + info.pasosExtra.toLocaleString() + ' pasos extra o aligera la cena en ~' + info.recorteCena + ' kcal. El plan sigue igual.',
+                 'One day changes nothing — today balances it out: add ~' + info.pasosExtra.toLocaleString() + ' extra steps or lighten dinner by ~' + info.recorteCena + ' kcal. The plan goes on.')}
+            </div>
+          </div>
+          <button onClick={cerrar} aria-label={t('Cerrar','Close')}
+            className="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full cursor-pointer text-ink-faint hover:text-ink"
+            style={{ background: 'none', border: 'none' }}>
+            <i className="fas fa-times" style={{ fontSize: 11 }}></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================
+// DÍA LIBRE (B2): banner de estado cuando está activo
+// =============================================
+function DiaLibreBanner({ perfil, darkMode, onTerminar }) {
+  var fechaHoy = _localDate();
+  if (!window.adherencia || !window.adherencia.esDiaLibre || !window.adherencia.esDiaLibre(fechaHoy)) return null;
+  var tdee = null;
+  try {
+    if (perfil && perfil.roadmap && perfil.roadmap.calculados) tdee = perfil.roadmap.calculados.tdee;
+    else if (perfil && perfil.tdee) tdee = perfil.tdee;
+  } catch(e) {}
+  return (
+    <div className={`rounded-2xl border overflow-hidden ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
+      <div className="px-4 py-3.5 flex items-start gap-3">
+        <span style={{ fontSize: 20 }}>🍷</span>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold text-ink">{t('Día libre activo','Free day active')}</div>
+          <div className="text-sm text-ink-muted mt-1" style={{ lineHeight: 1.5 }}>
+            {t('Hoy no hay conteo estricto y tu racha se mantiene. Disfruta sin culpa' + (tdee ? ' — referencia: mantenerte cerca de ' + tdee + ' kcal ya es un buen día' : '') + '. Mañana el plan sigue solo.',
+               'No strict tracking today and your streak is safe. Enjoy guilt-free' + (tdee ? ' — staying near ' + tdee + ' kcal is already a good day' : '') + '. Tomorrow the plan resumes.')}
+          </div>
+        </div>
+        <button onClick={onTerminar}
+          className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer"
+          style={{ background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)', border: 'none' }}>
+          {t('Terminar','End it')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// =============================================
 // COMPONENTE: VacacionesModal — Gestión de períodos de vacaciones
 // =============================================
 function VacacionesModal({ darkMode, onClose }) {
@@ -8824,6 +9066,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
       });
       setPesoGuardado(true);
       setRefresh(r => r + 1);
+      try { window.dispatchEvent(new CustomEvent('calibrate_proactive_ping', { detail: { razon: 'peso', peso: val } })); } catch(e) {}
     }
   };
 
@@ -8999,6 +9242,19 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                     )}
                   </>
                 )}
+                {/* Día libre (B2): 1 tap, sin culpa, racha protegida */}
+                {esHoy && window.adherencia && window.adherencia.esDiaLibre && !window.adherencia.esDiaLibre(fechaHoyIso) && (
+                  <button
+                    onClick={() => {
+                      window.adherencia.setDiaLibre(fechaHoyIso, 'libre');
+                      setRefresh(r => r + 1);
+                    }}
+                    title={t('Día sin conteo estricto: la racha se mantiene y mañana el plan sigue solo','A day without strict tracking: streak is safe and the plan resumes tomorrow')}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer text-ink-muted"
+                    style={{ background: 'none', border: '1px dashed var(--color-ink-faint, #9ca3af)' }}>
+                    🍷 {t('Día libre','Free day')}
+                  </button>
+                )}
               </div>
 
               {/* Mensaje motivacional sobrio */}
@@ -9009,6 +9265,14 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           </div>
         );
       })()}
+
+      {/* ── Hitos duraderos (B8) + ajuste tras desvío (B9) + día libre activo (B2) ── */}
+      {esHoy && <MilestoneCard perfil={perfil} darkMode={darkMode} />}
+      {esHoy && <DesvioCard perfil={perfil} darkMode={darkMode} />}
+      {esHoy && (
+        <DiaLibreBanner perfil={perfil} darkMode={darkMode}
+          onTerminar={() => { window.adherencia.setDiaLibre(fechaHoyIso, null); setRefresh(r => r + 1); }} />
+      )}
 
       {/* ── Chip Vacaciones — solo cuando está activa o programada esta semana (status). */}
       {/*    El acceso a configurar vive en el dropdown del avatar (uso esporádico).    */}
@@ -9396,6 +9660,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                     id: comida.id || comida.recetaId || null,
                     kcal_plan: comida.calorias_escaladas || comida.calorias,
                     proteinas_plan: comida.proteinas_escaladas || comida.proteinas,
+                    carbohidratos_plan: comida.carbohidratos_escalados || comida.carbohidratos || 0,
+                    grasas_plan: comida.grasas_escaladas || comida.grasas || 0,
                     nombre: comida.nombre
                   });
                   setRefresh(r => r + 1);
@@ -9448,12 +9714,31 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                 );
               }
               // Slot del plan normal
+              // B11: al marcar comido, calificar ahí mismo (1 tap) — sin esperar al cierre del día
+              const sinRating = yaComido && comida.id && typeof cargarRatings === 'function' && !((cargarRatings()[comida.id] || 0) > 0);
               return (
                 <div key={tipo} className="px-5 py-2.5 flex items-center gap-3 animate-fadeUp">
                   <i className={`fas ${iconosComida[tipo]} text-sm w-4 text-center text-ink-faint`}></i>
                   <div className="flex-1 min-w-0">
                     <div className={`text-[11px] font-bold uppercase tracking-wide text-ink-faint`}>{nombresComida[tipo]}</div>
                     <div className={`text-sm font-medium truncate ${yaComido ? 'line-through opacity-60' : ''} text-ink`}>{getNombreReceta(comida)}</div>
+                    {sinRating && (
+                      <div className="flex items-center gap-0.5 mt-1">
+                        <span className="text-[10px] text-ink-faint mr-1">{t('¿Qué tal?','How was it?')}</span>
+                        {[{ icon: '😕', stars: 1 }, { icon: '🙂', stars: 3 }, { icon: '😍', stars: 5 }].map(e => (
+                          <button key={e.stars}
+                            onClick={(ev) => {
+                              ev.stopPropagation();
+                              if (typeof guardarRating === 'function') guardarRating(comida.id, e.stars);
+                              setRefresh(r => r + 1);
+                            }}
+                            className="cursor-pointer"
+                            style={{ background: 'none', border: 'none', fontSize: 15, lineHeight: 1, padding: '1px 4px' }}>
+                            {e.icon}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <span className={`text-xs font-bold flex-shrink-0 text-ink-faint`}>{comida.calorias_escaladas || comida.calorias} kcal</span>
                   {onSwapRecipe && (
@@ -10743,6 +11028,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
       _genero: perfil.genero === 'femenino' ? 'F' : 'M',
       _altura: perfil.altura
     });
+    try { window.dispatchEvent(new CustomEvent('calibrate_proactive_ping', { detail: { razon: 'peso', peso: parseFloat(pesoInput) } })); } catch(e) {}
     setPesoInput('');
     onRefresh();
   };
@@ -14179,6 +14465,82 @@ function ChatPanel({ darkMode, activeTab }) {
     return function() {
       window.removeEventListener('calibrate_meal_logged', onMealLogged);
       clearTimeout(_proactiveTimer);
+    };
+  }, []);
+
+  // ── Coach proactivo (B10): reacciona a peso registrado, regreso tras ─────
+  //    ausencia e inicio de semana — no solo a comidas registradas por chat.
+  React.useEffect(function() {
+    function _statsContexto() {
+      var adh = null, tend = null;
+      try { adh = (window.adherencia && window.adherencia.semanal) ? window.adherencia.semanal() : null; } catch(e) {}
+      try { tend = window.NP_BodyComp ? window.NP_BodyComp.tendencia(window.NP_BodyComp.cargar(), 'peso') : null; } catch(e) {}
+      return { adh: adh, tend: tend };
+    }
+    async function proactivePing(razon, extra) {
+      try {
+        if (proactiveRunningRef.current) return;
+        var lastTs = 0;
+        try { lastTs = parseInt(localStorage.getItem('calibrate_last_proactive') || '0'); } catch(e) {}
+        if (Date.now() - lastTs < 90 * 60 * 1000) return;
+        var _lang = window._NP_lang || 'es';
+        var reglas = _lang === 'en'
+          ? 'IMPORTANT: Respond in English only. Write 2-3 sentences, warm but direct, never guilt-tripping. End with ONE concrete action.'
+          : 'IMPORTANTE: Responde en español latinoamericano neutro — sin regionalismos, sin voseo. Escribe 2-3 oraciones, tono cálido y directo, jamás culpabilizador. Cierra con UNA acción concreta.';
+        var s = _statsContexto();
+        var msg = null;
+        if (razon === 'peso') {
+          msg = '[Análisis automático — no menciones este mensaje]\n' +
+            'El usuario acaba de registrar su peso' + (extra && extra.peso ? ': ' + extra.peso + ' kg' : '') + '. ' +
+            (s.tend && s.tend.deltaSemanal != null
+              ? 'Tendencia actual: ' + s.tend.deltaSemanal + ' kg/semana. '
+              : 'Aún no hay tendencia confiable (pocos registros). ') +
+            'Dale feedback breve: qué significa este dato y si va bien encaminado.\n' + reglas;
+        } else if (razon === 'regreso') {
+          var kR = 'calibrate_ping_regreso_' + _localDate();
+          if (localStorage.getItem(kR)) return;
+          try { localStorage.setItem(kR, '1'); } catch(e) {}
+          msg = '[Análisis automático — no menciones este mensaje]\n' +
+            'El usuario vuelve a abrir la app después de ' + ((extra && extra.dias) || 2) + ' días sin actividad. ' +
+            'Dale la bienvenida sin ningún reproche y sugiere retomar por lo más simple (marcar la próxima comida o registrar el peso de hoy).\n' + reglas;
+        } else if (razon === 'resumen_semana') {
+          var kS = 'calibrate_ping_resumen_' + _localDate();
+          if (localStorage.getItem(kS)) return;
+          try { localStorage.setItem(kS, '1'); } catch(e) {}
+          msg = '[Análisis automático — no menciones este mensaje]\n' +
+            'Es inicio de semana. Últimos 7 días: adherencia ' +
+            (s.adh ? s.adh.porcentaje + '% (' + s.adh.cumplidos + ' de ' + s.adh.registros_total + ' comidas)' : 'sin datos') +
+            (s.tend && s.tend.deltaSemanal != null ? ', tendencia de peso ' + s.tend.deltaSemanal + ' kg/sem' : '') +
+            '. Redacta un mini resumen semanal motivador con UN foco concreto para esta semana.\n' + reglas;
+        }
+        if (!msg) return;
+        proactiveRunningRef.current = true;
+        try { localStorage.setItem('calibrate_last_proactive', String(Date.now())); } catch(e) {}
+        await dispararSugerencia(msg);
+        proactiveRunningRef.current = false;
+      } catch(e) { proactiveRunningRef.current = false; }
+    }
+    function onPing(e) {
+      var d = (e && e.detail) || {};
+      setTimeout(function() { proactivePing(d.razon, d); }, 1200);
+    }
+    window.addEventListener('calibrate_proactive_ping', onPing);
+    // Al montar: detectar regreso tras ausencia (≥2 días) o lunes (resumen semanal)
+    var mountTimer = setTimeout(function() {
+      try {
+        var hoyIso = _localDate();
+        var lastOpen = localStorage.getItem('calibrate_last_open') || '';
+        try { localStorage.setItem('calibrate_last_open', hoyIso); } catch(e) {}
+        if (lastOpen && lastOpen < hoyIso) {
+          var gapDias = Math.round((new Date(hoyIso + 'T00:00:00') - new Date(lastOpen + 'T00:00:00')) / 86400000);
+          if (gapDias >= 2) { proactivePing('regreso', { dias: gapDias }); return; }
+        }
+        if (new Date().getDay() === 1) proactivePing('resumen_semana', {});
+      } catch(e) {}
+    }, 5000);
+    return function() {
+      window.removeEventListener('calibrate_proactive_ping', onPing);
+      clearTimeout(mountTimer);
     };
   }, []);
 
