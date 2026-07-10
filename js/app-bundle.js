@@ -653,7 +653,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
     if (peso > 0 && altura > 0 && edad > 0 && nivelValido) {
       const bmr = calcularBMR(parseFloat(peso), parseFloat(altura), parseFloat(edad), genero);
       const tdee = calcularTDEE(parseFloat(peso), parseFloat(altura), parseFloat(edad), genero, nivelActividad);
-      const caloriasCalculadas = calcularCaloriasObjetivo(tdee, objetivo);
+      const caloriasCalculadas = calcularCaloriasObjetivo(tdee, objetivo, genero);
       // Si hay calorías manuales activas, usarlas; sino usar las calculadas
       const caloriasObj = usarCaloriasManual && perfil.caloriasManual > 0
         ? Math.max(800, Math.round(parseFloat(perfil.caloriasManual)))
@@ -5087,6 +5087,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                   yaComido={yaComido}
                   onMarcarComido={(comido) => {
                     window.adherencia.marcar(diaSeleccionado, tipo, comido, {
+                      id: comida.id || comida.recetaId || null,
                       kcal_plan: comida.calorias_escaladas,
                       proteinas_plan: comida.proteinas_escaladas,
                       nombre: comida.nombre
@@ -5312,6 +5313,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
             if (comida.reemplaza && typeof window.adherencia !== 'undefined') {
               var planReemplazada = comidasDia[comida.reemplaza];
               window.adherencia.marcar(diaSeleccionado, comida.reemplaza, true, {
+                id: planReemplazada ? (planReemplazada.id || planReemplazada.recetaId || null) : null,
                 kcal_plan: planReemplazada ? (planReemplazada.calorias_escaladas || planReemplazada.calorias || 0) : 0,
                 proteinas_plan: planReemplazada ? (planReemplazada.proteinas_escaladas || planReemplazada.proteinas || 0) : 0
               }, semanaActiva);
@@ -9391,8 +9393,10 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               const toggleAdh = () => {
                 if (typeof window.adherencia !== 'undefined' && window.adherencia.marcar) {
                   window.adherencia.marcar(diaActual, tipo, !yaComido, {
+                    id: comida.id || comida.recetaId || null,
                     kcal_plan: comida.calorias_escaladas || comida.calorias,
-                    proteinas_plan: comida.proteinas_escaladas || comida.proteinas
+                    proteinas_plan: comida.proteinas_escaladas || comida.proteinas,
+                    nombre: comida.nombre
                   });
                   setRefresh(r => r + 1);
                 }
@@ -9684,6 +9688,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                         if (confirmada.reemplaza && typeof window.adherencia !== 'undefined' && window.adherencia.marcar) {
                           var planSlot = (comidasHoy && comidasHoy[confirmada.reemplaza]) || null;
                           window.adherencia.marcar(diaActual, confirmada.reemplaza, true, {
+                            id: planSlot ? (planSlot.id || planSlot.recetaId || null) : null,
                             kcal_plan: planSlot ? (planSlot.calorias_escaladas || planSlot.calorias || 0) : confirmada.kcal,
                             proteinas_plan: planSlot ? (planSlot.proteinas_escaladas || planSlot.proteinas || 0) : confirmada.proteinas_g,
                             nombre: confirmada.nombre
@@ -9903,6 +9908,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             if (comida.reemplaza && typeof window.adherencia !== 'undefined') {
               var planReemplazada = comidasHoy[comida.reemplaza];
               window.adherencia.marcar(diaActual, comida.reemplaza, true, {
+                id: planReemplazada ? (planReemplazada.id || planReemplazada.recetaId || null) : null,
                 kcal_plan: planReemplazada ? (planReemplazada.calorias_escaladas || planReemplazada.calorias || 0) : 0,
                 proteinas_plan: planReemplazada ? (planReemplazada.proteinas_escaladas || planReemplazada.proteinas || 0) : 0
               }, 1);
@@ -13674,6 +13680,7 @@ function ChatPanel({ darkMode, activeTab }) {
             if (!_adhData[input_.fecha]) _adhData[input_.fecha] = {};
             _adhData[input_.fecha][dia + ':' + tipo] = {
               comido: true, timestamp: Date.now(),
+              id: comida.id || comida.recetaId || null,
               kcal_plan: comida.calorias_escaladas || comida.calorias || 0,
               proteinas_plan: comida.proteinas_escaladas || comida.proteinas || 0,
               nombre: comida.nombre, semana: 1
@@ -13682,6 +13689,7 @@ function ChatPanel({ darkMode, activeTab }) {
           } catch(_e) {}
         } else {
           window.adherencia.marcar(dia, tipo, true, {
+            id: comida.id || comida.recetaId || null,
             kcal_plan: comida.calorias_escaladas || comida.calorias || 0,
             proteinas_plan: comida.proteinas_escaladas || comida.proteinas || 0,
             nombre: comida.nombre

@@ -64,16 +64,20 @@ function eliminarEntrada(fecha) {
 function calcularBFNavy(genero, altura, cintura, cuello, cadera) {
   if (!altura || !cintura || !cuello) return null;
   const g = (genero === 'F' || genero === 'femenino') ? 'F' : 'M';
+  let bf = null;
   try {
     if (g === 'M') {
+      if (cintura - cuello <= 0) return null; // log10 de ≤0 daría NaN silencioso
       const denom = 1.0324 - 0.19077 * Math.log10(cintura - cuello) + 0.15456 * Math.log10(altura);
-      return 495 / denom - 450;
+      bf = 495 / denom - 450;
     } else {
       if (!cadera) return null;
+      if (cintura + cadera - cuello <= 0) return null;
       const denom = 1.29579 - 0.35004 * Math.log10(cintura + cadera - cuello) + 0.22100 * Math.log10(altura);
-      return 495 / denom - 450;
+      bf = 495 / denom - 450;
     }
   } catch (e) { return null; }
+  return (Number.isFinite(bf) && bf > 1 && bf < 75) ? bf : null;
 }
 
 // ─── Promedio móvil de N días sobre un campo ───
@@ -89,7 +93,14 @@ function promedioMovil(entries, campo, dias) {
   return Math.round((suma / filtradas.length) * 10) / 10;
 }
 
-// ─── Tendencia: diferencia entre promedio actual y el de hace 14 días ───
+// ─── Días desde epoch de una fecha ISO (para promediar fechas) ───
+function _epochDia(fechaIso) {
+  return Math.round(new Date(fechaIso + 'T00:00:00').getTime() / 86400000);
+}
+
+// ─── Tendencia: promedio últimos 7d vs promedio ventana 14-21d atrás ───
+// La tasa semanal se calcula con la distancia REAL entre los puntos medios de las
+// ventanas (según las fechas de los registros usados), no asumiendo 14 días fijos.
 function tendencia(entries, campo) {
   const avgActual = promedioMovil(entries, campo, 7);
   if (avgActual == null) return null;
@@ -99,19 +110,37 @@ function tendencia(entries, campo) {
   hace21.setDate(hace21.getDate() - 21);
   const hace14 = new Date(ahora);
   hace14.setDate(hace14.getDate() - 14);
+  const hace7 = new Date(ahora);
+  hace7.setDate(hace7.getDate() - 7);
   const iso21 = _localDate(hace21);
   const iso14 = _localDate(hace14);
+  const iso7 = _localDate(hace7);
 
+  const actuales = entries.filter(e => e.fecha >= iso7 && e[campo] != null);
   const anteriores = entries.filter(e => e.fecha >= iso21 && e.fecha < iso14 && e[campo] != null);
-  if (anteriores.length === 0) return { actual: avgActual, delta: null, deltaSemanal: null };
+  if (anteriores.length === 0) {
+    return { actual: avgActual, delta: null, deltaSemanal: null, nActual: actuales.length, nAnterior: 0 };
+  }
   const avgAnterior = anteriores.reduce((s, e) => s + e[campo], 0) / anteriores.length;
-
   const delta = avgActual - avgAnterior;
+
+  // Punto medio real de cada ventana (promedio de fechas de los registros)
+  const midActual = actuales.length > 0
+    ? actuales.reduce((s, e) => s + _epochDia(e.fecha), 0) / actuales.length
+    : _epochDia(_localDate(ahora));
+  const midAnterior = anteriores.reduce((s, e) => s + _epochDia(e.fecha), 0) / anteriores.length;
+  const diasEntre = midActual - midAnterior;
+  // Con menos de 4 días de separación real, la tasa semanal no es confiable
+  const deltaSemanal = diasEntre >= 4 ? (delta / diasEntre) * 7 : null;
+
   return {
     actual: avgActual,
     anterior: Math.round(avgAnterior * 10) / 10,
     delta: Math.round(delta * 100) / 100,
-    deltaSemanal: Math.round((delta / 2) * 100) / 100  // 14 días / 2 = tasa semanal
+    deltaSemanal: deltaSemanal != null ? Math.round(deltaSemanal * 100) / 100 : null,
+    diasEntreVentanas: Math.round(diasEntre * 10) / 10,
+    nActual: actuales.length,
+    nAnterior: anteriores.length
   };
 }
 

@@ -48,13 +48,17 @@ function detectar() {
   }
   const entries = window.NP_BodyComp.cargar();
   const conPeso = entries.filter(e => e.peso != null);
-  if (conPeso.length < 4) {
-    return { plateau: false, datosSuficientes: false, razon: 'menos de 4 registros de peso' };
+  if (conPeso.length < 8) {
+    return { plateau: false, datosSuficientes: false, razon: 'menos de 8 registros de peso' };
   }
 
   const tend = window.NP_BodyComp.tendencia(entries, 'peso');
   if (!tend || tend.deltaSemanal == null) {
     return { plateau: false, datosSuficientes: false, razon: 'no hay ventana de comparación 7d vs 14-21d' };
+  }
+  // Robustez mínima: al menos 3 pesajes en cada ventana para declarar meseta
+  if ((tend.nActual != null && tend.nActual < 3) || (tend.nAnterior != null && tend.nAnterior < 3)) {
+    return { plateau: false, datosSuficientes: false, razon: 'menos de 3 pesajes en alguna ventana de comparación' };
   }
 
   // Ventana temporal real: primer registro vs último

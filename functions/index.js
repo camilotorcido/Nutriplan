@@ -854,7 +854,8 @@ exports.sendPlateauPush = onSchedule(
         const ultimo  = ultimos14[ultimos14.length - 1].peso;
         const deltaSemanal = ((ultimo - primero) / 14) * 7;
         const enPlateau = Math.abs(deltaSemanal) < 0.25;
-        const plateauState = await _readUserData(uid, 'nutriplan_plateau_state');
+        // El cliente persiste el estado del protocolo en 'nutriplan_plateau' (plateau-detector.js)
+        const plateauState = await _readUserData(uid, 'nutriplan_plateau');
         const pasoActivo = plateauState && plateauState.pasoActual && plateauState.pasoActual > 0;
         if (!enPlateau || pasoActivo) continue;
         const tz = subs[0].data.tz || 'America/Santiago';

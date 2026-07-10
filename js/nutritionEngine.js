@@ -67,15 +67,24 @@ var _DIAS_A_DOW = {
   Viernes: 5, 'Sábado': 6, Domingo: 0
 };
 function _multiplicadorDia(dia, perfil) {
-  // Nutrient timing por entreno: días de entreno suben kcal (×1.05), descanso bajan (×0.95).
-  // El target diario es el PROMEDIO semanal — los días individuales varían intencionalmente.
+  // Nutrient timing por entreno: días de entreno suben kcal (+5%), descanso compensan a la baja.
+  // La compensación se calcula según el split real del schedule para que el promedio semanal
+  // sea EXACTAMENTE el target (con 1.05/0.95 fijos, 4 entrenos/3 descansos daba +0.7% de sesgo).
   var rd = (typeof window !== 'undefined') ? window.NP_RoadmapData : null;
   var sch = null;
   if (rd && typeof rd.getEffectiveSchedule === 'function') sch = rd.getEffectiveSchedule();
   else if (rd && rd.ENTRENO_PROTOCOLO) sch = rd.ENTRENO_PROTOCOLO.scheduleDefault;
   if (!sch) return 1.0;
+  var nEntreno = 0;
+  for (var d = 0; d < 7; d++) {
+    if (sch[d] && sch[d] !== 'descanso') nEntreno++;
+  }
+  var nDescanso = 7 - nEntreno;
+  if (nEntreno === 0 || nDescanso === 0) return 1.0;
+  var BOOST = 0.05;
   var dow = _DIAS_A_DOW[dia];
-  return (sch[dow] && sch[dow] !== 'descanso') ? 1.05 : 0.95;
+  var esEntreno = sch[dow] && sch[dow] !== 'descanso';
+  return esEntreno ? 1 + BOOST : 1 - (BOOST * nEntreno) / nDescanso;
 }
 
 // ─── Preferencias de generación: filtro por tipo de cocina ───
@@ -107,10 +116,17 @@ function _sortPorRating(candidatas) {
   });
 }
 
+// ─── Normalización de género: acepta 'masculino'/'femenino', 'M'/'F', etc. ───
+// (misma lógica que _generoNorm de roadmap-generator.js; duplicada por independencia de archivos)
+function _generoNormNutri(genero) {
+  const g = String(genero || '').trim().toLowerCase();
+  return (g === 'f' || g === 'femenino' || g === 'female' || g === 'mujer') ? 'F' : 'M';
+}
+
 // ─── Cálculo BMR con ecuación Mifflin-St Jeor ───
 function calcularBMR(peso, altura, edad, genero) {
   const base = (10 * peso) + (6.25 * altura) - (5 * edad);
-  return genero === "masculino" ? base + 5 : base - 161;
+  return _generoNormNutri(genero) === 'M' ? base + 5 : base - 161;
 }
 
 // ─── Cálculo TDEE = BMR × Factor de Actividad ───
@@ -121,9 +137,12 @@ function calcularTDEE(peso, altura, edad, genero, nivelActividad) {
 }
 
 // ─── Calorías objetivo = TDEE + ajuste por objetivo ───
-function calcularCaloriasObjetivo(tdee, objetivo) {
+// genero es opcional: con él, el piso de seguridad es 1200 (F) / 1500 (M); sin él, 1200.
+function calcularCaloriasObjetivo(tdee, objetivo, genero) {
   const ajuste = AJUSTES_OBJETIVO[objetivo].valor;
-  return Math.max(1200, Math.round(tdee + ajuste));
+  const piso = genero ? (_generoNormNutri(genero) === 'F' ? 1200 : 1500) : 1200;
+  // Si el TDEE mismo está bajo el piso (persona muy pequeña), no inflar por encima del TDEE
+  return Math.max(Math.min(piso, Math.round(tdee)), Math.round(tdee + ajuste));
 }
 
 // ─── Cálculo de gramos de macros basado en calorías y porcentajes ───

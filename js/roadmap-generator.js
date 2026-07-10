@@ -11,16 +11,26 @@ var _localDate = window._localDate || function(d) {
 
 // ─── Cálculos base ───
 
+// Normaliza cualquier convención de género ('F', 'femenino', 'female') a 'F' | 'M'.
+// Evita el bug silencioso de pasar 'femenino' a una comparación === 'F' (error de 166 kcal en BMR).
+function _generoNorm(genero) {
+  const g = String(genero || '').trim().toLowerCase();
+  return (g === 'f' || g === 'femenino' || g === 'female' || g === 'mujer') ? 'F' : 'M';
+}
+
+// Piso calórico de seguridad: nunca planificar por debajo de esto
+function _pisoKcalSeguro(genero) {
+  return _generoNorm(genero) === 'F' ? 1200 : 1500;
+}
+
 function calcularBMRFatLoss(peso, altura, edad, genero) {
   // Mifflin-St Jeor
   const base = 10 * peso + 6.25 * altura - 5 * edad;
-  return genero === 'F' ? base - 161 : base + 5;
+  return _generoNorm(genero) === 'F' ? base - 161 : base + 5;
 }
 
 function calcularTDEEFatLoss(bmr, factorActividad) {
-  // Redondeo a múltiplos de 50 para limpieza visual
-  const raw = bmr * factorActividad;
-  return Math.round(raw / 50) * 50;
+  return Math.round(bmr * factorActividad);
 }
 
 // Navy method para % grasa corporal
@@ -28,18 +38,22 @@ function calcularTDEEFatLoss(bmr, factorActividad) {
 // Mujeres: 495 / (1.29579 - 0.35004 × log10(cintura + cadera − cuello) + 0.22100 × log10(altura)) − 450
 function calcularBFNavy(genero, altura, cintura, cuello, cadera) {
   if (!altura || !cintura || !cuello) return null;
+  let bf = null;
   try {
-    if (genero === 'M') {
+    if (_generoNorm(genero) === 'M') {
+      if (cintura - cuello <= 0) return null; // log10 de ≤0 daría NaN silencioso
       const denom = 1.0324 - 0.19077 * Math.log10(cintura - cuello) + 0.15456 * Math.log10(altura);
-      return 495 / denom - 450;
+      bf = 495 / denom - 450;
     } else {
       if (!cadera) return null;
+      if (cintura + cadera - cuello <= 0) return null;
       const denom = 1.29579 - 0.35004 * Math.log10(cintura + cadera - cuello) + 0.22100 * Math.log10(altura);
-      return 495 / denom - 450;
+      bf = 495 / denom - 450;
     }
   } catch (e) {
     return null;
   }
+  return (Number.isFinite(bf) && bf > 1 && bf < 75) ? bf : null;
 }
 
 // ─── Presets de tasa de pérdida ───
@@ -218,7 +232,7 @@ function _prescripcionEntrenamiento(indice, total, esDietBreak) {
 function _construirFases(params) {
   const {
     semanasActivas, cantDietBreaks, caloriasCorte, tdee,
-    pesoInicial, bfInicial, pesoTarget, bfTarget
+    pesoInicial, bfInicial, pesoTarget, bfTarget, pisoKcal
   } = params;
 
   const fases = [];
@@ -228,15 +242,22 @@ function _construirFases(params) {
   // Calorías escalonadas: cada bloque subsiguiente baja 50 kcal (ajuste por adaptación)
   const kcalPorBloque = [caloriasCorte];
   for (let i = 1; i < bloques; i++) {
-    // Piso: no bajar más de 800 kcal debajo de TDEE (protege hormonas)
-    kcalPorBloque.push(Math.max(tdee - 800, caloriasCorte - i * 50));
+    // Pisos: no bajar más de 800 kcal debajo de TDEE (protege hormonas) ni bajo el piso absoluto
+    kcalPorBloque.push(Math.max(pisoKcal || 0, tdee - 800, caloriasCorte - i * 50));
   }
 
   const pasosPorBloque = [8000, 10000, 12000, 14000];
   const cardioPorBloque = ['no', 'si_plateau', 'si', 'si'];
 
-  const kgPorBloque = (pesoInicial - pesoTarget) / bloques;
-  const puntosBFPorBloque = (bfInicial - bfTarget) / bloques;
+  // Reparto no lineal: los primeros bloques pierden más rápido; el "last mile" es más lento
+  // (pesos relativos de 1.15 a 0.85, normalizados — coherente con el foco declarado de cada fase)
+  const _pesosBloques = [];
+  for (let b = 0; b < bloques; b++) {
+    _pesosBloques.push(bloques === 1 ? 1 : 1.15 - 0.3 * (b / (bloques - 1)));
+  }
+  const _sumaPesos = _pesosBloques.reduce((a, x) => a + x, 0);
+  const kgTotal = pesoInicial - pesoTarget;
+  const puntosBFTotal = bfInicial - bfTarget;
 
   let pesoActual = pesoInicial;
   let bfActualFase = bfInicial;
@@ -248,6 +269,8 @@ function _construirFases(params) {
       ? semanasActivas - semanasPorBloque * (bloques - 1)
       : semanasPorBloque;
     const mesesBloque = Math.max(1, Math.ceil(semanasBloque / 4.33));
+    const kgBloque = kgTotal * _pesosBloques[b] / _sumaPesos;
+    const puntosBFBloque = puntosBFTotal * _pesosBloques[b] / _sumaPesos;
 
     fases.push({
       numero: numeroFase++,
@@ -258,9 +281,9 @@ function _construirFases(params) {
       semanas: semanasBloque,
       calorias: kcalPorBloque[b],
       pesoInicio: Math.round(pesoActual * 10) / 10,
-      pesoFin: Math.round((pesoActual - kgPorBloque) * 10) / 10,
+      pesoFin: Math.round((pesoActual - kgBloque) * 10) / 10,
       bfInicio: Math.round(bfActualFase * 10) / 10,
-      bfFin: Math.round((bfActualFase - puntosBFPorBloque) * 10) / 10,
+      bfFin: Math.round((bfActualFase - puntosBFBloque) * 10) / 10,
       targetPasos: pasosPorBloque[Math.min(b, pasosPorBloque.length - 1)],
       cardioFormal: cardioPorBloque[Math.min(b, cardioPorBloque.length - 1)],
       foco: _bloqueFoco(b, bloques),
@@ -268,11 +291,13 @@ function _construirFases(params) {
     });
 
     mesActual += mesesBloque;
-    pesoActual -= kgPorBloque;
-    bfActualFase -= puntosBFPorBloque;
+    pesoActual -= kgBloque;
+    bfActualFase -= puntosBFBloque;
 
     // Diet break después del bloque (excepto el último)
     if (b < bloques - 1) {
+      // Rebote esperado ≈1% del peso corporal (glucógeno + agua, no grasa), acotado 0.5-1.5 kg
+      const reboteKg = Math.min(1.5, Math.max(0.5, Math.round(pesoActual * 0.01 * 10) / 10));
       fases.push({
         numero: numeroFase++,
         tipo: 'dietBreak',
@@ -282,8 +307,7 @@ function _construirFases(params) {
         semanas: 2,
         calorias: tdee,
         pesoInicio: Math.round(pesoActual * 10) / 10,
-        // Diet break sube 0.5-1.5 kg (glucógeno + agua, no grasa)
-        pesoFin: Math.round((pesoActual + 0.8) * 10) / 10,
+        pesoFin: Math.round((pesoActual + reboteKg) * 10) / 10,
         bfInicio: Math.round(bfActualFase * 10) / 10,
         bfFin: Math.round(bfActualFase * 10) / 10,
         targetPasos: pasosPorBloque[Math.min(b, pasosPorBloque.length - 1)],
@@ -342,7 +366,7 @@ function generarRoadmapFatLoss(input) {
     bfTarget = Number(input.bfTarget);
     pesoTarget = lbmActual / (1 - bfTarget / 100);
   } else {
-    bfTarget = input.genero === 'F' ? 20 : 15;
+    bfTarget = _generoNorm(input.genero) === 'F' ? 20 : 15;
     pesoTarget = lbmActual / (1 - bfTarget / 100);
   }
 
@@ -354,37 +378,61 @@ function generarRoadmapFatLoss(input) {
   let deficitDiario = preset.deficitKcal;
   let tasaSemanal = preset.kgPorSemana;
 
-  // Semanas activas estimadas (con buffer 15% para variabilidad real)
-  let semanasActivas = Math.ceil(grasaAPerder / tasaSemanal * 1.15);
+  // Buffer 15% para variabilidad real — mismo buffer en ambos caminos (preset y timeline)
+  const BUFFER_SEMANAS = 1.15;
+  let semanasActivas = Math.ceil(grasaAPerder / tasaSemanal * BUFFER_SEMANAS);
 
   // Si el usuario pidió timeline específico, ajustar déficit
   if (input.timelineMesesDeseado && input.timelineMesesDeseado > 0) {
     const semanasTotalesDeseadas = input.timelineMesesDeseado * 4.33;
     // Reserva ~20% para diet breaks
-    semanasActivas = Math.max(4, Math.round(semanasTotalesDeseadas / 1.2));
-    tasaSemanal = grasaAPerder / semanasActivas;
+    const semanasActivasDeseadas = Math.max(4, Math.round(semanasTotalesDeseadas / 1.2));
+    // Tasa necesaria para cubrir la grasa (con buffer) dentro del plazo pedido
+    tasaSemanal = (grasaAPerder * BUFFER_SEMANAS) / semanasActivasDeseadas;
     // 7700 kcal ≈ 1 kg de grasa
     deficitDiario = Math.round((tasaSemanal * 7700) / 7);
     // Clamp a rangos sanos: 200-800 kcal déficit
     deficitDiario = Math.max(200, Math.min(800, deficitDiario));
     // Recalcular la tasa real con el déficit clampeado
     tasaSemanal = (deficitDiario * 7) / 7700;
-    semanasActivas = Math.ceil(grasaAPerder / tasaSemanal);
+    semanasActivas = Math.ceil(grasaAPerder / tasaSemanal * BUFFER_SEMANAS);
   }
 
-  const caloriasCorte = tdee - deficitDiario;
+  // Piso calórico de seguridad: si el déficit deja las kcal bajo el mínimo, se recorta
+  // el déficit (y se alarga el timeline) — nunca se planifica bajo el piso.
+  const pisoKcal = _pisoKcalSeguro(input.genero);
+  let caloriasCorte = tdee - deficitDiario;
+  if (caloriasCorte < pisoKcal) {
+    caloriasCorte = Math.min(pisoKcal, Math.round(tdee)); // si TDEE < piso, mantener a TDEE
+    deficitDiario = Math.max(0, tdee - caloriasCorte);
+    if (deficitDiario > 0) {
+      tasaSemanal = (deficitDiario * 7) / 7700;
+      semanasActivas = Math.ceil(grasaAPerder / tasaSemanal * BUFFER_SEMANAS);
+    }
+  }
+
   // Proteína basada en LBM (Helms et al. 2014 · 2.63 g/kg LBM ≈ 1.2 g/lb LBM)
   // Floor: nunca bajar de 1.6 g/kg peso total (protección hormonal)
-  const proteinaTarget = Math.max(
+  let proteinaTarget = Math.max(
     Math.round(lbmActual * 2.63),
     Math.round(input.peso * 1.6)
   );
-  // Macros en gramos exactos (split 57% carbos / 43% grasas del remanente)
+  // Grasas: 42.8% del remanente con piso esencial de 0.5 g/kg (nunca 0 ni negativas).
+  // Carbos cierran las kcal exactas (elimina el descuadre por redondeos).
+  const grasasMin = Math.round(input.peso * 0.5);
   const _kcalRestantes = caloriasCorte - proteinaTarget * 4;
+  let grasasTarget = Math.max(grasasMin, Math.round((_kcalRestantes * 0.428) / 9));
+  let carbosTarget = Math.round((caloriasCorte - proteinaTarget * 4 - grasasTarget * 9) / 4);
+  if (carbosTarget < 0) {
+    // Las kcal no alcanzan: bajar proteína hasta su piso antes de tocar la grasa esencial
+    const protMin = Math.round(input.peso * 1.6);
+    proteinaTarget = Math.max(protMin, Math.floor((caloriasCorte - grasasTarget * 9) / 4));
+    carbosTarget = Math.max(0, Math.round((caloriasCorte - proteinaTarget * 4 - grasasTarget * 9) / 4));
+  }
   const macrosGramos = {
     proteina:      proteinaTarget,
-    carbohidratos: Math.round((_kcalRestantes * 0.572) / 4),
-    grasas:        Math.round((_kcalRestantes * 0.428) / 9)
+    carbohidratos: carbosTarget,
+    grasas:        grasasTarget
   };
 
   // Diet breaks: cada ~10 semanas activas, 2 semanas a TDEE
@@ -395,7 +443,7 @@ function generarRoadmapFatLoss(input) {
 
   const fases = _construirFases({
     semanasActivas, cantDietBreaks, caloriasCorte, tdee,
-    pesoInicial: input.peso, bfInicial: bfActual, pesoTarget, bfTarget
+    pesoInicial: input.peso, bfInicial: bfActual, pesoTarget, bfTarget, pisoKcal
   });
 
   return {
@@ -567,10 +615,10 @@ function generarRoadmapMantenimiento(input) {
     ? Math.max(Math.round(lbmActual * 2.0), Math.round(input.peso * 1.6))
     : Math.round(input.peso * 1.6);
 
-  // Restante: 45% carbos / 55% grasas (split equilibrado)
+  // Restante: 55% grasas con piso esencial 0.5 g/kg; carbos cierran las kcal exactas
   const kcalRestantes = tdee - proteinaTarget * 4;
-  const carbohidratos = Math.round((kcalRestantes * 0.45) / 4);
-  const grasas        = Math.round((kcalRestantes * 0.55) / 9);
+  const grasas        = Math.max(Math.round(input.peso * 0.5), Math.round((kcalRestantes * 0.55) / 9));
+  const carbohidratos = Math.max(0, Math.round((tdee - proteinaTarget * 4 - grasas * 9) / 4));
 
   const macrosGramos = { proteina: proteinaTarget, carbohidratos, grasas };
   const totalKcalCheck = proteinaTarget * 4 + carbohidratos * 4 + grasas * 9;
@@ -628,10 +676,11 @@ function generarRoadmapVolumen(input) {
     ? Math.max(Math.round(lbmActual * 2.4), Math.round(input.peso * 1.8))
     : Math.round(input.peso * 1.8);
 
-  // Restante: 60% carbos / 40% grasas (dominio de carbos para glucógeno y rendimiento)
+  // Restante: 40% grasas (piso esencial 0.5 g/kg); carbos cierran las kcal exactas
+  // (dominio de carbos para glucógeno y rendimiento)
   const kcalRestantes = caloriasObjetivo - proteinaTarget * 4;
-  const carbohidratos = Math.round((kcalRestantes * 0.60) / 4);
-  const grasas        = Math.round((kcalRestantes * 0.40) / 9);
+  const grasas        = Math.max(Math.round(input.peso * 0.5), Math.round((kcalRestantes * 0.40) / 9));
+  const carbohidratos = Math.max(0, Math.round((caloriasObjetivo - proteinaTarget * 4 - grasas * 9) / 4));
 
   const macrosGramos = { proteina: proteinaTarget, carbohidratos, grasas };
 

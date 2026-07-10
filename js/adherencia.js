@@ -75,6 +75,9 @@ var _localDate = window._localDate || function(d) {
     data[fecha][key] = {
       comido: comido,
       timestamp: Date.now(),
+      // id de la receta del plan: necesario para que el push de cierre del día
+      // (sendEveningPush) pueda cruzar contra nutriplan_ratings
+      id: datosExtra?.id || null,
       kcal_plan: datosExtra?.kcal_plan || 0,
       proteinas_plan: datosExtra?.proteinas_plan || 0,
       nombre: datosExtra?.nombre || '',

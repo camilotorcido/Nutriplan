@@ -4,6 +4,13 @@
    y expone helpers de UI para banner, calorías efectivas y proteína target.
    ============================================ */
 
+// Piso calórico de seguridad según género del perfil (1200 F / 1500 M).
+// Debe ser coherente con _pisoKcalSeguro de roadmap-generator.js.
+function _pisoKcalPerfil(perfil) {
+  const g = String((perfil && perfil.genero) || '').trim().toLowerCase();
+  return (g === 'f' || g === 'femenino' || g === 'female' || g === 'mujer') ? 1200 : 1500;
+}
+
 // ─── Activar Fat Loss Mode (desde wizard) ───
 function activarFatLossMode(wizardInputs) {
   if (!window.NP_Roadmap || !window.NP_Roadmap.generar) {
@@ -82,7 +89,7 @@ function recalcularRoadmap(overrides) {
   const fase = window.NP_Roadmap.faseActual(roadmap);
   if (fase && fase.calorias) {
     const pesoRef = perfil.peso != null ? perfil.peso : (nuevosInputs.peso || null);
-    const kcalAjustada = Math.max(800, fase.calorias + _kcalDeltaPasos(fase.targetPasos, pesoRef));
+    const kcalAjustada = Math.max(Math.min(_pisoKcalPerfil(perfil), fase.calorias), fase.calorias + _kcalDeltaPasos(fase.targetPasos, pesoRef));
     perfil.caloriasManual  = kcalAjustada;
     perfil.caloriasObjetivo = kcalAjustada;
   }
@@ -187,8 +194,9 @@ function faseActualPerfil() {
     : (perfil.roadmap && perfil.roadmap.inputs ? perfil.roadmap.inputs.peso : null);
   const defaultPasos = fase.targetPasos;
   const delta = Math.round((override - (defaultPasos || 0)) * _kcalPorPaso(peso));
-  // Piso de seguridad: nunca calorías por debajo de 800 (protege hormonas)
-  const caloriasAjust = Math.max(800, (fase.calorias || 0) + delta);
+  // Piso de seguridad por género (1200 F / 1500 M); si la fase ya está bajo el piso, no inflar
+  const _piso = Math.min(_pisoKcalPerfil(perfil), fase.calorias || Infinity);
+  const caloriasAjust = Math.max(_piso, (fase.calorias || 0) + delta);
   return Object.assign({}, fase, {
     _targetPasosDefault: defaultPasos,
     _caloriasOriginal: fase.calorias,
