@@ -74,7 +74,7 @@ index.html → loads app-bundle.compiled.js (esbuild output) → React renders
 
 ### Meal planning rules
 
-- Calorie distribution per meal: 25% breakfast, 10% AM snack, 35% lunch, 10% PM snack, 20% dinner.
+- Calorie distribution per meal defaults to 25% breakfast, 10% AM snack, 35% lunch, 10% PM snack, 20% dinner — but it is configurable: `getDistribucionComidas(perfil)` in `nutritionEngine.js` reads `perfil.distribucionComidas` (custom %) and `perfil.comidasActivas` (optional snacks; breakfast/lunch/dinner mandatory) and renormalizes to 1. Never use `DISTRIBUCION_COMIDAS` directly for generation.
 - Multi-week plans (1–4 weeks) use `_sanitizarPlan()` for format migrations.
 - Recipe repetition is blocked within a rolling 14-day window.
 - Lunch and dinner may fall back to TheMealDB online search; breakfast and snacks always use local `recipes.js`.
@@ -98,6 +98,7 @@ Edit `css/style.css` for custom design tokens and dark mode. Do not modify `css/
 - `calibrateAnalyzeFood` — food image analysis
 - `calibrateTranscribe` — Groq Whisper audio transcription
 - `pushSubscribe` / `pushUnsubscribe` / `sendTestPush` — VAPID-based web push (`web-push` lib). Public VAPID key is embedded client-side; `VAPID_PRIVATE_KEY` is a secret.
+- Scheduled (hourly, filtered by user-local hour): `sendEveningPush` (19h rate meals), `sendPlateauPush` (8h plateau), `sendRetentionPushes` (20h streak-at-risk, Sunday 18h weekly summary written by Haiku, 11h re-engagement with 3-day dedup in `users/{uid}/pushMeta/state`).
 - `getAdminMetrics` / `adminDeleteUser` — admin-only dashboard (guard these carefully when editing).
 
 Functions require Firebase service account credentials and Anthropic + Groq API keys + `VAPID_PRIVATE_KEY` in Firebase Secret Manager. Runtime is Node 20.
