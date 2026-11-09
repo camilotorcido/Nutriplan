@@ -228,6 +228,64 @@ function callAnthropic(apiKey, body) {
   });
 }
 
+// Pasa a tuteo el texto que ve la persona. No toca «después», «estás» ni el futuro (verás, comerás).
+const _VOSEO_A_TUTEO = [
+  ['necesitás', 'necesitas'], ['preferís', 'prefieres'], ['recibís', 'recibes'],
+  ['entendés', 'entiendes'], ['empezás', 'empiezas'], ['pensás', 'piensas'],
+  ['preparás', 'preparas'], ['esperás', 'esperas'], ['cocinás', 'cocinas'],
+  ['seguís', 'sigues'], ['dormís', 'duermes'], ['sentís', 'sientes'],
+  ['venís', 'vienes'], ['decís', 'dices'], ['hacés', 'haces'], ['sabés', 'sabes'],
+  ['querés', 'quieres'], ['podés', 'puedes'], ['tenés', 'tienes'],
+  ['llevás', 'llevas'], ['quedás', 'quedas'], ['andás', 'andas'], ['pasás', 'pasas'],
+  ['tomás', 'tomas'], ['comés', 'comes'], ['usás', 'usas'], ['vivís', 'vives'],
+  ['salís', 'sales'], ['pedís', 'pides'], ['hablás', 'hablas'], ['mirás', 'miras'],
+  ['registralo', 'regístralo'], ['sumalos', 'súmalos'], ['anotalo', 'anótalo'],
+  ['marcalo', 'márcalo'], ['guardalo', 'guárdalo'], ['dejalo', 'déjalo'],
+  ['probalo', 'pruébalo'], ['miralo', 'míralo'], ['agregalo', 'agrégalo'], ['pegala', 'pégala'],
+  ['decime', 'dime'], ['fijate', 'fíjate'], ['acordate', 'acuérdate'],
+  ['olvidate', 'olvídate'], ['enterate', 'entérate'], ['quedate', 'quédate'],
+  ['avisame', 'avísame'], ['contame', 'cuéntame'], ['mostrame', 'muéstrame'],
+  ['pasame', 'pásame'], ['hacelo', 'hazlo'], ['ponelo', 'ponlo'], ['ponete', 'ponte'],
+  ['explicale', 'explícale'],
+  ['registrá', 'registra'], ['preguntá', 'pregunta'], ['prepará', 'prepara'],
+  ['mezclá', 'mezcla'], ['orientá', 'orienta'], ['enfocá', 'enfoca'],
+  ['calentá', 'calienta'], ['cociná', 'cocina'], ['ajustá', 'ajusta'],
+  ['activá', 'activa'], ['revisá', 'revisa'], ['esperá', 'espera'],
+  ['cambiá', 'cambia'], ['cerrá', 'cierra'], ['cortá', 'corta'],
+  ['mantené', 'mantén'], ['ayudá', 'ayuda'], ['evitá', 'evita'],
+  ['sumá', 'suma'], ['anotá', 'anota'], ['agregá', 'agrega'],
+  ['guardá', 'guarda'], ['marcá', 'marca'], ['buscá', 'busca'],
+  ['dejá', 'deja'], ['sacá', 'saca'], ['tomá', 'toma'], ['poné', 'pon'],
+  ['hacé', 'haz'], ['mirá', 'mira'], ['decí', 'di'], ['comé', 'come'],
+  ['andá', 'anda'], ['tocá', 'toca'], ['volvé', 'vuelve'], ['abrí', 'abre'],
+  ['tené', 'ten'], ['usá', 'usa'], ['llamá', 'llama'],
+  ['aclará', 'aclara'], ['entrá', 'entra'], ['vení', 'ven'],
+  ['bajá', 'baja'], ['contá', 'cuenta'], ['probá', 'prueba'],
+  ['sos', 'eres'], ['vos', 'tú']
+].sort((a, b) => b[0].length - a[0].length);
+
+function _casoComo(origen, destino) {
+  if (origen.toLowerCase() === 'sos' && origen === origen.toUpperCase()) return origen;
+  if (origen === origen.toUpperCase() && origen.length > 1) return destino.toUpperCase();
+  if (origen.charAt(0) === origen.charAt(0).toUpperCase()) {
+    return destino.charAt(0).toUpperCase() + destino.slice(1);
+  }
+  return destino;
+}
+
+function aTuteo(texto) {
+  if (!texto || typeof texto !== 'string') return texto;
+  const mapa = Object.create(null);
+  _VOSEO_A_TUTEO.forEach((p) => { mapa[p[0]] = p[1]; });
+  const alt = _VOSEO_A_TUTEO.map((p) => p[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const re = new RegExp('(^|[^\\p{L}\\p{N}_])(' + alt + ')(?![\\p{L}\\p{N}_])', 'giu');
+  return texto.replace(re, (todo, pre, palabra) => {
+    const destino = mapa[palabra.toLowerCase()];
+    if (!destino) return todo;
+    return pre + _casoComo(palabra, destino);
+  });
+}
+
 // ── System prompt ───────────────────────────────────────────────────────────
 function buildSystemPrompt(contexto) {
   const perfil    = contexto?.perfil || {};
@@ -253,15 +311,20 @@ function buildSystemPrompt(contexto) {
   const activeTab = contexto?.activeTab || 'hoy';
   const tabHint = ({
     hoy:       'El usuario está en la pantalla "Hoy" — prioriza ayudarle con la comida y entreno del día. Si no escribió nada todavía, podrías ofrecer ayuda con la próxima comida pendiente.',
-    plan:      'El usuario está en "Plan" (vista semanal) — orientá la conversación a ajustes del plan completo, regenerar comidas o entrenamientos de la semana.',
-    progreso:  'El usuario está en "Progreso" — enfocá la conversación en tendencias (peso, fase del roadmap, adherencia, métricas corporales). Evitá registrar comidas acá salvo que lo pida explícito.',
-    cocinar:   'El usuario está en "Recetario" — ayudá a buscar recetas, crear con ingredientes que tenga, o sugerir según despensa.',
-    despensa:  'El usuario está viendo su Despensa — ayudá a sugerir qué cocinar con lo que tiene o qué falta comprar.',
-    compras:   'El usuario está viendo la Lista de compras — ayudá a optimizar la lista o explicar qué se necesita para qué receta.',
-    perfil:    'El usuario está editando su perfil — ayudá con dudas sobre su configuración u objetivo.'
+    plan:      'El usuario está en "Plan" (vista semanal). Orienta la conversación a ajustes del plan, a regenerar comidas o a los entrenamientos de la semana.',
+    progreso:  'El usuario está en "Progreso". Habla de peso, fase, adherencia y medidas. No registres comidas aquí salvo que lo pida.',
+    cocinar:   'El usuario está en "Recetario". Ayuda a buscar recetas, a armar algo con lo que tiene o a elegir según la despensa.',
+    despensa:  'El usuario está viendo su despensa. Sugiere qué cocinar con lo que tiene o qué falta comprar.',
+    compras:   'El usuario está viendo la lista de compras. Ayuda a ordenar la lista o a decir qué ingrediente va en qué receta.',
+    perfil:    'El usuario está editando su perfil. Responde dudas sobre su configuración o su objetivo.'
   })[activeTab] || '';
 
-  return `Eres el asistente nutricional de Calibrate, una app de nutrición personalizada.
+  return `Eres el asistente nutricional de Calibrate. Hablas de comida en concreto, en frases cortas.
+
+IDIOMA Y TONO (prioridad sobre el resto de este prompt):
+Responde en español latinoamericano neutro, con tuteo. Prohibido el voseo y el acento argentino. No escribas tenés, podés, querés, sos, vos, decime, andá, tocá, registrá, comé, fijate, hacé, mirá, decí, acordate, contá, poné, mezclá, probá, volvé, abrí ni imperativos en -á, -é o -í. Escribe tienes, puedes, quieres, eres, dime, registra, come, mira, prueba.
+Si el usuario escribe en inglés, responde en inglés.
+Sin muletillas (vale la pena, es importante señalar, en conclusión), sin tono de brochure y sin cierre de coach genérico. Cierra con el dato o con una acción: qué comer, cuántos gramos o qué marcar. Máximo 3 o 4 oraciones, salvo que pidan detalle. Sin emojis.
 
 USUARIO: ${perfil.nombre || 'Usuario'}
 OBJETIVO: ${perfil.objetivo || 'mantenimiento'}
@@ -290,9 +353,8 @@ MACROS CONSUMIDOS HOY (valor AUTORIZADO — siempre usa este dato para los total
   (Nota: tras cada registrar_comida, marcar_comida_plan o eliminar_comida, el tool result devuelve "totalFecha" con el total REAL de esa fecha — SIEMPRE úsalo para el mensaje de confirmación, nunca sumes tú mismo los números.)
 
 INSTRUCCIONES:
-- Responde en español latinoamericano neutro — sin chilenismos, sin voseo (di "llevas", nunca "llevai"), sin "po", sin regionalismos de ningún país. Tono cercano y profesional.
-- Si el usuario escribe en inglés, responde en inglés.
-- Sé breve: máximo 3–4 oraciones por respuesta salvo que te pidan más detalle.
+- El bloque IDIOMA Y TONO de arriba manda. Si una frase de más abajo está en voseo, no la copies: la respuesta va en tuteo.
+- Sé breve: máximo 3 o 4 oraciones por respuesta salvo que te pidan más detalle.
 - No inventes datos del usuario que no estén en el contexto.
 - Si el usuario pregunta por el plan del día, lee los datos de contexto.
 
@@ -303,7 +365,7 @@ Para registrar una comida, tu respuesta en ese turno DEBE incluir un tool_use de
 
 NO PREGUNTAR — ACTUAR:
 Si el usuario menciona una comida sin marcador de futuro, NO le preguntes "¿ya te lo comiste o lo vas a comer?". El default es CONSUMIDO. Llama registrar_comida directo. Si después te dice que en realidad era para más tarde, ahí corriges con eliminar_comida + planear_comida.
-Excepción única: si el alimento es genuinamente ambiguo en cantidad o composición y NO podés estimar macros razonables (ej: "comí algo de carne" sin especificar cuánto), preguntá SOLO por la cantidad/preparación — nunca por si ya lo comió.
+Excepción única: si el alimento es ambiguo en cantidad o composición y no puedes estimar macros razonables (ej: "comí algo de carne" sin decir cuánto), pregunta solo la cantidad o la preparación. Nunca preguntes si ya lo comió.
 
 Si por accidente preguntaste si lo comió y el usuario responde con palabra corta ("comí", "ya", "sí") → tu próxima respuesta DEBE incluir tool_use de registrar_comida en el MISMO turno. NO escribas "Registré X" sin tool_use.
 
@@ -371,7 +433,7 @@ MODELO DE DATOS — CRÍTICO PARA ENTENDER LA APP:
 - eliminar_comida: cuando una comida fue registrada por error, no la comió, o quiere desmarcarla. NUNCA la uses para "hacer espacio" a otra comida — las comidas adicionales no tienen límite.
 
 CAMBIAR UNA COMIDA DE REEMPLAZO A ADICIONAL — FLUJO OBLIGATORIO:
-  Cuando el usuario dice "dejalo como adicional", "quítale el reemplazo", "no reemplaces nada", etc.:
+  Cuando el usuario dice "déjalo como adicional", "dejalo como adicional", "quítale el reemplazo" o "no reemplaces nada":
   1. Llama eliminar_comida con el nombre de la comida
   2. Llama registrar_comida con los MISMOS macros pero SIN reemplaza
   NUNCA digas "Entendido, ya está" o "ya está registrado como adicional" sin haber llamado primero estas dos herramientas.
@@ -395,9 +457,9 @@ REGLA ANTI-ALUCINACIÓN — INVIOLABLE:
 Si en tu respuesta dices verbos de ejecución pasada como "regeneré", "modifiqué", "apliqué", "cambié", "actualicé", "guardé" o frases como "Listo", "Hecho", "Ya está" referidos a un cambio del plan/perfil — DEBES haber incluido un tool_use block de aplicar_cambios_perfil o regenerar_plan_semanal en ese MISMO turno. Sin tool_use, NO afirmes que lo hiciste. NO existe memoria de ejecución entre turnos: si en un turno anterior dijiste que ejecutaste algo, eso ya pasó (o no) y no afecta este turno. Si el usuario te pide ahora un cambio, llamalo ahora — no asumas que "ya lo hiciste antes".
 
 CUÁNDO LLAMAR LA TOOL — INMEDIATO:
-- Primer pedido de cambio: explica brevemente qué vas a hacer (1-2 oraciones), pedí confirmación, y llamá la tool cuando el usuario diga "sí" / "dale" / "confirmo" / "adelante" / "ok" / "hazlo".
-- Comandos directos repetidos como "regenera el plan", "vuelve a regenerar", "hazlo de nuevo", "regenera para X kcal": LLAMÁ LA TOOL DIRECTO sin pedir confirmación adicional — el usuario ya está dando una orden clara, no preguntando. Después confirma con "Listo, regeneré..." (el tool_use ya estará en el turno).
-- Cuando el usuario corrige diciendo "no se regeneró" o "el plan sigue igual": LLAMÁ LA TOOL DE INMEDIATO — no expliques, no preguntes, solo llamala.
+- Primer pedido de cambio: explica en una o dos oraciones qué vas a hacer, pide confirmación, y llama la herramienta cuando diga "sí", "dale", "confirmo", "adelante", "ok" o "hazlo".
+- Si repite una orden clara ("regenera el plan", "vuelve a regenerar", "hazlo de nuevo", "regenera para X kcal"), llama la herramienta directo, sin pedir otra confirmación. Después confirma con el resultado.
+- Si dice "no se regeneró" o "el plan sigue igual", llama la herramienta en ese turno. No expliques ni preguntes antes.
 
 TOPE SOFT DE CALORÍAS — RANGO SEGURO 1200–4000 KCAL/DÍA:
 - Si el usuario pide calorias_objetivo < 1200 o > 4000, advierte explícitamente que es un rango atípico y potencialmente peligroso (déficit/superávit muy agresivo). Pregunta si está seguro y si lo está acompañando con un profesional.
@@ -411,8 +473,8 @@ CUÁNDO USAR aplicar_cambios_perfil:
 NUTRIENT TIMING POR ENTRENO — el target diario es un PROMEDIO SEMANAL:
 - El sistema aplica nutrient timing: días de entrenamiento ×1.05 kcal, días de descanso ×0.95 kcal (variación de ±5% sobre el promedio).
 - Si el usuario fija calorias_objetivo = 1850, eso es el PROMEDIO semanal — los días individuales varían (entreno ~1943, descanso ~1758) pero el promedio es 1850.
-- Cuando confirmes el cambio, aclará al usuario: "Voy a fijar tu objetivo en X kcal como PROMEDIO diario. Los días de entreno comerás un poco más (~X×1.05) y los de descanso un poco menos (~X×0.95) — esto es nutrient timing y ayuda al rendimiento."
-- Si el usuario te dice "pero el lunes dice más kcal de lo esperado" → explicale el nutrient timing (±5%) en lugar de regenerar.
+- Cuando confirmes el cambio, dilo así: "Dejo el objetivo en X kcal de promedio. Los días de entreno quedan cerca de X×1.05 y los de descanso cerca de X×0.95."
+- Si dice "el lunes marca más kcal de lo que pedí", explica esa diferencia de ±5% entre día de entreno y día de descanso. No regeneres el plan por eso.
 
 CUÁNDO USAR regenerar_plan_semanal:
 - Cuando el usuario pida regenerar el plan/recetas SIN cambio de perfil ("vuelve a regenerar", "cambia las recetas", "dame otro plan"). Llamá la tool directo, sin pedir confirmación si es un comando claro.
@@ -477,10 +539,16 @@ exports.calibrateChat = onCall(
 
       console.log('[calibrateChat] OK stop_reason:', response.stop_reason);
 
+      const content = Array.isArray(response.content)
+        ? response.content.map((b) => (b && b.type === 'text' && typeof b.text === 'string')
+          ? Object.assign({}, b, { text: aTuteo(b.text) })
+          : b)
+        : response.content;
+
       return {
         id:          response.id,
         stop_reason: response.stop_reason,
-        content:     response.content,
+        content:     content,
         usage:       response.usage
       };
 
@@ -974,13 +1042,13 @@ async function _resumenSemanalIA(stats, deltaPeso) {
     messages: [{
       role: 'user',
       content: 'Eres el coach nutricional de la app Calibrate. Resumen de la semana del usuario: ' + datos + '\n' +
-        'Escribe UNA sola oración motivadora (máximo 150 caracteres) para una notificación push. ' +
-        'Español latinoamericano neutro, sin voseo ni regionalismos, sin emojis, sin comillas, jamás culpabilizador. ' +
-        'Menciona el dato más relevante y cierra con un micro-foco para la semana que empieza.'
+        'Escribe UNA sola oración (máximo 150 caracteres) para una notificación. ' +
+        'Español latinoamericano neutro, tuteo, prohibido el voseo. Sin emojis, sin comillas, sin arenga. ' +
+        'Di el dato y una acción para la semana: qué comer o qué marcar.'
     }]
   });
   const texto = response && response.content && response.content[0] && response.content[0].text;
-  return texto ? texto.trim().replace(/^"|"$/g, '') : null;
+  return texto ? aTuteo(texto.trim().replace(/^"|"$/g, '')) : null;
 }
 
 exports.sendRetentionPushes = onSchedule(
@@ -1023,8 +1091,8 @@ exports.sendRetentionPushes = onSchedule(
           const streak = _streakServidor(adher, esLibre, fechaHoy);
           if (streak < 3) continue;
           await _sendPushToUser(uid, {
-            title: '🔥 Racha de ' + streak + ' días en juego',
-            body: 'Aún no registras nada hoy. Un par de taps y la racha sigue viva.',
+            title: 'Racha de ' + streak + ' días, hoy sin registro',
+            body: 'Marca lo que comiste hoy. Con eso la racha sigue.',
             tag: 'calibrate-streak-' + fechaHoy,
             icon: 'icons/icon.svg',
             url: './',
@@ -1065,8 +1133,8 @@ exports.sendRetentionPushes = onSchedule(
           const lastReengage = metaSnap.exists ? metaSnap.data().lastReengage : null;
           if (lastReengage && _diffDias(fechaHoy, lastReengage) < 3) continue;
           await _sendPushToUser(uid, {
-            title: 'El plan te espera — Calibrate',
-            body: 'Hace ' + gap + ' días que no registras. Retomar cuesta un tap: marca tu próxima comida.',
+            title: 'Hace ' + gap + ' días sin registro',
+            body: 'Marca la próxima comida y el día vuelve a contar.',
             tag: 'calibrate-reengage-' + fechaHoy,
             icon: 'icons/icon.svg',
             url: './',
@@ -1103,11 +1171,11 @@ exports.sendTestPush = onCall(
       .collection('users').doc(uid)
       .collection('pushSubscriptions').get();
     if (subsSnap.empty) {
-      throw new HttpsError('failed-precondition', 'Sin subscripciones activas');
+      throw new HttpsError('failed-precondition', 'No hay suscripciones activas');
     }
     await _sendPushToUser(uid, {
       title: 'Calibrate — Push de prueba',
-      body:  'Si recibís esto, las notificaciones funcionan ✓',
+      body:  'Si recibes esto, las notificaciones funcionan.',
       tag:   'calibrate-test-' + Date.now(),
       icon:  'icons/icon.svg',
       url:   './',
@@ -1307,7 +1375,7 @@ exports.adminDeleteUser = onCall(
 
     // Protección: no permitir auto-eliminación
     if (targetUid === request.auth.uid) {
-      throw new HttpsError('failed-precondition', 'No podés eliminar tu propia cuenta desde admin');
+      throw new HttpsError('failed-precondition', 'No puedes eliminar tu propia cuenta desde aquí');
     }
 
     const db = admin.firestore();

@@ -319,6 +319,59 @@ function _afirmaMutacion(texto) {
   if (!texto) return false;
   return /(?:^|[^\p{L}\p{N}_])(registr[ée]|registrad[ao]s?|anot[ée]|anotad[ao]s?|agregu[ée]|agregad[ao]s?|añad[ií]|añadid[ao]s?|sum[ée]|sumad[ao]s?|guard[ée]|guardad[ao]s?|elimin[ée]|eliminad[ao]s?|borr[ée]|borrad[ao]s?|quit[ée]|quitad[ao]s?|marqu[ée]|marcad[ao]s?)/iu.test(texto);
 }
+// El filtro de «Registré» no ve tenés, podés, registrá ni comé. Este sí, antes de mostrar el texto.
+var _VOSEO_A_TUTEO = [
+  ['necesitás', 'necesitas'], ['preferís', 'prefieres'], ['recibís', 'recibes'],
+  ['entendés', 'entiendes'], ['empezás', 'empiezas'], ['pensás', 'piensas'],
+  ['preparás', 'preparas'], ['esperás', 'esperas'], ['cocinás', 'cocinas'],
+  ['seguís', 'sigues'], ['dormís', 'duermes'], ['sentís', 'sientes'],
+  ['venís', 'vienes'], ['decís', 'dices'], ['hacés', 'haces'], ['sabés', 'sabes'],
+  ['querés', 'quieres'], ['podés', 'puedes'], ['tenés', 'tienes'],
+  ['llevás', 'llevas'], ['quedás', 'quedas'], ['andás', 'andas'], ['pasás', 'pasas'],
+  ['tomás', 'tomas'], ['comés', 'comes'], ['usás', 'usas'], ['vivís', 'vives'],
+  ['salís', 'sales'], ['pedís', 'pides'], ['hablás', 'hablas'], ['mirás', 'miras'],
+  ['registralo', 'regístralo'], ['sumalos', 'súmalos'], ['anotalo', 'anótalo'],
+  ['marcalo', 'márcalo'], ['guardalo', 'guárdalo'], ['dejalo', 'déjalo'],
+  ['probalo', 'pruébalo'], ['miralo', 'míralo'], ['agregalo', 'agrégalo'], ['pegala', 'pégala'],
+  ['decime', 'dime'], ['fijate', 'fíjate'], ['acordate', 'acuérdate'],
+  ['olvidate', 'olvídate'], ['enterate', 'entérate'], ['quedate', 'quédate'],
+  ['avisame', 'avísame'], ['contame', 'cuéntame'], ['mostrame', 'muéstrame'],
+  ['pasame', 'pásame'], ['hacelo', 'hazlo'], ['ponelo', 'ponlo'], ['ponete', 'ponte'],
+  ['explicale', 'explícale'],
+  ['registrá', 'registra'], ['preguntá', 'pregunta'], ['prepará', 'prepara'],
+  ['mezclá', 'mezcla'], ['orientá', 'orienta'], ['enfocá', 'enfoca'],
+  ['calentá', 'calienta'], ['cociná', 'cocina'], ['ajustá', 'ajusta'],
+  ['activá', 'activa'], ['revisá', 'revisa'], ['esperá', 'espera'],
+  ['cambiá', 'cambia'], ['cerrá', 'cierra'], ['cortá', 'corta'],
+  ['mantené', 'mantén'], ['ayudá', 'ayuda'], ['evitá', 'evita'],
+  ['sumá', 'suma'], ['anotá', 'anota'], ['agregá', 'agrega'],
+  ['guardá', 'guarda'], ['marcá', 'marca'], ['buscá', 'busca'],
+  ['dejá', 'deja'], ['sacá', 'saca'], ['tomá', 'toma'], ['poné', 'pon'],
+  ['hacé', 'haz'], ['mirá', 'mira'], ['decí', 'di'], ['comé', 'come'],
+  ['andá', 'anda'], ['tocá', 'toca'], ['volvé', 'vuelve'], ['abrí', 'abre'],
+  ['tené', 'ten'], ['usá', 'usa'], ['llamá', 'llama'],
+  ['aclará', 'aclara'], ['entrá', 'entra'], ['vení', 'ven'],
+  ['bajá', 'baja'], ['contá', 'cuenta'], ['probá', 'prueba'],
+  ['sos', 'eres'], ['vos', 'tú']
+].sort(function(a, b) { return b[0].length - a[0].length; });
+function _casoComo(origen, destino) {
+  if (origen.toLowerCase() === 'sos' && origen === origen.toUpperCase()) return origen;
+  if (origen === origen.toUpperCase() && origen.length > 1) return destino.toUpperCase();
+  if (origen.charAt(0) === origen.charAt(0).toUpperCase()) return destino.charAt(0).toUpperCase() + destino.slice(1);
+  return destino;
+}
+function _aTuteo(texto) {
+  if (!texto || typeof texto !== 'string') return texto;
+  var mapa = Object.create(null);
+  _VOSEO_A_TUTEO.forEach(function(p) { mapa[p[0]] = p[1]; });
+  var alt = _VOSEO_A_TUTEO.map(function(p) { return p[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|');
+  var re = new RegExp('(^|[^\\p{L}\\p{N}_])(' + alt + ')(?![\\p{L}\\p{N}_])', 'giu');
+  return texto.replace(re, function(todo, pre, palabra) {
+    var destino = mapa[palabra.toLowerCase()];
+    if (!destino) return todo;
+    return pre + _casoComo(palabra, destino);
+  });
+}
 function _normalizarSlotComida(s) {
   if (!s) return null;
   var mapa = {
@@ -750,7 +803,7 @@ function LoginScreen({ darkMode, onToggleDark }) {
   const handleKeyDown = (e) => { if (e.key === 'Enter') handleSubmit(); };
 
   const titles = { login: 'Inicia sesión', signup: 'Crear cuenta', reset: 'Recuperar contraseña' };
-  const subtitles = { login: 'Tu plan nutricional te espera', signup: 'Empieza a planificar tu semana', reset: 'Te enviamos un link por email' };
+  const subtitles = { login: 'Entra para ver el plan de la semana', signup: 'Crea la cuenta y arma la semana', reset: 'Te enviamos un link por email' };
   const btnLabels = { login: 'Iniciar sesión', signup: 'Crear cuenta', reset: 'Enviar email' };
 
   return (
@@ -5164,7 +5217,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
             <div className="cal-empty-state">
               <div className="cal-empty-state__icon"><i className="fas fa-dumbbell"></i></div>
               <p className="cal-empty-state__title">{t('Plan de entrenamiento no configurado','Training plan not configured')}</p>
-              <p className="cal-empty-state__desc">{t('Activa tu roadmap para ver el split semanal acá.','Activate your roadmap to see the weekly split here.')}</p>
+              <p className="cal-empty-state__desc">{t('Activa el plan para ver el entrenamiento de la semana.','Activate the plan to see this week\'s training.')}</p>
             </div>
           );
         }
@@ -7394,7 +7447,7 @@ function ShoppingList({ plan, darkMode }) {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
             <i className="fas fa-check-circle text-green-500 text-4xl"></i>
           </div>
-          <h3 className={`text-xl font-bold mb-2 text-ink`}>{t('¡Tienes todo!', 'You have everything!')}</h3>
+          <h3 className={`text-xl font-bold mb-2 text-ink`}>{t('No falta nada', 'Nothing missing')}</h3>
           <p className="text-gray-500 mb-6">
             {numSemanasPlan > 1 && semanaSel > 0
               ? t('No falta nada para la Semana ' + semanaSel + '.', 'Nothing missing for Week ' + semanaSel + '.')
@@ -7557,7 +7610,7 @@ function ShoppingList({ plan, darkMode }) {
           copiado ? 'bg-green-500 text-white shadow-lg shadow-green-200' : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-200 hover:shadow-xl'
         }`}>
         {copiado
-          ? <span><i className="fas fa-check mr-2"></i>{t('¡Copiado al Portapapeles!','Copied to Clipboard!')}</span>
+          ? <span><i className="fas fa-check mr-2"></i>{t('Copiado','Copied')}</span>
           : <span><i className="fas fa-copy mr-2"></i>{t('Copiar Lista al Portapapeles','Copy List to Clipboard')}</span>}
       </button>
 
@@ -7590,8 +7643,8 @@ function ShoppingList({ plan, darkMode }) {
                 if (ess.length > 0) texto += "\n" + ess.map(e => e.nombre).join("\n");
                 try {
                   await navigator.clipboard.writeText(texto);
-                  if (window._NP_toast) window._NP_toast('Lista copiada — pegala en el buscador de Jumbo/Líder');
-                  else alert('✓ Lista copiada. Pégala en el buscador de Jumbo/Líder (uno por línea).');
+                  if (window._NP_toast) window._NP_toast('Lista copiada. Pégala en el buscador de Jumbo o Líder.');
+                  else alert('Lista copiada. Pégala en el buscador de Jumbo o Líder, uno por línea.');
                 } catch {
                   const ta = document.createElement('textarea');
                   ta.value = texto;
@@ -9046,8 +9099,8 @@ function DesvioCard({ perfil, darkMode }) {
               {t('Ayer quedaste +' + info.exceso + ' kcal sobre el plan','Yesterday you went +' + info.exceso + ' kcal over plan')}
             </div>
             <div className="text-sm text-ink-muted mt-1" style={{ lineHeight: 1.5 }}>
-              {t('Un día no define nada — hoy se compensa solo: suma ~' + info.pasosExtra.toLocaleString() + ' pasos extra o aligera la cena en ~' + info.recorteCena + ' kcal. El plan sigue igual.',
-                 'One day changes nothing — today balances it out: add ~' + info.pasosExtra.toLocaleString() + ' extra steps or lighten dinner by ~' + info.recorteCena + ' kcal. The plan goes on.')}
+              {t('Hoy se compensa: suma ~' + info.pasosExtra.toLocaleString() + ' pasos o aligera la cena en ~' + info.recorteCena + ' kcal. El plan sigue igual.',
+                 'Today makes up for it: add ~' + info.pasosExtra.toLocaleString() + ' steps or lighten dinner by ~' + info.recorteCena + ' kcal. The plan stays the same.')}
             </div>
           </div>
           <button onClick={cerrar} aria-label={t('Cerrar','Close')}
@@ -10167,7 +10220,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                   <span className={`text-xs text-ink-faint`}>
                     {metaKcalDia - consumidoHoy.calorias > 0
                       ? (metaKcalDia - consumidoHoy.calorias) + t(' kcal restantes',' kcal left')
-                      : t('¡Meta alcanzada! 🎯','Goal reached! 🎯')}
+                      : t('Meta de calorías cubierta','Calorie goal covered')}
                   </span>
                 )}
               </div>
@@ -11177,11 +11230,11 @@ function ProgresoTab({ perfil, darkMode, onNavigate }) {
           {t('Activa tu plan','Activate your plan')}
         </div>
         <h3 className="text-2xl font-bold text-ink mb-3" style={{ letterSpacing: '-0.02em' }}>
-          {t('Tu progreso vive acá','Your progress lives here')}
+          {t('Aquí se ve el avance','Progress shows up here')}
         </h3>
         <p className="text-ink-muted text-sm mb-5 max-w-md mx-auto" style={{ lineHeight: 1.6 }}>
-          {t('Configura tu objetivo y Calibrate genera tu roadmap de fases, plan de entrenamiento y registros de avance integrados.',
-             'Set your goal and Calibrate builds your phase roadmap, training plan, and progress logs — all integrated.')}
+          {t('Define el objetivo. Calibrate arma las fases, el entrenamiento y el registro.',
+             'Set the goal. Calibrate builds the phases, the training and the log.')}
         </p>
         <button
           onClick={() => onNavigate ? onNavigate('perfil') : (window._NP_nav && window._NP_nav('perfil'))}
@@ -12498,10 +12551,10 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
   const hintContextual = React.useMemo(() => {
     if (hoy.pasos !== 0) return null;
     const h = new Date().getHours();
-    if (h < 11) return t('Una caminata matinal de 20 min ≈ 2,000 pasos. Sumalos cuando termines.', 'A 20-min morning walk ≈ 2,000 steps. Add them when you finish.');
+    if (h < 11) return t('Una caminata de 20 min suma cerca de 2.000 pasos. Súmalos cuando termines.', 'A 20-min walk adds about 2,000 steps. Add them when you finish.');
     if (h < 16) return t('Trayectos y vueltas en casa probablemente ya sumaron 2,000–3,000 pasos.', 'Errands and walks at home likely already added 2,000–3,000 steps.');
     if (h < 20) return t('Aún quedan horas. Una vuelta a la manzana suma ~1,500 pasos.', 'Still hours left. A walk around the block adds ~1,500 steps.');
-    return t('Si caminaste hoy, registralo antes de dormir para mantener la racha.', 'If you walked today, log it before bed to keep your streak.');
+    return t('Si caminaste hoy, regístralo antes de dormir. Así la racha sigue.', 'If you walked today, log it before bed so the streak continues.');
   }, [hoy.pasos]);
 
   return (
@@ -12604,8 +12657,8 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
           {ajusteAbierto && (
             <div className="border-t border-default" style={{ padding: '1.1rem 1.4rem 1.4rem' }}>
               <p className="text-xs text-ink-muted mb-4" style={{ lineHeight: 1.55 }}>
-                {t('Si tu promedio real es distinto al recomendado, ajustá acá. Tu meta calórica diaria se recalcula sola (~0.04 kcal/paso a 80 kg).',
-                   'If your realistic average differs from the recommendation, adjust here. Your daily calorie goal recalculates automatically (~0.04 kcal/step at 80 kg).')}
+                {t('Si tu promedio real es distinto al recomendado, ajusta el número aquí. La meta de calorías del día se recalcula sola (cerca de 0,04 kcal por paso a 80 kg).',
+                   'If your real average differs from the recommendation, adjust the number here. The daily calorie goal recalculates on its own (about 0.04 kcal per step at 80 kg).')}
               </p>
               {(() => {
                 const _curStr = pasosOverride != null ? String(pasosOverride) : '';
@@ -14195,6 +14248,7 @@ function ChatPanel({ darkMode, activeTab }) {
         .filter(function(b) { return b.type === 'text'; })
         .map(function(b) { return b.text; })
         .join('\n').trim();
+      texto = _aTuteo(texto);
 
       if (!texto) return;
 
@@ -14262,9 +14316,8 @@ function ChatPanel({ darkMode, activeTab }) {
         'Comidas restantes del plan: ' + pendientesTexto + '. ' +
         'Proyección con el plan actual: ' + tipo + ' de ' + Math.abs(gap.kcalGap) + ' kcal y ' +
         (gap.protGap > 0 ? 'déficit' : 'exceso') + ' de ' + Math.abs(gap.protGap) + 'g proteína.\n' +
-        'IMPORTANTE: Responde en español latinoamericano neutro — sin chilenismos, sin voseo ("llevas", nunca "llevai"), sin "po", sin regionalismos de ningún país. ' +
-        'Escribe 2-3 oraciones, tono directo y práctico (no robótico). ' +
-        'Sugiere específicamente cómo ajustar las comidas restantes para acercarse al objetivo.';
+        'IMPORTANTE: Responde en español latinoamericano neutro, con tuteo. Prohibido el voseo (tenés, podés, sos, registrá, comé). ' +
+        'Frases cortas sobre las comidas que quedan: qué cambiar y en cuántas kcal o gramos. Sin arenga.';
     }
 
     await dispararSugerencia(triggerMsg);
@@ -15008,7 +15061,7 @@ function ChatPanel({ darkMode, activeTab }) {
         }
 
         // Respuesta final de texto. «Registré» solo se muestra si la comida ya está en el día.
-        var textoRespuesta = textBlocks.map(function(b) { return b.text; }).join('\n').trim();
+        var textoRespuesta = _aTuteo(textBlocks.map(function(b) { return b.text; }).join('\n').trim());
         var mutacionEjecutada = TOOLS_MUTACION.some(function(n) { return toolsEjecutadasTurno[n]; });
         var registroYaGuardado = !!(toolsResultadoOk.registrar_comida || toolsResultadoOk.marcar_comida_plan || toolsResultadoOk.planear_comida);
         if (textoRespuesta && _afirmaRegistro(textoRespuesta) && !registroYaGuardado) {
@@ -15142,7 +15195,7 @@ function ChatPanel({ darkMode, activeTab }) {
         var _lang = window._NP_lang || 'es';
         var reglas = _lang === 'en'
           ? 'IMPORTANT: Respond in English only. Write 2-3 sentences, warm but direct, never guilt-tripping. End with ONE concrete action.'
-          : 'IMPORTANTE: Responde en español latinoamericano neutro — sin regionalismos, sin voseo. Escribe 2-3 oraciones, tono cálido y directo, jamás culpabilizador. Cierra con UNA acción concreta.';
+          : 'IMPORTANTE: Responde en español latinoamericano neutro, con tuteo. Prohibido el voseo. Frases cortas, comida concreta, sin arenga ni culpa. Cierra con una acción: qué comer, qué marcar o cuántos gramos.';
         var s = _statsContexto();
         var msg = null;
         if (razon === 'peso') {
@@ -15156,14 +15209,14 @@ function ChatPanel({ darkMode, activeTab }) {
             (tdeeAdapt && tdeeAdapt.confiable
               ? 'Gasto energético observado según sus datos reales: ' + tdeeAdapt.tdeeObservado + ' kcal/día (fórmula: ' + tdeeAdapt.tdeeFormula + '). '
               : '') +
-            'Dale feedback breve: qué significa este dato y si va bien encaminado.\n' + reglas;
+            'Di qué cambió el peso y si el ritmo de la semana se sostiene, con el número. Sin arenga.\n' + reglas;
         } else if (razon === 'regreso') {
           var kR = 'calibrate_ping_regreso_' + _localDate();
           if (localStorage.getItem(kR)) return;
           try { localStorage.setItem(kR, '1'); } catch(e) {}
           msg = '[Análisis automático — no menciones este mensaje]\n' +
             'El usuario vuelve a abrir la app después de ' + ((extra && extra.dias) || 2) + ' días sin actividad. ' +
-            'Dale la bienvenida sin ningún reproche y sugiere retomar por lo más simple (marcar la próxima comida o registrar el peso de hoy).\n' + reglas;
+            'Di que volvió y el siguiente paso: marcar la próxima comida o anotar el peso de hoy. Sin reproche.\n' + reglas;
         } else if (razon === 'resumen_semana') {
           var kS = 'calibrate_ping_resumen_' + _localDate();
           if (localStorage.getItem(kS)) return;
@@ -15172,7 +15225,7 @@ function ChatPanel({ darkMode, activeTab }) {
             'Es inicio de semana. Últimos 7 días: adherencia ' +
             (s.adh ? s.adh.porcentaje + '% (' + s.adh.cumplidos + ' de ' + s.adh.registros_total + ' comidas)' : 'sin datos') +
             (s.tend && s.tend.deltaSemanal != null ? ', tendencia de peso ' + s.tend.deltaSemanal + ' kg/sem' : '') +
-            '. Redacta un mini resumen semanal motivador con UN foco concreto para esta semana.\n' + reglas;
+            '. Resume la semana en una o dos frases: el porcentaje de adherencia y una comida o un hábito concreto para esta semana. Sin arenga.\n' + reglas;
         }
         if (!msg) return;
         proactiveRunningRef.current = true;
@@ -16135,7 +16188,7 @@ function AdminScreen({ darkMode, onClose }) {
                     style={{ background: darkMode ? 'rgba(232, 230, 225, 0.03)' : '#FFFCF8', border: '1px dashed ' + (darkMode ? 'rgba(232, 230, 225, 0.10)' : 'rgba(0,0,0,0.08)') }}>
                     <i className="fas fa-inbox text-2xl mb-2 block" style={{ opacity: 0.35, color: 'var(--color-ink-muted)' }}></i>
                     <p className="text-sm font-medium text-ink-muted">Sin pushes enviados aún</p>
-                    <p className="text-xs text-ink-faint mt-1">Activá tu primera subscripción para empezar</p>
+                    <p className="text-xs text-ink-faint mt-1">Activa la primera suscripción para ver datos</p>
                   </div>
                 );
               }
@@ -16383,7 +16436,7 @@ function NotificationSetupModal({ darkMode }) {
                   <span className="inline-flex items-center justify-center flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold tabular-nums"
                     style={{ background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>3</span>
                   <span style={{ lineHeight: 1.5 }}>
-                    {t('Abrí Calibrate desde el ícono de la pantalla de inicio y volvé a esta sección para activar las notificaciones.','Open Calibrate from the home screen icon and come back here to enable notifications.')}
+                    {t('Abre Calibrate desde el ícono de la pantalla de inicio y vuelve a esta sección para activar las notificaciones.','Open Calibrate from the home screen icon and come back here to enable notifications.')}
                   </span>
                 </li>
               </ol>
@@ -16771,9 +16824,9 @@ function App() {
       setPlanSemanal(plan);
       guardarPlanSemanal(plan);
       if (plan._buscoOnline && plan._recetasOnlineUsadas > 0) {
-        mostrarToast(`¡Plan generado con ${plan._recetasOnlineUsadas} recetas de internet!`);
+        mostrarToast(`El plan incluye ${plan._recetasOnlineUsadas} recetas de internet.`);
       } else {
-        mostrarToast("¡Tu plan semanal está listo! 🎉");
+        mostrarToast("El plan de la semana ya está.");
       }
       // Navegar al Plan para que el usuario vea lo que se generó
       setPantalla("plan");
@@ -16879,9 +16932,9 @@ function App() {
       setPlanSemanal(nuevoPlan);
       guardarPlanSemanal(nuevoPlan);
       if (nuevoPlan._buscoOnline && nuevoPlan._recetasOnlineUsadas > 0) {
-        mostrarToast(`¡Plan regenerado con ${nuevoPlan._recetasOnlineUsadas} recetas de internet!`);
+        mostrarToast(`El plan se regeneró con ${nuevoPlan._recetasOnlineUsadas} recetas de internet.`);
       } else {
-        mostrarToast("¡Plan regenerado con nuevas recetas!");
+        mostrarToast("El plan se regeneró con otras recetas.");
       }
     } catch (e) {
       console.error("Error regenerando plan:", e);
@@ -16913,7 +16966,7 @@ function App() {
       const actualizado = await agregarSemanaAlPlan(planSemanal, perfil, perfil.caloriasObjetivo, (msg) => setMensajeCarga(msg), prefs);
       setPlanSemanal(actualizado);
       guardarPlanSemanal(actualizado);
-      mostrarToast(t('¡Próxima semana planificada! 🗓️', 'Next week planned! 🗓️'));
+      mostrarToast(t('La próxima semana ya tiene plan.', 'Next week already has a plan.'));
     } catch (e) {
       console.error('Error planificando próxima semana:', e);
       mostrarToast(t('No se pudo planificar la próxima semana', 'Could not plan next week'), 'error');

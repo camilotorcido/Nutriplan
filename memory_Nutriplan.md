@@ -6,6 +6,12 @@ _Convención: entradas nuevas al inicio (más reciente arriba), fecha YYYY-MM-DD
 
 ---
 
+## 2026-11-09 — El coach y la UI quedan en español neutro
+
+El system prompt estaba en voseo (orientá, podés, llamá) y el modelo lo copiaba. El filtro de «Registré» no mira tenés, podés, registrá ni comé. Ahora el prompt pide tuteo y frases cortas de comida, y un filtro pasa a tuteo el texto del coach antes de mostrarlo. La UI, un paso de receta («usás») y el protocolo de meseta quedaron en el mismo registro, con anti-ai-style.md. No es la voz comercial de Camilo.
+
+---
+
 ## 2026-11-09 — Paleta Mesa
 
 Fondo `#F3F1EC` / `#121417`. Botón `#1D4E89` con texto `#F4F7FB`. Las tarjetas no llevan relleno de acento. El azul no va en la nav, los chips ni el banner. En oscuro el número grande de kcal restantes es `#8FB4D9`: `#1D4E89` sobre `#1C1F24` no contrasta. `--color-accent` quedó en tinta para que el remap de verdes no vuelva a pintar mostaza.

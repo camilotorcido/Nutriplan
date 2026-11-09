@@ -38,7 +38,7 @@
       'auth/cancelled-popup-request': '',
       'auth/popup-blocked':           'El navegador bloqueó la ventana. Permite las ventanas emergentes de este sitio.',
       'auth/requires-recent-login':   'Por seguridad, cierra sesión, vuelve a ingresar y repite la acción.',
-      'auth/operation-not-allowed':   'Este método de login no está habilitado. Activá Email/contraseña en Firebase Console.',
+      'auth/operation-not-allowed':   'Este método de login no está habilitado. Activa email y contraseña en Firebase Console.',
     };
     return map[code] || 'Error de autenticación. Intenta de nuevo.';
   }

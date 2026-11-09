@@ -219,7 +219,7 @@
         "Bajar a fuego medio. Sofreír cebolla picada, pimiento rojo en cubos y zanahoria en rodajas por 8 minutos.",
         "Añadir los 3 ajos picados y los 2 tomates rallados (sin piel). Cocinar 5 minutos hasta deshacer.",
         "Devolver la carne. Añadir 400 ml de caldo y 1 g comino. Llevar a hervor.",
-        "Si usás olla a presión: tapar y cocinar 35 minutos desde que pita. Si es cacerola: tapar y cocinar a fuego bajo 1h 30 min.",
+        "Si usas olla a presión: tapar y cocinar 35 minutos desde que pita. Si es cacerola: tapar y cocinar a fuego bajo 1h 30 min.",
         "Los últimos 20 min añadir los 250 g de papa cortada en cuartos.",
         "Rectificar sal. Servir directo de la cacerola con la papa y abundante salsa."
       ],

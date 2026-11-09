@@ -9,7 +9,7 @@ const PLATEAU_PROTOCOL = [
   {
     paso: 1,
     accion: 'Auditoría de calorías',
-    detalle: 'Trackear TODO lo que comés durante 7 días. Buscar calorías ocultas: aceites de cocina, salsas, cremas, "bocados" mientras cocinás. La mayoría de mesetas se explican acá.',
+    detalle: 'Anota todo lo que comes durante 7 días. Busca calorías que no estás contando: aceite, salsas, cremas y lo que pruebas mientras cocinas. La mayoría de las mesetas se explica con eso.',
     duracion: '7 días',
     ajusteCalorias: 0,
     ajustePasos: 0
