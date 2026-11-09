@@ -10,7 +10,7 @@
 (function cargarLazyLoader() {
   var cargado = false;
   var promesaCarga = null;
-  var VERSION = 'v=20260511proteinas';
+  var VERSION = 'v=20261109despensa';
 
   function cargarScript(src) {
     return new Promise(function(resolve, reject) {
@@ -37,6 +37,7 @@
 
     promesaCarga = cargarScript('js/recipes-extra.js?' + VERSION)
       .then(function() { return cargarScript('js/recipes-extra-2.js?' + VERSION); })
+      .then(function() { return cargarScript('js/recipes-despensa.js?' + VERSION); })
       .then(function() { return cargarScript('js/recipes-thermomix-upgrade.js?' + VERSION); })
       .then(function() { return cargarScript('js/recipes-metadata-upgrade.js?' + VERSION); })
       .then(function() {

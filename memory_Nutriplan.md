@@ -6,6 +6,10 @@ _Convención: entradas nuevas al inicio (más reciente arriba), fecha YYYY-MM-DD
 
 ---
 
+## 2026-11-09 — 34 recetas de despensa chilena
+
+34 platos nuevos en `js/recipes-despensa.js`, en el pool diferido (el loader los mezcla antes de generar, y antes del upgrade Thermomix). No van en el primer paint. Criterio: cocina de casa en Chile, una olla o sartén, ingredientes de despensa, útiles para bajar grasa. Desayuno y snacks también están ahí: el generador ya lee ese pool para esas comidas. Arvejas en lata no tenían precio CLP; se estimó en 4 pesos por gramo (lata ~1.600/400 g).
+
 ## 2026-11-09 — La siguiente comida en Hoy no va sobre accent-light
 
 Camilo vio la tarjeta en oscuro: crema #F0D9AC con el nombre en tinta clara. `var(--color-accent-light)` no se invierte en oscuro y `var(--color-ink)` sí, así que el texto queda claro sobre claro. Esa tarjeta usa `surface-subtle` (cream #FAF6EE en claro, #25211E en oscuro). El nombre va en Fraunces con #1A1A1A o #E8E0D4 según el modo. "Desayuno" y la porción van en #4A4A4A o #B8AB9C. El botón "Ya la comí" sigue en #8C6424 / texto #F5F0E8, a la derecha desde 1024px y a lo ancho en móvil. Las filas de Hoy y el h2 del modal ya contrastaban (tinta sobre la surface; #1A1A1A sobre mostaza #C8943A) y no se tocaron. --color-accent sigue #C8943A.

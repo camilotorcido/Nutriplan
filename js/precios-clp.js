@@ -61,6 +61,7 @@
     papa:              { clp_por_unidad_base: 2.0,  unidad_base: "g", descripcion: "Papa (~2.000/kg)" },
     camote:            { clp_por_unidad_base: 4.0,  unidad_base: "g", descripcion: "Camote (~4.000/kg)" },
     choclo:            { clp_por_unidad_base: 6.0,  unidad_base: "g", descripcion: "Choclo (~3.000/500g congelado)" },
+    arvejas:           { clp_por_unidad_base: 4.0,  unidad_base: "g", descripcion: "Arvejas en lata (~1.600/400g, estimación)" },
 
     // ═════════ LEGUMBRES ═════════
     lentejas:          { clp_por_unidad_base: 5.5,  unidad_base: "g", descripcion: "Lentejas (~5.500/kg)" },
