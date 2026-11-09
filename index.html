@@ -28,7 +28,7 @@
     <meta http-equiv="Expires" content="0">
     <!-- Tailwind CSS pre-compilado (38 KB, vs 300 KB del CDN JIT).
          Contiene solo las ~655 clases que realmente usa el proyecto. -->
-    <link rel="stylesheet" href="css/tailwind-compiled.css?v=679373f4">
+    <link rel="stylesheet" href="css/tailwind-compiled.css?v=9b3a628e">
     <!-- Tipografía: Plus Jakarta Sans (UI) + JetBrains Mono (números). Fraunces solo en el nombre del plato. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,14 +36,14 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <!-- PWA -->
     <link rel="manifest" href="manifest.webmanifest">
-    <meta name="theme-color" content="#C8943A">
+    <meta name="theme-color" content="#F3F1EC">
     <!-- iOS PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Calibrate">
     <link rel="apple-touch-icon" href="icons/icon.svg">
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
-    <link rel="stylesheet" href="css/style.css?v=679373f4">
+    <link rel="stylesheet" href="css/style.css?v=9b3a628e">
     <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
     <!-- Babel Standalone removido: el bundle se pre-compila con esbuild en deploy.ps1 → js/app-bundle.compiled.js -->
@@ -55,15 +55,15 @@
             justify-content: center;
             min-height: 100vh;
             font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-            color: #4A4A4A;
+            color: #5C5852;
             gap: 16px;
-            background: #F5F0E8;
+            background: #F3F1EC;
         }
         #app-loader .spinner {
             width: 48px;
             height: 48px;
-            border: 4px solid #E0D9CC;
-            border-top-color: #C8943A;
+            border: 4px solid #E3DFD8;
+            border-top-color: #1A1A1A;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
@@ -84,40 +84,40 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
     <!-- Auth + core modules (cargados antes que cualquier otro módulo) -->
     <!-- Version timestamp for cache-busting: 20260428ce -->
-    <script src="js/firebase-config.js?v=679373f4"></script>
-    <script src="js/auth.js?v=679373f4"></script>
-    <script src="js/cloud-storage.js?v=679373f4"></script>
-    <script src="js/precios-clp.js?v=679373f4"></script>
-    <script src="js/recipes.js?v=679373f4"></script>
+    <script src="js/firebase-config.js?v=9b3a628e"></script>
+    <script src="js/auth.js?v=9b3a628e"></script>
+    <script src="js/cloud-storage.js?v=9b3a628e"></script>
+    <script src="js/precios-clp.js?v=9b3a628e"></script>
+    <script src="js/recipes.js?v=9b3a628e"></script>
     <!-- Fase 6.2: recipes-extra y upgrades se cargan lazy al primer uso (ahorro ~224 KB en first paint) -->
-    <script src="js/nutritionEngine.js?v=679373f4"></script>
-    <script src="js/storage.js?v=679373f4"></script>
+    <script src="js/nutritionEngine.js?v=9b3a628e"></script>
+    <script src="js/storage.js?v=9b3a628e"></script>
     <!-- Calibrate — Fat Loss roadmap engine -->
-    <script src="js/roadmap-data.js?v=679373f4"></script>
-    <script src="js/roadmap-generator.js?v=679373f4"></script>
-    <script src="js/protein-complement.js?v=679373f4"></script>
-    <script src="js/fat-loss-integration.js?v=679373f4"></script>
-    <script src="js/body-comp.js?v=679373f4"></script>
-    <script src="js/steps.js?v=679373f4"></script>
-    <script src="js/entrenamiento.js?v=679373f4"></script>
-    <script src="js/plateau-detector.js?v=679373f4"></script>
-    <script src="js/alcohol-calc.js?v=679373f4"></script>
-    <script src="js/recipeAPI.js?v=679373f4"></script>
-    <script src="js/recipes-thermomix-upgrade.js?v=679373f4"></script>
-    <script src="js/recipe-translations.js?v=679373f4"></script>
-    <script src="js/foods-db.js?v=679373f4"></script>
-    <script src="js/lazy-recipes-loader.js?v=679373f4"></script>
-    <script src="js/equivalencias-ingredientes.js?v=679373f4"></script>
-    <script src="js/adherencia.js?v=679373f4"></script>
-    <script src="js/busqueda-inversa.js?v=679373f4"></script>
-    <script src="js/generador-recetas.js?v=679373f4"></script>
-    <script src="js/batch-cooking.js?v=679373f4"></script>
-    <script src="js/perfiles.js?v=679373f4"></script>
-    <script src="js/exports.js?v=679373f4"></script>
-    <script src="js/recetas-guardadas-loader.js?v=679373f4"></script>
+    <script src="js/roadmap-data.js?v=9b3a628e"></script>
+    <script src="js/roadmap-generator.js?v=9b3a628e"></script>
+    <script src="js/protein-complement.js?v=9b3a628e"></script>
+    <script src="js/fat-loss-integration.js?v=9b3a628e"></script>
+    <script src="js/body-comp.js?v=9b3a628e"></script>
+    <script src="js/steps.js?v=9b3a628e"></script>
+    <script src="js/entrenamiento.js?v=9b3a628e"></script>
+    <script src="js/plateau-detector.js?v=9b3a628e"></script>
+    <script src="js/alcohol-calc.js?v=9b3a628e"></script>
+    <script src="js/recipeAPI.js?v=9b3a628e"></script>
+    <script src="js/recipes-thermomix-upgrade.js?v=9b3a628e"></script>
+    <script src="js/recipe-translations.js?v=9b3a628e"></script>
+    <script src="js/foods-db.js?v=9b3a628e"></script>
+    <script src="js/lazy-recipes-loader.js?v=9b3a628e"></script>
+    <script src="js/equivalencias-ingredientes.js?v=9b3a628e"></script>
+    <script src="js/adherencia.js?v=9b3a628e"></script>
+    <script src="js/busqueda-inversa.js?v=9b3a628e"></script>
+    <script src="js/generador-recetas.js?v=9b3a628e"></script>
+    <script src="js/batch-cooking.js?v=9b3a628e"></script>
+    <script src="js/perfiles.js?v=9b3a628e"></script>
+    <script src="js/exports.js?v=9b3a628e"></script>
+    <script src="js/recetas-guardadas-loader.js?v=9b3a628e"></script>
     <script>
     (function() {
-        var APP_VERSION = '679373f4';
+        var APP_VERSION = '9b3a628e';
 
         function checkDeps() {
             return typeof React !== 'undefined'
@@ -227,7 +227,7 @@
                 var el = document.createElement('div');
                 el.id = 'np-version-nueva';
                 el.textContent = 'Hay una versión nueva';
-                el.setAttribute('style', 'position:fixed;left:0;right:0;bottom:0;z-index:9999;text-align:center;font-size:13px;padding:10px 16px;background:#8C6424;color:#F5F0E8;');
+                el.setAttribute('style', 'position:fixed;left:0;right:0;bottom:0;z-index:9999;text-align:center;font-size:13px;padding:10px 16px;background:#1A1A1A;color:#F4F7FB;');
                 (document.body || document.documentElement).appendChild(el);
             }
             function checkVersionJson() {
@@ -289,9 +289,9 @@
       ind.style.cssText = [
         'position:fixed', 'top:0', 'left:50%', 'z-index:99999',
         'pointer-events:none', 'width:44px', 'height:44px',
-        'border-radius:50%', 'background:#C8943A',
+        'border-radius:50%', 'background:#1A1A1A',
         'display:flex', 'align-items:center', 'justify-content:center',
-        'box-shadow:0 6px 20px rgba(200,148,58,0.45)',
+        'box-shadow:0 6px 20px rgba(26,26,26,0.28)',
         'opacity:0', 'transform:translateX(-50%) translateY(-60px)',
         'will-change:transform,opacity'
       ].join(';');

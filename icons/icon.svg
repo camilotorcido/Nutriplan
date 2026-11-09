@@ -1,17 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Calibrate">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#D5A148"/>
-      <stop offset="100%" stop-color="#B68530"/>
-    </linearGradient>
-    <linearGradient id="topHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22"/>
-      <stop offset="55%" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <rect width="512" height="512" rx="112" fill="url(#topHighlight)"/>
+  <rect width="512" height="512" rx="112" fill="#1A1A1A"/>
   <path d="M 369 191 A 130 130 0 1 0 369 321"
-        stroke="#F5F0E8" stroke-width="52" stroke-linecap="round" fill="none"/>
-  <circle cx="256" cy="256" r="14" fill="#5A7A5E"/>
+        stroke="#F4F7FB" stroke-width="52" stroke-linecap="round" fill="none"/>
+  <circle cx="256" cy="256" r="14" fill="#2F6B4F"/>
 </svg>

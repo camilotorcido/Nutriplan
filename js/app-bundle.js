@@ -457,10 +457,10 @@ function NP_confirm(mensaje, opts) {
     btnC.onclick = function() { cerrar(false); };
     var btnOk = document.createElement('button');
     btnOk.textContent = opts.confirmar || 'Confirmar';
-    btnOk.style.cssText = 'border:none;cursor:pointer;font-weight:700;font-size:13px;padding:9px 16px;border-radius:10px;color:' + (opts.destructivo ? '#fff' : '#F5F0E8') + ';background:' + (opts.destructivo ? '#dc2626' : '#8C6424');
+    btnOk.style.cssText = 'border:none;cursor:pointer;font-weight:700;font-size:13px;padding:9px 16px;border-radius:10px;color:' + '#F4F7FB' + ';background:' + (opts.destructivo ? '#9F2D2D' : '#1D4E89');
     if (!opts.destructivo) {
-      btnOk.onmouseenter = function() { btnOk.style.background = '#6E4E1C'; };
-      btnOk.onmouseleave = function() { btnOk.style.background = '#8C6424'; };
+      btnOk.onmouseenter = function() { btnOk.style.background = '#163A68'; };
+      btnOk.onmouseleave = function() { btnOk.style.background = '#1D4E89'; };
     }
     btnOk.onclick = function() { cerrar(true); };
     row.appendChild(btnC);
@@ -755,11 +755,11 @@ function LoginScreen({ darkMode, onToggleDark }) {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative"
-      style={{ background: darkMode ? '#1A1816' : '#F5F0E8' }}>
+      style={{ background: darkMode ? '#121417' : '#F3F1EC' }}>
 
       <button onClick={onToggleDark} aria-label={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
         className={`absolute p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-white/70'}`}
-        style={{ top: 16, right: 16, color: darkMode ? '#E8C77A' : 'var(--color-ink-muted)', zIndex: 2 }}>
+        style={{ top: 16, right: 16, color: darkMode ? '#E8E6E1' : 'var(--color-ink-muted)', zIndex: 2 }}>
         <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'} text-sm`}></i>
       </button>
 
@@ -771,11 +771,11 @@ function LoginScreen({ darkMode, onToggleDark }) {
         <div className="mb-8">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 brand-icon-bg rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg width="16" height="16" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
+              <svg width="16" height="16" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="currentColor" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-ink">Calibrate</h1>
           </div>
-          <p className="text-sm mt-3" style={{ color: darkMode ? '#D9CBB8' : 'var(--color-ink-muted)' }}>{subtitles[mode]}</p>
+          <p className="text-sm mt-3" style={{ color: darkMode ? '#A8A49C' : 'var(--color-ink-muted)' }}>{subtitles[mode]}</p>
         </div>
 
         {/* Title */}
@@ -784,7 +784,7 @@ function LoginScreen({ darkMode, onToggleDark }) {
         {/* Error / Success */}
         {error && (
           <div className="animate-slideDown mb-4">
-            <div className="flex items-start gap-2 px-4 py-3 rounded-xl text-sm" style={{ background: darkMode ? 'rgba(192,82,58,0.18)' : '#F8E8E3', color: darkMode ? '#F0C2B6' : '#8A3324' }}>
+            <div className="flex items-start gap-2 px-4 py-3 rounded-xl text-sm" style={{ background: darkMode ? 'rgba(159,45,45,0.18)' : '#F6E4E2', color: darkMode ? '#E7A8A2' : '#9F2D2D' }}>
               <i className="fas fa-circle-exclamation mt-0.5 flex-shrink-0"></i>
               <span>{error}</span>
             </div>
@@ -808,7 +808,7 @@ function LoginScreen({ darkMode, onToggleDark }) {
               placeholder="tu@email.com" autoComplete="email"
               aria-invalid={emailInvalid ? 'true' : 'false'}
               className={`w-full px-4 py-3 rounded-xl border text-sm transition-colors ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400'} focus:border-green-500`}
-              style={emailInvalid ? { borderColor: '#C0523A', boxShadow: '0 0 0 1px #C0523A' } : undefined} />
+              style={emailInvalid ? { borderColor: '#9F2D2D', boxShadow: '0 0 0 1px #9F2D2D' } : undefined} />
           </div>
 
           {mode !== 'reset' && (
@@ -831,9 +831,9 @@ function LoginScreen({ darkMode, onToggleDark }) {
 
           <button aria-label={loading ? 'Procesando' : btnLabels[mode]} onClick={handleSubmit} disabled={loading}
             className={`w-full py-3 rounded-xl font-semibold text-sm transition active:scale-[0.98] ${loading ? 'cursor-not-allowed' : ''}`}
-            style={{ background: '#8C6424', color: '#F5F0E8', boxShadow: loading ? 'none' : 'var(--shadow-soft-md)' }}
-            onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#6E4E1C'; }}
-            onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = '#8C6424'; }}>
+            style={{ background: '#1D4E89', color: '#F4F7FB', boxShadow: loading ? 'none' : 'var(--shadow-soft-md)' }}
+            onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#163A68'; }}
+            onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = '#1D4E89'; }}>
             {loading
               ? <span className="flex items-center justify-center gap-2"><i className="fas fa-circle-notch fa-spin"></i>Procesando…</span>
               : btnLabels[mode]
@@ -909,7 +909,7 @@ function LoginScreen({ darkMode, onToggleDark }) {
       </div>
 
       {/* Footer */}
-      <p className="mt-6 text-xs" style={{ color: darkMode ? '#D9CBB8' : 'var(--color-ink-muted)' }}>
+      <p className="mt-6 text-xs" style={{ color: darkMode ? '#A8A49C' : 'var(--color-ink-muted)' }}>
         Solo para amigos · Beta privada
       </p>
     </div>
@@ -947,7 +947,7 @@ function EmptyState({ icon, title, desc, cta, onCta, darkMode }) {
       {desc && <p className="cal-empty-state__desc">{desc}</p>}
       {cta && onCta && (
         <button onClick={onCta}
-          className="mt-3 px-5 py-2.5 rounded-xl text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors flex items-center gap-2">
+          className="cal-action mt-3 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2">
           {cta}
         </button>
       )}
@@ -1300,7 +1300,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           <div className={`w-full max-w-sm rounded-2xl shadow-xl p-8 animate-scaleIn ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'}`}>
             <div className="text-center mb-6">
               <div className="w-16 h-16 brand-icon-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
+                <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="currentColor" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
               </div>
               <h1 className={`text-2xl font-bold tracking-tight text-ink`}>Calibrate</h1>
             </div>
@@ -1358,7 +1358,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 
             {/* ── Continuar ── */}
             <button aria-label="Avanzar" onClick={_continuar}
-              className="w-full py-4 rounded-2xl font-bold text-base bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
+              className="cal-action w-full py-4 rounded-2xl font-bold text-base transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
               {t('Continuar','Continue')} <i className="fas fa-arrow-right text-sm"></i>
             </button>
           </div>
@@ -1757,7 +1757,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
         <div className={`min-h-screen py-6 px-4 bg-base`}>
           <div className="max-w-3xl mx-auto">
             {/* Header gradient */}
-            <div className="rounded-2xl p-5 mb-5 shadow-lg" style={{ background: 'var(--color-accent)', color: '#1A1A1A' }}>
+            <div className="rounded-2xl p-5 mb-5 shadow-lg" style={{ background: 'var(--color-surface)', color: 'var(--color-ink)', boxShadow: 'inset 0 0 0 1px var(--color-ink)' }}>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold tracking-widest uppercase">Tu plan está listo</span>
                 <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: 'rgba(26,26,26,0.08)' }}>{objMeta}</span>
@@ -1794,9 +1794,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             {/* CTA */}
             <button type="button" onClick={() => onComplete(perfilParaExplicar)}
               className="w-full py-4 rounded-2xl font-bold text-base transition active:scale-[0.98] shadow-lg cursor-pointer"
-              style={{ background: '#8C6424', color: '#F5F0E8' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#6E4E1C'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#8C6424'; }}>
+              style={{ background: '#1D4E89', color: '#F4F7FB' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#163A68'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#1D4E89'; }}>
               <i className="fas fa-check mr-2"></i>Comenzar mi plan
             </button>
             <p className={`text-[11px] text-center mt-3 text-ink-faint`}>
@@ -1815,7 +1815,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 brand-icon-bg rounded-xl flex items-center justify-center">
-                <svg width="18" height="18" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.8" strokeLinecap="round" fill="none"/></svg>
+                <svg width="18" height="18" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="currentColor" strokeWidth="3.8" strokeLinecap="round" fill="none"/></svg>
               </div>
               <div>
                 <div className={`font-bold text-base text-ink`}>Calibrate</div>
@@ -1988,12 +1988,12 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 <div className="flex gap-2">
                   <button type="button" onClick={() => { setVerMedidas(true); setSinMedidas(false); }}
                     className="flex-1 py-2.5 rounded-xl text-xs font-semibold"
-                    style={verMedidas ? { background: 'var(--color-accent)', color: '#1A1A1A' } : { background: 'var(--color-surface)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px var(--color-border)' }}>
+                    style={verMedidas ? { background: 'var(--color-surface)', color: 'var(--color-ink)', boxShadow: 'inset 0 0 0 1px var(--color-ink)' } : { background: 'var(--color-surface)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px var(--color-border)' }}>
                     {t('Tengo cintura y cuello','I have waist and neck')}
                   </button>
                   <button type="button" onClick={() => { setSinMedidas(true); setVerMedidas(false); }}
                     className="flex-1 py-2.5 rounded-xl text-xs font-semibold"
-                    style={sinMedidas ? { background: 'var(--color-accent)', color: '#1A1A1A' } : { background: 'var(--color-surface)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px var(--color-border)' }}>
+                    style={sinMedidas ? { background: 'var(--color-surface)', color: 'var(--color-ink)', boxShadow: 'inset 0 0 0 1px var(--color-ink)' } : { background: 'var(--color-surface)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px var(--color-border)' }}>
                     {t('No sé mi porcentaje','I don\'t know my body fat')}
                   </button>
                 </div>
@@ -2068,12 +2068,12 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                         {l: t('Duración','Duration'), v: roadmapPreview.calculados.mesesTotales+' meses'},
                       ].map(x => (
                         <div key={x.l} className="rounded-lg p-2 text-center" style={{ background: 'rgba(255,255,255,0.55)' }}>
-                          <div className="text-[10px] leading-tight" style={{ color: '#4A4A4A' }}>{x.l}</div>
+                          <div className="text-[10px] leading-tight" style={{ color: '#5C5852' }}>{x.l}</div>
                           <div className="text-xs font-bold mt-0.5">{x.v}</div>
                         </div>
                       ))}
                     </div>
-                    <p className="text-[11px]" style={{ color: '#4A4A4A' }}>{roadmapPreview.fases.length} {t('fases','phases')} · {roadmapPreview.calculados.cantDietBreaks} {t('pausas','breaks')} · {roadmapPreview.calculados.proteinaTarget}g {t('de proteína','of protein')}</p>
+                    <p className="text-[11px]" style={{ color: '#5C5852' }}>{roadmapPreview.fases.length} {t('fases','phases')} · {roadmapPreview.calculados.cantDietBreaks} {t('pausas','breaks')} · {roadmapPreview.calculados.proteinaTarget}g {t('de proteína','of protein')}</p>
                   </div>
                 ) : (
                   <div className="text-xs p-3 rounded-lg text-ink-muted" style={{ background: 'var(--color-accent-light)' }}>
@@ -2472,9 +2472,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               className={`${pasoWizard > 1 ? '' : 'w-full'} py-3.5 rounded-2xl font-semibold transition flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] ${
                 btnFinalDisabled ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : ''
               }`}
-              style={btnFinalDisabled ? (pasoWizard > 1 ? { flex: 2 } : {}) : { ...(pasoWizard > 1 ? { flex: 2 } : {}), background: '#8C6424', color: '#F5F0E8' }}
-              onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = '#6E4E1C'; }}
-              onMouseLeave={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = '#8C6424'; }}>
+              style={btnFinalDisabled ? (pasoWizard > 1 ? { flex: 2 } : {}) : { ...(pasoWizard > 1 ? { flex: 2 } : {}), background: '#1D4E89', color: '#F4F7FB' }}
+              onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = '#163A68'; }}
+              onMouseLeave={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = '#1D4E89'; }}>
               {pasoWizard === TOTAL_PASOS ? (
                 <><i className={`fas ${perfil.objetivo === 'perdida' ? 'fa-fire' : perfil.objetivo === 'volumen' ? 'fa-arrow-trend-up' : 'fa-scale-balanced'} text-sm`}></i>
                   {' '}{t('Generar mi plan','Generate my plan')}</>
@@ -2719,7 +2719,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </button>
           </div>
           <div className="inline-flex items-center justify-center w-16 h-16 brand-icon-bg rounded-2xl mb-4">
-            <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
+            <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="currentColor" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
           </div>
           <h1 className={`text-3xl font-bold tracking-tight mb-2 text-ink`}>Calibrate</h1>
           <p className={`text-lg text-ink-faint`}>{tienePlan ? 'Edita tu perfil' : 'Para calcular tu plan necesito tus datos.'}</p>
@@ -2972,7 +2972,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 <div className="rounded-xl p-5" style={{ background: 'var(--color-accent-light)', color: '#1A1A1A' }}>
                   <div className="flex items-center justify-between mb-3">
                     <div className="text-xs font-bold tracking-wider">Así queda tu plan</div>
-                    <div className="text-[11px]" style={{ color: '#4A4A4A' }}>{roadmapPreview.calculados.semanasActivas} semanas · {roadmapPreview.calculados.cantDietBreaks} pausas</div>
+                    <div className="text-[11px]" style={{ color: '#5C5852' }}>{roadmapPreview.calculados.semanasActivas} semanas · {roadmapPreview.calculados.cantDietBreaks} pausas</div>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
                     <div className="bg-white/20 rounded-lg p-2 text-center">
@@ -3525,9 +3525,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 ? 'shadow-lg active:scale-[0.98]'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
-            style={(perfil.objetivo === 'perdida' ? !!roadmapPreview : perfil.objetivo === 'mantenimiento' ? !!roadmapMantPreview : perfil.objetivo === 'volumen' ? !!roadmapVolPreview : (tdeeInfo && !macroError)) ? { background: '#8C6424', color: '#F5F0E8' } : undefined}
-            onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = '#6E4E1C'; }}
-            onMouseLeave={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = '#8C6424'; }}>
+            style={(perfil.objetivo === 'perdida' ? !!roadmapPreview : perfil.objetivo === 'mantenimiento' ? !!roadmapMantPreview : perfil.objetivo === 'volumen' ? !!roadmapVolPreview : (tdeeInfo && !macroError)) ? { background: '#1D4E89', color: '#F4F7FB' } : undefined}
+            onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = '#163A68'; }}
+            onMouseLeave={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = '#1D4E89'; }}>
             <i className={`fas ${perfil.objetivo === 'perdida' ? 'fa-fire' : perfil.objetivo === 'volumen' ? 'fa-arrow-trend-up' : 'fa-scale-balanced'} mr-2`}></i>
             {tienePlan ? t('Guardar y Regenerar Plan', 'Save & Regenerate Plan') : t('Generar Plan Semanal', 'Generate Weekly Plan')}
           </button>
@@ -4085,9 +4085,9 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
 
         <button onClick={generar}
           className="w-full py-3 rounded-xl font-semibold text-sm hover:shadow-lg transition"
-          style={{ background: '#8C6424', color: '#F5F0E8' }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = '#6E4E1C'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = '#8C6424'; }}>
+          style={{ background: '#1D4E89', color: '#F4F7FB' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#163A68'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = '#1D4E89'; }}>
           <i className="fas fa-wand-magic-sparkles mr-2"></i>{t(`Generar ${cantidad} receta${cantidad !== 1 ? 's' : ''}`,`Generate ${cantidad} recipe${cantidad !== 1 ? 's' : ''}`)}
         </button>
       </div>
@@ -4170,9 +4170,9 @@ function AdherenceWidget({ darkMode, forceUpdate }) {
       <div className="mt-6 rounded-2xl text-center"
         style={{
           padding: '1.25rem',
-          border: '1px dashed ' + (darkMode ? 'rgba(232, 224, 212, 0.18)' : 'var(--color-border)'),
+          border: '1px dashed ' + (darkMode ? 'rgba(232, 230, 225, 0.18)' : 'var(--color-border)'),
           color: 'var(--color-ink-faint)',
-          background: darkMode ? 'rgba(232, 224, 212, 0.03)' : 'rgba(245, 240, 232, 0.4)'
+          background: darkMode ? 'rgba(232, 230, 225, 0.03)' : 'rgba(243, 241, 236, 0.4)'
         }}>
         <i className="fas fa-clipboard-check text-2xl mb-2" style={{ opacity: 0.6 }}></i>
         <p className="text-sm" style={{ lineHeight: 1.5 }}>{t('Marca las comidas que efectivamente comiste para medir tu adherencia','Mark the meals you ate to measure adherence')}</p>
@@ -4182,10 +4182,10 @@ function AdherenceWidget({ darkMode, forceUpdate }) {
 
   // IA redesign: paleta de estado del brand
   const adhColor = stats.porcentaje >= 80 ? 'var(--color-success)' : stats.porcentaje >= 50 ? 'var(--color-accent-dark)' : 'var(--color-alert)';
-  const tileBg = darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(245, 240, 232, 0.55)';
-  const tileRing = darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.06)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.05)';
+  const tileBg = darkMode ? 'rgba(232, 230, 225, 0.04)' : 'rgba(243, 241, 236, 0.55)';
+  const tileRing = darkMode ? 'inset 0 0 0 1px rgba(232, 230, 225, 0.06)' : 'inset 0 0 0 1px rgba(26, 26, 26, 0.05)';
   const barColor = (pct) => pct == null
-    ? (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'var(--color-border)')
+    ? (darkMode ? 'rgba(232, 230, 225, 0.10)' : 'var(--color-border)')
     : pct >= 80 ? 'var(--color-success)' : pct >= 50 ? 'var(--color-accent)' : 'var(--color-alert)';
 
   return (
@@ -4640,7 +4640,7 @@ function SlotAcciones({
                 cursor: 'pointer', transition: 'background-color 0.12s',
                 borderTop: idx > 0 ? `1px solid ${itemDivider}` : 'none',
                 fontSize: '13px', fontWeight: 500,
-                color: item.destructivo ? (darkMode ? '#f87171' : '#dc2626') : (darkMode ? '#e5e7eb' : '#111827')
+                color: item.destructivo ? (darkMode ? '#E7A8A2' : '#9F2D2D') : (darkMode ? '#e5e7eb' : '#111827')
               }}
               onMouseEnter={e => e.currentTarget.style.backgroundColor = itemHover}
               onMouseLeave={e => e.currentTarget.style.backgroundColor = itemSolid}>
@@ -4903,8 +4903,8 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
           <div style={{
             height: '4px',
             background: faseInfo.tipoFase === 'dietBreak'
-              ? 'linear-gradient(90deg, var(--color-success), var(--color-accent))'
-              : 'var(--color-accent)'
+              ? 'var(--color-protein)'
+              : 'var(--color-ink)'
           }} />
 
           <div className="px-6 min-w-0" style={{ paddingTop: '1.5rem', paddingBottom: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -4918,7 +4918,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                 {faseInfo.completado && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
                     style={darkMode
-                      ? { background: 'rgba(140, 188, 145, 0.16)', color: '#9FCBA3', boxShadow: 'inset 0 0 0 1px rgba(140, 188, 145, 0.22)' }
+                      ? { background: 'rgba(143, 191, 159, 0.16)', color: '#8FBF9F', boxShadow: 'inset 0 0 0 1px rgba(143, 191, 159, 0.22)' }
                       : { background: 'var(--color-success-light)', color: 'var(--color-success)' }}>
                     {t('Completado','Completed')}
                   </span>
@@ -4926,8 +4926,8 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                 {faseInfo.porEmpezar && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
                     style={darkMode
-                      ? { background: 'rgba(232, 224, 212, 0.06)', color: '#B8AB9C', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
-                      : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' }}>
+                      ? { background: 'rgba(232, 230, 225, 0.06)', color: '#A8A49C', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.10)' }
+                      : { background: '#FFFCF8', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' }}>
                     {t('Programado','Scheduled')}
                   </span>
                 )}
@@ -4983,12 +4983,12 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
 
             {/* ── Prescripción de entrenamiento (basada en evidencia científica) — brand pattern ── */}
             {faseInfo.entrenamiento && (() => {
-              const _tileBg = darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(245, 240, 232, 0.55)';
-              const _tileRing = darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.06)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.05)';
+              const _tileBg = darkMode ? 'rgba(232, 230, 225, 0.04)' : 'rgba(243, 241, 236, 0.55)';
+              const _tileRing = darkMode ? 'inset 0 0 0 1px rgba(232, 230, 225, 0.06)' : 'inset 0 0 0 1px rgba(26, 26, 26, 0.05)';
               const _chipAccent = darkMode
-                ? { background: 'rgba(232, 199, 122, 0.14)', color: '#E8C77A', boxShadow: 'inset 0 0 0 1px rgba(232, 199, 122, 0.20)' }
+                ? { background: 'rgba(232, 230, 225, 0.14)', color: '#E8E6E1', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.20)' }
                 : { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' };
-              const _divider = darkMode ? 'rgba(232, 224, 212, 0.10)' : 'var(--color-border)';
+              const _divider = darkMode ? 'rgba(232, 230, 225, 0.10)' : 'var(--color-border)';
               return (
                 <div style={{ borderTop: '1px solid ' + _divider, paddingTop: '1.25rem' }}>
                   <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
@@ -5054,8 +5054,8 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
             {faseInfo.proximoHito && (
               <div className="flex items-center justify-between gap-3 rounded-xl px-4 py-3"
                 style={{
-                  background: darkMode ? 'rgba(232, 199, 122, 0.08)' : 'rgba(200, 148, 58, 0.06)',
-                  boxShadow: darkMode ? 'inset 0 0 0 1px rgba(232, 199, 122, 0.14)' : 'inset 0 0 0 1px rgba(200, 148, 58, 0.14)'
+                  background: darkMode ? 'rgba(232, 230, 225, 0.08)' : 'rgba(26, 26, 26, 0.06)',
+                  boxShadow: darkMode ? 'inset 0 0 0 1px rgba(232, 230, 225, 0.14)' : 'inset 0 0 0 1px rgba(26, 26, 26, 0.14)'
                 }}>
                 <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
                   <i className="fas fa-forward-fast flex-shrink-0" style={{ color: 'var(--color-accent-dark)', fontSize: '12px' }}></i>
@@ -5429,7 +5429,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                       <span className={`${colores.badge} px-2 py-0.5 rounded-lg text-xs font-medium`}>
                         <i className={`fas ${iconosComida[tipo]} mr-1`}></i>{tComida(tipo)}
                       </span>
-                      <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'rgba(47,107,79,0.14)', color: '#2F6B4F' }}>
                         {t('comido','eaten')}
                       </span>
                     </div>
@@ -5787,17 +5787,17 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
 
 // Colores de macros: consistentes en todo el bundle
 const MACRO_COLORS = {
-  proteinas: { solid: '#3B82F6', light: '#DBEAFE', label: 'Proteína' },
-  carbohidratos: { solid: '#F59E0B', light: '#FEF3C7', label: 'Carbos' },
-  grasas: { solid: '#F43F5E', light: '#FFE4E6', label: 'Grasa' },
+  proteinas: { solid: '#2F6B4F', light: '#E4EFE8', label: 'Proteína' },
+  carbohidratos: { solid: '#3D5A80', light: '#E6EBF2', label: 'Carbos' },
+  grasas: { solid: '#8A6232', light: '#F3EBE3', label: 'Grasa' },
 };
 
 // Gradientes de header según objetivo del usuario
 const OBJETIVO_GRADIENTS = {
-  'perdida':       'linear-gradient(135deg, #C0523A 0%, #8B3A2A 100%)',
-  'volumen':       'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-  'mantenimiento': 'linear-gradient(135deg, #C8943A 0%, #A67830 100%)',
-  'default':       'linear-gradient(135deg, #C8943A 0%, #A67830 100%)',
+  'perdida':       'var(--color-surface)',
+  'volumen':       'var(--color-surface)',
+  'mantenimiento': 'var(--color-surface)',
+  'default':       'var(--color-surface)',
 };
 
 // =============================================
@@ -6075,21 +6075,21 @@ function MacroDonut({ consumed, metas, darkMode }) {
   var CIRC = 2 * Math.PI * R;
   var dashFill = CIRC * kcalPct;
 
-  var trackColor = darkMode ? '#1F2937' : '#E2E8F0';
+  var trackColor = darkMode ? '#2C3138' : '#E3DFD8';
   var ringColor  = kcalOver > 105
-    ? (darkMode ? '#F87171' : '#DC2626')
+    ? (darkMode ? '#E7A8A2' : '#9F2D2D')
     : inRange
-      ? (darkMode ? '#4ADE80' : '#16A34A')
-      : (darkMode ? '#34D399' : '#0D9488');
+      ? (darkMode ? '#8FBF9F' : '#2F6B4F')
+      : (darkMode ? '#8FB4D9' : '#1D4E89');
 
   var heroNum  = kcalOver > 0 ? kcalOver : kcalRem;
   var heroLbl  = kcalOver > 0 ? t('exceso','over') : t('restantes','left');
-  var heroColor = kcalOver > 0 ? (darkMode ? '#F87171' : '#DC2626') : (darkMode ? '#F8FAFC' : '#0F172A');
+  var heroColor = kcalOver > 0 ? (darkMode ? '#E7A8A2' : '#9F2D2D') : (darkMode ? '#8FB4D9' : '#1D4E89');
 
   var bars = [
-    { label: 'Prot',   val: Math.round(consumed.proteinas || 0),     meta: metas.proteinas,     pct: Math.round(prot*100), color: darkMode ? '#9FCBA3' : '#5A7A5E' },
-    { label: 'Carb',   val: Math.round(consumed.carbohidratos || 0), meta: metas.carbohidratos, pct: Math.round(carb*100), color: darkMode ? '#FBBF24' : '#D97706' },
-    { label: 'Grasas', val: Math.round(consumed.grasas || 0),        meta: metas.grasas,        pct: Math.round(gras*100), color: darkMode ? '#F87171' : '#DC2626' },
+    { label: 'Prot',   val: Math.round(consumed.proteinas || 0),     meta: metas.proteinas,     pct: Math.round(prot*100), color: darkMode ? '#8FBF9F' : '#2F6B4F' },
+    { label: 'Carb',   val: Math.round(consumed.carbohidratos || 0), meta: metas.carbohidratos, pct: Math.round(carb*100), color: '#3D5A80' },
+    { label: 'Grasas', val: Math.round(consumed.grasas || 0),        meta: metas.grasas,        pct: Math.round(gras*100), color: '#8A6232' },
   ];
 
   return (
@@ -6183,7 +6183,7 @@ function ModalPreferenciasGeneracion({ onConfirm, onCancel, darkMode }) {
         </div>
         <div className="space-y-3 mb-5">
           {[
-            { key: 'prot', val: altaProteina, set: setAltaProteina, icon: 'fa-dumbbell', iconColor: '#3B82F6', label: 'Priorizar alta proteína' },
+            { key: 'prot', val: altaProteina, set: setAltaProteina, icon: 'fa-dumbbell', iconColor: '#2F6B4F', label: 'Priorizar alta proteína' },
             { key: 'rap',  val: rapido,       set: setRapido,       icon: 'fa-bolt',     iconColor: '#F59E0B', label: 'Preparación rápida (<20 min)' },
             { key: 'sam',  val: snackAM,      set: setSnackAM,      icon: 'fa-apple-whole',  iconColor: '#22a06b', label: t('Incluir snack de mañana','Include AM snack') },
             { key: 'spm',  val: snackPM,      set: setSnackPM,      icon: 'fa-cookie-bite',  iconColor: '#b45309', label: t('Incluir snack de tarde','Include PM snack') },
@@ -6633,7 +6633,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
                 className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${
                   tabActiva === "thermomix" ? '' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
-                style={tabActiva === "thermomix" ? { background: 'var(--color-accent)', color: '#1A1A1A' } : undefined}>
+                style={tabActiva === "thermomix" ? { background: 'var(--color-surface)', color: 'var(--color-ink)', boxShadow: 'inset 0 0 0 1px var(--color-ink)' } : undefined}>
                 <i className="fas fa-blender mr-1"></i>Thermomix TM6
               </button>
             </div>
@@ -6671,7 +6671,7 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
                     const partes = contenido.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
                     return (
                       <li key={idx} className="flex gap-3">
-                        <span className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'var(--color-ink)', color: '#F5F0E8' }}>{idx + 1}</span>
+                        <span className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'var(--color-ink)', color: '#F3F1EC' }}>{idx + 1}</span>
                         <p className={`text-sm leading-relaxed pt-1 text-ink`}>
                           {partes.map((parte, i) => {
                             if (parte.startsWith('**') && parte.endsWith('**')) {
@@ -6851,19 +6851,19 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
           {t('Tu despensa','Your pantry')}
         </span>
         <div className="grid grid-cols-3 gap-3 mt-4 mb-5">
-          <div className="text-center" style={{ background: darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(245, 240, 232, 0.55)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.06)' : 'rgba(120, 53, 15, 0.05)'), borderRadius: 'var(--radius-premium-md)', padding: '0.95rem 0.5rem' }}>
+          <div className="text-center" style={{ background: darkMode ? 'rgba(232, 230, 225, 0.04)' : 'rgba(243, 241, 236, 0.55)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.06)' : 'rgba(26, 26, 26, 0.05)'), borderRadius: 'var(--radius-premium-md)', padding: '0.95rem 0.5rem' }}>
             <div className="text-ink tabular-nums" style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
               {totalIngredientes}
             </div>
             <div className="text-[10px] font-bold uppercase tracking-wider mt-2 text-ink-muted">Total</div>
           </div>
-          <div className="text-center" style={{ background: darkMode ? 'rgba(140, 188, 145, 0.10)' : 'rgba(90, 122, 94, 0.06)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(140, 188, 145, 0.18)' : 'rgba(90, 122, 94, 0.16)'), borderRadius: 'var(--radius-premium-md)', padding: '0.95rem 0.5rem' }}>
+          <div className="text-center" style={{ background: darkMode ? 'rgba(143, 191, 159, 0.10)' : 'rgba(47, 107, 79, 0.06)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(143, 191, 159, 0.18)' : 'rgba(47, 107, 79, 0.16)'), borderRadius: 'var(--radius-premium-md)', padding: '0.95rem 0.5rem' }}>
             <div className="tabular-nums" style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: 'var(--color-success)' }}>
               {enDespensa}
             </div>
             <div className="text-[10px] font-bold uppercase tracking-wider mt-2" style={{ color: 'var(--color-success)' }}>{t('Ya tengo','I have it')}</div>
           </div>
-          <div className="text-center" style={{ background: darkMode ? 'rgba(232, 199, 122, 0.10)' : 'rgba(200, 148, 58, 0.06)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 199, 122, 0.18)' : 'rgba(200, 148, 58, 0.16)'), borderRadius: 'var(--radius-premium-md)', padding: '0.95rem 0.5rem' }}>
+          <div className="text-center" style={{ background: darkMode ? 'rgba(232, 230, 225, 0.10)' : 'rgba(26, 26, 26, 0.06)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.18)' : 'rgba(26, 26, 26, 0.16)'), borderRadius: 'var(--radius-premium-md)', padding: '0.95rem 0.5rem' }}>
             <div className="tabular-nums" style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: 'var(--color-accent-dark)' }}>
               {faltantes}
             </div>
@@ -7020,7 +7020,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
                   style={{
                     padding: '0.875rem 1.25rem',
                     background: despensa[ing.id]
-                      ? (darkMode ? 'rgba(140, 188, 145, 0.06)' : 'rgba(90, 122, 94, 0.04)')
+                      ? (darkMode ? 'rgba(143, 191, 159, 0.06)' : 'rgba(47, 107, 79, 0.04)')
                       : 'transparent'
                   }}>
                   <button onClick={() => toggleDespensa(ing.id)}
@@ -7029,8 +7029,8 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
                     <div className="w-7 h-7 rounded-lg flex items-center justify-center transition flex-shrink-0"
                       style={despensa[ing.id]
                         ? { background: 'var(--color-success)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18)' }
-                        : { background: darkMode ? 'rgba(232, 224, 212, 0.04)' : '#FAF6EE',
-                            boxShadow: 'inset 0 0 0 1.5px ' + (darkMode ? 'rgba(232, 224, 212, 0.18)' : 'rgba(120, 53, 15, 0.18)') }}>
+                        : { background: darkMode ? 'rgba(232, 230, 225, 0.04)' : '#FFFCF8',
+                            boxShadow: 'inset 0 0 0 1.5px ' + (darkMode ? 'rgba(232, 230, 225, 0.18)' : 'rgba(26, 26, 26, 0.18)') }}>
                       {despensa[ing.id] && <i className="fas fa-check text-white text-xs"></i>}
                     </div>
                     <span className="text-sm flex-1"
@@ -7040,8 +7040,8 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
                   </button>
                   <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ml-2 tabular-nums"
                     style={despensa[ing.id]
-                      ? (darkMode ? { background: 'rgba(140, 188, 145, 0.16)', color: '#9FCBA3' } : { background: 'var(--color-success-light)', color: 'var(--color-success)' })
-                      : (darkMode ? { background: 'rgba(232, 224, 212, 0.06)', color: 'var(--color-ink-muted)' } : { background: '#FAF6EE', color: 'var(--color-ink-muted)' })
+                      ? (darkMode ? { background: 'rgba(143, 191, 159, 0.16)', color: '#8FBF9F' } : { background: 'var(--color-success-light)', color: 'var(--color-success)' })
+                      : (darkMode ? { background: 'rgba(232, 230, 225, 0.06)', color: 'var(--color-ink-muted)' } : { background: '#FFFCF8', color: 'var(--color-ink-muted)' })
                     }>
                     {formatearCompraCorto(ing)}
                   </span>
@@ -7063,7 +7063,7 @@ function Pantry({ plan, onNavigateToShopping, darkMode }) {
       <div className="mt-6">
         <button onClick={onNavigateToShopping}
           className="w-full py-3.5 rounded-xl font-semibold text-base transition active:scale-[0.98] flex items-center justify-center gap-2"
-          style={{ background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-md), inset 0 1px 0 rgba(255,255,255,0.18)' }}>
+          style={{ background: 'var(--color-ink)', color: 'var(--color-base)', boxShadow: 'var(--shadow-soft-md), inset 0 1px 0 rgba(255,255,255,0.18)' }}>
           <i className="fas fa-cart-shopping"></i>
           {t('Ver lista de compras', 'View shopping list')} <span className="tabular-nums opacity-90">({faltantes})</span>
         </button>
@@ -8393,8 +8393,8 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
               return (
                 <button key={tab.key} onClick={function() { setModo(tab.key); }}
                   style={{ flex:1, padding:'9px 4px', border:'none', cursor:'pointer',
-                    backgroundColor: active ? (tab.key === 'foto' ? '#8b5cf6' : '#10b981') : (darkMode ? '#111827' : '#f9fafb'),
-                    color: active ? '#ffffff' : (darkMode ? '#6b7280' : '#9ca3af'),
+                    backgroundColor: active ? (darkMode ? '#E8E6E1' : '#1A1A1A') : (darkMode ? '#111827' : '#f9fafb'),
+                    color: active ? (darkMode ? '#121417' : '#F3F1EC') : (darkMode ? '#6b7280' : '#9ca3af'),
                     fontSize:12, fontWeight:'600', transition:'background-color 0.15s',
                     borderRight: tab.key !== 'foto' ? '1px solid '+inputBorder : 'none' }}>
                   <i className={'fas '+tab.icon} style={{ marginRight:5 }}></i>{tab.label}
@@ -8427,7 +8427,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
                         color: darkMode ? '#d1d5db' : '#374151',
                         fontSize:12, fontWeight:'500', whiteSpace:'nowrap', lineHeight:'1.4' }}>
                       {r.nombre.length > 22 ? r.nombre.slice(0, 22) + '…' : r.nombre}
-                      <span style={{ color:'#10b981', marginLeft:5, fontWeight:'700' }}>{r.kcal}</span>
+                      <span style={{ color: darkMode ? '#8FBF9F' : '#2F6B4F', marginLeft:5, fontWeight:'700' }}>{r.kcal}</span>
                     </button>
                   );
                 })}
@@ -8446,7 +8446,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
                 <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:16, padding:'32px 0' }}>
                   {fotoPreview && <img src={fotoPreview} alt="" style={{ width:120, height:120, objectFit:'cover', borderRadius:16, opacity:0.6 }} />}
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <i className="fas fa-spinner fa-spin" style={{ color:'#8b5cf6' }}></i>
+                    <i className="fas fa-spinner fa-spin" style={{ color: darkMode ? '#E8E6E1' : '#5C5852' }}></i>
                     <span style={{ fontSize:14, fontWeight:600, color: darkMode ? '#f9fafb' : '#111827' }}>
                       {t('Analizando la foto…','Analyzing photo…')}
                     </span>
@@ -8465,7 +8465,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
                   <div style={{ width:64, height:64, borderRadius:32,
                     backgroundColor: darkMode ? '#1e1b4b' : '#ede9fe',
                     display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    <i className="fas fa-camera" style={{ fontSize:28, color:'#8b5cf6' }}></i>
+                    <i className="fas fa-camera" style={{ fontSize:28, color: darkMode ? '#E8E6E1' : '#5C5852' }}></i>
                   </div>
                   <div style={{ textAlign:'center' }}>
                     <p style={{ fontSize:15, fontWeight:700, color: darkMode ? '#f9fafb' : '#111827', marginBottom:4 }}>
@@ -8486,17 +8486,17 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
               {/* ── Thumbnail si viene de análisis de foto ────────────────── */}
               {fotoPreview && !fotoAnalizando && (
                 <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 12px', borderRadius:12,
-                  backgroundColor: darkMode ? '#1e1b4b' : '#faf5ff',
-                  border:'1px solid ' + (darkMode ? '#4c1d95' : '#ddd6fe') }}>
+                  backgroundColor: darkMode ? '#1C1F24' : '#FFFCF8',
+                  border:'1px solid ' + (darkMode ? '#2C3138' : '#E3DFD8') }}>
                   <img src={fotoPreview} alt="" style={{ width:52, height:52, objectFit:'cover', borderRadius:10, flexShrink:0 }} />
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3, flexWrap:'wrap' }}>
-                      <i className="fas fa-camera-retro" style={{ color:'#8b5cf6', fontSize:11 }}></i>
-                      <span style={{ fontSize:11, fontWeight:700, color:'#8b5cf6' }}>{t('Detectado por IA','Detected by AI')}</span>
+                      <i className="fas fa-camera-retro" style={{ color: darkMode ? '#E8E6E1' : '#5C5852', fontSize:11 }}></i>
+                      <span style={{ fontSize:11, fontWeight:700, color: darkMode ? '#E8E6E1' : '#5C5852' }}>{t('Detectado por IA','Detected by AI')}</span>
                       {fotoConfianza && (
                         <span style={{ fontSize:10, fontWeight:600, padding:'1px 7px', borderRadius:8,
-                          backgroundColor: fotoConfianza==='alta' ? '#10b98120' : fotoConfianza==='media' ? '#f59e0b20' : '#f8717120',
-                          color: fotoConfianza==='alta' ? '#10b981' : fotoConfianza==='media' ? '#f59e0b' : '#f87171' }}>
+                          backgroundColor: fotoConfianza==='alta' ? (darkMode ? '#1A2822' : '#E4EFE8') : fotoConfianza==='media' ? (darkMode ? '#2A241C' : '#F3EBE3') : (darkMode ? '#3A2222' : '#F6E4E2'),
+                          color: fotoConfianza==='alta' ? (darkMode ? '#8FBF9F' : '#2F6B4F') : fotoConfianza==='media' ? '#8A6232' : (darkMode ? '#E7A8A2' : '#9F2D2D') }}>
                           {fotoConfianza==='alta' ? t('Alta confianza','High confidence') : fotoConfianza==='media' ? t('Confianza media','Medium confidence') : t('Baja confianza','Low confidence')}
                         </span>
                       )}
@@ -8505,7 +8505,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
                       <p style={{ fontSize:11, color:'#6b7280', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{fotoPorcion}</p>
                     )}
                     <button aria-label="Rotate left" onClick={function() { setModo('foto'); }}
-                      style={{ fontSize:10, color:'#8b5cf6', background:'none', border:'none', cursor:'pointer', padding:0, marginTop:2 }}>
+                      style={{ fontSize:10, color: darkMode ? '#E8E6E1' : '#5C5852', background:'none', border:'none', cursor:'pointer', padding:0, marginTop:2 }}>
                       <i className="fas fa-rotate-left" style={{ marginRight:3 }}></i>{t('Retomar foto','Retake photo')}
                     </button>
                   </div>
@@ -8514,7 +8514,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
               {/* ── Nombre ───────────────────────────────────────────────── */}
               <div>
                 <label style={{ display:'block', fontSize:11, fontWeight:'700', color:'#6b7280', marginBottom:5 }}>
-                  {t('Nombre de la comida','Meal name')} <span style={{ color:'#f87171' }}>*</span>
+                  {t('Nombre de la comida','Meal name')} <span style={{ color:'#E7A8A2' }}>*</span>
                 </label>
                 <input type="text" value={nombre} autoFocus
                   onChange={function(e) { setNombre(e.target.value); setNombreManual(true); }}
@@ -8531,9 +8531,9 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
                 </label>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
                   {[
-                    { label:t('Proteínas','Protein'),      unit:'g', color:'#3b82f6', val:manualProt, set:setManualProt },
-                    { label:t('Carbohidratos','Carbs'),    unit:'g', color:'#f59e0b', val:manualCarb, set:setManualCarb },
-                    { label:t('Grasas','Fat'),             unit:'g', color:'#a855f7', val:manualGras, set:setManualGras }
+                    { label:t('Proteínas','Protein'),      unit:'g', color: darkMode ? '#8FBF9F' : '#2F6B4F', val:manualProt, set:setManualProt },
+                    { label:t('Carbohidratos','Carbs'),    unit:'g', color:'#3D5A80', val:manualCarb, set:setManualCarb },
+                    { label:t('Grasas','Fat'),             unit:'g', color:'#8A6232', val:manualGras, set:setManualGras }
                   ].map(function(f, fi) {
                     return (
                       <div key={fi}>
@@ -8558,18 +8558,18 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
               <div style={{
                 display:'flex', alignItems:'center', justifyContent:'center', gap:10,
                 padding:'14px 16px', borderRadius:14,
-                backgroundColor: darkMode ? (finalKcal>0 ? '#052e16' : '#111827') : (finalKcal>0 ? '#f0fdf4' : '#f9fafb'),
-                border:'1px solid '+(darkMode ? (finalKcal>0?'#166534':'#374151') : (finalKcal>0?'#bbf7d0':'#e5e7eb')),
+                backgroundColor: darkMode ? '#1C1F24' : '#FFFCF8',
+                border:'1px solid '+(darkMode ? '#2C3138' : '#E3DFD8'),
                 transition:'background-color 0.2s, border-color 0.2s'
               }}>
-                <i className="fas fa-fire" style={{ color: finalKcal>0 ? '#f97316' : '#9ca3af', fontSize:18 }}></i>
+                <i className="fas fa-fire" style={{ color: finalKcal>0 ? (darkMode ? '#E8E6E1' : '#1A1A1A') : '#9ca3af', fontSize:18 }}></i>
                 <div style={{ display:'flex', alignItems:'baseline', gap:4 }}>
                   <span style={{ fontSize:32, fontWeight:'800', lineHeight:1,
-                    color: finalKcal>0 ? '#10b981' : (darkMode?'#374151':'#d1d5db') }}>
+                    color: finalKcal>0 ? (darkMode ? '#8FB4D9' : '#1D4E89') : (darkMode?'#374151':'#d1d5db') }}>
                     {finalKcal > 0 ? finalKcal : '—'}
                   </span>
                   <span style={{ fontSize:14, fontWeight:'700',
-                    color: finalKcal>0 ? '#10b981' : (darkMode?'#374151':'#d1d5db') }}>kcal</span>
+                    color: finalKcal>0 ? (darkMode ? '#8FB4D9' : '#1D4E89') : (darkMode?'#374151':'#d1d5db') }}>kcal</span>
                 </div>
                 <span style={{ fontSize:10, color:'#9ca3af', marginLeft:2 }}>
                   {finalKcal>0
@@ -8591,7 +8591,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
                   <input type="text" value={busqueda} autoFocus
                     onChange={function(e) { setBusqueda(e.target.value); }}
                     placeholder={t('Buscar alimento o receta...','Search food or recipe...')}
-                    style={{ background:'transparent', color:inputColor, caretColor:'#10b981',
+                    style={{ background:'transparent', color:inputColor, caretColor: darkMode ? '#E8E6E1' : '#1A1A1A',
                       flex:1, fontSize:'14px', outline:'none', border:'none' }} />
                   {busqueda && (
                     <button aria-label="Cerrar" onClick={function() { setBusqueda(''); setSugerencias([]); }}
@@ -8668,9 +8668,9 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
                   <div className="grid grid-cols-4 gap-1.5">
                     {[
                       { label:'kcal', color:inputColor, val:manualKcal, set:setManualKcal },
-                      { label:'Prot g', color:'#3b82f6', val:manualProt, set:setManualProt },
-                      { label:'Carbs g', color:'#f59e0b', val:manualCarb, set:setManualCarb },
-                      { label:'Grasas g', color:'#a855f7', val:manualGras, set:setManualGras }
+                      { label:'Prot g', color: darkMode ? '#8FBF9F' : '#2F6B4F', val:manualProt, set:setManualProt },
+                      { label:'Carbs g', color:'#3D5A80', val:manualCarb, set:setManualCarb },
+                      { label:'Grasas g', color:'#8A6232', val:manualGras, set:setManualGras }
                     ].map(function(f, fi) {
                       return (
                         <div key={fi}>
@@ -8689,7 +8689,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
               {/* ── Nombre de la comida (modo buscar) ────────────────────── */}
               <div>
                 <label style={{ display:'block', fontSize:11, fontWeight:'700', color:'#6b7280', marginBottom:5 }}>
-                  {t('Nombre de la comida','Meal name')} <span style={{ color:'#f87171' }}>*</span>
+                  {t('Nombre de la comida','Meal name')} <span style={{ color:'#E7A8A2' }}>*</span>
                 </label>
                 <input type="text" value={nombre}
                   onChange={function(e) { setNombre(e.target.value); setNombreManual(true); }}
@@ -8718,7 +8718,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
                 })}
               </select>
               {reemplaza && (
-                <p className="text-xs mt-1.5" style={{ color:'#f59e0b' }}>
+                <p className="text-xs mt-1.5" style={{ color: 'var(--color-ink-muted)' }}>
                   <i className="fas fa-info-circle mr-1"></i>
                   {t('Los macros de esa comida del plan serán reemplazados por estos.','This replaces that meal\'s macros in your daily totals.')}
                 </p>
@@ -8727,7 +8727,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
           )}
 
           {error && (
-            <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'#f87171' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'#E7A8A2' }}>
               <i className="fas fa-exclamation-circle"></i>
               <span>{error}</span>
             </div>
@@ -8742,7 +8742,7 @@ function ModalComidaExterna({ darkMode, diaActual, comidasHoy, nombresComida, on
               </button>
               <button onClick={() => handleSubmit(false)}
                 disabled={fotoAnalizando || (modo !== 'foto' && !nombre.trim())}
-                className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-green-500 text-white hover:bg-green-600 transition-colors cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                className="cal-action flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                 <i className="fas fa-check mr-1.5"></i>{t('Ya lo comí','I ate this')}
               </button>
             </div>
@@ -9110,7 +9110,7 @@ function AjusteSemanalCard({ darkMode }) {
             <div className="flex items-center gap-2 mt-2.5">
               <button onClick={aplicar}
                 className="text-xs font-bold px-3.5 py-1.5 rounded-full cursor-pointer"
-                style={{ background: 'var(--color-accent)', color: '#fff', border: 'none' }}>
+                style={{ background: 'var(--color-ink)', color: 'var(--color-base)', border: 'none' }}>
                 {t('Aplicar y regenerar','Apply & regenerate')}
               </button>
               <button onClick={cerrar}
@@ -9748,10 +9748,10 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
           : t('Marca las comidas que ya tomaste para ver tu progreso.','Mark the meals you\'ve had to see your progress.');
         // Chips: warm-tinted en light, accent-tinted con alpha en dark (mejor armonía y contraste)
         const chipAccentStyle = darkMode
-          ? { background: 'rgba(232, 199, 122, 0.14)', color: '#E8C77A', boxShadow: 'inset 0 0 0 1px rgba(232, 199, 122, 0.20)' }
+          ? { background: 'rgba(232, 230, 225, 0.14)', color: '#E8E6E1', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.20)' }
           : { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' };
         const chipSuccessStyle = darkMode
-          ? { background: 'rgba(140, 188, 145, 0.14)', color: '#9FCBA3', boxShadow: 'inset 0 0 0 1px rgba(140, 188, 145, 0.20)' }
+          ? { background: 'rgba(143, 191, 159, 0.14)', color: '#8FBF9F', boxShadow: 'inset 0 0 0 1px rgba(143, 191, 159, 0.20)' }
           : { background: 'var(--color-success-light)', color: 'var(--color-success)' };
         return (
           <div className="premium-shell lg:col-start-1 lg:row-start-2">
@@ -9813,7 +9813,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                       });
                     }}
                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer text-ink-muted"
-                    style={{ background: 'none', border: '1px dashed var(--color-border, #E0D9CC)' }}>
+                    style={{ background: 'none', border: '1px dashed var(--color-border, #E3DFD8)' }}>
                     <i className="fas fa-calendar-day" style={{ fontSize: 10 }}></i> {t('Día libre','Free day')}
                   </button>
                 )}
@@ -9839,8 +9839,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                   }
                 } catch(e) {}
                 if (!sig) return null;
-                var sigNombre = darkMode ? '#E8E0D4' : '#1A1A1A';
-                var sigMuted = darkMode ? '#B8AB9C' : '#4A4A4A';
+                var sigNombre = darkMode ? '#E8E6E1' : '#1A1A1A';
+                var sigMuted = darkMode ? '#A8A49C' : '#5C5852';
                 return (
                   <div className="mt-4 hoy-siguiente surface-subtle" style={{ borderRadius: '0.9rem', padding: '1rem 1.1rem' }}>
                     <button type="button" onClick={() => { if (onRecipeClick) onRecipeClick(sig.comida); }}
@@ -9914,17 +9914,17 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             className="w-full flex items-center justify-between rounded-xl cursor-pointer transition lg:col-start-2 lg:row-start-2"
             style={{
               padding: '0.75rem 1rem',
-              background: darkMode ? 'rgba(140, 188, 145, 0.08)' : 'rgba(90, 122, 94, 0.05)',
-              boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(140, 188, 145, 0.20)' : 'rgba(90, 122, 94, 0.18)')
+              background: darkMode ? 'rgba(143, 191, 159, 0.08)' : 'rgba(47, 107, 79, 0.05)',
+              boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(143, 191, 159, 0.20)' : 'rgba(47, 107, 79, 0.18)')
             }}
           >
-            <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: darkMode ? '#9FCBA3' : 'var(--color-success)' }}>
+            <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: darkMode ? '#8FBF9F' : 'var(--color-success)' }}>
               <span className="text-base">🏖</span>
               {esVacaciones
                 ? t('Estás en modo vacaciones','Vacation Mode is active')
                 : t('Tienes vacaciones esta semana','You have vacation days this week')}
             </span>
-            <span className="text-xs font-medium" style={{ color: darkMode ? '#9FCBA3' : 'var(--color-success)', opacity: 0.85 }}>
+            <span className="text-xs font-medium" style={{ color: darkMode ? '#8FBF9F' : 'var(--color-success)', opacity: 0.85 }}>
               {t('Gestionar →','Manage →')}
             </span>
           </button>
@@ -10042,10 +10042,10 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         var inRange = pctKcal >= 95 && pctKcal <= 105;
         var over = pctKcal > 105;
         var barColor = over
-          ? (darkMode ? '#F87171' : '#DC2626')
+          ? (darkMode ? '#E7A8A2' : '#9F2D2D')
           : inRange
-            ? (darkMode ? '#4ADE80' : '#16A34A')
-            : (darkMode ? '#34D399' : '#0D9488');
+            ? (darkMode ? '#8FBF9F' : '#2F6B4F')
+            : (darkMode ? '#8FB4D9' : '#1D4E89');
         return (
         <div className="rounded-2xl overflow-hidden surface-card-shadow lg:col-start-1">
           <div className={`px-5 py-3 flex items-center justify-between border-b border-default`}>
@@ -10089,7 +10089,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                 </span>
               </div>
               <div className="w-full h-2.5 rounded-full overflow-hidden"
-                style={{ background: darkMode ? 'rgba(232, 224, 212, 0.06)' : '#EDE7DA' }}>
+                style={{ background: darkMode ? 'rgba(232, 230, 225, 0.06)' : '#E7E4DE' }}>
                 <div
                   className="h-full rounded-full"
                   style={{
@@ -10113,8 +10113,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               <div className="lg:col-span-2" style={{
                 borderRadius: 'var(--radius-premium-md)',
                 padding: '12px 16px',
-                background: darkMode ? 'rgba(140, 188, 145, 0.10)' : 'rgba(90, 122, 94, 0.08)',
-                boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(140, 188, 145, 0.22)' : 'rgba(90, 122, 94, 0.20)'),
+                background: darkMode ? 'rgba(143, 191, 159, 0.10)' : 'rgba(47, 107, 79, 0.08)',
+                boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(143, 191, 159, 0.22)' : 'rgba(47, 107, 79, 0.20)'),
                 display: 'flex', alignItems: 'center', gap: '10px',
                 animation: 'celebrationPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275)'
               }}>
@@ -10182,9 +10182,9 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             {/* Macros en vacaciones */}
             <div className={`grid grid-cols-3 gap-2`}>
               {[
-                { label: t('Proteínas','Protein'), val: consumidoHoy.proteinas, meta: metaProtDia, color: '#3b82f6', unit: 'g' },
-                { label: t('Carbos','Carbs'), val: consumidoHoy.carbohidratos, meta: metaCarbDia, color: '#f59e0b', unit: 'g' },
-                { label: t('Grasas','Fats'), val: consumidoHoy.grasas, meta: metaGrasDia, color: '#f43f5e', unit: 'g' }
+                { label: t('Proteínas','Protein'), val: consumidoHoy.proteinas, meta: metaProtDia, color: darkMode ? '#8FBF9F' : '#2F6B4F', unit: 'g' },
+                { label: t('Carbos','Carbs'), val: consumidoHoy.carbohidratos, meta: metaCarbDia, color: '#3D5A80', unit: 'g' },
+                { label: t('Grasas','Fats'), val: consumidoHoy.grasas, meta: metaGrasDia, color: '#8A6232', unit: 'g' }
               ].map(function(m) {
                 return React.createElement('div', {
                   key: m.label,
@@ -10304,7 +10304,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <div className={`text-[11px] font-bold uppercase tracking-wide text-ink-faint`}>{nombresComida[tipo]}</div>
-                        <span style={{ fontSize: '10px', fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
+                        <span style={{ fontSize: '10px', fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: 'rgba(47,107,79,0.14)', color: '#2F6B4F' }}>
                           {t('comido','eaten')}
                         </span>
                         {_horaComida(extReemplazo) && (
@@ -10383,7 +10383,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         transition: 'color 0.15s', background: 'transparent',
                         color: (swapping && swapping.dia === diaActual && swapping.tipoComida === tipo)
-                          ? '#f97316' : (darkMode ? '#4b5563' : '#9ca3af')
+                          ? (darkMode ? '#E8E6E1' : '#1A1A1A') : (darkMode ? '#4b5563' : '#9ca3af')
                       }}>
                       <i className={`fas ${(swapping && swapping.dia === diaActual && swapping.tipoComida === tipo) ? 'fa-spinner fa-spin' : 'fa-shuffle'} text-xs`}></i>
                     </button>
@@ -10411,7 +10411,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             </p>
             {/* Paso 1 — Completado */}
             <div className="flex items-center gap-3 mb-4">
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#2F6B4F', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <i className="fas fa-check text-white" style={{ fontSize: 11 }}></i>
               </div>
               <div className="flex-1">
@@ -10425,7 +10425,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             </div>
             {/* Paso 2 — Actual */}
             <div className="flex items-start gap-3 mb-4" style={{ paddingLeft: 1 }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#22c55e,#10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 0 0 4px rgba(34,197,94,0.2)', animation: 'pulse-soft 1.8s infinite' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#2F6B4F', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 0 0 4px rgba(47,107,79,0.22)', animation: 'pulse-soft 1.8s infinite' }}>
                 <span style={{ color: '#fff', fontSize: 12, fontWeight: 800 }}>2</span>
               </div>
               <div className="flex-1">
@@ -10449,7 +10449,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             <button
               onClick={() => onNavigate('plan')}
               className="w-full py-3 rounded-xl font-semibold text-sm text-white transition hover:opacity-90 cursor-pointer"
-              style={{ background: 'linear-gradient(135deg,#22c55e,#10b981)' }}>
+              style={{ background: '#1D4E89', color: '#F4F7FB' }}>
               <i className="fas fa-plus mr-2"></i>{t('Crear mi plan ahora','Create my plan now')}
             </button>
           </div>
@@ -10964,11 +10964,11 @@ function NutricionLogView({ perfil, darkMode }) {
     return (
       <svg viewBox="0 0 100 100" className="w-36 h-36">
         <circle cx="50" cy="50" r={r} fill="none" stroke={darkMode ? '#374151' : '#e5e7eb'} strokeWidth="15" />
-        {p > 0 && <circle cx="50" cy="50" r={r} fill="none" stroke="#60a5fa" strokeWidth="15"
+        {p > 0 && <circle cx="50" cy="50" r={r} fill="none" stroke={darkMode ? '#8FBF9F' : '#2F6B4F'} strokeWidth="15"
           strokeDasharray={`${pArc} ${C - pArc}`} transform="rotate(-90, 50, 50)" />}
-        {c > 0 && <circle cx="50" cy="50" r={r} fill="none" stroke="#fbbf24" strokeWidth="15"
+        {c > 0 && <circle cx="50" cy="50" r={r} fill="none" stroke="#3D5A80" strokeWidth="15"
           strokeDasharray={`${cArc} ${C - cArc}`} transform={`rotate(${-90 + 360 * p / 100}, 50, 50)`} />}
-        {f > 0 && <circle cx="50" cy="50" r={r} fill="none" stroke="#f87171" strokeWidth="15"
+        {f > 0 && <circle cx="50" cy="50" r={r} fill="none" stroke="#8A6232" strokeWidth="15"
           strokeDasharray={`${fArc} ${C - fArc}`} transform={`rotate(${-90 + 360 * (p + c) / 100}, 50, 50)`} />}
         <text x="50" y="47" textAnchor="middle" fontSize="12" fontWeight="bold"
           fill={darkMode ? '#f9fafb' : '#111827'}>{datos.avgKcal > 0 ? datos.avgKcal.toLocaleString('es-CL') : '—'}</text>
@@ -11033,7 +11033,7 @@ function NutricionLogView({ perfil, darkMode }) {
             { label: t('Calorías','Calories'),      val: datos.avgKcal, unit: 'kcal', tgt: datos.kcalTarget, color: 'var(--color-accent)', est: false },
             { label: t('Proteína','Protein'),       val: datos.avgProt, unit: 'g',    tgt: datos.protTarget, color: '#60a5fa',             est: false },
             { label: t('Carbohidratos','Carbs'),    val: datos.avgCarb, unit: 'g',    tgt: datos.carbTarget, color: '#fbbf24',             est: true  },
-            { label: t('Grasa','Fat'),              val: datos.avgFat,  unit: 'g',    tgt: datos.fatTarget,  color: '#f87171',             est: true  },
+            { label: t('Grasa','Fat'),              val: datos.avgFat,  unit: 'g',    tgt: datos.fatTarget,  color: '#E7A8A2',             est: true  },
           ].map(item => (
             <div key={item.label} className={`rounded-xl p-3 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
               <div className={`text-[10px] mb-0.5 flex items-center gap-1 text-ink-faint`}>
@@ -11044,7 +11044,7 @@ function NutricionLogView({ perfil, darkMode }) {
               </div>
               {item.tgt && (
                 <div className={`text-[10px] mt-0.5 text-ink-faint`}>
-                  {t('obj','goal')} {item.tgt}{item.unit} · <span style={{color: Math.abs(item.val/item.tgt - 1) < 0.1 ? 'var(--color-success)' : item.val < item.tgt ? '#fbbf24' : '#f87171'}}>
+                  {t('obj','goal')} {item.tgt}{item.unit} · <span style={{color: Math.abs(item.val/item.tgt - 1) < 0.1 ? 'var(--color-success)' : item.val < item.tgt ? '#fbbf24' : '#E7A8A2'}}>
                     {item.val >= item.tgt ? '+' : ''}{Math.round((item.val/item.tgt - 1)*100)}%
                   </span>
                 </div>
@@ -11075,7 +11075,7 @@ function NutricionLogView({ perfil, darkMode }) {
           {[
             { label: t('Proteína','Protein'), pct: datos.protPct, g: datos.avgProt, color: '#60a5fa', bg: darkMode ? 'rgba(59,130,246,0.15)' : '#eff6ff' },
             { label: t('Carbos','Carbs'),   pct: datos.carbPct, g: datos.avgCarb, color: '#fbbf24', bg: darkMode ? 'rgba(245,158,11,0.15)' : '#fffbeb' },
-            { label: t('Grasa','Fat'),      pct: datos.fatPct,  g: datos.avgFat,  color: '#f87171', bg: darkMode ? 'rgba(248,113,113,0.15)' : '#fff1f2' },
+            { label: t('Grasa','Fat'),      pct: datos.fatPct,  g: datos.avgFat,  color: '#E7A8A2', bg: darkMode ? 'rgba(248,113,113,0.15)' : '#fff1f2' },
           ].map(item => (
             <div key={item.label} className="rounded-xl p-3 text-center" style={{ background: item.bg }}>
               {/* Porcentaje grande */}
@@ -11108,7 +11108,7 @@ function NutricionLogView({ perfil, darkMode }) {
             const maxRef = datos.kcalTarget || datos.avgKcal || 1;
             const pct    = Math.min(115, Math.round(d.kcal / maxRef * 100));
             const barColor = datos.kcalTarget
-              ? (d.kcal < datos.kcalTarget * 0.8 ? '#fbbf24' : d.kcal > datos.kcalTarget * 1.1 ? '#f87171' : 'var(--color-accent)')
+              ? (d.kcal < datos.kcalTarget * 0.8 ? '#fbbf24' : d.kcal > datos.kcalTarget * 1.1 ? '#E7A8A2' : 'var(--color-accent)')
               : 'var(--color-accent)';
             return (
               <div key={d.fecha} className="flex items-center gap-2">
@@ -11185,8 +11185,8 @@ function ProgresoTab({ perfil, darkMode, onNavigate }) {
         </p>
         <button
           onClick={() => onNavigate ? onNavigate('perfil') : (window._NP_nav && window._NP_nav('perfil'))}
-          className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-dark transition-colors inline-flex items-center gap-2"
-          style={{ background: 'var(--color-accent)' }}>
+          className="cal-action px-5 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2"
+          style={{ background: '#1D4E89', color: '#F4F7FB' }}>
           <i className="fas fa-route"></i>
           {t('Generar mi roadmap','Generate my roadmap')}
         </button>
@@ -11303,8 +11303,8 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
 
   // IA redesign: paleta de estado del brand (success salvia / accent mostaza / alert terracota)
   const colorAlcohol = (nivel) => {
-    if (nivel === 'critico') return { bg: 'var(--color-alert)', color: '#fff' };
-    if (nivel === 'alto')    return { bg: 'var(--color-accent-dark)', color: '#fff' };
+    if (nivel === 'critico') return { bg: 'var(--color-alert)', color: '#F4F7FB' };
+    if (nivel === 'alto')    return { bg: 'var(--color-ink)', color: 'var(--color-base)' };
     if (nivel === 'moderado') return { bg: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' };
     return { bg: 'var(--color-success-light)', color: 'var(--color-success)' };
   };
@@ -11381,9 +11381,9 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
           <button onClick={onGoToRegistros}
             className="w-full mt-5 px-3.5 py-2.5 rounded-xl text-xs flex items-center gap-2 text-left transition-colors"
             style={{
-              background: darkMode ? 'rgba(192, 82, 58, 0.14)' : 'rgba(192, 82, 58, 0.08)',
+              background: darkMode ? 'rgba(159, 45, 45, 0.14)' : 'rgba(159, 45, 45, 0.08)',
               color: darkMode ? '#E89B85' : 'var(--color-alert)',
-              boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.20)'
+              boxShadow: 'inset 0 0 0 1px rgba(159, 45, 45, 0.20)'
             }}>
             <i className="fas fa-triangle-exclamation flex-shrink-0"></i>
             <span>{t('Meseta detectada','Plateau detected')} · {plateau.diasVentana}d · {plateau.deltaSemanal} kg/sem</span>
@@ -11592,7 +11592,7 @@ function WeightChart({ perfil, entries, darkMode }) {
   const gridC = darkMode ? '#374151' : '#e5e7eb';
   // TY4: #6b7280 (gray-500, contraste ≥4:1) en lugar de #9ca3af (gray-400, insuficiente)
   const labelC = darkMode ? '#6b7280' : '#6b7280';
-  const targetC = darkMode ? '#22c55e' : '#16a34a';
+  const targetC = darkMode ? '#8FBF9F' : '#2F6B4F';
   const planC = darkMode ? '#4b5563' : '#d1d5db';
 
   // A10/CH1: SVG accesible — title + role="img"
@@ -11623,15 +11623,15 @@ function WeightChart({ perfil, entries, darkMode }) {
       {/* Área bajo curva real */}
       <path
         d={`${pathD}L${pts[pts.length-1][0].toFixed(1)},${(pT+cH).toFixed(1)}L${pts[0][0].toFixed(1)},${(pT+cH).toFixed(1)}Z`}
-        fill={darkMode ? 'rgba(249,115,22,0.07)' : 'rgba(249,115,22,0.05)'} />
+        fill={darkMode ? 'rgba(232,230,225,0.08)' : 'rgba(26,26,26,0.05)'} />
 
       {/* Línea real */}
-      <path d={pathD} fill="none" stroke="#f97316" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={pathD} fill="none" stroke={darkMode ? '#E8E6E1' : '#1A1A1A'} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
 
       {/* Puntos */}
       {pts.map((p, i) => (
         <circle key={i} cx={p[0].toFixed(1)} cy={p[1].toFixed(1)} r="2.5"
-          fill="#f97316" stroke={darkMode ? '#1f2937' : 'white'} strokeWidth="1.5" />
+          fill={darkMode ? '#E8E6E1' : '#1A1A1A'} stroke={darkMode ? '#1C1F24' : '#FFFCF8'} strokeWidth="1.5" />
       ))}
 
       {/* Etiquetas X */}
@@ -11710,9 +11710,9 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
             <button onClick={() => { window.NP_BodyComp.eliminar(hoy); onRefresh(); }}
               className="text-xs font-semibold px-3.5 py-2 rounded-xl transition"
               style={{
-                background: darkMode ? 'rgba(232, 224, 212, 0.06)' : '#FAF6EE',
+                background: darkMode ? 'rgba(232, 230, 225, 0.06)' : '#FFFCF8',
                 color: 'var(--color-ink-muted)',
-                boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'rgba(0,0,0,0.04)')
+                boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.10)' : 'rgba(0,0,0,0.04)')
               }}>
               <i className="fas fa-pen mr-1.5"></i>{t('Cambiar', 'Change')}
             </button>
@@ -11726,8 +11726,8 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
             <button aria-label="Confirmar" onClick={registrarPeso} disabled={!pesoInput}
               className="px-5 py-3 rounded-xl font-semibold transition active:scale-[0.98]"
               style={pesoInput
-                ? { background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-md)' }
-                : { background: darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(0,0,0,0.05)', color: 'var(--color-ink-faint)', cursor: 'not-allowed' }}>
+                ? { background: 'var(--color-ink)', color: 'var(--color-base)', boxShadow: 'var(--shadow-soft-md)' }
+                : { background: darkMode ? 'rgba(232, 230, 225, 0.04)' : 'rgba(0,0,0,0.05)', color: 'var(--color-ink-faint)', cursor: 'not-allowed' }}>
               <i className="fas fa-check"></i>
             </button>
           </div>
@@ -11768,13 +11768,13 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
           </div>
           <div className="flex items-center gap-5 mt-3 text-xs text-ink-muted">
             <span className="flex items-center gap-1.5">
-              <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#C8943A" strokeWidth="2"/></svg>{t('Real','Actual')}
+              <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke={darkMode ? '#E8E6E1' : '#1A1A1A'} strokeWidth="2"/></svg>{t('Real','Actual')}
             </span>
             <span className="flex items-center gap-1.5">
               <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#8A8A8A" strokeWidth="1.5" strokeDasharray="4 2"/></svg>{t('Plan','Plan')}
             </span>
             <span className="flex items-center gap-1.5">
-              <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#5A7A5E" strokeWidth="1.5" strokeDasharray="4 2"/></svg>Target
+              <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#2F6B4F" strokeWidth="1.5" strokeDasharray="4 2"/></svg>Target
             </span>
           </div>
         </div>
@@ -11790,11 +11790,11 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
           <button onClick={() => setMostrarMedidas(!mostrarMedidas)}
             className="text-xs font-semibold px-3.5 py-2 rounded-xl transition"
             style={mostrarMedidas
-              ? { background: 'var(--color-accent)', color: '#fff' }
+              ? { background: 'var(--color-ink)', color: 'var(--color-base)' }
               : {
-                  background: darkMode ? 'rgba(232, 224, 212, 0.06)' : '#FAF6EE',
+                  background: darkMode ? 'rgba(232, 230, 225, 0.06)' : '#FFFCF8',
                   color: 'var(--color-ink-muted)',
-                  boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'rgba(0,0,0,0.04)')
+                  boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.10)' : 'rgba(0,0,0,0.04)')
                 }}>
             {mostrarMedidas ? t('Cancelar', 'Cancel') : t('+ Registrar', '+ Log')}
           </button>
@@ -11832,7 +11832,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
             </div>
             <button aria-label="Confirmar" onClick={registrarMedidas}
               className="w-full py-3 rounded-xl font-semibold transition active:scale-[0.98]"
-              style={{ background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-md)' }}>
+              style={{ background: 'var(--color-ink)', color: 'var(--color-base)', boxShadow: 'var(--shadow-soft-md)' }}>
               <i className="fas fa-check mr-2"></i>{t('Guardar medidas', 'Save measurements')}
             </button>
           </div>
@@ -11920,9 +11920,9 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
       <div className="rounded-2xl text-sm flex items-start gap-2.5"
         style={{
           padding: '1rem 1.15rem',
-          border: '1px dashed ' + (darkMode ? 'rgba(232, 224, 212, 0.18)' : 'var(--color-border)'),
+          border: '1px dashed ' + (darkMode ? 'rgba(232, 230, 225, 0.18)' : 'var(--color-border)'),
           color: 'var(--color-ink-muted)',
-          background: darkMode ? 'rgba(232, 224, 212, 0.03)' : 'rgba(245, 240, 232, 0.4)',
+          background: darkMode ? 'rgba(232, 230, 225, 0.03)' : 'rgba(243, 241, 236, 0.4)',
           lineHeight: 1.5
         }}>
         <i className="fas fa-radar mt-1 flex-shrink-0" style={{ opacity: 0.6 }}></i>
@@ -11961,28 +11961,28 @@ function PlateauCard({ darkMode, refresh, onRefresh }) {
   let bannerStyle, ribbonStyle, iconColor, deltaColor;
   if (hayPasoActivo) {
     bannerStyle = darkMode
-      ? { background: 'rgba(232, 199, 122, 0.08)', boxShadow: 'inset 0 0 0 1px rgba(232, 199, 122, 0.20)' }
-      : { background: 'rgba(200, 148, 58, 0.06)', boxShadow: 'inset 0 0 0 1px rgba(200, 148, 58, 0.18)' };
+      ? { background: 'rgba(232, 230, 225, 0.08)', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.20)' }
+      : { background: 'rgba(26, 26, 26, 0.06)', boxShadow: 'inset 0 0 0 1px rgba(26, 26, 26, 0.18)' };
     ribbonStyle = darkMode
-      ? { background: 'rgba(232, 199, 122, 0.18)', color: '#E8C77A' }
+      ? { background: 'rgba(232, 230, 225, 0.18)', color: '#E8E6E1' }
       : { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' };
     iconColor = 'var(--color-accent-dark)';
     ribbon = t('Protocolo activo', 'Active protocol');
   } else if (hayPlateau) {
     bannerStyle = darkMode
-      ? { background: 'rgba(192, 82, 58, 0.10)', boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.22)' }
-      : { background: 'rgba(192, 82, 58, 0.06)', boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.18)' };
+      ? { background: 'rgba(159, 45, 45, 0.10)', boxShadow: 'inset 0 0 0 1px rgba(159, 45, 45, 0.22)' }
+      : { background: 'rgba(159, 45, 45, 0.06)', boxShadow: 'inset 0 0 0 1px rgba(159, 45, 45, 0.18)' };
     ribbonStyle = darkMode
-      ? { background: 'rgba(192, 82, 58, 0.20)', color: '#E89B85' }
-      : { background: 'rgba(192, 82, 58, 0.10)', color: 'var(--color-alert)' };
+      ? { background: 'rgba(159, 45, 45, 0.20)', color: '#E89B85' }
+      : { background: 'rgba(159, 45, 45, 0.10)', color: 'var(--color-alert)' };
     iconColor = 'var(--color-alert)';
     ribbon = t('Meseta detectada', 'Plateau detected');
   } else {
     bannerStyle = darkMode
-      ? { background: 'rgba(140, 188, 145, 0.08)', boxShadow: 'inset 0 0 0 1px rgba(140, 188, 145, 0.18)' }
-      : { background: 'rgba(90, 122, 94, 0.05)', boxShadow: 'inset 0 0 0 1px rgba(90, 122, 94, 0.16)' };
+      ? { background: 'rgba(143, 191, 159, 0.08)', boxShadow: 'inset 0 0 0 1px rgba(143, 191, 159, 0.18)' }
+      : { background: 'rgba(47, 107, 79, 0.05)', boxShadow: 'inset 0 0 0 1px rgba(47, 107, 79, 0.16)' };
     ribbonStyle = darkMode
-      ? { background: 'rgba(140, 188, 145, 0.16)', color: '#9FCBA3' }
+      ? { background: 'rgba(143, 191, 159, 0.16)', color: '#8FBF9F' }
       : { background: 'var(--color-success-light)', color: 'var(--color-success)' };
     iconColor = 'var(--color-success)';
     ribbon = t('Progreso normal', 'Normal progress');
@@ -12547,9 +12547,9 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
             <button key={n} onClick={() => sumar(n)}
               className="flex-1 py-2.5 rounded-xl text-sm font-semibold tabular-nums active:scale-[0.97]"
               style={{
-                background: darkMode ? 'rgba(232, 224, 212, 0.06)' : 'rgba(245, 240, 232, 0.7)',
+                background: darkMode ? 'rgba(232, 230, 225, 0.06)' : 'rgba(243, 241, 236, 0.7)',
                 color: 'var(--color-ink)',
-                boxShadow: darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.06)',
+                boxShadow: darkMode ? 'inset 0 0 0 1px rgba(232, 230, 225, 0.10)' : 'inset 0 0 0 1px rgba(26, 26, 26, 0.06)',
                 transition: 'transform 0.18s cubic-bezier(0.32, 0.72, 0, 1), background 0.2s'
               }}>
               +{n.toLocaleString()}
@@ -12570,8 +12570,8 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
               aria-label={t('Guardar', 'Save')}
               className="px-4 py-2 rounded-xl text-sm font-semibold transition active:scale-[0.97] shrink-0"
               style={pasosInput
-                ? { background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-sm)' }
-                : { background: darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(0,0,0,0.04)', color: 'var(--color-ink-faint)', cursor: 'not-allowed' }}>
+                ? { background: 'var(--color-ink)', color: 'var(--color-base)', boxShadow: 'var(--shadow-soft-sm)' }
+                : { background: darkMode ? 'rgba(232, 230, 225, 0.04)' : 'rgba(0,0,0,0.04)', color: 'var(--color-ink-faint)', cursor: 'not-allowed' }}>
               <i className="fas fa-check" style={{ fontSize: '12px' }}></i>
             </button>
           </div>
@@ -12623,8 +12623,8 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
                       aria-label={t('Aplicar', 'Apply')}
                       className="px-4 py-2.5 rounded-xl text-sm font-semibold transition active:scale-[0.97] shrink-0"
                       style={_dirty
-                        ? { background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-sm)' }
-                        : { background: darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(0,0,0,0.04)', color: 'var(--color-ink-faint)', cursor: 'not-allowed' }}>
+                        ? { background: 'var(--color-ink)', color: 'var(--color-base)', boxShadow: 'var(--shadow-soft-sm)' }
+                        : { background: darkMode ? 'rgba(232, 230, 225, 0.04)' : 'rgba(0,0,0,0.04)', color: 'var(--color-ink-faint)', cursor: 'not-allowed' }}>
                       <i className="fas fa-check" style={{ fontSize: '12px' }}></i>
                     </button>
                     {pasosOverride != null && (
@@ -12632,9 +12632,9 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
                         onClick={() => { setPasosObjEdit(''); guardarPasosObj(''); }}
                         className="px-4 rounded-xl text-xs font-semibold cursor-pointer transition active:scale-[0.97] shrink-0"
                         style={{
-                          background: darkMode ? 'rgba(232, 224, 212, 0.06)' : 'rgba(245, 240, 232, 0.7)',
+                          background: darkMode ? 'rgba(232, 230, 225, 0.06)' : 'rgba(243, 241, 236, 0.7)',
                           color: 'var(--color-ink-muted)',
-                          boxShadow: darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.06)'
+                          boxShadow: darkMode ? 'inset 0 0 0 1px rgba(232, 230, 225, 0.10)' : 'inset 0 0 0 1px rgba(26, 26, 26, 0.06)'
                         }}>
                         {t('Volver al recomendado', 'Reset')}
                       </button>
@@ -12667,9 +12667,9 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
         <div className="surface-card-shadow col-span-3" style={{
           padding: '1.25rem 1.3rem 1.4rem',
           background: racha >= 3
-            ? (darkMode ? 'rgba(200, 148, 58, 0.08)' : 'rgba(240, 217, 172, 0.4)')
+            ? (darkMode ? 'rgba(26, 26, 26, 0.08)' : 'rgba(240, 217, 172, 0.4)')
             : undefined,
-          boxShadow: racha >= 3 ? 'var(--shadow-soft-md), inset 0 0 0 1px rgba(200, 148, 58, 0.18)' : undefined
+          boxShadow: racha >= 3 ? 'var(--shadow-soft-md), inset 0 0 0 1px rgba(26, 26, 26, 0.18)' : undefined
         }}>
           <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted">{t('Racha actual', 'Current streak')}</div>
           <div className="tabular-nums mt-2 flex items-baseline gap-2"
@@ -12744,7 +12744,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
             transform: 'translate(-50%, 0)',
             zIndex: 60,
             background: darkMode ? 'rgba(28, 26, 24, 0.96)' : 'rgba(26, 26, 26, 0.94)',
-            color: '#F5F0E8',
+            color: '#F3F1EC',
             borderRadius: '0.95rem',
             padding: '0.7rem 0.85rem 0.7rem 1.1rem',
             boxShadow: '0 18px 32px -16px rgba(120,53,15,0.35), 0 4px 12px -4px rgba(0,0,0,0.25)',
@@ -12767,7 +12767,7 @@ function FLPasosView({ perfil, darkMode, refresh, onRefresh }) {
                 fontWeight: 700,
                 padding: '0.35rem 0.7rem',
                 borderRadius: '0.6rem',
-                boxShadow: 'inset 0 0 0 1px rgba(200, 148, 58, 0.35)',
+                boxShadow: 'inset 0 0 0 1px rgba(26, 26, 26, 0.35)',
                 cursor: 'pointer'
               }}>
               {t('Deshacer', 'Undo')}
@@ -12849,11 +12849,11 @@ function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
               const activo = seleccion.includes(eq.id);
               const btnStyle = activo
                 ? eq.siempre
-                  ? { background: darkMode ? 'rgba(232, 199, 122, 0.16)' : 'var(--color-accent-light)', color: darkMode ? '#E8C77A' : 'var(--color-accent-dark)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 199, 122, 0.20)' : 'rgba(200, 148, 58, 0.20)'), opacity: 0.7, cursor: 'default' }
-                  : { background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-sm)' }
+                  ? { background: darkMode ? 'rgba(232, 230, 225, 0.16)' : 'var(--color-accent-light)', color: darkMode ? '#E8E6E1' : 'var(--color-accent-dark)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.20)' : 'rgba(26, 26, 26, 0.20)'), opacity: 0.7, cursor: 'default' }
+                  : { background: 'var(--color-ink)', color: 'var(--color-base)', boxShadow: 'var(--shadow-soft-sm)' }
                 : darkMode
-                  ? { background: 'rgba(232, 224, 212, 0.04)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
-                  : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' };
+                  ? { background: 'rgba(232, 230, 225, 0.04)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.10)' }
+                  : { background: '#FFFCF8', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' };
               return (
                 <button
                   key={eq.id}
@@ -12894,8 +12894,8 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
   // IA redesign: estilos brand para EjercicioCard
   const cardStyle = e.done
     ? darkMode
-      ? { background: 'rgba(140, 188, 145, 0.08)', boxShadow: 'inset 0 0 0 1px rgba(140, 188, 145, 0.18)' }
-      : { background: 'rgba(90, 122, 94, 0.05)', boxShadow: 'inset 0 0 0 1px rgba(90, 122, 94, 0.16)' }
+      ? { background: 'rgba(143, 191, 159, 0.08)', boxShadow: 'inset 0 0 0 1px rgba(143, 191, 159, 0.18)' }
+      : { background: 'rgba(47, 107, 79, 0.05)', boxShadow: 'inset 0 0 0 1px rgba(47, 107, 79, 0.16)' }
     : null;
 
   return (
@@ -12934,8 +12934,8 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
           style={e.done
             ? { background: 'var(--color-success)', color: '#fff', boxShadow: 'var(--shadow-soft-sm)' }
             : darkMode
-              ? { background: 'rgba(232, 224, 212, 0.06)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
-              : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' }}>
+              ? { background: 'rgba(232, 230, 225, 0.06)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.10)' }
+              : { background: '#FFFCF8', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' }}>
           <i className={`fas ${e.done ? 'fa-check' : 'fa-circle'} text-sm`}></i>
         </button>
       </div>
@@ -13202,14 +13202,14 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
       {/* IA redesign: Prescripción de la fase — brand-aligned (cream/mostaza, double-bezel sutil, jerarquía clara) */}
       {_faseEnt && (() => {
         const chipAccentSty = darkMode
-          ? { background: 'rgba(232, 199, 122, 0.14)', color: '#E8C77A', boxShadow: 'inset 0 0 0 1px rgba(232, 199, 122, 0.20)' }
+          ? { background: 'rgba(232, 230, 225, 0.14)', color: '#E8E6E1', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.20)' }
           : { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' };
         const chipMutedSty = darkMode
-          ? { background: 'rgba(232, 224, 212, 0.06)', color: '#B8AB9C', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
-          : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' };
-        const tileBg = darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(245, 240, 232, 0.55)';
-        const tileRing = darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.06)' : 'inset 0 0 0 1px rgba(120, 53, 15, 0.05)';
-        const dividerColor = darkMode ? 'rgba(232, 224, 212, 0.10)' : 'var(--color-border)';
+          ? { background: 'rgba(232, 230, 225, 0.06)', color: '#A8A49C', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.10)' }
+          : { background: '#FFFCF8', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' };
+        const tileBg = darkMode ? 'rgba(232, 230, 225, 0.04)' : 'rgba(243, 241, 236, 0.55)';
+        const tileRing = darkMode ? 'inset 0 0 0 1px rgba(232, 230, 225, 0.06)' : 'inset 0 0 0 1px rgba(26, 26, 26, 0.05)';
+        const dividerColor = darkMode ? 'rgba(232, 230, 225, 0.10)' : 'var(--color-border)';
         return (
           <div className="surface-card-shadow" style={{ padding: '1.75rem 1.5rem' }}>
             {/* Header: eyebrow + modalidad pill */}
@@ -13354,14 +13354,14 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
           {esDescanso ? (
             <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
               style={darkMode
-                ? { background: 'rgba(232, 224, 212, 0.06)', color: '#B8AB9C', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
-                : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' }}>
+                ? { background: 'rgba(232, 230, 225, 0.06)', color: '#A8A49C', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.10)' }
+                : { background: '#FFFCF8', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' }}>
               {t('Descanso según plan', 'Rest day per plan')}
             </span>
           ) : (
             <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
               style={darkMode
-                ? { background: 'rgba(232, 199, 122, 0.14)', color: '#E8C77A', boxShadow: 'inset 0 0 0 1px rgba(232, 199, 122, 0.20)' }
+                ? { background: 'rgba(232, 230, 225, 0.14)', color: '#E8E6E1', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.20)' }
                 : { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
               {t('Sugerido: Día', 'Suggested: Day')} {(tipos.find(tipo => tipo.k === sugerido) || {}).short || sugerido}
             </span>
@@ -13377,10 +13377,10 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                 onClick={() => { localStorage.setItem('nutriplan_dias_semana', String(n)); setDiasSemana(n); }}
                 className="w-10 h-10 rounded-xl text-sm font-bold cursor-pointer transition tabular-nums"
                 style={diasSemana === n
-                  ? { background: 'var(--color-accent)', color: '#ffffff', boxShadow: 'var(--shadow-soft-sm)' }
+                  ? { background: 'var(--color-ink)', color: 'var(--color-base)', boxShadow: 'var(--shadow-soft-sm)' }
                   : darkMode
-                    ? { background: 'rgba(232, 224, 212, 0.04)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
-                    : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' }
+                    ? { background: 'rgba(232, 230, 225, 0.04)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.10)' }
+                    : { background: '#FFFCF8', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' }
                 }>
                 {n}
               </button>
@@ -13420,10 +13420,10 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                   className={`px-2.5 h-9 rounded-xl text-[11px] font-bold transition ${lleno ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                   style={Object.assign({},
                     seleccionado
-                      ? { background: 'var(--color-accent)', color: '#ffffff', boxShadow: 'var(--shadow-soft-sm)' }
+                      ? { background: 'var(--color-ink)', color: 'var(--color-base)', boxShadow: 'var(--shadow-soft-sm)' }
                       : darkMode
-                        ? { background: 'rgba(232, 224, 212, 0.04)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
-                        : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' },
+                        ? { background: 'rgba(232, 230, 225, 0.04)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.10)' }
+                        : { background: '#FFFCF8', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' },
                     lleno ? { opacity: 0.35 } : {}
                   )}>
                   {d.label}
@@ -13440,14 +13440,14 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
             const activo = tipoDia === tipo.k;
             const esSugerido = !esDescanso && sugerido === tipo.k;
             const btnStyle = activo
-              ? { background: 'var(--color-accent)', color: '#ffffff', boxShadow: 'var(--shadow-soft-md)' }
+              ? { background: 'var(--color-ink)', color: 'var(--color-base)', boxShadow: 'var(--shadow-soft-md)' }
               : esSugerido
                 ? darkMode
-                  ? { background: 'rgba(232, 199, 122, 0.10)', color: '#E8C77A', boxShadow: 'inset 0 0 0 1px rgba(232, 199, 122, 0.22)' }
-                  : { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)', boxShadow: 'inset 0 0 0 1px rgba(200, 148, 58, 0.20)' }
+                  ? { background: 'rgba(232, 230, 225, 0.10)', color: '#E8E6E1', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.22)' }
+                  : { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)', boxShadow: 'inset 0 0 0 1px rgba(26, 26, 26, 0.20)' }
                 : darkMode
-                  ? { background: 'rgba(232, 224, 212, 0.04)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.08)' }
-                  : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' };
+                  ? { background: 'rgba(232, 230, 225, 0.04)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.08)' }
+                  : { background: '#FFFCF8', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' };
             return (
               <button key={tipo.k} onClick={() => setTipoDia(tipo.k)}
                 className="rounded-xl font-semibold flex flex-col items-center cursor-pointer transition active:scale-[0.98]"
@@ -13466,13 +13466,13 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
       {/* Card del día seleccionado */}
       {protocolo && (() => {
         const pillNeutralSty = darkMode
-          ? { background: 'rgba(232, 224, 212, 0.06)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' }
-          : { background: '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' };
+          ? { background: 'rgba(232, 230, 225, 0.06)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.10)' }
+          : { background: '#FFFCF8', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' };
         const pillAlertSty = darkMode
-          ? { background: 'rgba(192, 82, 58, 0.14)', color: '#E89B85', boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.20)' }
-          : { background: 'rgba(192, 82, 58, 0.08)', color: 'var(--color-alert)', boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.18)' };
+          ? { background: 'rgba(159, 45, 45, 0.14)', color: '#E89B85', boxShadow: 'inset 0 0 0 1px rgba(159, 45, 45, 0.20)' }
+          : { background: 'rgba(159, 45, 45, 0.08)', color: 'var(--color-alert)', boxShadow: 'inset 0 0 0 1px rgba(159, 45, 45, 0.18)' };
         const pillAccentSty = darkMode
-          ? { background: 'rgba(232, 199, 122, 0.14)', color: '#E8C77A', boxShadow: 'inset 0 0 0 1px rgba(232, 199, 122, 0.20)' }
+          ? { background: 'rgba(232, 230, 225, 0.14)', color: '#E8E6E1', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.20)' }
           : { background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' };
         return (
           <div className="surface-card-shadow" style={{ padding: '1.5rem 1.4rem' }}>
@@ -13519,7 +13519,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition active:scale-[0.98]"
                 style={pct === 100
                   ? Object.assign({ cursor: 'not-allowed' }, pillNeutralSty)
-                  : { background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-sm)' }}>
+                  : { background: 'var(--color-ink)', color: 'var(--color-base)', boxShadow: 'var(--shadow-soft-sm)' }}>
                 <i className="fas fa-check-double mr-1.5"></i>{t('Marcar todos', 'Mark all')}
               </button>
               {completados > 0 && (
@@ -13565,19 +13565,19 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
         <div className="rounded-2xl"
           style={{
             padding: '1.15rem 1.25rem',
-            background: darkMode ? 'rgba(232, 199, 122, 0.08)' : 'rgba(200, 148, 58, 0.06)',
-            boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 199, 122, 0.18)' : 'rgba(200, 148, 58, 0.16)')
+            background: darkMode ? 'rgba(232, 230, 225, 0.08)' : 'rgba(26, 26, 26, 0.06)',
+            boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.18)' : 'rgba(26, 26, 26, 0.16)')
           }}>
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{
-                background: darkMode ? 'rgba(232, 199, 122, 0.18)' : 'var(--color-accent-light)',
-                color: darkMode ? '#E8C77A' : 'var(--color-accent-dark)'
+                background: darkMode ? 'rgba(232, 230, 225, 0.18)' : 'var(--color-accent-light)',
+                color: darkMode ? '#E8E6E1' : 'var(--color-accent-dark)'
               }}>
               <i className="fas fa-person-walking"></i>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-bold tabular-nums" style={{ color: darkMode ? '#E8C77A' : 'var(--color-accent-dark)' }}>
+              <div className="text-sm font-bold tabular-nums" style={{ color: darkMode ? '#E8E6E1' : 'var(--color-accent-dark)' }}>
                 {t('Después de la sesión: ','After this session: ')}+{_faseEnt.ent.cardioPorSesionExtra} {t('min de caminata','min of walking')}
               </div>
               <p className="text-sm mt-1.5 text-ink-muted" style={{ lineHeight: 1.55 }}>
@@ -13591,8 +13591,8 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
         <div className="rounded-2xl text-sm flex items-start gap-2.5"
           style={{
             padding: '0.875rem 1.15rem',
-            background: darkMode ? 'rgba(232, 224, 212, 0.04)' : 'rgba(245, 240, 232, 0.55)',
-            boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.08)' : 'rgba(120, 53, 15, 0.05)'),
+            background: darkMode ? 'rgba(232, 230, 225, 0.04)' : 'rgba(243, 241, 236, 0.55)',
+            boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.08)' : 'rgba(26, 26, 26, 0.05)'),
             color: 'var(--color-ink-muted)',
             lineHeight: 1.55
           }}>
@@ -15338,16 +15338,17 @@ function ChatPanel({ darkMode, activeTab }) {
   }
 
   // IA redesign: paleta del brand para ChatPanel
-  var borderColor = darkMode ? 'rgba(232, 224, 212, 0.10)' : '#E0D9CC';
-  var bgPanel     = darkMode ? '#2A2622' : '#FFFFFF';
-  var bgMsg       = darkMode ? 'rgba(232, 224, 212, 0.06)' : '#FAF6EE';
-  var colorText   = darkMode ? '#E8E0D4' : '#1A1A1A';
-  var colorMuted  = darkMode ? '#B8AB9C' : '#4A4A4A';
-  var brandAccent = '#C8943A';
-  var brandAccentDark = '#A67830';
-  var brandAccentLight = darkMode ? 'rgba(232, 199, 122, 0.14)' : '#F0D9AC';
-  var brandSuccess = '#5A7A5E';
-  var brandAlert = '#C0523A';
+  var borderColor = darkMode ? 'rgba(232, 230, 225, 0.10)' : '#E3DFD8';
+  var bgPanel     = darkMode ? '#1C1F24' : '#FFFCF8';
+  var bgMsg       = darkMode ? 'rgba(232, 230, 225, 0.06)' : '#FFFCF8';
+  var colorText   = darkMode ? '#E8E6E1' : '#1A1A1A';
+  var colorMuted  = darkMode ? '#A8A49C' : '#5C5852';
+  var brandAccent = darkMode ? '#E8E6E1' : '#1A1A1A';
+  var brandAccentDark = brandAccent;
+  var brandAccentLight = darkMode ? '#1C1F24' : '#FFFCF8';
+  var brandSuccess = darkMode ? '#8FBF9F' : '#2F6B4F';
+  var brandAlert = darkMode ? '#E7A8A2' : '#9F2D2D';
+  var onInk = darkMode ? '#121417' : '#F3F1EC';
 
   return React.createElement(React.Fragment, null,
     /* ── Botón flotante ── */
@@ -15362,10 +15363,10 @@ function ChatPanel({ darkMode, activeTab }) {
         zIndex:1000,
         width:52, height:52, borderRadius:'50%', border:'none',
         background: brandAccent,
-        color:'#fff', fontSize:20, cursor:'pointer',
+        color:onInk, fontSize:20, cursor:'pointer',
         boxShadow: badge && !open
-          ? '0 4px 24px rgba(192, 82, 58, 0.40), inset 0 1px 0 rgba(255,255,255,0.18)'
-          : '0 6px 22px rgba(120, 53, 15, 0.32), inset 0 1px 0 rgba(255,255,255,0.18)',
+          ? '0 4px 24px rgba(159, 45, 45, 0.40), inset 0 1px 0 rgba(255,255,255,0.18)'
+          : '0 6px 22px rgba(26, 26, 26, 0.32), inset 0 1px 0 rgba(255,255,255,0.18)',
         display:'flex', alignItems:'center', justifyContent:'center',
         transition:'transform 0.15s, box-shadow 0.3s, background 0.3s'
       }
@@ -15449,7 +15450,7 @@ function ChatPanel({ darkMode, activeTab }) {
             display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
             boxShadow:'inset 0 1px 0 rgba(255,255,255,0.18)' }
         }, React.createElement('svg', { width:16, height:16, viewBox:'0 0 32 32', fill:'none', 'aria-hidden':true },
-          React.createElement('path', { d:'M 23.1 11.5 A 9 9 0 1 0 23.1 20.5', stroke:'#F5F0E8', strokeWidth:3.8, strokeLinecap:'round', fill:'none' }))),
+          React.createElement('path', { d:'M 23.1 11.5 A 9 9 0 1 0 23.1 20.5', stroke:onInk, strokeWidth:3.8, strokeLinecap:'round', fill:'none' }))),
         React.createElement('div', { style:{ flex:1 } },
           React.createElement('div', { style:{ fontWeight:700, fontSize:14, color:colorText, letterSpacing:'-0.01em' } }, 'Calibrate'),
           React.createElement('div', { style:{ fontSize:10, fontWeight:700, letterSpacing:'0.16em', textTransform:'uppercase', color: brandAccentDark, marginTop:2 } },
@@ -15492,9 +15493,9 @@ function ChatPanel({ darkMode, activeTab }) {
                 boxShadow: esUser
                   ? 'inset 0 1px 0 rgba(255,255,255,0.18)'
                   : esProactivo
-                    ? (darkMode ? 'inset 0 0 0 1px rgba(232, 199, 122, 0.22)' : 'inset 0 0 0 1px rgba(200, 148, 58, 0.20)')
-                    : (darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(0, 0, 0, 0.04)'),
-                color: esUser ? '#fff' : (esProactivo ? brandAccentDark : colorText),
+                    ? (darkMode ? 'inset 0 0 0 1px rgba(232, 230, 225, 0.22)' : 'inset 0 0 0 1px rgba(26, 26, 26, 0.20)')
+                    : (darkMode ? 'inset 0 0 0 1px rgba(232, 230, 225, 0.10)' : 'inset 0 0 0 1px rgba(0, 0, 0, 0.04)'),
+                color: esUser ? onInk : (esProactivo ? brandAccentDark : colorText),
                 fontSize:13.5, lineHeight:1.6, whiteSpace:'pre-wrap', wordBreak:'break-word'
               }
             },
@@ -15579,8 +15580,8 @@ function ChatPanel({ darkMode, activeTab }) {
             style:{
               width:38, height:38, borderRadius:12, border:'none', flexShrink:0,
               background: chatImage ? brandAccent : bgMsg,
-              boxShadow: chatImage ? 'inset 0 1px 0 rgba(255,255,255,0.18)' : (darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(0,0,0,0.04)'),
-              color: chatImage ? '#fff' : colorMuted,
+              boxShadow: chatImage ? 'inset 0 1px 0 rgba(255,255,255,0.18)' : (darkMode ? 'inset 0 0 0 1px rgba(232, 230, 225, 0.10)' : 'inset 0 0 0 1px rgba(0,0,0,0.04)'),
+              color: chatImage ? onInk : colorMuted,
               cursor: loading ? 'not-allowed' : 'pointer',
               display:'flex', alignItems:'center', justifyContent:'center'
             }
@@ -15592,9 +15593,9 @@ function ChatPanel({ darkMode, activeTab }) {
             title: recording ? t('Soltar para enviar','Release to send') : t('Hablar','Speak'),
             style:{
               width:38, height:38, borderRadius:12, border:'none', flexShrink:0,
-              background: recording ? brandAlert : bgMsg,
-              boxShadow: recording ? 'inset 0 1px 0 rgba(255,255,255,0.18)' : (darkMode ? 'inset 0 0 0 1px rgba(232, 224, 212, 0.10)' : 'inset 0 0 0 1px rgba(0,0,0,0.04)'),
-              color: recording ? '#fff' : colorMuted,
+              background: recording ? '#9F2D2D' : bgMsg,
+              boxShadow: recording ? 'inset 0 1px 0 rgba(255,255,255,0.18)' : (darkMode ? 'inset 0 0 0 1px rgba(232, 230, 225, 0.10)' : 'inset 0 0 0 1px rgba(0,0,0,0.04)'),
+              color: recording ? '#F4F7FB' : colorMuted,
               cursor: loading ? 'not-allowed' : 'pointer',
               display:'flex', alignItems:'center', justifyContent:'center'
             }
@@ -15607,7 +15608,7 @@ function ChatPanel({ darkMode, activeTab }) {
               width:38, height:38, borderRadius:12, border:'none', flexShrink:0,
               background: (loading || (!input.trim() && !chatImage)) ? bgMsg : brandAccent,
               boxShadow: (loading || (!input.trim() && !chatImage)) ? 'none' : 'inset 0 1px 0 rgba(255,255,255,0.18)',
-              color: (loading || (!input.trim() && !chatImage)) ? colorMuted : '#fff',
+              color: (loading || (!input.trim() && !chatImage)) ? colorMuted : onInk,
               cursor: (loading || (!input.trim() && !chatImage)) ? 'not-allowed' : 'pointer',
               display:'flex', alignItems:'center', justifyContent:'center'
             }
@@ -15643,8 +15644,8 @@ function NotificationGrantedView({ darkMode }) {
       <div className="rounded-2xl text-sm flex items-start gap-2.5"
         style={{
           padding: '1rem 1.15rem',
-          background: darkMode ? 'rgba(140, 188, 145, 0.10)' : 'rgba(90, 122, 94, 0.06)',
-          boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(140, 188, 145, 0.20)' : 'rgba(90, 122, 94, 0.18)'),
+          background: darkMode ? 'rgba(143, 191, 159, 0.10)' : 'rgba(47, 107, 79, 0.06)',
+          boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(143, 191, 159, 0.20)' : 'rgba(47, 107, 79, 0.18)'),
           color: 'var(--color-success)', lineHeight: 1.5
         }}>
         <i className="fas fa-circle-check mt-1 flex-shrink-0"></i>
@@ -15653,8 +15654,8 @@ function NotificationGrantedView({ darkMode }) {
       <button onClick={sendTest} disabled={testing}
         className="w-full py-2.5 rounded-xl text-sm font-semibold transition active:scale-[0.98]"
         style={testing
-          ? { background: darkMode ? 'rgba(232, 224, 212, 0.06)' : '#FAF6EE', color: 'var(--color-ink-faint)', cursor: 'wait' }
-          : { background: darkMode ? 'rgba(232, 199, 122, 0.14)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 199, 122, 0.20)' : 'rgba(200, 148, 58, 0.18)') }}>
+          ? { background: darkMode ? 'rgba(232, 230, 225, 0.06)' : '#FFFCF8', color: 'var(--color-ink-faint)', cursor: 'wait' }
+          : { background: darkMode ? 'rgba(232, 230, 225, 0.14)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.20)' : 'rgba(26, 26, 26, 0.18)') }}>
         {testing
           ? <><i className="fas fa-circle-notch fa-spin mr-2"></i>{t('Enviando…','Sending…')}</>
           : <><i className="fas fa-paper-plane mr-2"></i>{t('Enviar push de prueba','Send test push')}</>}
@@ -15723,8 +15724,8 @@ function UsersList({ users, darkMode, fmtDate, fmtRel, onUserDeleted, currentUse
     <button key={id} onClick={() => setFilter(id)}
       className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold tabular-nums transition"
       style={filter === id
-        ? { background: 'var(--color-accent)', color: '#fff', boxShadow: '0 2px 8px rgba(200, 148, 58, 0.25)' }
-        : { background: darkMode ? 'rgba(232, 224, 212, 0.06)' : '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'rgba(0,0,0,0.05)') }}>
+        ? { background: 'var(--color-ink)', color: 'var(--color-base)', boxShadow: '0 2px 8px rgba(26, 26, 26, 0.25)' }
+        : { background: darkMode ? 'rgba(232, 230, 225, 0.06)' : '#FFFCF8', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.10)' : 'rgba(0,0,0,0.05)') }}>
       {label} {count !== undefined ? <span style={{ opacity: 0.7 }}>· {count}</span> : null}
     </button>
   );
@@ -15737,13 +15738,13 @@ function UsersList({ users, darkMode, fmtDate, fmtRel, onUserDeleted, currentUse
     google: users.filter(u => u.provider === 'google.com').length
   };
 
-  const rowBorder = darkMode ? 'rgba(232, 224, 212, 0.06)' : 'var(--color-border)';
-  const headBg    = darkMode ? 'rgba(232, 224, 212, 0.06)' : '#F5EFE2';
-  const hoverBg   = darkMode ? 'rgba(232, 199, 122, 0.04)' : 'rgba(200, 148, 58, 0.04)';
+  const rowBorder = darkMode ? 'rgba(232, 230, 225, 0.06)' : 'var(--color-border)';
+  const headBg    = darkMode ? 'rgba(232, 230, 225, 0.06)' : '#F5EFE2';
+  const hoverBg   = darkMode ? 'rgba(232, 230, 225, 0.04)' : 'rgba(26, 26, 26, 0.04)';
 
   return (
-    <div className="surface-card-shadow overflow-hidden" style={darkMode ? { boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.06), 0 4px 16px 0 rgba(0,0,0,0.35)' } : undefined}>
-      <div className="px-7 py-6 flex items-center justify-between" style={{ borderBottom: '1px solid ' + (darkMode ? 'rgba(232, 224, 212, 0.08)' : 'var(--color-border)') }}>
+    <div className="surface-card-shadow overflow-hidden" style={darkMode ? { boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.06), 0 4px 16px 0 rgba(0,0,0,0.35)' } : undefined}>
+      <div className="px-7 py-6 flex items-center justify-between" style={{ borderBottom: '1px solid ' + (darkMode ? 'rgba(232, 230, 225, 0.08)' : 'var(--color-border)') }}>
         <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
           <i className="fas fa-users" style={{ fontSize: '10px' }}></i>
           Usuarios registrados
@@ -15751,7 +15752,7 @@ function UsersList({ users, darkMode, fmtDate, fmtRel, onUserDeleted, currentUse
         <span className="text-xs font-semibold tabular-nums text-ink-muted">{filtered.length} / {users.length}</span>
       </div>
 
-      <div className="px-7 py-6" style={{ borderBottom: '1px solid ' + (darkMode ? 'rgba(232, 224, 212, 0.06)' : 'var(--color-border)') }}>
+      <div className="px-7 py-6" style={{ borderBottom: '1px solid ' + (darkMode ? 'rgba(232, 230, 225, 0.06)' : 'var(--color-border)') }}>
         <div className="relative mb-4">
           <i className="fas fa-search absolute top-1/2 -translate-y-1/2 text-xs text-ink-faint"
              style={{ left: '20px' }}></i>
@@ -15761,9 +15762,9 @@ function UsersList({ users, darkMode, fmtDate, fmtRel, onUserDeleted, currentUse
             style={{
               paddingLeft: '46px',
               paddingRight: '16px',
-              background: darkMode ? 'rgba(232, 224, 212, 0.10)' : '#FAF6EE',
+              background: darkMode ? 'rgba(232, 230, 225, 0.10)' : '#FFFCF8',
               color: 'var(--color-ink)',
-              boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.18)' : 'rgba(0,0,0,0.08)')
+              boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.18)' : 'rgba(0,0,0,0.08)')
             }} />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -15811,7 +15812,7 @@ function UsersList({ users, darkMode, fmtDate, fmtRel, onUserDeleted, currentUse
                               className="rounded-full flex-shrink-0"
                               style={{ width: '40px', height: '40px', minWidth: '40px', minHeight: '40px', objectFit: 'cover', display: 'block' }} />
                           : <div className="rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                              style={{ width: '40px', height: '40px', minWidth: '40px', minHeight: '40px', background: darkMode ? 'rgba(232, 199, 122, 0.18)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
+                              style={{ width: '40px', height: '40px', minWidth: '40px', minHeight: '40px', background: darkMode ? 'rgba(232, 230, 225, 0.18)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
                               {(u.displayName || u.email || '?')[0].toUpperCase()}
                             </div>}
                         <div className="min-w-0 flex-1">
@@ -15827,13 +15828,13 @@ function UsersList({ users, darkMode, fmtDate, fmtRel, onUserDeleted, currentUse
                             )}
                             {u.hasPush && (
                               <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded inline-flex items-center gap-1"
-                                style={{ background: 'rgba(232, 199, 122, 0.18)', color: 'var(--color-accent-dark)' }}>
+                                style={{ background: 'rgba(232, 230, 225, 0.18)', color: 'var(--color-accent-dark)' }}>
                                 <i className="fas fa-bell" style={{ fontSize: '7px' }}></i>Push
                               </span>
                             )}
                             {u.disabled && (
                               <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
-                                style={{ background: 'rgba(192, 82, 58, 0.14)', color: 'var(--color-alert)' }}>
+                                style={{ background: 'rgba(159, 45, 45, 0.14)', color: 'var(--color-alert)' }}>
                                 Off
                               </span>
                             )}
@@ -15849,9 +15850,9 @@ function UsersList({ users, darkMode, fmtDate, fmtRel, onUserDeleted, currentUse
                     <td className="px-4 py-5 whitespace-nowrap" style={{ borderTop: '1px solid ' + rowBorder }}>
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium"
                         style={{
-                          background: darkMode ? 'rgba(232, 224, 212, 0.04)' : '#FAF6EE',
+                          background: darkMode ? 'rgba(232, 230, 225, 0.04)' : '#FFFCF8',
                           color: 'var(--color-ink-muted)',
-                          boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.08)' : 'rgba(0,0,0,0.05)')
+                          boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.08)' : 'rgba(0,0,0,0.05)')
                         }}>
                         <i className={u.provider === 'google.com' ? 'fab fa-google' : 'fas fa-envelope'} style={{ fontSize: '10px', opacity: 0.7 }}></i>
                         {u.provider === 'google.com' ? 'Google' : (u.provider === 'password' ? 'Email' : u.provider)}
@@ -15878,7 +15879,7 @@ function UsersList({ users, darkMode, fmtDate, fmtRel, onUserDeleted, currentUse
                         <button onClick={() => { setDeleteError(null); setDeleteTarget(u); }}
                           className="inline-flex items-center justify-center rounded-lg transition"
                           style={{ width: '32px', height: '32px', background: 'transparent', color: 'var(--color-ink-faint)' }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(192, 82, 58, 0.12)'; e.currentTarget.style.color = 'var(--color-alert)'; }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(159, 45, 45, 0.12)'; e.currentTarget.style.color = 'var(--color-alert)'; }}
                           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-ink-faint)'; }}
                           title="Eliminar usuario">
                           <i className="fas fa-trash" style={{ fontSize: '12px' }}></i>
@@ -15908,15 +15909,15 @@ function UsersList({ users, darkMode, fmtDate, fmtRel, onUserDeleted, currentUse
           onClick={(e) => { if (e.target === e.currentTarget && !deleting) setDeleteTarget(null); }}>
           <div className="rounded-2xl mx-4"
             style={{
-              background: darkMode ? '#2A2622' : '#FFFFFF',
-              boxShadow: '0 24px 64px 0 rgba(0,0,0,0.40), inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.08)' : 'rgba(0,0,0,0.06)'),
+              background: darkMode ? '#1C1F24' : '#FFFCF8',
+              boxShadow: '0 24px 64px 0 rgba(0,0,0,0.40), inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.08)' : 'rgba(0,0,0,0.06)'),
               maxWidth: '440px',
               width: '100%',
               padding: '2rem'
             }}>
             <div className="flex items-center gap-3 mb-4">
               <div className="rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ width: '44px', height: '44px', background: 'rgba(192, 82, 58, 0.14)', color: 'var(--color-alert)' }}>
+                style={{ width: '44px', height: '44px', background: 'rgba(159, 45, 45, 0.14)', color: 'var(--color-alert)' }}>
                 <i className="fas fa-triangle-exclamation"></i>
               </div>
               <div>
@@ -15926,13 +15927,13 @@ function UsersList({ users, darkMode, fmtDate, fmtRel, onUserDeleted, currentUse
             </div>
 
             <div className="rounded-xl p-4 mb-5"
-              style={{ background: darkMode ? 'rgba(232, 224, 212, 0.04)' : '#FAF6EE', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.08)' : 'rgba(0,0,0,0.05)') }}>
+              style={{ background: darkMode ? 'rgba(232, 230, 225, 0.04)' : '#FFFCF8', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.08)' : 'rgba(0,0,0,0.05)') }}>
               <div className="flex items-center gap-3">
                 {deleteTarget.photoURL
                   ? <img src={deleteTarget.photoURL} alt="" referrerPolicy="no-referrer"
                       style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                   : <div className="rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                      style={{ width: '36px', height: '36px', background: darkMode ? 'rgba(232, 199, 122, 0.18)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
+                      style={{ width: '36px', height: '36px', background: darkMode ? 'rgba(232, 230, 225, 0.18)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>
                       {(deleteTarget.displayName || deleteTarget.email || '?')[0].toUpperCase()}
                     </div>}
                 <div className="min-w-0 flex-1">
@@ -15956,7 +15957,7 @@ function UsersList({ users, darkMode, fmtDate, fmtRel, onUserDeleted, currentUse
 
             {deleteError && (
               <div className="rounded-xl text-xs flex items-start gap-2 mb-4"
-                style={{ padding: '0.75rem 1rem', background: 'rgba(192, 82, 58, 0.08)', boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.20)', color: 'var(--color-alert)', lineHeight: 1.5 }}>
+                style={{ padding: '0.75rem 1rem', background: 'rgba(159, 45, 45, 0.08)', boxShadow: 'inset 0 0 0 1px rgba(159, 45, 45, 0.20)', color: 'var(--color-alert)', lineHeight: 1.5 }}>
                 <i className="fas fa-circle-info mt-0.5 flex-shrink-0"></i>
                 <span>{deleteError}</span>
               </div>
@@ -15966,9 +15967,9 @@ function UsersList({ users, darkMode, fmtDate, fmtRel, onUserDeleted, currentUse
               <button onClick={() => setDeleteTarget(null)} disabled={deleting}
                 className="flex-1 py-3 rounded-xl text-sm font-semibold transition"
                 style={{
-                  background: darkMode ? 'rgba(232, 224, 212, 0.06)' : '#FAF6EE',
+                  background: darkMode ? 'rgba(232, 230, 225, 0.06)' : '#FFFCF8',
                   color: 'var(--color-ink)',
-                  boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'rgba(0,0,0,0.05)'),
+                  boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.10)' : 'rgba(0,0,0,0.05)'),
                   opacity: deleting ? 0.5 : 1
                 }}>
                 Cancelar
@@ -15977,8 +15978,8 @@ function UsersList({ users, darkMode, fmtDate, fmtRel, onUserDeleted, currentUse
                 className="flex-1 py-3 rounded-xl text-sm font-semibold transition active:scale-[0.98]"
                 style={{
                   background: 'var(--color-alert)',
-                  color: '#FFFFFF',
-                  boxShadow: '0 2px 8px rgba(192, 82, 58, 0.30), inset 0 1px 0 rgba(255,255,255,0.18)',
+                  color: '#FFFCF8',
+                  boxShadow: '0 2px 8px rgba(159, 45, 45, 0.30), inset 0 1px 0 rgba(255,255,255,0.18)',
                   opacity: deleting ? 0.7 : 1
                 }}>
                 {deleting ? (
@@ -16046,7 +16047,7 @@ function AdminScreen({ darkMode, onClose }) {
         </span>
         <button onClick={onClose}
           className="text-xs font-semibold px-4 py-2.5 rounded-xl transition"
-          style={{ background: darkMode ? 'rgba(232, 224, 212, 0.06)' : '#FAF6EE', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'rgba(0,0,0,0.04)') }}>
+          style={{ background: darkMode ? 'rgba(232, 230, 225, 0.06)' : '#FFFCF8', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.10)' : 'rgba(0,0,0,0.04)') }}>
           <i className="fas fa-arrow-left mr-2"></i>Volver
         </button>
       </div>
@@ -16060,7 +16061,7 @@ function AdminScreen({ darkMode, onClose }) {
 
       {error && (
         <div className="rounded-2xl text-sm flex items-start gap-3"
-          style={{ padding: '1.15rem 1.35rem', background: 'rgba(192, 82, 58, 0.08)', boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.20)', color: 'var(--color-alert)', lineHeight: 1.5 }}>
+          style={{ padding: '1.15rem 1.35rem', background: 'rgba(159, 45, 45, 0.08)', boxShadow: 'inset 0 0 0 1px rgba(159, 45, 45, 0.20)', color: 'var(--color-alert)', lineHeight: 1.5 }}>
           <i className="fas fa-triangle-exclamation mt-1 flex-shrink-0"></i>
           <span>{error}</span>
         </div>
@@ -16078,7 +16079,7 @@ function AdminScreen({ darkMode, onClose }) {
             ].map(x => (
               <div key={x.l} className="surface-card-shadow" style={Object.assign(
                 { padding: '1.5rem 1.5rem' },
-                darkMode ? { boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.06), 0 4px 16px 0 rgba(0,0,0,0.35)' } : {}
+                darkMode ? { boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.06), 0 4px 16px 0 rgba(0,0,0,0.35)' } : {}
               )}>
                 <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted flex items-center gap-2">
                   <i className={`fas ${x.i}`} style={{ color: 'var(--color-accent)' }}></i>
@@ -16102,7 +16103,7 @@ function AdminScreen({ darkMode, onClose }) {
             ].map(x => (
               <div key={x.l} className="surface-card-shadow" style={Object.assign(
                 { padding: '1.25rem 1.5rem' },
-                darkMode ? { boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.06), 0 2px 8px 0 rgba(0,0,0,0.25)' } : {}
+                darkMode ? { boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.06), 0 2px 8px 0 rgba(0,0,0,0.25)' } : {}
               )}>
                 <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-muted flex items-center gap-2">
                   <i className={`fas ${x.i}`} style={{ color: 'var(--color-accent)', opacity: 0.7 }}></i>
@@ -16119,7 +16120,7 @@ function AdminScreen({ darkMode, onClose }) {
           {/* Push enviados últimos 7 días — empty state si todo es 0 */}
           <div className="surface-card-shadow" style={Object.assign(
             { padding: '2rem 2rem' },
-            darkMode ? { boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.06), 0 4px 16px 0 rgba(0,0,0,0.35)' } : {}
+            darkMode ? { boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.06), 0 4px 16px 0 rgba(0,0,0,0.35)' } : {}
           )}>
             <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
               <i className="fas fa-paper-plane" style={{ fontSize: '10px' }}></i>
@@ -16131,7 +16132,7 @@ function AdminScreen({ darkMode, onClose }) {
               if (total7d === 0) {
                 return (
                   <div className="mt-5 text-center py-8 rounded-xl"
-                    style={{ background: darkMode ? 'rgba(232, 224, 212, 0.03)' : '#FAF6EE', border: '1px dashed ' + (darkMode ? 'rgba(232, 224, 212, 0.10)' : 'rgba(0,0,0,0.08)') }}>
+                    style={{ background: darkMode ? 'rgba(232, 230, 225, 0.03)' : '#FFFCF8', border: '1px dashed ' + (darkMode ? 'rgba(232, 230, 225, 0.10)' : 'rgba(0,0,0,0.08)') }}>
                     <i className="fas fa-inbox text-2xl mb-2 block" style={{ opacity: 0.35, color: 'var(--color-ink-muted)' }}></i>
                     <p className="text-sm font-medium text-ink-muted">Sin pushes enviados aún</p>
                     <p className="text-xs text-ink-faint mt-1">Activá tu primera subscripción para empezar</p>
@@ -16151,7 +16152,7 @@ function AdminScreen({ darkMode, onClose }) {
                     </thead>
                     <tbody className="tabular-nums">
                       {data.stats7d.map((s) => (
-                        <tr key={s.date} style={{ borderTop: '1px solid ' + (darkMode ? 'rgba(232, 224, 212, 0.06)' : 'var(--color-border)') }}>
+                        <tr key={s.date} style={{ borderTop: '1px solid ' + (darkMode ? 'rgba(232, 230, 225, 0.06)' : 'var(--color-border)') }}>
                           <td className="px-3 py-3 text-ink">{s.date}</td>
                           <td className="px-3 py-3 text-right text-ink">{s.evening_sent}</td>
                           <td className="px-3 py-3 text-right text-ink">{s.plateau_sent}</td>
@@ -16169,7 +16170,7 @@ function AdminScreen({ darkMode, onClose }) {
           {Object.keys(data.tzDistribution || {}).length > 0 && (
             <div className="surface-card-shadow" style={Object.assign(
               { padding: '2rem 2rem' },
-              darkMode ? { boxShadow: 'inset 0 0 0 1px rgba(232, 224, 212, 0.06), 0 4px 16px 0 rgba(0,0,0,0.35)' } : {}
+              darkMode ? { boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.06), 0 4px 16px 0 rgba(0,0,0,0.35)' } : {}
             )}>
               <span className="premium-eyebrow" style={{ display: 'inline-flex' }}>
                 <i className="fas fa-globe" style={{ fontSize: '10px' }}></i>
@@ -16178,7 +16179,7 @@ function AdminScreen({ darkMode, onClose }) {
               <div className="flex flex-wrap gap-2.5 mt-5">
                 {Object.entries(data.tzDistribution).sort((a,b) => b[1]-a[1]).map(([tz, n]) => (
                   <span key={tz} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold tabular-nums"
-                    style={{ background: darkMode ? 'rgba(232, 199, 122, 0.14)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 199, 122, 0.20)' : 'rgba(200, 148, 58, 0.18)') }}>
+                    style={{ background: darkMode ? 'rgba(232, 230, 225, 0.14)' : 'var(--color-accent-light)', color: 'var(--color-accent-dark)', boxShadow: 'inset 0 0 0 1px ' + (darkMode ? 'rgba(232, 230, 225, 0.20)' : 'rgba(26, 26, 26, 0.18)') }}>
                     {tz} <span className="text-ink-muted">· {n}</span>
                   </span>
                 ))}
@@ -16201,7 +16202,7 @@ function AdminScreen({ darkMode, onClose }) {
           {/* Errores parciales (si los hubo) */}
           {data.errors && data.errors.length > 0 && (
             <div className="rounded-2xl text-xs"
-              style={{ padding: '0.75rem 1rem', background: 'rgba(192, 82, 58, 0.06)', boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.14)', color: 'var(--color-ink-muted)' }}>
+              style={{ padding: '0.75rem 1rem', background: 'rgba(159, 45, 45, 0.06)', boxShadow: 'inset 0 0 0 1px rgba(159, 45, 45, 0.14)', color: 'var(--color-ink-muted)' }}>
               <i className="fas fa-circle-info mr-1.5" style={{ color: 'var(--color-alert)' }}></i>
               Algunas consultas fallaron parcialmente: {data.errors.join(' · ')}
             </div>
@@ -16347,8 +16348,8 @@ function NotificationSetupModal({ darkMode }) {
             <div className="rounded-2xl text-sm flex items-start gap-2.5"
               style={{
                 padding: '1rem 1.15rem',
-                background: 'rgba(192, 82, 58, 0.06)',
-                boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.18)',
+                background: 'rgba(159, 45, 45, 0.06)',
+                boxShadow: 'inset 0 0 0 1px rgba(159, 45, 45, 0.18)',
                 color: 'var(--color-alert)', lineHeight: 1.5
               }}>
               <i className="fas fa-circle-info mt-1 flex-shrink-0"></i>
@@ -16406,7 +16407,7 @@ function NotificationSetupModal({ darkMode }) {
               </ul>
               <button onClick={requestPerm}
                 className="w-full py-3 rounded-xl font-semibold text-sm transition active:scale-[0.98]"
-                style={{ background: 'var(--color-accent)', color: '#fff', boxShadow: 'var(--shadow-soft-md), inset 0 1px 0 rgba(255,255,255,0.18)' }}>
+                style={{ background: 'var(--color-ink)', color: 'var(--color-base)', boxShadow: 'var(--shadow-soft-md), inset 0 1px 0 rgba(255,255,255,0.18)' }}>
                 <i className="fas fa-bell mr-2"></i>{t('Activar notificaciones','Enable notifications')}
               </button>
             </div>
@@ -16421,8 +16422,8 @@ function NotificationSetupModal({ darkMode }) {
               <div className="rounded-2xl text-sm flex items-start gap-2.5"
                 style={{
                   padding: '1rem 1.15rem',
-                  background: 'rgba(192, 82, 58, 0.06)',
-                  boxShadow: 'inset 0 0 0 1px rgba(192, 82, 58, 0.18)',
+                  background: 'rgba(159, 45, 45, 0.06)',
+                  boxShadow: 'inset 0 0 0 1px rgba(159, 45, 45, 0.18)',
                   color: 'var(--color-alert)', lineHeight: 1.5
                 }}>
                 <i className="fas fa-circle-xmark mt-1 flex-shrink-0"></i>
@@ -17156,7 +17157,7 @@ function App() {
       <div className={`min-h-screen flex items-center justify-center bg-base`}>
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl mb-4 shadow-lg" style={{animation: 'pulse-soft 1.5s infinite'}}>
-            <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
+            <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="currentColor" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
           </div>
           <p className={`text-sm text-ink-faint`}>Verificando sesión…</p>
         </div>
@@ -17174,7 +17175,7 @@ function App() {
       <div className={`min-h-screen flex items-center justify-center bg-base`}>
         <div className="text-center" style={{animation: 'pulse-soft 1.5s infinite'}}>
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl mb-4 shadow-lg">
-            <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
+            <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="currentColor" strokeWidth="3.6" strokeLinecap="round" fill="none"/></svg>
           </div>
           <p className="text-gray-500">Cargando Calibrate...</p>
         </div>
@@ -17209,7 +17210,7 @@ function App() {
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 brand-icon-bg rounded-lg flex items-center justify-center">
               <svg width="20" height="20" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                <path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="#F5F0E8" strokeWidth="3.4" strokeLinecap="round" fill="none"/>
+                <path d="M 23.1 11.5 A 9 9 0 1 0 23.1 20.5" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" fill="none"/>
               </svg>
             </div>
             <span className={`font-bold text-lg tracking-tight text-ink`}>Calibrate</span>
@@ -17366,7 +17367,7 @@ function App() {
                 <p className="cal-empty-state__desc">{t('Tu despensa aparece aquí una vez que tengas un plan semanal activo.','Your pantry appears here once you have an active weekly plan.')}</p>
                 <button onClick={() => navegarA('plan')}
                   className="mt-3 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
-                  style={{ background: 'var(--color-accent)', color: '#fff' }}>
+                  style={{ background: 'var(--color-ink)', color: 'var(--color-base)' }}>
                   <i className="fas fa-calendar-days"></i>{t('Ir al Plan','Go to Plan')}
                 </button>
               </div>
@@ -17394,7 +17395,7 @@ function App() {
                 <p className="cal-empty-state__desc">{t('Tu lista de compras aparece aquí una vez que tengas un plan semanal activo.','Your shopping list appears here once you have an active weekly plan.')}</p>
                 <button onClick={() => navegarA('plan')}
                   className="mt-3 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
-                  style={{ background: 'var(--color-accent)', color: '#fff' }}>
+                  style={{ background: 'var(--color-ink)', color: 'var(--color-base)' }}>
                   <i className="fas fa-calendar-days"></i>{t('Ir al Plan','Go to Plan')}
                 </button>
               </div>
@@ -17460,7 +17461,7 @@ class AppErrorBoundary extends React.Component {
       return React.createElement('div', {
         style: { padding: '24px', fontFamily: 'Inter, system-ui, sans-serif', maxWidth: '600px', margin: '40px auto' }
       },
-        React.createElement('h1', { style: { color: '#C0523A', marginBottom: '12px' } }, 'Error al cargar Calibrate'),
+        React.createElement('h1', { style: { color: '#9F2D2D', marginBottom: '12px' } }, 'Error al cargar Calibrate'),
         React.createElement('p', { style: { color: '#374151', marginBottom: '8px' } }, 'Mensaje: ' + (this.state.error && this.state.error.message || 'desconocido')),
         React.createElement('pre', { style: { background: '#f3f4f6', padding: '12px', borderRadius: '8px', fontSize: '12px', overflow: 'auto', maxHeight: '200px' } }, this.state.error && this.state.error.stack || ''),
         React.createElement('button', {
@@ -17479,7 +17480,7 @@ class AppErrorBoundary extends React.Component {
               }
             } catch (e) { window.location.reload(true); }
           },
-          style: { marginTop: '16px', padding: '10px 24px', background: '#22c55e', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }
+          style: { marginTop: '16px', padding: '10px 24px', background: '#1D4E89', color: '#F4F7FB', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }
         }, '🔄 Limpiar caché y reintentar')
       );
     }

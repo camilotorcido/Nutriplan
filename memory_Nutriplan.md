@@ -6,6 +6,12 @@ _Convención: entradas nuevas al inicio (más reciente arriba), fecha YYYY-MM-DD
 
 ---
 
+## 2026-11-09 — Paleta Mesa
+
+Fondo `#F3F1EC` / `#121417`. Botón `#1D4E89` con texto `#F4F7FB`. Las tarjetas no llevan relleno de acento. El azul no va en la nav, los chips ni el banner. En oscuro el número grande de kcal restantes es `#8FB4D9`: `#1D4E89` sobre `#1C1F24` no contrasta. `--color-accent` quedó en tinta para que el remap de verdes no vuelva a pintar mostaza.
+
+---
+
 ## 2026-11-09 — El coach decía «Registré» y la focaccia no quedaba en Hoy
 
 El modelo respondió «Registré tu focaccia» sin llamar a `registrar_comida`. El filtro que debía atrapar esa frase usa `\b`, y en JavaScript ese límite no cuenta la é: «Registré», «marqué» y «guardé» no coinciden. El texto se mostraba y `nutriplan_comidas_externas` no se escribía. Hoy leía el 9 de noviembre vacío: 0 kcal, el plan sin marcar y la lista de adicionales en blanco. «Todavía no marcas el desayuno» es el aviso de recomendaciones cuando no hay nada marcado; si hay una adicional, ya no ocupa ese lugar.
