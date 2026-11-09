@@ -6,6 +6,12 @@ _Convención: entradas nuevas al inicio (más reciente arriba), fecha YYYY-MM-DD
 
 ---
 
+## 2026-11-09 — Fraunces solo en el nombre del plato; botones de acción en mostaza oscuro
+
+Fraunces (pesos 500 y 600) carga junto a Plus Jakarta Sans y se usa solo en el nombre del plato: el título de la siguiente comida en Hoy, el nombre en cada fila de comidas de Hoy, y el h2 del modal de la receta. Ese título va en tinta porque el encabezado del modal se pinta mostaza, no verde. Los botones de acción que estaban en #C8943A con texto carbón pasan a relleno #8C6424 y texto #F5F0E8; el hover es #6E4E1C. El contraste de crema sobre #8C6424 queda en 4.67:1, así que el relleno no se oscureció más. El token --color-accent sigue en #C8943A. Chips, eyebrows, barra de fase, banner y estados activos de la navegación no se tocaron.
+
+---
+
 ## 2026-11-09 — Hoy abre con el plato; el laboratorio queda en Evidencia
 
 Camilo pidió la revisión completa y eligió este alcance: primero Hoy, después el botón de generar el plan, después el alta. El lenguaje técnico (TDEE, BF%, Navy, diet break, Fat Loss Mode) sale de Hoy y del alta. Se queda en las pestañas Fórmulas y Evidencia. El alta nueva parte en bajar de grasa. Quien no tiene cintura y cuello puede estimar (20% hombre, 28% mujer) y afinarlo después. Un día con plan y nada marcado no ofrece comida extra: dice que todavía no marcó esa comida.

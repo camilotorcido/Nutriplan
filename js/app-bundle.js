@@ -310,7 +310,11 @@ function NP_confirm(mensaje, opts) {
     btnC.onclick = function() { cerrar(false); };
     var btnOk = document.createElement('button');
     btnOk.textContent = opts.confirmar || 'Confirmar';
-    btnOk.style.cssText = 'border:none;cursor:pointer;font-weight:700;font-size:13px;padding:9px 16px;border-radius:10px;color:' + (opts.destructivo ? '#fff' : '#1A1A1A') + ';background:' + (opts.destructivo ? '#dc2626' : 'var(--color-accent, #C8943A)');
+    btnOk.style.cssText = 'border:none;cursor:pointer;font-weight:700;font-size:13px;padding:9px 16px;border-radius:10px;color:' + (opts.destructivo ? '#fff' : '#F5F0E8') + ';background:' + (opts.destructivo ? '#dc2626' : '#8C6424');
+    if (!opts.destructivo) {
+      btnOk.onmouseenter = function() { btnOk.style.background = '#6E4E1C'; };
+      btnOk.onmouseleave = function() { btnOk.style.background = '#8C6424'; };
+    }
     btnOk.onclick = function() { cerrar(true); };
     row.appendChild(btnC);
     row.appendChild(btnOk);
@@ -657,9 +661,9 @@ function LoginScreen({ darkMode, onToggleDark }) {
 
           <button aria-label={loading ? 'Procesando' : btnLabels[mode]} onClick={handleSubmit} disabled={loading}
             className={`w-full py-3 rounded-xl font-semibold text-sm transition active:scale-[0.98] ${loading ? 'cursor-not-allowed' : ''}`}
-            style={{ background: loading ? 'rgba(200,148,58,0.55)' : 'var(--color-accent)', color: '#1A1A1A', boxShadow: loading ? 'none' : 'var(--shadow-soft-md)' }}
-            onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = 'var(--color-accent-dark)'; }}
-            onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = 'var(--color-accent)'; }}>
+            style={{ background: '#8C6424', color: '#F5F0E8', boxShadow: loading ? 'none' : 'var(--shadow-soft-md)' }}
+            onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#6E4E1C'; }}
+            onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = '#8C6424'; }}>
             {loading
               ? <span className="flex items-center justify-center gap-2"><i className="fas fa-circle-notch fa-spin"></i>Procesando…</span>
               : btnLabels[mode]
@@ -1620,7 +1624,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             {/* CTA */}
             <button type="button" onClick={() => onComplete(perfilParaExplicar)}
               className="w-full py-4 rounded-2xl font-bold text-base transition active:scale-[0.98] shadow-lg cursor-pointer"
-              style={{ background: 'var(--color-accent)', color: '#1A1A1A' }}>
+              style={{ background: '#8C6424', color: '#F5F0E8' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#6E4E1C'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#8C6424'; }}>
               <i className="fas fa-check mr-2"></i>Comenzar mi plan
             </button>
             <p className={`text-[11px] text-center mt-3 text-ink-faint`}>
@@ -2296,7 +2302,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               className={`${pasoWizard > 1 ? '' : 'w-full'} py-3.5 rounded-2xl font-semibold transition flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] ${
                 btnFinalDisabled ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : ''
               }`}
-              style={btnFinalDisabled ? (pasoWizard > 1 ? { flex: 2 } : {}) : { ...(pasoWizard > 1 ? { flex: 2 } : {}), background: 'var(--color-accent)', color: '#1A1A1A' }}>
+              style={btnFinalDisabled ? (pasoWizard > 1 ? { flex: 2 } : {}) : { ...(pasoWizard > 1 ? { flex: 2 } : {}), background: '#8C6424', color: '#F5F0E8' }}
+              onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = '#6E4E1C'; }}
+              onMouseLeave={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = '#8C6424'; }}>
               {pasoWizard === TOTAL_PASOS ? (
                 <><i className={`fas ${perfil.objetivo === 'perdida' ? 'fa-fire' : perfil.objetivo === 'volumen' ? 'fa-arrow-trend-up' : 'fa-scale-balanced'} text-sm`}></i>
                   {' '}{t('Generar mi plan','Generate my plan')}</>
@@ -3347,7 +3355,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 ? 'shadow-lg active:scale-[0.98]'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
-            style={(perfil.objetivo === 'perdida' ? !!roadmapPreview : perfil.objetivo === 'mantenimiento' ? !!roadmapMantPreview : perfil.objetivo === 'volumen' ? !!roadmapVolPreview : (tdeeInfo && !macroError)) ? { background: 'var(--color-accent)', color: '#1A1A1A' } : undefined}>
+            style={(perfil.objetivo === 'perdida' ? !!roadmapPreview : perfil.objetivo === 'mantenimiento' ? !!roadmapMantPreview : perfil.objetivo === 'volumen' ? !!roadmapVolPreview : (tdeeInfo && !macroError)) ? { background: '#8C6424', color: '#F5F0E8' } : undefined}
+            onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = '#6E4E1C'; }}
+            onMouseLeave={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = '#8C6424'; }}>
             <i className={`fas ${perfil.objetivo === 'perdida' ? 'fa-fire' : perfil.objetivo === 'volumen' ? 'fa-arrow-trend-up' : 'fa-scale-balanced'} mr-2`}></i>
             {tienePlan ? t('Guardar y Regenerar Plan', 'Save & Regenerate Plan') : t('Generar Plan Semanal', 'Generate Weekly Plan')}
           </button>
@@ -3880,7 +3890,9 @@ function RecipeGenerator({ darkMode, onRecipeClick }) {
 
         <button onClick={generar}
           className="w-full py-3 rounded-xl font-semibold text-sm hover:shadow-lg transition"
-          style={{ background: 'var(--color-accent)', color: '#1A1A1A' }}>
+          style={{ background: '#8C6424', color: '#F5F0E8' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#6E4E1C'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = '#8C6424'; }}>
           <i className="fas fa-wand-magic-sparkles mr-2"></i>{t(`Generar ${cantidad} receta${cantidad !== 1 ? 's' : ''}`,`Generate ${cantidad} recipe${cantidad !== 1 ? 's' : ''}`)}
         </button>
       </div>
@@ -6154,8 +6166,12 @@ function RecipeModal({ receta, onClose, darkMode, factorComensales, usaThermomix
                 )}
                 {tieneThermomix && <span className="thermomix-badge"><i className="fas fa-blender mr-1"></i>TM6</span>}
               </div>
-              <h2 ref={titleRef} className="font-bold leading-tight"
+              <h2 ref={titleRef} className="leading-tight"
                 style={{
+                  fontFamily: "'Fraunces', Georgia, serif",
+                  fontWeight: 600,
+                  letterSpacing: '-0.02em',
+                  color: '#1A1A1A',
                   fontSize: '1.05rem',
                   transformOrigin: 'left center',
                   willChange: 'transform',
@@ -9594,7 +9610,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                       <div className="text-[11px] font-bold text-ink-muted">
                         {nombresComida[sig.tipo]}
                       </div>
-                      <div className="text-base font-semibold text-ink mt-0.5" style={{ letterSpacing: '-0.02em' }}>
+                      <div className="text-base text-ink mt-0.5" style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--color-ink)' }}>
                         {getNombreReceta(sig.comida)}
                       </div>
                       {_porcionVisible(sig.comida) && (
@@ -9616,7 +9632,9 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                         }
                       }}
                       className="mt-3 text-xs font-bold px-3.5 py-2 rounded-full cursor-pointer"
-                      style={{ background: 'var(--color-accent)', color: '#1A1A1A', border: 'none' }}>
+                      style={{ background: '#8C6424', color: '#F5F0E8', border: 'none' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = '#6E4E1C'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = '#8C6424'; }}>
                       <i className="fas fa-check mr-1" style={{ fontSize: 10 }}></i>{t('Ya la comí','I ate it')}
                     </button>
                   </div>
@@ -10056,7 +10074,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                           </span>
                         )}
                       </div>
-                      <div className={`text-sm font-medium truncate text-ink`}>{extReemplazo.nombre}</div>
+                      <div className="text-sm truncate text-ink" style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--color-ink)' }}>{extReemplazo.nombre}</div>
                       <div className="text-xs mt-0.5">
                         <span className="text-blue-400 font-semibold">{extReemplazo.proteinas_g}g</span>{' '}{t('prot','prot')}
                         {' · '}<span className="text-amber-400 font-semibold">{extReemplazo.carbohidratos_g}g</span>{' '}{t('carb','carb')}
@@ -10094,7 +10112,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                   <div className="flex-1 min-w-0" onClick={() => { if (onRecipeClick && comida) onRecipeClick(comida); }}
                     style={{ cursor: onRecipeClick ? 'pointer' : 'default' }}>
                     <div className={`text-[11px] font-bold uppercase tracking-wide text-ink-faint`}>{nombresComida[tipo]}</div>
-                    <div className={`text-sm font-medium ${yaComido ? 'line-through opacity-60' : ''} text-ink`}>{getNombreReceta(comida)}</div>
+                    <div className={`text-sm ${yaComido ? 'line-through opacity-60' : ''} text-ink`} style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--color-ink)' }}>{getNombreReceta(comida)}</div>
                     {sinRating && (
                       <div className="flex items-center gap-0.5 mt-1">
                         <span className="text-[10px] text-ink-faint mr-1">{t('¿Qué tal?','How was it?')}</span>
