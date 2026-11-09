@@ -25,18 +25,18 @@
   // ─── Mensajes de error en español ───
   function _errMsg(code) {
     const map = {
-      'auth/email-already-in-use':    'Este email ya tiene una cuenta. Iniciá sesión.',
+      'auth/email-already-in-use':    'Este email ya tiene una cuenta. Inicia sesión.',
       'auth/invalid-email':           'El email no es válido.',
       'auth/wrong-password':          'Contraseña incorrecta.',
       'auth/invalid-credential':      'Email o contraseña incorrectos.',
       'auth/user-not-found':          'No hay cuenta con este email.',
       'auth/user-disabled':           'Esta cuenta fue desactivada.',
       'auth/weak-password':           'La contraseña debe tener al menos 6 caracteres.',
-      'auth/too-many-requests':       'Demasiados intentos. Esperá unos minutos.',
-      'auth/network-request-failed':  'Sin conexión. Verificá tu internet.',
+      'auth/too-many-requests':       'Demasiados intentos. Espera unos minutos.',
+      'auth/network-request-failed':  'Sin conexión. Revisa tu internet.',
       'auth/popup-closed-by-user':    '',   // el usuario cerró el popup — no es un error
       'auth/cancelled-popup-request': '',
-      'auth/popup-blocked':           'El navegador bloqueó el popup. Habilitá los popups para este sitio.',
+      'auth/popup-blocked':           'El navegador bloqueó la ventana. Permite las ventanas emergentes de este sitio.',
       'auth/requires-recent-login':   'Por seguridad, cierra sesión, vuelve a ingresar y repite la acción.',
       'auth/operation-not-allowed':   'Este método de login no está habilitado. Activá Email/contraseña en Firebase Console.',
     };
