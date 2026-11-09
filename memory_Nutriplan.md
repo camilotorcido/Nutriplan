@@ -6,6 +6,10 @@ _Convención: entradas nuevas al inicio (más reciente arriba), fecha YYYY-MM-DD
 
 ---
 
+## 2026-11-09 — La siguiente comida en Hoy no va sobre accent-light
+
+Camilo vio la tarjeta en oscuro: crema #F0D9AC con el nombre en tinta clara. `var(--color-accent-light)` no se invierte en oscuro y `var(--color-ink)` sí, así que el texto queda claro sobre claro. Esa tarjeta usa `surface-subtle` (cream #FAF6EE en claro, #25211E en oscuro). El nombre va en Fraunces con #1A1A1A o #E8E0D4 según el modo. "Desayuno" y la porción van en #4A4A4A o #B8AB9C. El botón "Ya la comí" sigue en #8C6424 / texto #F5F0E8, a la derecha desde 1024px y a lo ancho en móvil. Las filas de Hoy y el h2 del modal ya contrastaban (tinta sobre la surface; #1A1A1A sobre mostaza #C8943A) y no se tocaron. --color-accent sigue #C8943A.
+
 ## 2026-11-09 — Fraunces solo en el nombre del plato; botones de acción en mostaza oscuro
 
 Fraunces (pesos 500 y 600) carga junto a Plus Jakarta Sans y se usa solo en el nombre del plato: el título de la siguiente comida en Hoy, el nombre en cada fila de comidas de Hoy, y el h2 del modal de la receta. Ese título va en tinta porque el encabezado del modal se pinta mostaza, no verde. Los botones de acción que estaban en #C8943A con texto carbón pasan a relleno #8C6424 y texto #F5F0E8; el hover es #6E4E1C. El contraste de crema sobre #8C6424 queda en 4.67:1, así que el relleno no se oscureció más. El token --color-accent sigue en #C8943A. Chips, eyebrows, barra de fase, banner y estados activos de la navegación no se tocaron.

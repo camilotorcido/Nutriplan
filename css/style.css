@@ -222,6 +222,54 @@ html.dark {
 }
 html.dark .surface-subtle      { background-color: #25211E; }
 html.dark .surface-secondary   { background-color: #322D28; }
+
+/* Siguiente comida en Hoy. En móvil el botón ocupa el ancho; desde desktop queda a la derecha. */
+.hoy-siguiente {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.9rem;
+}
+.hoy-siguiente__info {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+}
+.hoy-siguiente__cta {
+    width: 100%;
+    text-align: center;
+    background: #8C6424;
+    color: #F5F0E8;
+    border: 0;
+    border-radius: 999px;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 0.875rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    padding: 0.72rem 1.2rem;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background-color 0.15s var(--easing-premium), transform 0.15s var(--easing-premium);
+}
+.hoy-siguiente__cta:hover { background: #6E4E1C; }
+.hoy-siguiente__cta:active { transform: scale(0.98); }
+@media (min-width: 1024px) {
+    .hoy-siguiente {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.25rem;
+    }
+    .hoy-siguiente__cta { width: auto; }
+}
 html.dark .text-info           { color: #93C5FD; }
 
 /* ─── Banner premium agency-tier (Soft Structuralism + Asymmetrical Bento) ───

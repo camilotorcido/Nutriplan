@@ -9603,21 +9603,25 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                   }
                 } catch(e) {}
                 if (!sig) return null;
+                var sigNombre = darkMode ? '#E8E0D4' : '#1A1A1A';
+                var sigMuted = darkMode ? '#B8AB9C' : '#4A4A4A';
                 return (
-                  <div className="mt-4 rounded-xl px-3.5 py-3" style={{ background: 'var(--color-accent-light)' }}>
+                  <div className="mt-4 hoy-siguiente surface-subtle" style={{ borderRadius: '0.9rem', padding: '1rem 1.1rem' }}>
                     <button type="button" onClick={() => { if (onRecipeClick) onRecipeClick(sig.comida); }}
-                      className="w-full text-left" style={{ background: 'none', border: 'none', padding: 0, cursor: onRecipeClick ? 'pointer' : 'default' }}>
-                      <div className="text-[11px] font-bold text-ink-muted">
+                      className="hoy-siguiente__info"
+                      style={{ cursor: onRecipeClick ? 'pointer' : 'default' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: sigMuted }}>
                         {nombresComida[sig.tipo]}
                       </div>
-                      <div className="text-base text-ink mt-0.5" style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--color-ink)' }}>
+                      <div style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 600, letterSpacing: '-0.02em', fontSize: '1.25rem', lineHeight: 1.25, marginTop: '0.3rem', color: sigNombre }}>
                         {getNombreReceta(sig.comida)}
                       </div>
                       {_porcionVisible(sig.comida) && (
-                        <div className="text-sm mt-1" style={{ color: '#4A4A4A' }}>{_porcionVisible(sig.comida)}</div>
+                        <div style={{ fontSize: '0.875rem', lineHeight: 1.4, marginTop: '0.35rem', color: sigMuted }}>{_porcionVisible(sig.comida)}</div>
                       )}
                     </button>
                     <button
+                      type="button"
                       onClick={() => {
                         if (window.adherencia && window.adherencia.marcar) {
                           window.adherencia.marcar(diaActual, sig.tipo, true, {
@@ -9631,11 +9635,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                           setRefresh(r => r + 1);
                         }
                       }}
-                      className="mt-3 text-xs font-bold px-3.5 py-2 rounded-full cursor-pointer"
-                      style={{ background: '#8C6424', color: '#F5F0E8', border: 'none' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = '#6E4E1C'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = '#8C6424'; }}>
-                      <i className="fas fa-check mr-1" style={{ fontSize: 10 }}></i>{t('Ya la comí','I ate it')}
+                      className="hoy-siguiente__cta">
+                      <i className="fas fa-check" style={{ fontSize: 11, marginRight: 6 }}></i>{t('Ya la comí','I ate it')}
                     </button>
                   </div>
                 );
