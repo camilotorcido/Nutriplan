@@ -190,12 +190,22 @@ function _horaComida(c) {
   var d = new Date(ts);
   return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
 }
+function _syncComidasExtAhora() {
+  try {
+    if (typeof window !== 'undefined' && window.NP_CloudStorage && typeof window.NP_CloudStorage.syncNow === 'function') {
+      window.NP_CloudStorage.syncNow(_EXT_KEY);
+    }
+  } catch (e) {}
+}
 function _guardarComidasExt(fecha, lista) {
   try {
     var a = JSON.parse(localStorage.getItem(_EXT_KEY) || '{}');
     a[fecha] = lista;
     localStorage.setItem(_EXT_KEY, JSON.stringify(a));
-  } catch(e) {}
+    // Sube esta clave al tiro. El debounce de 3s se pierde si justo después se vacía la caché.
+    _syncComidasExtAhora();
+    return true;
+  } catch (e) { return false; }
 }
 // ─── Vacation Mode helpers ───
 var _VAC_KEY = 'nutriplan_vacaciones';
@@ -299,6 +309,122 @@ function _macrosConsumidosFecha(fecha) {
   } catch(e2) {}
   return { kcal: Math.round(kcal), proteinas: Math.round(prot), carbohidratos: Math.round(carb), grasas: Math.round(fat) };
 }
+
+// \b de JavaScript no trata é/í como letra: «Registré» no coincidía y el texto se mostraba sin guardar nada.
+function _afirmaRegistro(texto) {
+  if (!texto) return false;
+  return /(?:^|[^\p{L}\p{N}_])(registr[ée]|registrad[ao]s?|anot[ée]|anotad[ao]s?|agregu[ée]|agregad[ao]s?|añad[ií]|añadid[ao]s?|sum[ée]|sumad[ao]s?|guard[ée]|guardad[ao]s?|marqu[ée]|marcad[ao]s?)/iu.test(texto);
+}
+function _afirmaMutacion(texto) {
+  if (!texto) return false;
+  return /(?:^|[^\p{L}\p{N}_])(registr[ée]|registrad[ao]s?|anot[ée]|anotad[ao]s?|agregu[ée]|agregad[ao]s?|añad[ií]|añadid[ao]s?|sum[ée]|sumad[ao]s?|guard[ée]|guardad[ao]s?|elimin[ée]|eliminad[ao]s?|borr[ée]|borrad[ao]s?|quit[ée]|quitad[ao]s?|marqu[ée]|marcad[ao]s?)/iu.test(texto);
+}
+function _normalizarSlotComida(s) {
+  if (!s) return null;
+  var mapa = {
+    once: 'snack_pm', merienda: 'snack_pm', 'snack pm': 'snack_pm', snack_tarde: 'snack_pm',
+    colacion: 'snack_am', 'colación': 'snack_am', 'snack am': 'snack_am', 'snack_mañana': 'snack_am',
+    desayuno: 'desayuno', almuerzo: 'almuerzo', cena: 'cena',
+    snack_am: 'snack_am', snack_pm: 'snack_pm'
+  };
+  return mapa[String(s).toLowerCase().trim()] || null;
+}
+// Si el usuario dijo «hoy», la comida cae en el día local que Hoy está mostrando.
+// Una fecha UTC o de otra semana no se usa para ese caso.
+function _fechaParaRegistro(fechaInput, textoUsuario) {
+  var hoy = _localDate();
+  var utcHoy = new Date().toISOString().slice(0, 10);
+  var f = hoy;
+  if (typeof fechaInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaInput.trim())) f = fechaInput.trim();
+  if (f === utcHoy && utcHoy !== hoy) f = hoy;
+  var texto = String(textoUsuario || '').toLowerCase();
+  var pideOtroDia = /\b(ayer|anteayer|anoche)\b/.test(texto);
+  var hablaDeHoy = /\bhoy\b/.test(texto);
+  if (hablaDeHoy && !pideOtroDia) f = hoy;
+  return f;
+}
+function _slotMencionadoPorUsuario(texto) {
+  var t = String(texto || '').toLowerCase();
+  if (/desayun/.test(t)) return 'desayuno';
+  if (/almorc|almuerzo/.test(t)) return 'almuerzo';
+  if (/(?:^|[^\p{L}\p{N}_])(?:cen[eé]|cena|cenamos|cenar)(?![\p{L}\p{N}_])/u.test(t)) return 'cena';
+  if (/media mañana|colaci[oó]n|snack de la mañana/.test(t)) return 'snack_am';
+  if (/(?:^|[^\p{L}\p{N}_])once(?![\p{L}\p{N}_])|media tarde|merienda|snack de la tarde/u.test(t)) return 'snack_pm';
+  return null;
+}
+function _parseRegistroAfirmado(textoAsistente, textoUsuario) {
+  var t = String(textoAsistente || '').replace(/\*/g, '');
+  var m = t.match(/(\d+)\s*kcal\D{0,40}?(\d+)\s*g?\s*prote[íi]nas?\D{0,30}?(\d+)\s*g?\s*carbohidratos?\D{0,30}?(\d+)\s*g?\s*grasas?/i);
+  if (!m) return null;
+  var nombre = '';
+  var nm = t.match(/registr[ée]\s+(?:tu\s+|el\s+|la\s+|un\s+|una\s+|mi\s+)?([^\n.]{2,80})/i);
+  if (nm) nombre = nm[1].replace(/\s+/g, ' ').trim();
+  if (!nombre) {
+    var um = String(textoUsuario || '').match(/com[íi]\s+(?:solo\s+|solamente\s+)?(?:un|una|el|la|unos|unas)?\s*(.{2,80})/i);
+    if (um) nombre = um[1].replace(/\s+/g, ' ').trim();
+  }
+  if (!nombre) return null;
+  return {
+    nombre: nombre,
+    kcal: parseInt(m[1], 10),
+    proteinas_g: parseInt(m[2], 10),
+    carbohidratos_g: parseInt(m[3], 10),
+    grasas_g: parseInt(m[4], 10)
+  };
+}
+// Comida fuera del plan. No toca la adherencia del yogur ni de ningún slot si el usuario no nombró ese horario.
+function _persistirComidaExtra(input, textoUsuario) {
+  input = input || {};
+  if (!input.nombre || input.kcal == null || input.kcal === '') {
+    return { ok: false, error: 'Faltan nombre o kcal.' };
+  }
+  var fecha = _fechaParaRegistro(input.fecha, textoUsuario);
+  var slotUsuario = _slotMencionadoPorUsuario(textoUsuario);
+  var reemplaza = null;
+  if (slotUsuario) reemplaza = _normalizarSlotComida(slotUsuario);
+  else if (!textoUsuario && input.reemplaza) reemplaza = _normalizarSlotComida(input.reemplaza);
+
+  var extMap = {};
+  try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch (e) {}
+  var lista = (extMap[fecha] || []).slice();
+
+  if (reemplaza && lista.some(function(c) { return c.reemplaza === reemplaza; })) reemplaza = null;
+
+  if (reemplaza) {
+    var nombreBuscar = String(input.nombre).toLowerCase();
+    var idxExist = lista.findIndex(function(c) { return c && !c.reemplaza && c.nombre && c.nombre.toLowerCase() === nombreBuscar; });
+    if (idxExist < 0) {
+      idxExist = lista.findIndex(function(c) { return c && !c.reemplaza && c.nombre && c.nombre.toLowerCase().indexOf(nombreBuscar) >= 0; });
+    }
+    if (idxExist >= 0) {
+      lista[idxExist] = Object.assign({}, lista[idxExist], { reemplaza: reemplaza });
+      if (!_guardarComidasExt(fecha, lista)) return { ok: false, error: 'No se pudo guardar la comida.' };
+      return { ok: true, registrado: lista[idxExist], actualizado: true, totalFecha: _macrosConsumidosFecha(fecha), fecha: fecha };
+    }
+  }
+
+  var ts = Date.now();
+  var nueva = {
+    id: 'chat_' + ts,
+    registradoEn: ts,
+    nombre: input.nombre,
+    kcal: Number(input.kcal) || 0,
+    proteinas_g: Number(input.proteinas_g) || 0,
+    carbohidratos_g: Number(input.carbohidratos_g) || 0,
+    grasas_g: Number(input.grasas_g) || 0,
+    reemplaza: reemplaza,
+    fuente: 'chat'
+  };
+  if (!_guardarComidasExt(fecha, lista.concat([nueva]))) return { ok: false, error: 'No se pudo guardar la comida.' };
+  return { ok: true, registrado: nueva, totalFecha: _macrosConsumidosFecha(fecha), fecha: fecha };
+}
+// El aviso de «todavía no marcas» no ocupa el lugar de una comida adicional ya guardada.
+function _avisoSinMarcar(huecoInfo, adicionales, pendientes) {
+  if (!huecoInfo || huecoInfo.ofrecer || !huecoInfo.mensaje) return null;
+  if ((adicionales && adicionales.length) || (pendientes && pendientes.length)) return null;
+  return huecoInfo.mensaje;
+}
+/* REGISTRO_COACH_END */
 // ─── Confirm propio (reemplaza window.confirm — coherente con la estética y sin bloquear iOS) ───
 // opts: { detalle?, confirmar?, cancelar?, destructivo? }
 function NP_confirm(mensaje, opts) {
@@ -10368,16 +10494,15 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             };
           });
           var huecoInfo = evaluarHuecoExtras(slotsExtras, metaKcalDia);
-          if (!huecoInfo.ofrecer) {
-            if (huecoInfo.mensaje) {
-              return (
-                <div className="px-5 py-3 text-sm text-ink-muted">
-                  {t(huecoInfo.mensaje, huecoInfo.mensaje)}
-                </div>
-              );
-            }
-            return null;
+          var avisoSinMarcar = _avisoSinMarcar(huecoInfo, comidasExtAdicional, comidasPendientes);
+          if (avisoSinMarcar) {
+            return (
+              <div className="px-5 py-3 text-sm text-ink-muted">
+                {t(avisoSinMarcar, avisoSinMarcar)}
+              </div>
+            );
           }
+          if (!huecoInfo.ofrecer) return null;
           var gapProt = Math.round(metaProtDia - consumidoHoy.proteinas);
           var recom = _getRecomendaciones(huecoInfo.hueco, gapProt, comidasExt);
           return (
@@ -14221,56 +14346,14 @@ function ChatPanel({ darkMode, activeTab }) {
     return plan;
   }
 
-  async function ejecutarTool(name, input_) {
+  async function ejecutarTool(name, input_, textoUsuario) {
     if (name === 'registrar_comida') {
-      var hoy = (input_.fecha && /^\d{4}-\d{2}-\d{2}$/.test(input_.fecha)) ? input_.fecha : _localDate();
-      // Normalizar slot en caso de que el coach envíe 'once', 'colacion', etc.
-      if (input_.reemplaza) input_ = Object.assign({}, input_, { reemplaza: _normalizarSlot(input_.reemplaza) });
-      var extMap = {};
-      try { extMap = JSON.parse(localStorage.getItem('nutriplan_comidas_externas') || '{}'); } catch(e) {}
-      var lista = extMap[hoy] || [];
-
-      // Guard: si el slot ya está reemplazado por otra entrada, registrar como adicional
-      // Evita que el coach doble-reemplace un slot que ya tiene comida externa asignada.
-      if (input_.reemplaza) {
-        var yaReemplazado = lista.some(function(c) { return c.reemplaza === input_.reemplaza; });
-        if (yaReemplazado) input_ = Object.assign({}, input_, { reemplaza: null });
+      var outReg = _persistirComidaExtra(input_ || {}, textoUsuario);
+      if (outReg && outReg.ok) {
+        window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
+        _flushHoyView();
       }
-
-      // Anti-duplicado: si se especifica reemplaza, buscar una entrada previa con el
-      // mismo nombre (sin reemplaza asignado aún) y actualizarla en vez de crear otra.
-      if (input_.reemplaza) {
-        var nombreBuscar = (input_.nombre || '').toLowerCase();
-        var idxExist = -1;
-        // Preferir coincidencia exacta; si no, coincidencia parcial
-        idxExist = lista.findIndex(function(c) { return !c.reemplaza && c.nombre.toLowerCase() === nombreBuscar; });
-        if (idxExist < 0) {
-          idxExist = lista.findIndex(function(c) { return !c.reemplaza && c.nombre.toLowerCase().includes(nombreBuscar); });
-        }
-        if (idxExist >= 0) {
-          lista[idxExist] = Object.assign({}, lista[idxExist], { reemplaza: input_.reemplaza });
-          extMap[hoy] = lista;
-          localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
-          window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
-          _flushHoyView();
-          return { ok: true, registrado: lista[idxExist], actualizado: true, totalFecha: _macrosFecha(hoy), fecha: hoy };
-        }
-      }
-
-      // Sin duplicado → crear nueva entrada
-      var _ts = Date.now();
-      var nueva = {
-        id: 'chat_' + _ts,
-        registradoEn: _ts,
-        nombre: input_.nombre, kcal: input_.kcal,
-        proteinas_g: input_.proteinas_g, carbohidratos_g: input_.carbohidratos_g, grasas_g: input_.grasas_g,
-        reemplaza: input_.reemplaza || null, fuente: 'chat'
-      };
-      extMap[hoy] = lista.concat([nueva]);
-      localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
-      window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
-      _flushHoyView();
-      return { ok: true, registrado: nueva, totalFecha: _macrosFecha(hoy), fecha: hoy };
+      return outReg;
     }
     if (name === 'buscar_alimento') {
       var q = (input_.query || '').toLowerCase();
@@ -14324,8 +14407,7 @@ function ChatPanel({ darkMode, activeTab }) {
         } catch(_e) {}
       }
 
-      extMap[hoy] = lista;
-      localStorage.setItem('nutriplan_comidas_externas', JSON.stringify(extMap));
+      _guardarComidasExt(hoy, lista);
       window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
       _flushHoyView();
       var _ctx3 = buildContexto();
@@ -14899,10 +14981,9 @@ function ChatPanel({ darkMode, activeTab }) {
         'aplicar_cambios_perfil','regenerar_plan_semanal'
       ];
       var toolsEjecutadasTurno = {};
-      // Verbos en pasado/participio específicos a una mutación. NO incluye "Listo"
-      // / "Hecho" / "Ya está" porque aparecen también en respuestas informativas.
-      var REGEX_AFIRMA_MUTACION = /\b(registr[ée]|registrad[ao]s?|anot[ée]|anotad[ao]s?|agregu[ée]|agregad[ao]s?|añad[ií]|añadid[ao]s?|sum[ée]|sumad[ao]s?|guard[ée]|guardad[ao]s?|elimin[ée]|eliminad[ao]s?|borr[ée]|borrad[ao]s?|quit[ée]|quitad[ao]s?|marqu[ée]|marcad[ao]s?)\b/i;
+      var toolsResultadoOk = {};
       var nudgeAplicado = false;
+      var nudgeInterno = '[Sistema interno — el usuario NO ve este mensaje] Tu última respuesta dice que registraste/marcaste/eliminaste algo, pero NO incluiste ningún tool_use de registrar_comida, marcar_comida_plan, planear_comida ni eliminar_comida. La acción NO ocurrió en el sistema. Revisa el último mensaje del usuario y, si la acción procede, llama AHORA la herramienta correcta con los datos exactos. Si interpretaste mal la intención del usuario, responde con texto preguntando qué quería hacer (sin afirmar registros).';
 
       while (maxRondas-- > 0) {
         var result = await fn({ messages: apiHistory, contexto: contexto });
@@ -14918,25 +14999,50 @@ function ChatPanel({ darkMode, activeTab }) {
           for (var _ti = 0; _ti < toolBlocks.length; _ti++) {
             var tb = toolBlocks[_ti];
             toolsEjecutadasTurno[tb.name] = true;
-            var _outTool = await ejecutarTool(tb.name, tb.input);
+            var _outTool = await ejecutarTool(tb.name, tb.input, texto);
+            if (_outTool && _outTool.ok) toolsResultadoOk[tb.name] = true;
             toolResults.push({ type:'tool_result', tool_use_id: tb.id, content: JSON.stringify(_outTool) });
           }
           apiHistory = apiHistory.concat([{ role:'user', content: toolResults }]);
           continue;
         }
 
-        // Respuesta final de texto — verificar alucinación de registro
+        // Respuesta final de texto. «Registré» solo se muestra si la comida ya está en el día.
         var textoRespuesta = textBlocks.map(function(b) { return b.text; }).join('\n').trim();
         var mutacionEjecutada = TOOLS_MUTACION.some(function(n) { return toolsEjecutadasTurno[n]; });
-        if (!nudgeAplicado && !mutacionEjecutada && textoRespuesta && REGEX_AFIRMA_MUTACION.test(textoRespuesta)) {
-          // El modelo afirma haber registrado/eliminado pero no llamó ninguna tool de registro.
-          // Inyectamos un nudge correctivo y reintentamos UNA vez.
+        var registroYaGuardado = !!(toolsResultadoOk.registrar_comida || toolsResultadoOk.marcar_comida_plan || toolsResultadoOk.planear_comida);
+        if (textoRespuesta && _afirmaRegistro(textoRespuesta) && !registroYaGuardado) {
+          var parsedReg = _parseRegistroAfirmado(textoRespuesta, texto);
+          if (parsedReg) {
+            var outRegTxt = await ejecutarTool('registrar_comida', parsedReg, texto);
+            if (outRegTxt && outRegTxt.ok) {
+              toolsResultadoOk.registrar_comida = true;
+              displayMsgs = displayMsgs.concat([{ role:'assistant', content: textoRespuesta }]);
+              break;
+            }
+          }
+          if (!nudgeAplicado) {
+            nudgeAplicado = true;
+            apiHistory = apiHistory.concat([
+              { role: 'assistant', content: data.content },
+              { role: 'user', content: nudgeInterno }
+            ]);
+            continue;
+          }
+          displayMsgs = displayMsgs.concat([{ role:'assistant', content: t('No pude dejar esa comida en el registro de hoy. Repite el nombre y la cantidad y la anoto.', 'I could not save that meal in today\'s log. Tell me the name and the amount again.') }]);
+          break;
+        }
+        if (!nudgeAplicado && !mutacionEjecutada && textoRespuesta && _afirmaMutacion(textoRespuesta)) {
           nudgeAplicado = true;
           apiHistory = apiHistory.concat([
             { role: 'assistant', content: data.content },
-            { role: 'user', content: '[Sistema interno — el usuario NO ve este mensaje] Tu última respuesta dice que registraste/marcaste/eliminaste algo, pero NO incluiste ningún tool_use de registrar_comida, marcar_comida_plan, planear_comida ni eliminar_comida. La acción NO ocurrió en el sistema. Revisa el último mensaje del usuario y, si la acción procede, llama AHORA la herramienta correcta con los datos exactos. Si interpretaste mal la intención del usuario, responde con texto preguntando qué quería hacer (sin afirmar registros).' }
+            { role: 'user', content: nudgeInterno }
           ]);
           continue;
+        }
+        if (textoRespuesta && _afirmaMutacion(textoRespuesta) && !mutacionEjecutada && !toolsResultadoOk.registrar_comida) {
+          displayMsgs = displayMsgs.concat([{ role:'assistant', content: t('No pude dejar ese cambio en el registro. Dime de nuevo qué quieres anotar.', 'I could not save that change. Tell me again what to log.') }]);
+          break;
         }
         if (textoRespuesta) {
           displayMsgs = displayMsgs.concat([{ role:'assistant', content: textoRespuesta }]);

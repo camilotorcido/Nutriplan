@@ -6,6 +6,14 @@ _Convención: entradas nuevas al inicio (más reciente arriba), fecha YYYY-MM-DD
 
 ---
 
+## 2026-11-09 — El coach decía «Registré» y la focaccia no quedaba en Hoy
+
+El modelo respondió «Registré tu focaccia» sin llamar a `registrar_comida`. El filtro que debía atrapar esa frase usa `\b`, y en JavaScript ese límite no cuenta la é: «Registré», «marqué» y «guardé» no coinciden. El texto se mostraba y `nutriplan_comidas_externas` no se escribía. Hoy leía el 9 de noviembre vacío: 0 kcal, el plan sin marcar y la lista de adicionales en blanco. «Todavía no marcas el desayuno» es el aviso de recomendaciones cuando no hay nada marcado; si hay una adicional, ya no ocupa ese lugar.
+
+Ahora, si el coach afirma el registro y no hay tool con ok, se guarda la comida en la fecha local de hoy (un «hoy» del usuario no acepta una fecha corrida). Sin nombrar desayuno, almuerzo u otro horario, no reemplaza el slot del plan. Si no se puede guardar, no dice que registró. Al guardar, Hoy se refresca y la clave sube al tiro.
+
+---
+
 ## 2026-11-09 — Los 10 puntos de funcionamiento
 
 Se aplicaron los 10 puntos: fecha única (el check usa el lunes del plan, también si Hoy retrocede), extras con el plan descontado, racha sobre los slots del día, coach async con la semana vigente, sync que no pisa lo más nuevo y sube al marcar o regenerar, cierre del día abre las comidas sin calificar, copy humano al mostrar, lote manual si las proteínas no se repiten, entreno del día que se está viendo, y version.json que no cuenta un fallo como «no hay versión».
