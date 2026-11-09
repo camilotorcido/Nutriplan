@@ -105,7 +105,7 @@ Edit `css/style.css` for custom design tokens and dark mode. Do not modify `css/
 - Scheduled (hourly, filtered by user-local hour): `sendEveningPush` (19h rate meals), `sendPlateauPush` (8h plateau), `sendRetentionPushes` (20h streak-at-risk, Sunday 18h weekly summary written by Haiku, 11h re-engagement with 3-day dedup in `users/{uid}/pushMeta/state`).
 - `getAdminMetrics` / `adminDeleteUser` — admin-only dashboard (guard these carefully when editing).
 
-Functions require Firebase service account credentials and Anthropic + Groq API keys + `VAPID_PRIVATE_KEY` in Firebase Secret Manager. Runtime is Node 20.
+Functions require Firebase service account credentials and Anthropic + Groq API keys + `VAPID_PRIVATE_KEY` in Firebase Secret Manager. Runtime is Node 22 (Node 20 quedó fuera de Firebase el 2026-10-30).
 
 **Deploy is conditional:** `deploy.ps1` only runs `firebase deploy --only functions` when `git diff HEAD~1` shows changes under `functions/`. A frontend-only deploy never touches Cloud Functions.
 

@@ -10,6 +10,8 @@ _Convención: entradas nuevas al inicio (más reciente arriba), fecha YYYY-MM-DD
 
 El system prompt estaba en voseo (orientá, podés, llamá) y el modelo lo copiaba. El filtro de «Registré» no mira tenés, podés, registrá ni comé. Ahora el prompt pide tuteo y frases cortas de comida, y un filtro pasa a tuteo el texto del coach antes de mostrarlo. La UI, un paso de receta («usás») y el protocolo de meseta quedaron en el mismo registro, con anti-ai-style.md. No es la voz comercial de Camilo.
 
+Node 20 ya no se puede desplegar (Firebase lo dio de baja el 2026-10-30). Las functions quedan en Node 22. Sin cambio de secrets ni de esquema.
+
 ---
 
 ## 2026-11-09 — Paleta Mesa
