@@ -5226,6 +5226,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
         const cortoMap = { Empuje: t('Empuje','Push'), Piernas: t('Piernas','Legs'), Jalar: t('Jalar','Pull'), Circuito: t('Circuito','Circuit'), 'Empuje+': t('Empuje+','Push+'), 'Piernas+': t('Piernas+','Legs+'), 'Jalar+': t('Jalar+','Pull+') };
         const hoyDow = new Date().getDay();
         const equipos = (typeof leerEquipos === 'function') ? leerEquipos() : ['peso_corporal'];
+        const lugarEntreno = (perfil && perfil.lugarEntreno === 'speediance') ? 'speediance' : 'gimnasio';
         const semanaNum = window.NP_RoadmapData && window.NP_RoadmapData.semanaActual ? window.NP_RoadmapData.semanaActual(_localDate()) : 1;
         return (
           <div className="animate-fadeIn">
@@ -5301,7 +5302,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
               }
               const tipoInfo = planEntreno.tipos.find(x => x.k === tipo);
               const protocolo = window.NP_RoadmapData && window.NP_RoadmapData.generarProtocoloDia
-                ? window.NP_RoadmapData.generarProtocoloDia(tipo, semanaNum, equipos) : null;
+                ? window.NP_RoadmapData.generarProtocoloDia(tipo, semanaNum, equipos, lugarEntreno) : null;
               const ejercicios = protocolo ? protocolo.ejercicios.slice(0, 8) : [];
               return (
                 <div className="surface-card-shadow p-5">
@@ -5324,7 +5325,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                       {ejercicios.map((ej, idx) => (
                         <li key={idx} className="flex items-start gap-2">
                           <span className="text-ink-faint font-mono tabular-nums" style={{ minWidth: '1.5em' }}>{idx + 1}.</span>
-                          <span className="flex-1">{ej.nombre}{ej.series && ej.reps ? <span className="text-ink-faint"> · {ej.series}×{ej.reps}</span> : null}</span>
+                          <span className="flex-1">{ej.nombre}{ej.accesorio ? <span className="text-ink-faint"> · {ej.accesorio}</span> : null}{(ej.sets && ej.reps) ? <span className="text-ink-faint"> · {ej.sets}×{ej.reps}</span> : null}</span>
                         </li>
                       ))}
                     </ul>
@@ -9423,13 +9424,19 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     const tipoInfo = planActual && planActual.tipos ? planActual.tipos.find(t => t.k === tipo) : null;
     const semanaNum = window.NP_RoadmapData ? window.NP_RoadmapData.semanaActual(hoyStr) : 0;
     const equiposDisp = leerEquipos();
+    const lugarEntreno = (perfil && perfil.lugarEntreno === 'speediance') ? 'speediance' : 'gimnasio';
     const protocolo = (window.NP_RoadmapData && window.NP_RoadmapData.generarProtocoloDia && tipo !== 'descanso')
-      ? window.NP_RoadmapData.generarProtocoloDia(tipo, semanaNum, equiposDisp)
+      ? window.NP_RoadmapData.generarProtocoloDia(tipo, semanaNum, equiposDisp, lugarEntreno)
       : null;
     const foco = protocolo ? protocolo.foco : null;
     const duracionMin = protocolo ? protocolo.duracionMin : null;
-    return { tipo, tipoInfo, completados, total, esDescanso: tipo === 'descanso', foco, duracionMin };
-  }, [tieneEntrenamiento, refresh, fechaHoyIso]);
+    const ejercicios = (lugarEntreno === 'speediance' && protocolo && protocolo.ejercicios)
+      ? protocolo.ejercicios.map(function(ej) {
+          return { nombre: ej.nombre, accesorio: ej.accesorio || '', sets: ej.sets, reps: ej.reps };
+        })
+      : null;
+    return { tipo, tipoInfo, completados, total, esDescanso: tipo === 'descanso', foco, duracionMin, ejercicios, lugarEntreno };
+  }, [tieneEntrenamiento, refresh, fechaHoyIso, perfil && perfil.lugarEntreno]);
 
   const pasosHoy = React.useMemo(() => {
     if (!tieneEntrenamiento || !window.NP_Steps || !window.NP_Steps.hoy) return null;
@@ -10796,6 +10803,17 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                           <span className="text-xs text-gray-400">{entrenoHoy.completados}/{entrenoHoy.total}</span>
                         </div>
                       )}
+                      {entrenoHoy.ejercicios && entrenoHoy.ejercicios.length > 0 && (
+                        <ul className="mt-2 space-y-1">
+                          {entrenoHoy.ejercicios.map(function(ej, idx) {
+                            return (
+                              <li key={ej.nombre + idx} className="text-xs text-ink-muted" style={{ lineHeight: 1.4 }}>
+                                {ej.nombre}{ej.accesorio ? ' · ' + ej.accesorio : ''}{(ej.sets && ej.reps) ? ' · ' + ej.sets + '×' + ej.reps : ''}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
                     </div>
                   </div>
                 )}
@@ -11199,7 +11217,7 @@ function NutricionLogView({ perfil, darkMode }) {
 // IA redesign 2026-05-07: ex-FitnessTab. Sub-tab "nutricion" eliminado (era duplicado de Hoy/Plan).
 // Siempre visible — el empty state ahora invita a generar el roadmap.
 // =============================================
-function ProgresoTab({ perfil, darkMode, onNavigate }) {
+function ProgresoTab({ perfil, darkMode, onNavigate, onPerfilChange }) {
   const subs = [
     { k: 'roadmap',   l: t('Fases','Phases'),     icon: 'fa-route' },
     { k: 'metricas',  l: t('Registros','Logs'),   icon: 'fa-clipboard-list' },
@@ -11265,7 +11283,7 @@ function ProgresoTab({ perfil, darkMode, onNavigate }) {
       </div>
       {subVista === 'roadmap'   && <FLRoadmapView  perfil={perfil} darkMode={darkMode} refresh={refresh} onGoToRegistros={() => cambiarSub('metricas')} />}
       {subVista === 'metricas'  && <FLMetricasView perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
-      {subVista === 'entreno'   && <FLEntrenoView  perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
+      {subVista === 'entreno'   && <FLEntrenoView  perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} onPerfilChange={onPerfilChange} />}
       {subVista === 'pasos'     && <FLPasosView    perfil={perfil} darkMode={darkMode} refresh={refresh} onRefresh={() => setRefresh(r => r + 1)} />}
     </div>
   );
@@ -12930,7 +12948,7 @@ function EquipamientoCard({ darkMode, onEquiposChange, onRefresh }) {
 function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, bajó, onToggle, onSetPeso, onSetReps }) {
   const eqId = getEquipoId(e.equipo);
   const esPesoCorporal = eqId === 'peso_corporal';
-  const eqNoDisp = !esPesoCorporal && !equiposDisp.includes(eqId);
+  const eqNoDisp = !e.accesorio && !esPesoCorporal && !equiposDisp.includes(eqId);
 
   // Estado local para el input de texto del peso (permite escribir "12.5" sin interrupciones)
   const pesoInicial = e.peso != null ? e.peso : (previo ? previo.peso : 0);
@@ -12960,7 +12978,7 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
           <div className="flex items-center gap-3 flex-wrap mt-1.5">
             <span className="text-xs text-ink-muted tabular-nums">
               <span className="font-bold tabular-nums" style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{e.setsEsperado} × {e.repsEsperado}</span>
-              <span className="text-ink-faint"> · {e.equipo}</span>
+              <span className="text-ink-faint"> · {e.accesorio || e.equipo}</span>
             </span>
             {protEj && protEj.youtube && (
               <a href={protEj.youtube} target="_blank" rel="noopener noreferrer"
@@ -13064,7 +13082,7 @@ function EjercicioCard({ e, i, darkMode, protEj, previo, equiposDisp, mejoró, b
 }
 
 // ─── Sub-vista: Entreno (log de cargas por día A/B/C/D) ───
-function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
+function FLEntrenoView({ perfil, darkMode, refresh, onRefresh, onPerfilChange }) {
   const hoy = _localDate();
 
   // ── Días/semana: persiste en localStorage, modifica todo el plan ──
@@ -13119,8 +13137,23 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
   const semanaNum = window.NP_RoadmapData ? window.NP_RoadmapData.semanaActual(hoy) : 0;
   // equiposDisp como estado: permite re-render inmediato al cambiar equipamiento
   const [equiposDisp, setEquiposDisp] = React.useState(leerEquipos);
+  const lugarDesdePerfil = (perfil && perfil.lugarEntreno === 'speediance') ? 'speediance' : 'gimnasio';
+  const [lugarEntreno, setLugarEntreno] = React.useState(lugarDesdePerfil);
+  React.useEffect(function() { setLugarEntreno(lugarDesdePerfil); }, [lugarDesdePerfil]);
+  const elegirLugar = function(lugar) {
+    const next = lugar === 'speediance' ? 'speediance' : 'gimnasio';
+    if (next === lugarEntreno) return;
+    setLugarEntreno(next);
+    const actual = (typeof cargarPerfil === 'function' ? cargarPerfil() : null) || perfil || {};
+    const nuevo = Object.assign({}, actual, { lugarEntreno: next });
+    if (typeof guardarPerfil === 'function') guardarPerfil(nuevo);
+    else {
+      try { localStorage.setItem('nutriplan_perfil', JSON.stringify(nuevo)); } catch (err) {}
+    }
+    if (typeof onPerfilChange === 'function') onPerfilChange(nuevo);
+  };
   let protocolo = (window.NP_RoadmapData && window.NP_RoadmapData.generarProtocoloDia)
-    ? window.NP_RoadmapData.generarProtocoloDia(tipoDia, semanaNum, equiposDisp)
+    ? window.NP_RoadmapData.generarProtocoloDia(tipoDia, semanaNum, equiposDisp, lugarEntreno)
     : (window.NP_Training ? window.NP_Training.protocoloDia(tipoDia) : null);
   // Ajustar protocolo según prescripción de la fase: factorVolumen escala sets,
   // repRange override el rango de reps (solo para ejercicios con rango numérico tipo "X-Y").
@@ -13172,6 +13205,7 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
           setsEsperado: ej.sets,
           repsEsperado: ej.reps,
           equipo:       ej.equipo,
+          accesorio:    ej.accesorio || '',
           nota:         ej.nota || '',
           done:         log.done  || false,
           peso:         log.peso  != null ? log.peso  : null,
@@ -13252,6 +13286,28 @@ function FLEntrenoView({ perfil, darkMode, refresh, onRefresh }) {
 
   return (
     <div className="space-y-4">
+      <div className="surface-card-shadow" style={{ padding: '1.15rem 1.4rem' }}>
+        <div className="text-xs font-semibold text-ink-muted mb-2">{t('Dónde entrenas', 'Where you train')}</div>
+        <div className="flex gap-1.5">
+          {[{ id: 'gimnasio', label: t('Gimnasio', 'Gym') }, { id: 'speediance', label: 'Speediance' }].map(function(op) {
+            const activo = lugarEntreno === op.id;
+            return (
+              <button key={op.id} type="button" onClick={function() { elegirLugar(op.id); }}
+                className="px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer transition active:scale-[0.98]"
+                style={activo
+                  ? { background: 'var(--color-ink)', color: 'var(--color-base)', boxShadow: 'var(--shadow-soft-sm)' }
+                  : darkMode
+                    ? { background: 'rgba(232, 230, 225, 0.04)', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(232, 230, 225, 0.10)' }
+                    : { background: '#FFFCF8', color: 'var(--color-ink-muted)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' }}>
+                {op.label}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-ink-muted mt-2" style={{ lineHeight: 1.45 }}>
+          {t('Poleas, barra y banco. Sin máquinas de gimnasio.', 'Cables, bar and bench. No gym machines.')}
+        </p>
+      </div>
       {/* IA redesign: Prescripción de la fase — brand-aligned (cream/mostaza, double-bezel sutil, jerarquía clara) */}
       {_faseEnt && (() => {
         const chipAccentSty = darkMode
@@ -17381,7 +17437,7 @@ function App() {
           </div>
         ))}
         {pantalla === "progreso" && (
-          <ProgresoTab perfil={perfil} darkMode={darkMode} onNavigate={navegarA} />
+          <ProgresoTab perfil={perfil} darkMode={darkMode} onNavigate={navegarA} onPerfilChange={setPerfil} />
         )}
         {(pantalla === "cocinar" || pantalla === "despensa") && (
           <div className="animate-fadeIn">

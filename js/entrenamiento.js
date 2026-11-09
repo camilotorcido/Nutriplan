@@ -46,12 +46,24 @@ function protocoloDia(tipoDia) {
   return ep.dias[tipoDia];
 }
 
-function ejerciciosBase(tipoDia) {
+function _listaEjerciciosDia(tipoDia) {
+  const rd = (typeof window !== 'undefined') ? window.NP_RoadmapData : null;
+  if (rd && typeof rd.leerLugarEntreno === 'function' && rd.leerLugarEntreno() === 'speediance' && typeof rd.generarProtocoloDia === 'function') {
+    const semana = typeof rd.semanaActual === 'function' ? rd.semanaActual() : 0;
+    const gen = rd.generarProtocoloDia(tipoDia, semana, null, 'speediance');
+    if (gen && gen.ejercicios && gen.ejercicios.length) return gen.ejercicios;
+  }
   const d = protocoloDia(tipoDia);
-  if (!d) return [];
-  return d.ejercicios.map(e => ({
+  return d ? d.ejercicios : null;
+}
+
+function ejerciciosBase(tipoDia) {
+  const lista = _listaEjerciciosDia(tipoDia);
+  if (!lista) return [];
+  return lista.map(e => ({
     nombre: e.nombre,
     equipo: e.equipo,
+    accesorio: e.accesorio || '',
     nota: e.nota,
     setsEsperado: e.sets,
     repsEsperado: e.reps,

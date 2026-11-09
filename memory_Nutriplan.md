@@ -6,6 +6,12 @@ _Convención: entradas nuevas al inicio (más reciente arriba), fecha YYYY-MM-DD
 
 ---
 
+## 2026-11-09 — Selector Gimnasio / Speediance
+
+`perfil.lugarEntreno` queda en `nutriplan_perfil` (gimnasio o speediance), con el namespace por usuario. Gimnasio deja la rutina anterior. Speediance rearma el mismo split con polea, barra y banco; cada ejercicio trae accesorio. No hay sync con la app de Speediance.
+
+---
+
 ## 2026-11-09 — El coach y la UI quedan en español neutro
 
 El system prompt estaba en voseo (orientá, podés, llamá) y el modelo lo copiaba. El filtro de «Registré» no mira tenés, podés, registrá ni comé. Ahora el prompt pide tuteo y frases cortas de comida, y un filtro pasa a tuteo el texto del coach antes de mostrarlo. La UI, un paso de receta («usás») y el protocolo de meseta quedaron en el mismo registro, con anti-ai-style.md. No es la voz comercial de Camilo.

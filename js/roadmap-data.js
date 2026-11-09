@@ -483,12 +483,142 @@ const SCHEDULES_POR_DIAS = {
   }
 };
 
+// ─── Speediance (Gym Monster): poleas, barra y banco ───
+// Catálogo cerrado. No incluye prensa, hack, multipower, mancuernas, femoral sentado ni polea cruzada.
+const SPEEDANCE_CATALOGO = {
+  'Press de pecho en polea': { sets: 4, reps: '8-10', accesorio: 'Barra · banco · polea baja', nota: 'Codos a unos 45°',
+    descripcion: 'En el banco, empuja la barra desde la polea baja hasta extender los codos.' },
+  'Press de hombro': { sets: 3, reps: '10-12', accesorio: 'Manillas · polea baja', nota: 'Costillas abajo',
+    descripcion: 'De pie, empuja las manillas desde los hombros hasta arriba.' },
+  'Extensión de tríceps': { sets: 3, reps: '12-15', accesorio: 'Cuerda · polea alta', nota: 'Codos fijos',
+    descripcion: 'Codos pegados al torso. Extiende con la cuerda desde la polea alta.' },
+  'Apertura de pecho': { sets: 3, reps: '12-15', accesorio: 'Manillas · polea media', nota: 'Codos leves',
+    descripcion: 'Manillas a la altura del pecho. Junta las manos al frente.' },
+  'Elevaciones laterales': { sets: 3, reps: '15', accesorio: 'Manilla · polea baja', nota: 'Sin subir el trapecio',
+    descripcion: 'Sube el brazo hasta la horizontal, con el codo levemente flexionado.' },
+  'Elevación frontal': { sets: 3, reps: '12', accesorio: 'Manilla · polea baja', nota: '',
+    descripcion: 'Sube la manilla al frente hasta la altura del hombro.' },
+  'Extensión de tríceps sobre la cabeza': { sets: 3, reps: '12-15', accesorio: 'Cuerda · polea baja', nota: 'Codos al frente',
+    descripcion: 'Cuerda en polea baja. Extiende los codos por encima de la cabeza.' },
+  'Face pull': { sets: 3, reps: '15', accesorio: 'Cuerda · polea alta', nota: 'Separa las manos al final',
+    descripcion: 'Tira la cuerda hacia la cara y separa las manos.' },
+  'Press Pallof': { sets: 3, reps: '12 c/lado', accesorio: 'Manilla · polea media', nota: 'Sin rotar el torso',
+    descripcion: 'Manilla a la altura del pecho. Empuja al frente y resiste la rotación.' },
+  'Chop': { sets: 3, reps: '12 c/lado', accesorio: 'Manilla · polea alta', nota: 'Cadera estable',
+    descripcion: 'Tira en diagonal desde la polea alta hacia la cadera contraria.' },
+  'Sentadilla con barra': { sets: 4, reps: '10-12', accesorio: 'Barra', nota: 'Talones en el piso',
+    descripcion: 'Barra sobre los hombros. Baja hasta que el muslo quede paralelo al suelo.' },
+  'Peso muerto rumano': { sets: 3, reps: '10-12', accesorio: 'Barra', nota: 'Espalda neutra',
+    descripcion: 'Barra frente a los muslos. Baja con la cadera atrás, rodillas apenas flexionadas.' },
+  'Sentadilla con cinturón': { sets: 3, reps: '10-12', accesorio: 'Cinturón · polea baja', nota: 'Torso vertical',
+    descripcion: 'El cinturón va a la polea baja. Baja en sentadilla sin inclinarte.' },
+  'Peso muerto': { sets: 3, reps: '8-10', accesorio: 'Barra', nota: 'Barra cerca de las tibias',
+    descripcion: 'Empuja el piso y extiende cadera y rodillas a la vez.' },
+  'Patada de glúteo': { sets: 3, reps: '15 c/lado', accesorio: 'Tobillera · polea baja', nota: 'Sin arquear la lumbar',
+    descripcion: 'Lleva el talón atrás y aprieta el glúteo al final.' },
+  'Isquios en polea': { sets: 3, reps: '12-15', accesorio: 'Tobillera · polea baja', nota: 'Cadera quieta',
+    descripcion: 'De pie, flexiona la rodilla y lleva el talón hacia el glúteo.' },
+  'Jalón': { sets: 4, reps: '10-12', accesorio: 'Barra · polea alta', nota: 'Agarre prono',
+    descripcion: 'Tira la barra hasta el pecho, con los codos hacia el suelo.' },
+  'Remo en polea': { sets: 4, reps: '10-12', accesorio: 'Manillas · polea baja', nota: 'Escápulas juntas',
+    descripcion: 'Tira las manillas hacia el abdomen y junta las escápulas.' },
+  'Curl de bíceps': { sets: 3, reps: '12-15', accesorio: 'Manillas · polea baja', nota: 'Codos fijos',
+    descripcion: 'Flexiona los codos sin mover los hombros.' },
+  'Remo a una mano': { sets: 3, reps: '12 c/lado', accesorio: 'Manilla · polea baja', nota: '',
+    descripcion: 'Tira una manilla hacia la cadera, con el torso estable.' },
+  'Curl con cuerda': { sets: 3, reps: '12-15', accesorio: 'Cuerda · polea baja', nota: 'Agarre neutro',
+    descripcion: 'Flexiona los codos y separa un poco las manos arriba.' },
+  'Jalón agarre neutro': { sets: 3, reps: '10-12', accesorio: 'Manillas · polea alta', nota: 'Palmas enfrentadas',
+    descripcion: 'Tira las manillas al pecho, con las palmas mirándose.' }
+};
+
+const SPEEDANCE_POOL = {
+  A: {
+    totalSesion: 8,
+    core: ['Press de pecho en polea', 'Press de hombro', 'Extensión de tríceps'],
+    extra: ['Apertura de pecho', 'Elevaciones laterales', 'Elevación frontal', 'Extensión de tríceps sobre la cabeza', 'Face pull', 'Press Pallof', 'Chop']
+  },
+  B: {
+    totalSesion: 8,
+    core: ['Sentadilla con barra', 'Peso muerto rumano'],
+    extra: ['Sentadilla con cinturón', 'Peso muerto', 'Patada de glúteo', 'Isquios en polea', 'Chop', 'Press Pallof']
+  },
+  C: {
+    totalSesion: 8,
+    core: ['Jalón', 'Remo en polea', 'Curl de bíceps'],
+    extra: ['Remo a una mano', 'Face pull', 'Curl con cuerda', 'Jalón agarre neutro', 'Press Pallof', 'Chop']
+  },
+  D: {
+    totalSesion: 8,
+    core: ['Press de pecho en polea', 'Remo en polea', 'Sentadilla con barra', 'Jalón', 'Chop', 'Patada de glúteo', 'Curl de bíceps', 'Press Pallof'],
+    extra: []
+  }
+};
+
+function leerLugarEntreno() {
+  if (typeof localStorage === 'undefined') return 'gimnasio';
+  try {
+    const raw = localStorage.getItem('nutriplan_perfil');
+    if (!raw) return 'gimnasio';
+    const perfil = JSON.parse(raw);
+    return perfil && perfil.lugarEntreno === 'speediance' ? 'speediance' : 'gimnasio';
+  } catch (e) { return 'gimnasio'; }
+}
+
+function nombresSpeediance() {
+  return Object.keys(SPEEDANCE_CATALOGO);
+}
+
+function _ejercicioSpeediance(nombre) {
+  const base = SPEEDANCE_CATALOGO[nombre];
+  if (!base || !base.accesorio) return null;
+  return Object.assign({ nombre: nombre, equipo: 'Speediance' }, base);
+}
+
+function _protocoloSpeediance(tipoDia, semanaNum) {
+  const match = String(tipoDia).match(/^([A-Z]+)(\d*)$/);
+  const baseDia = match ? match[1] : tipoDia;
+  const variantNum = match && match[2] ? parseInt(match[2], 10) : 0;
+  const diaBase = ENTRENO_PROTOCOLO.dias[baseDia];
+  const pool = SPEEDANCE_POOL[baseDia];
+  if (!diaBase || !pool) return null;
+
+  const seed = (semanaNum || 0) * 1000 + baseDia.charCodeAt(0) + variantNum * 500;
+  const usados = new Set();
+  const core = pool.core.map(function(nombre) {
+    const ej = _ejercicioSpeediance(nombre);
+    if (!ej) return null;
+    usados.add(nombre);
+    return ej;
+  }).filter(Boolean);
+  const extras = _seededShuffle(pool.extra, seed).map(_ejercicioSpeediance).filter(function(ej) {
+    return ej && !usados.has(ej.nombre);
+  });
+  const nAcc = Math.max(0, pool.totalSesion - core.length);
+  const ejercicios = core.concat(extras.slice(0, nAcc));
+
+  return {
+    nombre: variantNum > 0 ? diaBase.nombre + ' (variante ' + variantNum + ')' : diaBase.nombre,
+    foco: diaBase.foco,
+    duracionMin: diaBase.duracionMin,
+    equipamiento: 'Poleas, barra y banco',
+    ejercicios: ejercicios,
+    semana: semanaNum,
+    variante: (Math.abs(seed) % 99) + 1
+  };
+}
+
 // ─── Genera el protocolo del día para la semana actual ───
 // • Ejercicios core adaptados al equipamiento disponible (si el equipo requerido no
 //   está disponible, se sustituye por el primer accesorio/extra disponible del pool).
 // • Accesorios del protocolo base + extras del pool rotan seeded por semana.
 // • Soporta tipos variantes A2/B2/C2: misma base, seed diferente → ejercicios distintos.
-function generarProtocoloDia(tipoDia, semanaNum, equiposDisp) {
+// • lugarEntreno 'speediance' usa solo el catálogo de la máquina. 'gimnasio' (default) no cambia.
+function generarProtocoloDia(tipoDia, semanaNum, equiposDisp, lugarEntreno) {
+  const lugar = (lugarEntreno === 'speediance' || lugarEntreno === 'gimnasio')
+    ? lugarEntreno
+    : leerLugarEntreno();
+  if (lugar === 'speediance') return _protocoloSpeediance(tipoDia, semanaNum);
   // Tipos variantes (A2 → base A, variante 2; B2 → base B, variante 2)
   const match = String(tipoDia).match(/^([A-Z]+)(\d*)$/);
   const baseDia = match ? match[1] : tipoDia;
@@ -563,6 +693,9 @@ function buscarEjercicio(nombre) {
   for (const k of Object.keys(EJERCICIOS_POOL)) {
     const ej = EJERCICIOS_POOL[k].extra.find(e => e.nombre === nombre);
     if (ej) return ej;
+  }
+  if (SPEEDANCE_CATALOGO[nombre]) {
+    return Object.assign({ nombre: nombre, equipo: 'Speediance' }, SPEEDANCE_CATALOGO[nombre]);
   }
   return null;
 }
@@ -650,6 +783,8 @@ if (typeof window !== 'undefined') {
     semanaActual,
     generarProtocoloDia,
     buscarEjercicio,
+    leerLugarEntreno,
+    nombresSpeediance,
     getEffectiveSchedule,
     getDiasEntrenoSeleccionados,
     setDiasEntrenoSeleccionados
