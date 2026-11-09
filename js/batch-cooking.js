@@ -220,9 +220,25 @@
     return instr;
   }
 
+  function listarProteinas(planSemanaObj) {
+    const agrupado = analizarPlanSemana(planSemanaObj || {});
+    return Object.values(agrupado).filter(function(ing) {
+      return clasificar(ing.nombre_normalizado) === 'proteina';
+    }).map(function(ing) {
+      return {
+        nombre_normalizado: ing.nombre_normalizado,
+        nombre_display: ing.nombre_display,
+        cantidad_total: Math.round(ing.cantidad_total),
+        unidad: ing.unidad,
+        num_usos: ing.apariciones.length
+      };
+    });
+  }
+
   window.batchCooking = {
     analizar: analizarPlanSemana,
     generarPlan: generarPlanBatch,
+    listarProteinas: listarProteinas,
     regenerarInstrucciones: generarInstruccionesBatch
   };
 

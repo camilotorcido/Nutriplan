@@ -97,10 +97,23 @@ var _DATA_EN = {
   'Speediance modo remo + cables':    'Speediance rowing mode + cables',
   'Peso corporal + Treadmill':        'Bodyweight + Treadmill',
 };
+// Nombres guardados del roadmap, en lenguaje llano. No reescribe el historial.
+function textoVisible(str) {
+  if (str == null) return str;
+  var s = String(str);
+  if ((window._NP_lang || 'es') === 'en') return s;
+  s = s.replace(/Diet Break\s*(\d+)/gi, 'Pausa para recuperar $1');
+  s = s.replace(/Diet Break/gi, 'pausa para recuperar');
+  s = s.replace(/Last Mile/g, 'último tramo');
+  s = s.replace(/puntos de BF/g, 'puntos de grasa');
+  s = s.replace(/%\s*BF\b/g, '% de grasa');
+  s = s.replace(/\bBF%/g, 'grasa');
+  return s;
+}
 function tData(str) {
   if (!str) return str;
-  if ((window._NP_lang || 'es') !== 'en') return str;
-  return _DATA_EN[str] || str;
+  if ((window._NP_lang || 'es') !== 'en') return textoVisible(str);
+  return _DATA_EN[str] || textoVisible(str);
 }
 
 /** Translate meal-type slot keys (desayuno, snack_am, …) */
@@ -216,36 +229,44 @@ function _calcSemanaVigente(planNorm) {
   var sem = Math.round((lunesHoy.getTime() - lunesInicio.getTime()) / (7 * 86400000)) + 1;
   return Math.min(num, Math.max(1, sem));
 }
-// Convierte nombre de día + semana activa → ISO date, anclado al lunes de la semana
-// calendario de creación del plan. Fallback: semana calendario actual.
+// Misma fórmula que adherencia.fechaParaDia. No hay una segunda cuenta.
 function diaToIso(diaNombre, semanaActiva, planNorm) {
-  var DIAS = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
-  var idx = DIAS.indexOf(diaNombre);
-  if (idx < 0) return _localDate();
+  if (window.adherencia && typeof window.adherencia.fechaParaDia === 'function') {
+    return window.adherencia.fechaParaDia(diaNombre, semanaActiva, planNorm);
+  }
+  return _localDate();
+}
+// Índice de semana del plan para una fecha (puede ser 0 o negativo: semana anterior al ancla).
+function _semanaIndice(planNorm, fecha) {
+  var f = fecha || new Date();
   if (planNorm && planNorm._fechaCreacion) {
     var lunesInicio = _lunesDe(new Date(planNorm._fechaCreacion + 'T00:00:00'));
-    var fecha = new Date(lunesInicio);
-    fecha.setDate(lunesInicio.getDate() + ((semanaActiva || 1) - 1) * 7 + idx);
-    return _localDate(fecha);
+    var lunesFecha = _lunesDe(f);
+    return Math.round((lunesFecha.getTime() - lunesInicio.getTime()) / (7 * 86400000)) + 1;
   }
-  // Sin _fechaCreacion: semana calendario actual
-  var hoy = new Date();
-  var idxHoy = (hoy.getDay() + 6) % 7; // 0=lun
-  var fecha = new Date(hoy);
-  fecha.setDate(hoy.getDate() + (idx - idxHoy));
-  return _localDate(fecha);
+  var lunesHoy = _lunesDe(new Date());
+  var lunesFecha2 = _lunesDe(f);
+  return Math.round((lunesFecha2.getTime() - lunesHoy.getTime()) / (7 * 86400000)) + 1;
 }
-function _agregarAdherenciaExt(diaActual, comida) {
+function _semanaVigenteObj(plan) {
+  if (!plan) return null;
+  var norm = (typeof _normalizarPlanMulti === 'function') ? _normalizarPlanMulti(plan) : plan;
+  var n = (typeof _calcSemanaVigente === 'function') ? _calcSemanaVigente(norm) : 1;
+  return norm['semana_' + n] || norm.semana_1 || null;
+}
+function _agregarAdherenciaExt(diaActual, comida, numSemana) {
   if (typeof window.adherencia === 'undefined') return;
   window.adherencia.marcar(diaActual, 'ext_' + comida.id, true, {
     kcal_plan: comida.kcal, proteinas_plan: comida.proteinas_g, nombre: comida.nombre
-  }, 1);
+  }, numSemana || 1);
 }
-function _eliminarAdherenciaExt(diaActual, comidaId) {
+function _eliminarAdherenciaExt(diaActual, comidaId, numSemana) {
   try {
     var raw = localStorage.getItem('nutriplan_adherencia');
     var data = raw ? JSON.parse(raw) : {};
-    var fecha = _localDate();
+    var fecha = (window.adherencia && window.adherencia.fechaParaDia)
+      ? window.adherencia.fechaParaDia(diaActual, numSemana || 1)
+      : _localDate();
     if (data[fecha]) {
       delete data[fecha][diaActual + ':ext_' + comidaId];
       localStorage.setItem('nutriplan_adherencia', JSON.stringify(data));
@@ -463,6 +484,29 @@ var _ALIMENTOS_RECOM = [
 // Prioriza proteína cuando gapProt > 20g.
 // Excluye foods ya registrados hoy y rota por cantidad de comidas logueadas
 // para que las recomendaciones varíen visiblemente con cada registro.
+// Hueco real para extras: resta las comidas del plan que todavía no están marcadas.
+// ofrecer solo si ese hueco supera ~150 kcal. Sin nada marcado, no hay extras.
+function evaluarHuecoExtras(comidas, metaKcal) {
+  comidas = comidas || [];
+  var marcadas = [];
+  var pendientes = [];
+  for (var i = 0; i < comidas.length; i++) {
+    if (comidas[i] && comidas[i].marcada) marcadas.push(comidas[i]);
+    else if (comidas[i]) pendientes.push(comidas[i]);
+  }
+  if (marcadas.length === 0) {
+    var nombre = pendientes[0] && pendientes[0].nombre ? String(pendientes[0].nombre).toLowerCase() : 'comida';
+    var articulo = nombre.indexOf('media') === 0 ? 'la ' : 'el ';
+    return { ofrecer: false, hueco: null, mensaje: 'Todavía no marcas ' + articulo + nombre + '.' };
+  }
+  var consumido = 0;
+  var resta = 0;
+  marcadas.forEach(function(c) { consumido += c.kcal || 0; });
+  pendientes.forEach(function(c) { resta += c.kcal || 0; });
+  var hueco = Math.round((metaKcal || 0) - consumido - resta);
+  return { ofrecer: hueco > 150, hueco: hueco, mensaje: null };
+}
+
 function _getRecomendaciones(gapKcal, gapProt, registradas) {
   if (!gapKcal || gapKcal <= 0) return [];
   registradas = registradas || [];
@@ -2340,8 +2384,8 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
       : { from: 'from-blue-500', to: 'to-indigo-600' };
     const objLabel = !obj || obj === 'perdida' ? 'Pérdida de peso'
       : obj === 'mantenimiento' ? 'Mantenimiento' : 'Volumen muscular';
-    const objMeta = !obj || obj === 'perdida' ? 'Precision Nutrition'
-      : obj === 'mantenimiento' ? 'Recomposición corporal' : 'Lean bulk científico';
+    const objMeta = !obj || obj === 'perdida' ? 'Pérdida con pausas'
+      : obj === 'mantenimiento' ? 'Recomposición corporal' : 'Subida controlada';
 
     // Nivel A simple cards
     const _nivelAEdit = () => {
@@ -2353,17 +2397,17 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
       const rows = obj === 'perdida'
         ? [{ l: 'Calorías diarias', v: (calc.caloriasCorte || calc.caloriasObjetivo || '—') + ' kcal', i: 'fa-fire', c: 'text-orange-500' },
            { l: 'Proteína diaria', v: (calc.proteinaTarget || '—') + ' g', i: 'fa-egg', c: 'text-blue-500' },
-           { l: 'BF% estimado', v: calc.bfActual != null ? calc.bfActual + '%' : 'Sin medidas', i: 'fa-person', c: 'text-purple-500' },
+           { l: 'Grasa estimada', v: calc.bfActual != null ? calc.bfActual + '%' : 'Sin medidas', i: 'fa-person', c: 'text-purple-500' },
            { l: 'Duración est.', v: calc.mesesTotales ? calc.mesesTotales + ' meses' : '—', i: 'fa-calendar', c: 'text-green-500' }]
         : obj === 'mantenimiento'
-        ? [{ l: 'Calorías (TDEE)', v: (calc.caloriasObjetivo || '—') + ' kcal', i: 'fa-fire', c: 'text-green-500' },
+        ? [{ l: 'Calorías diarias', v: (calc.caloriasObjetivo || '—') + ' kcal', i: 'fa-fire', c: 'text-green-500' },
            { l: 'Proteína diaria', v: (calc.proteinaTarget || '—') + ' g', i: 'fa-egg', c: 'text-blue-500' },
-           { l: 'TDEE calculado', v: (calc.tdee || '—') + ' kcal', i: 'fa-calculator', c: 'text-purple-500' },
-           { l: 'BF% estimado', v: calc.bfActual != null ? calc.bfActual + '%' : 'Sin medidas', i: 'fa-person', c: 'text-amber-500' }]
+           { l: 'Gasto diario', v: (calc.tdee || '—') + ' kcal', i: 'fa-calculator', c: 'text-purple-500' },
+           { l: 'Grasa estimada', v: calc.bfActual != null ? calc.bfActual + '%' : 'Sin medidas', i: 'fa-person', c: 'text-amber-500' }]
         : [{ l: 'Calorías diarias', v: (calc.caloriasObjetivo || '—') + ' kcal', i: 'fa-fire', c: 'text-blue-500' },
            { l: 'Proteína diaria', v: (calc.proteinaTarget || '—') + ' g', i: 'fa-egg', c: 'text-blue-500' },
-           { l: 'Superávit', v: calc.tdee ? '+' + (calc.caloriasObjetivo - calc.tdee) + ' kcal' : '—', i: 'fa-arrow-trend-up', c: 'text-green-500' },
-           { l: 'BF% estimado', v: calc.bfActual != null ? calc.bfActual + '%' : 'Sin medidas', i: 'fa-person', c: 'text-purple-500' }];
+           { l: 'De más', v: calc.tdee ? '+' + (calc.caloriasObjetivo - calc.tdee) + ' kcal' : '—', i: 'fa-arrow-trend-up', c: 'text-green-500' },
+           { l: 'Grasa estimada', v: calc.bfActual != null ? calc.bfActual + '%' : 'Sin medidas', i: 'fa-person', c: 'text-purple-500' }];
       return (
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
@@ -2573,9 +2617,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 <div className="text-left">
                   <div className={`text-sm font-semibold text-ink`}>Mi metodología</div>
                   <div className={`text-xs text-ink-faint`}>
-                    {perfilInicial.objetivo === 'mantenimiento' ? 'Recomposición · TDEE exacto'
-                      : perfilInicial.objetivo === 'volumen' ? 'Lean bulk · LBM × 2.4 g/kg proteína'
-                      : 'Precision Nutrition · LBM × 2.63 g/kg proteína'}
+                    {perfilInicial.objetivo === 'mantenimiento' ? 'Mantener el peso, con proteína alta'
+                      : perfilInicial.objetivo === 'volumen' ? 'Subir de peso sin pasarte de grasa'
+                      : 'Bajar de peso con pausas para recuperar'}
                   </div>
                 </div>
               </div>
@@ -2659,9 +2703,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </h2>
             <div className="grid grid-cols-3 gap-3 mb-3">
               {[
-                { key: 'perdida',       icono: 'fa-arrow-trend-down', label: 'Pérdida de peso',  tag: 'Precision Nutrition', activeClasses: 'bg-orange-500 text-white shadow-lg shadow-orange-200 border-orange-500' },
-                { key: 'mantenimiento', icono: 'fa-scale-balanced',   label: 'Mantenimiento',     tag: 'Recomposición',        activeClasses: 'bg-green-500 text-white shadow-lg shadow-green-200 border-green-500' },
-                { key: 'volumen',       icono: 'fa-arrow-trend-up',   label: 'Volumen muscular',  tag: 'Lean bulk',            activeClasses: 'bg-blue-500 text-white shadow-lg shadow-blue-200 border-blue-500' },
+                { key: 'perdida',       icono: 'fa-arrow-trend-down', label: 'Pérdida de peso',  tag: 'Con pausas',     activeClasses: 'bg-orange-500 text-white shadow-lg shadow-orange-200 border-orange-500' },
+                { key: 'mantenimiento', icono: 'fa-scale-balanced',   label: 'Mantenimiento',     tag: 'Recomposición',  activeClasses: 'bg-green-500 text-white shadow-lg shadow-green-200 border-green-500' },
+                { key: 'volumen',       icono: 'fa-arrow-trend-up',   label: 'Volumen muscular',  tag: 'Subida lenta',   activeClasses: 'bg-blue-500 text-white shadow-lg shadow-blue-200 border-blue-500' },
               ].map(({ key, icono, label, tag, activeClasses }) => {
                 const activo = perfil.objetivo === key;
                 return (
@@ -2678,9 +2722,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               })}
             </div>
             <div className={`text-xs p-2.5 rounded-xl ${darkMode ? 'bg-gray-700/60 text-gray-400' : 'bg-gray-50 text-gray-500'}`}>
-              {perfil.objetivo === 'perdida' && 'Roadmap por fases con diet breaks. Proteína basada en masa magra (LBM × 2.63 g/kg). Metodología Precision Nutrition.'}
-              {perfil.objetivo === 'mantenimiento' && 'Calorías exactas a tu TDEE. Proteína basada en masa magra (LBM × 2.0 g/kg). Favorece recomposición corporal gradual.'}
-              {perfil.objetivo === 'volumen' && 'Superávit calórico controlado (200–400 kcal). Proteína alta para maximizar síntesis muscular (LBM × 2.4 g/kg).'}
+              {perfil.objetivo === 'perdida' && 'El plan baja por tramos y mete pausas para recuperar. La proteína se calcula sobre el músculo, no sobre el peso total.'}
+              {perfil.objetivo === 'mantenimiento' && 'Comes lo que gastas. La proteína queda alta para ir cambiando grasa por músculo, de a poco.'}
+              {perfil.objetivo === 'volumen' && 'Comes un poco más de lo que gastas (200 a 400 kcal). La proteína queda alta para que lo que subas sea músculo.'}
               {!perfil.objetivo && 'Selecciona un objetivo para ver la metodología.'}
             </div>
           </div>
@@ -2695,7 +2739,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             <div className="space-y-4">
               {/* Medidas corporales */}
               <div>
-                <div className={`text-xs font-semibold mb-2 uppercase tracking-wide text-ink-faint`}>Composición corporal (para cálculo LBM)</div>
+                <div className={`text-xs font-semibold mb-2 uppercase tracking-wide text-ink-faint`}>Medidas (para estimar el músculo)</div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div>
                     <label className={`block text-xs mb-1 text-ink-faint`}>Cintura (cm)</label>
@@ -2715,14 +2759,14 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                     </div>
                   )}
                   <div>
-                    <label className={`block text-xs mb-1 text-ink-faint`}>BF% manual (opcional)</label>
+                    <label className={`block text-xs mb-1 text-ink-faint`}>Grasa que ya mediste (opcional)</label>
                     <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange("bfOverride", e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="Sino: Navy auto" />
+                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="Si no, la estimamos" />
                   </div>
                 </div>
                 <p className={`text-[11px] mt-1 text-ink-faint`}>
                   <i className="fas fa-info-circle mr-1"></i>
-                  Navy calcula BF% con cintura + cuello{perfil.genero === 'femenino' ? ' + cadera' : ''}. Si tienes bioimpedancia o caliper, usa "BF% manual".
+                  Con cintura y cuello{perfil.genero === 'femenino' ? ' y cadera' : ''} estimamos tu grasa. Si ya te la midieron, escribe ese número.
                 </p>
               </div>
               {/* Targets */}
@@ -2730,12 +2774,12 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                 <div className={`text-xs font-semibold mb-2 uppercase tracking-wide text-ink-faint`}>Objetivos de composición</div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={`block text-xs mb-1 text-ink-faint`}>Peso target (kg)</label>
+                    <label className={`block text-xs mb-1 text-ink-faint`}>Peso objetivo (kg)</label>
                     <input type="number" step="0.1" value={perfil.pesoTarget || ''} onChange={(e) => handleChange("pesoTarget", e.target.value)}
                       className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="72" />
                   </div>
                   <div>
-                    <label className={`block text-xs mb-1 text-ink-faint`}>BF% target</label>
+                    <label className={`block text-xs mb-1 text-ink-faint`}>Grasa objetivo (%)</label>
                     <input type="number" step="0.1" value={perfil.bfTarget || ''} onChange={(e) => handleChange("bfTarget", e.target.value)}
                       className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="10" />
                   </div>
@@ -2795,7 +2839,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                     );
                   })}
                 </div>
-                <p className={`text-[11px] mt-1 text-ink-faint`}>Si algún día quedan pocos gramos de proteína, la app sugiere esta fuente para completar el target.</p>
+                <p className={`text-[11px] mt-1 text-ink-faint`}>Si algún día quedan pocos gramos de proteína, la app sugiere esta fuente para completar el objetivo.</p>
               </div>
               {/* Roadmap preview */}
               {roadmapPreview ? (
@@ -2806,32 +2850,32 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
                     <div className="bg-white/20 rounded-lg p-2 text-center">
-                      <div className="text-[11px] opacity-80">BMR</div>
+                      <div className="text-[11px] opacity-80">En reposo</div>
                       <div className="text-lg font-bold">{roadmapPreview.calculados.bmr}</div>
                       <div className="text-[11px] opacity-70">kcal</div>
                     </div>
                     <div className="bg-white/20 rounded-lg p-2 text-center">
-                      <div className="text-[11px] opacity-80">TDEE</div>
+                      <div className="text-[11px] opacity-80">Gasto diario</div>
                       <div className="text-lg font-bold">{roadmapPreview.calculados.tdee}</div>
                       <div className="text-[11px] opacity-70">kcal</div>
                     </div>
                     <div className="bg-white/30 rounded-lg p-2 text-center">
-                      <div className="text-[11px] opacity-80">CORTE</div>
+                      <div className="text-[11px] opacity-80">Comida</div>
                       <div className="text-lg font-bold">{roadmapPreview.calculados.caloriasCorte}</div>
                       <div className="text-[11px] opacity-70">−{roadmapPreview.calculados.deficitDiario} kcal</div>
                     </div>
                     <div className="bg-white/20 rounded-lg p-2 text-center">
                       <div className="text-[11px] opacity-80">PROTEÍNA</div>
                       <div className="text-lg font-bold">{roadmapPreview.calculados.proteinaTarget}g</div>
-                      <div className="text-[11px] opacity-70">LBM × 2.63</div>
+                      <div className="text-[11px] opacity-70">según tu músculo</div>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-[11px] mb-3">
                     <div className="bg-white/10 rounded p-2">
-                      <span className="opacity-75">BF actual:</span> <b>{roadmapPreview.calculados.bfActual}%</b>
+                      <span className="opacity-75">Grasa actual:</span> <b>{roadmapPreview.calculados.bfActual}%</b>
                     </div>
                     <div className="bg-white/10 rounded p-2">
-                      <span className="opacity-75">BF target:</span> <b>{roadmapPreview.calculados.bfTarget}%</b>
+                      <span className="opacity-75">Grasa objetivo:</span> <b>{roadmapPreview.calculados.bfTarget}%</b>
                     </div>
                     <div className="bg-white/10 rounded p-2">
                       <span className="opacity-75">Grasa a perder:</span> <b>{roadmapPreview.calculados.grasaAPerder} kg</b>
@@ -2846,7 +2890,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                       <div key={idx} className={`flex items-center justify-between rounded px-2 py-1.5 text-[11px] ${f.tipo === 'dietBreak' ? 'bg-white/30' : 'bg-white/10'}`}>
                         <div className="flex items-center gap-2">
                           <span className="font-bold opacity-90">M{f.mesInicio}{f.mesFin !== f.mesInicio ? '–'+f.mesFin : ''}</span>
-                          <span className={f.tipo === 'dietBreak' ? 'font-semibold' : ''}>{f.nombre}</span>
+                          <span className={f.tipo === 'dietBreak' ? 'font-semibold' : ''}>{textoVisible(f.nombre)}</span>
                           {f.tipo === 'dietBreak' && <i className="fas fa-pause-circle text-[11px]"></i>}
                         </div>
                         <span className="opacity-90">{f.calorias} kcal · {f.targetPasos.toLocaleString()} pasos</span>
@@ -2857,7 +2901,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               ) : (
                 <div className={`text-xs p-3 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-orange-50 text-orange-700 border border-orange-100'}`}>
                   <i className="fas fa-info-circle mr-1"></i>
-                  Completa cintura + cuello{perfil.genero === 'femenino' ? ' + cadera' : ''} (o BF% manual) y al menos un target de peso o BF% para ver el roadmap.
+                  Completa cintura y cuello{perfil.genero === 'femenino' ? ' y cadera' : ''} (o la grasa que ya mediste) y al menos un peso o un porcentaje de grasa para ver el plan.
                 </div>
               )}
             </div>
@@ -2873,7 +2917,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </h2>
             <div className={`p-3 rounded-xl mb-4 ${darkMode ? 'bg-green-900/20 border border-green-800/40' : 'bg-green-50 border border-green-100'}`}>
               <p className={`text-xs ${darkMode ? 'text-green-300' : 'text-green-700'}`}>
-                <i className="fas fa-flask mr-1.5"></i>TDEE exacto + proteína LBM × 2.0 g/kg. Composición corporal opcional, mejora la precisión.
+                <i className="fas fa-flask mr-1.5"></i>Comes lo que gastas y la proteína queda alta. Las medidas son opcionales y afinan el número.
               </p>
             </div>
             <div className="space-y-4">
@@ -2898,9 +2942,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                     </div>
                   )}
                   <div>
-                    <label className={`block text-xs mb-1 text-ink-faint`}>BF% manual (opcional)</label>
+                    <label className={`block text-xs mb-1 text-ink-faint`}>Grasa que ya mediste (opcional)</label>
                     <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange("bfOverride", e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="Sino: Navy auto" />
+                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="Si no, la estimamos" />
                   </div>
                 </div>
               </div>
@@ -2910,10 +2954,10 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   <div className="text-xs font-bold tracking-wider opacity-90 mb-2">PLAN DE MANTENIMIENTO</div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
                     {[
-                      { l: 'TDEE', v: roadmapMantPreview.calculados.tdee + ' kcal' },
+                      { l: 'Gasto diario', v: roadmapMantPreview.calculados.tdee + ' kcal' },
                       { l: 'Calorías/día', v: roadmapMantPreview.calculados.caloriasObjetivo + ' kcal' },
                       { l: 'Proteína', v: roadmapMantPreview.calculados.proteinaTarget + ' g/día' },
-                      { l: 'BF estimado', v: roadmapMantPreview.calculados.bfActual != null ? roadmapMantPreview.calculados.bfActual + '%' : '—' },
+                      { l: 'Grasa estimada', v: roadmapMantPreview.calculados.bfActual != null ? roadmapMantPreview.calculados.bfActual + '%' : '—' },
                     ].map(x => (
                       <div key={x.l} className="bg-white/20 rounded-lg p-2 text-center">
                         <div className="text-[10px] opacity-80">{x.l}</div>
@@ -2956,7 +3000,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
             </h2>
             <div className={`p-3 rounded-xl mb-4 ${darkMode ? 'bg-blue-900/20 border border-blue-800/40' : 'bg-blue-50 border border-blue-100'}`}>
               <p className={`text-xs text-info`}>
-                <i className="fas fa-flask mr-1.5"></i>Lean bulk científico: superávit 200–400 kcal + proteína LBM × 2.4 g/kg. Minimiza grasa ganada.
+                <i className="fas fa-flask mr-1.5"></i>Comes 200 a 400 kcal de más y la proteína queda alta, para subir músculo y no grasa.
               </p>
             </div>
             <div className="space-y-4">
@@ -2981,9 +3025,9 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                     </div>
                   )}
                   <div>
-                    <label className={`block text-xs mb-1 text-ink-faint`}>BF% manual (opcional)</label>
+                    <label className={`block text-xs mb-1 text-ink-faint`}>Grasa que ya mediste (opcional)</label>
                     <input type="number" step="0.1" value={perfil.bfOverride || ''} onChange={(e) => handleChange("bfOverride", e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="Sino: Navy auto" />
+                      className={`w-full px-3 py-2 rounded-lg border text-sm cal-input`} placeholder="Si no, la estimamos" />
                   </div>
                 </div>
               </div>
@@ -3022,7 +3066,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   <div className="text-xs font-bold tracking-wider opacity-90 mb-2">PLAN DE VOLUMEN</div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
                     {[
-                      { l: 'TDEE', v: roadmapVolPreview.calculados.tdee + ' kcal' },
+                      { l: 'Gasto diario', v: roadmapVolPreview.calculados.tdee + ' kcal' },
                       { l: 'Objetivo/día', v: roadmapVolPreview.calculados.caloriasObjetivo + ' kcal' },
                       { l: 'Proteína', v: roadmapVolPreview.calculados.proteinaTarget + ' g/día' },
                       { l: 'Duración est.', v: roadmapVolPreview.calculados.mesesEstimados ? roadmapVolPreview.calculados.mesesEstimados + ' meses' : '—' },
@@ -3097,7 +3141,7 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
                   {errores.caloriasManual && <p className="text-red-500 text-xs mt-1">{errores.caloriasManual}</p>}
                   <p className={`text-xs mt-2 text-ink-faint`}>
                     <i className="fas fa-info-circle mr-1"></i>
-                    Ingresa directamente tu objetivo calórico sin depender del cálculo TDEE. Rango: 800–6000 kcal.
+                    Escribe tu objetivo de calorías directo. Rango: 800–6000 kcal.
                   </p>
                 </div>
               )}
@@ -3299,12 +3343,12 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
               {!usarCaloriasManual && tdeeInfo.bmr != null ? (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div className="bg-white/15 rounded-xl p-3 text-center">
-                    <div className="text-xs opacity-80">BMR</div>
+                    <div className="text-xs opacity-80">En reposo</div>
                     <div className="text-xl font-bold">{tdeeInfo.bmr}</div>
                     <div className="text-xs opacity-80">kcal</div>
                   </div>
                   <div className="bg-white/15 rounded-xl p-3 text-center">
-                    <div className="text-xs opacity-80">TDEE</div>
+                    <div className="text-xs opacity-80">Gasto diario</div>
                     <div className="text-xl font-bold">{tdeeInfo.tdee}</div>
                     <div className="text-xs opacity-80">kcal</div>
                   </div>
@@ -3373,6 +3417,17 @@ function ProfileSetup({ onComplete, perfilInicial, darkMode, onToggleDark, onBac
 // =============================================
 function BatchCookingView({ plan, darkMode }) {
   const [semanaActiva, setSemanaActiva] = React.useState(1);
+  const [loteManual, setLoteManual] = React.useState(function() {
+    try { return JSON.parse(localStorage.getItem('nutriplan_batch_manual') || '{}'); } catch (e) { return {}; }
+  });
+  function toggleLote(id) {
+    setLoteManual(function(prev) {
+      var next = Object.assign({}, prev);
+      next[id] = !prev[id];
+      try { localStorage.setItem('nutriplan_batch_manual', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
+  }
 
   if (!plan || typeof window.batchCooking === 'undefined') {
     return (
@@ -3435,10 +3490,24 @@ function BatchCookingView({ plan, darkMode }) {
       </div>
 
       {resultado.total_bases === 0 && (
-        <div className={`text-center py-12 text-ink-faint`}>
-          <i className="fas fa-circle-info text-3xl mb-2"></i>
-          <p className="text-sm">No hay ingredientes repetidos ≥2 veces esta semana</p>
-          <p className="text-xs mt-2">Regenera el plan para aumentar repeticiones</p>
+        <div className="py-6">
+          <div className="text-center text-ink-faint mb-4">
+            <i className="fas fa-circle-info text-3xl mb-2"></i>
+            <p className="text-sm">Esta semana las proteínas no se repiten.</p>
+            <p className="text-xs mt-2">Puedes marcar a mano qué cocinar doble.</p>
+          </div>
+          <div className="space-y-2">
+            {(window.batchCooking.listarProteinas ? window.batchCooking.listarProteinas(semanaData) : []).map(function(ing) {
+              var on = !!loteManual[ing.nombre_normalizado];
+              return (
+                <label key={ing.nombre_normalizado} className="flex items-center gap-3 px-4 py-3 rounded-xl surface-card cursor-pointer">
+                  <input type="checkbox" checked={on} onChange={function() { toggleLote(ing.nombre_normalizado); }} />
+                  <span className="text-sm text-ink flex-1">{ing.nombre_display}</span>
+                  <span className="text-xs text-ink-faint">{ing.cantidad_total}{ing.unidad}{on ? ' · doble' : ''}</span>
+                </label>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -5034,7 +5103,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
               <div className={`mt-4 pt-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'} flex items-center justify-between text-xs text-ink-muted`}>
                 <span>
                   <i className="fas fa-circle-info mr-1"></i>
-                  {t('Tocá un día para ver el detalle del entreno desde Hoy o Progreso.','Tap a day to view workout detail from Hoy or Progreso.')}
+                  {t('Toca un día para ver el detalle del entreno desde Hoy o Progreso.','Tap a day to view workout detail from Hoy or Progreso.')}
                 </span>
               </div>
             </div>
@@ -5251,7 +5320,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                       e.stopPropagation();
                       var nuevas = comidasExtDia.filter(function(x) { return x.id !== extReemplazo.id; });
                       if (typeof _guardarComidasExt === 'function') _guardarComidasExt(fechaDiaIso, nuevas);
-                      if (typeof _eliminarAdherenciaExt === 'function') _eliminarAdherenciaExt(diaSeleccionado, extReemplazo.id);
+                      if (typeof _eliminarAdherenciaExt === 'function') _eliminarAdherenciaExt(diaSeleccionado, extReemplazo.id, semanaActiva);
                       setForceUpdate(function(x) { return x + 1; });
                     }}
                     title="Deshacer reemplazo"
@@ -5378,7 +5447,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
                       e.stopPropagation();
                       var nuevas = comidasExtDia.filter(function(x) { return x.id !== c.id; });
                       if (typeof _guardarComidasExt === 'function') _guardarComidasExt(fechaDiaIso, nuevas);
-                      if (typeof _eliminarAdherenciaExt === 'function') _eliminarAdherenciaExt(diaSeleccionado, c.id);
+                      if (typeof _eliminarAdherenciaExt === 'function') _eliminarAdherenciaExt(diaSeleccionado, c.id, semanaActiva);
                       setForceUpdate(function(x) { return x + 1; });
                     }}
                     title="Eliminar"
@@ -5564,7 +5633,7 @@ function WeeklyPlan({ plan, perfil, onRecipeClick, onRegenerate, onSwapRecipe, o
             var todas = (typeof _comidasExtFecha === 'function') ? _comidasExtFecha(fechaDiaIso) : [];
             var nuevas = todas.concat([comida]);
             if (typeof _guardarComidasExt === 'function') _guardarComidasExt(fechaDiaIso, nuevas);
-            if (typeof _agregarAdherenciaExt === 'function') _agregarAdherenciaExt(diaSeleccionado, comida);
+            if (typeof _agregarAdherenciaExt === 'function') _agregarAdherenciaExt(diaSeleccionado, comida, semanaActiva);
             if (comida.reemplaza && typeof window.adherencia !== 'undefined') {
               var planReemplazada = comidasDia[comida.reemplaza];
               window.adherencia.marcar(diaSeleccionado, comida.reemplaza, true, {
@@ -5806,6 +5875,25 @@ function reescalarInstruccionesPorFactor(instrucciones, factor) {
 // =============================================
 // UTILIDAD: Streak de adherencia consecutiva
 // =============================================
+// 1 de 4 slots marcados no es día cumplido: el denominador son los slots del plan.
+function diaCumpleRacha(cumplidos, slots) {
+  if (!slots || slots <= 0) return false;
+  return (cumplidos / slots) >= 0.8;
+}
+function _slotsPlanEnFecha(fechaDate) {
+  var plan = (typeof cargarPlanSemanal === 'function') ? cargarPlanSemanal() : null;
+  if (!plan) return 0;
+  var norm = (typeof _normalizarPlanMulti === 'function') ? _normalizarPlanMulti(plan) : plan;
+  var sem = _semanaIndice(norm, fechaDate);
+  var num = Object.keys(norm).filter(function(k) { return k.indexOf('semana_') === 0; }).length || 1;
+  if (sem < 1 || sem > num) return 0;
+  var dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  var comidas = (norm['semana_' + sem] || {})[dias[fechaDate.getDay()]] || {};
+  var tipos = ['desayuno', 'snack_am', 'almuerzo', 'snack_pm', 'cena'];
+  var n = 0;
+  tipos.forEach(function(tp) { if (comidas[tp]) n++; });
+  return n;
+}
 function calcularStreakAdherencia() {
   try {
     var data = JSON.parse(localStorage.getItem('nutriplan_adherencia') || '{}');
@@ -5813,10 +5901,9 @@ function calcularStreakAdherencia() {
     try { libres = JSON.parse(localStorage.getItem('nutriplan_dias_libres') || '{}'); } catch(e0) {}
     var streak = 0;
     var d = new Date();
-    d.setDate(d.getDate() - 1); // empezar desde ayer
-    for (var i = 0; i < 90; i++) {
+    for (var i = 0; i < 91; i++) {
       var key = _localDate(d);
-      // Día libre o vacaciones: mantiene la racha (cuenta como día dentro del plan)
+      var esHoy = i === 0;
       var esLibre = !!libres[key] || (typeof _esDiaVacaciones === 'function' && _esDiaVacaciones(key));
       if (esLibre) {
         streak++;
@@ -5824,9 +5911,19 @@ function calcularStreakAdherencia() {
         continue;
       }
       var dia = data[key] || {};
-      var total = 0, cumplidos = 0;
-      Object.values(dia).forEach(function(e) { total++; if (e.comido) cumplidos++; });
-      if (total === 0 || cumplidos / total < 0.8) break;
+      var cumplidos = 0;
+      Object.keys(dia).forEach(function(k) {
+        var e = dia[k];
+        if (!e || !e.comido) return;
+        var tp = k.split(':')[1];
+        if (!tp || tp.indexOf('ext_') === 0) return;
+        cumplidos++;
+      });
+      var slots = _slotsPlanEnFecha(d);
+      if (!diaCumpleRacha(cumplidos, slots)) {
+        if (esHoy) { d.setDate(d.getDate() - 1); continue; }
+        break;
+      }
       streak++;
       d.setDate(d.getDate() - 1);
     }
@@ -8701,8 +8798,8 @@ function _detectarHito(perfil) {
         var anterior = perfil.roadmap.fases[fase.indice - 1];
         var claveF = 'fase_' + (fase.indice - 1);
         if (anterior && !vistos[claveF]) return { clave: claveF, emoji: '🏁',
-          titulo: t('Completaste ' + anterior.nombre, anterior.nombre + ' completed'),
-          detalle: t('Ahora estás en ' + fase.nombre + '. ' + (fase.foco || ''), 'You are now in ' + fase.nombre + '.') };
+          titulo: t('Completaste ' + textoVisible(anterior.nombre), textoVisible(anterior.nombre) + ' completed'),
+          detalle: t('Ahora estás en ' + textoVisible(fase.nombre) + '. ' + textoVisible(fase.foco || ''), 'You are now in ' + textoVisible(fase.nombre) + '.') };
       }
     }
   } catch(e) {}
@@ -9107,8 +9204,13 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     return planSemanal['semana_' + numSemanaActual] || planSemanal[keys.sort()[0]];
   }, [planSemanal, numSemanaActual]);
 
-  const comidasHoy = semanaData ? (semanaData[diaActual] || {}) : {};
   const fechaHoyIso = _localDate(hoy); // fecha de la vista, no siempre "hoy"
+  // Semana del día que se está viendo. Si retrocedes 7 días, el check usa esa fecha, no hoy.
+  const semanaVista = _semanaIndice(planSemanal, hoy);
+  const numSemanasPlan = planSemanal ? Object.keys(planSemanal).filter(function(k) { return k.indexOf('semana_') === 0; }).length : 1;
+  const semanaComidas = (semanaVista >= 1 && semanaVista <= numSemanasPlan) ? semanaVista : numSemanaActual;
+  const semanaDataVista = planSemanal ? (planSemanal['semana_' + semanaComidas] || semanaData) : semanaData;
+  const comidasHoy = semanaDataVista ? (semanaDataVista[diaActual] || {}) : {};
   const resumenHoy = calcularResumenDiario(comidasHoy);
   const tiposOrden = ["desayuno", "snack_am", "almuerzo", "snack_pm", "cena"];
   const iconosComida = { desayuno: "fa-sun", snack_am: "fa-apple-whole", almuerzo: "fa-utensils", snack_pm: "fa-cookie-bite", cena: "fa-moon" };
@@ -9125,7 +9227,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
 
   const entrenoHoy = React.useMemo(() => {
     if (!tieneEntrenamiento) return null;
-    const hoyStr = _localDate();
+    const hoyStr = fechaHoyIso;
     const diasSemana = parseInt(localStorage.getItem('nutriplan_dias_semana') || '4');
     const planActual = window.NP_RoadmapData && window.NP_RoadmapData.SCHEDULES_POR_DIAS
       ? (window.NP_RoadmapData.SCHEDULES_POR_DIAS[diasSemana] || window.NP_RoadmapData.SCHEDULES_POR_DIAS[4])
@@ -9148,7 +9250,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     const foco = protocolo ? protocolo.foco : null;
     const duracionMin = protocolo ? protocolo.duracionMin : null;
     return { tipo, tipoInfo, completados, total, esDescanso: tipo === 'descanso', foco, duracionMin };
-  }, [tieneEntrenamiento, refresh]);
+  }, [tieneEntrenamiento, refresh, fechaHoyIso]);
 
   const pasosHoy = React.useMemo(() => {
     if (!tieneEntrenamiento || !window.NP_Steps || !window.NP_Steps.hoy) return null;
@@ -9275,8 +9377,16 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
   // IA redesign: Push notification "Cierre del día" — sustituye el EveningRatingCard de feed.
   // Dispara si: hora ≥ 19h, hay comidas marcadas como comidas sin rating, no dismissed hoy,
   // permission concedido. Si permission default, pide una sola vez (contextual).
+  const [mostrarCierre, setMostrarCierre] = React.useState(false);
   React.useEffect(function() {
-    if (!('Notification' in window) || !semanaData || !diaActual) return;
+    function onCierre() { setDayOffset(0); setMostrarCierre(true); }
+    window.addEventListener('calibrate_open_cierre', onCierre);
+    return function() { window.removeEventListener('calibrate_open_cierre', onCierre); };
+  }, []);
+  const sinPermisoNotif = (typeof Notification === 'undefined') || Notification.permission !== 'granted';
+
+  React.useEffect(function() {
+    if (!esHoy || !('Notification' in window) || !semanaDataVista || !diaActual) return;
     var fechaHoyStr = _localDate();
     var dismissKey  = 'calibrate_evening_push_dismissed_' + fechaHoyStr;
     var sentKey     = 'calibrate_evening_push_sent_' + fechaHoyStr;
@@ -9287,13 +9397,13 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     var hora = new Date().getHours();
     if (hora < 19) return;
     var ratings = (typeof cargarRatings === 'function') ? cargarRatings() : {};
-    var comidasHoyMap = semanaData[diaActual] || {};
+    var comidasHoyMap = semanaDataVista[diaActual] || {};
     var unratedCount = 0;
     ['desayuno','snack_am','almuerzo','snack_pm','cena'].forEach(function(tipo) {
       var c = comidasHoyMap[tipo];
       if (!c || !c.id) return;
       var adh = (window.adherencia && window.adherencia.estado)
-        ? window.adherencia.estado(diaActual, tipo, numSemanaActual) : null;
+        ? window.adherencia.estado(diaActual, tipo, semanaVista) : null;
       if (!adh || !adh.comido) return;
       if ((ratings[c.id] || 0) > 0) return;
       unratedCount++;
@@ -9315,7 +9425,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         });
         n.onclick = function() {
           window.focus();
-          window.dispatchEvent(new CustomEvent('calibrate_open_chat'));
+          window.dispatchEvent(new CustomEvent('calibrate_open_cierre'));
           n.close();
         };
         try { localStorage.setItem(sentKey, '1'); } catch (_) {}
@@ -9331,7 +9441,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         else { try { localStorage.setItem(dismissKey, '1'); } catch (_) {} }
       });
     }
-  }, [semanaData, diaActual, numSemanaActual, refresh]);
+  }, [esHoy, semanaDataVista, diaActual, semanaVista, refresh]);
 
   const necesitaPeso = React.useMemo(() => {
     if (!tieneEntrenamiento || !window.NP_BodyComp || !window.NP_BodyComp.cargar) return false;
@@ -9405,7 +9515,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
     var comida = comidasHoy[tipo];
     if (!comida) return;
     var estadoAdh = (typeof window.adherencia !== 'undefined' && window.adherencia.estado)
-      ? window.adherencia.estado(diaActual, tipo, 1) : null;
+      ? window.adherencia.estado(diaActual, tipo, semanaVista) : null;
     if (!estadoAdh || !estadoAdh.comido) return;
     consumidoHoy.calorias      += comida.calorias_escaladas      || comida.calorias      || 0;
     consumidoHoy.proteinas     += comida.proteinas_escaladas     || comida.proteinas     || 0;
@@ -9501,7 +9611,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
         const sch = (window.NP_RoadmapData && window.NP_RoadmapData.getEffectiveSchedule)
           ? window.NP_RoadmapData.getEffectiveSchedule()
           : (window.NP_RoadmapData && window.NP_RoadmapData.ENTRENO_PROTOCOLO ? window.NP_RoadmapData.ENTRENO_PROTOCOLO.scheduleDefault : null);
-        const dow = new Date().getDay();
+        const dow = hoy.getDay();
         const esEntreno = sch && sch[dow] && sch[dow] !== 'descanso';
         const _pct = (metaKcalDia > 0 && consumidoHoy.calorias > 0) ? Math.round((consumidoHoy.calorias / metaKcalDia) * 100) : 0;
         const _msg = metaKcalDia <= 0 ? '' :
@@ -9533,8 +9643,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               {entrenoHoy && (
                 <p className="text-sm font-semibold mt-2 text-ink">
                   {entrenoHoy.esDescanso
-                    ? t('Hoy descansas.','Rest day today.')
-                    : t('Hoy: ','Today: ') + (entrenoHoy.tipoInfo ? entrenoHoy.tipoInfo.corto : entrenoHoy.tipo) + (entrenoHoy.duracionMin ? ', ' + entrenoHoy.duracionMin + ' min' : '')}
+                    ? (esHoy ? t('Hoy descansas.','Rest day today.') : t('Día de descanso.','Rest day.'))
+                    : (esHoy ? t('Hoy: ','Today: ') : (diaActual + ': ')) + (entrenoHoy.tipoInfo ? entrenoHoy.tipoInfo.corto : entrenoHoy.tipo) + (entrenoHoy.duracionMin ? ', ' + entrenoHoy.duracionMin + ' min' : '')}
                 </p>
               )}
 
@@ -9597,7 +9707,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                   for (const tp of TIPOS_ORD) {
                     const c = comidasHoy[tp];
                     if (!c) continue;
-                    const st = (window.adherencia && window.adherencia.estado) ? window.adherencia.estado(diaActual, tp, 1) : null;
+                    const st = (window.adherencia && window.adherencia.estado) ? window.adherencia.estado(diaActual, tp, semanaVista) : null;
                     const reempl = comidasExt && comidasExt.some(x => x.reemplaza === tp && !x.pendiente);
                     if (!(st && st.comido) && !reempl) { sig = { tipo: tp, comida: c }; break; }
                   }
@@ -9631,7 +9741,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                             carbohidratos_plan: sig.comida.carbohidratos_escalados || sig.comida.carbohidratos || 0,
                             grasas_plan: sig.comida.grasas_escaladas || sig.comida.grasas || 0,
                             nombre: sig.comida.nombre
-                          });
+                          }, semanaVista);
                           setRefresh(r => r + 1);
                         }
                       }}
@@ -9647,6 +9757,9 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
       })()}
 
       {/* ── Hitos (B8) + desvío (B9) + calibración semanal (D3) + día libre (B2) ── */}
+      {esHoy && (sinPermisoNotif || mostrarCierre) && (
+        <EveningRatingCard semanaData={semanaDataVista} diaActual={diaActual} numSemanaActual={semanaVista} darkMode={darkMode} refresh={refresh} />
+      )}
       {esHoy && <MilestoneCard perfil={perfil} darkMode={darkMode} />}
       {esHoy && <DesvioCard perfil={perfil} darkMode={darkMode} />}
       {esHoy && <AjusteSemanalCard darkMode={darkMode} />}
@@ -10041,9 +10154,8 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
               // Saltar el slot solo si NO hay plan Y NO hay reemplazo (slot vacío real)
               if (!comida && !extReemplazo) return null;
               // N11: estado de adherencia para el día de hoy
-              const semanaActualIdx = semanaData ? 1 : 1;
               const estadoAdh = (typeof window.adherencia !== 'undefined' && window.adherencia.estado)
-                ? window.adherencia.estado(diaActual, tipo, semanaActualIdx) : null;
+                ? window.adherencia.estado(diaActual, tipo, semanaVista) : null;
               const yaComido = estadoAdh?.comido === true;
               const toggleAdh = () => {
                 if (typeof window.adherencia !== 'undefined' && window.adherencia.marcar) {
@@ -10054,7 +10166,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                     carbohidratos_plan: comida.carbohidratos_escalados || comida.carbohidratos || 0,
                     grasas_plan: comida.grasas_escaladas || comida.grasas || 0,
                     nombre: comida.nombre
-                  });
+                  }, semanaVista);
                   setRefresh(r => r + 1);
                 }
               };
@@ -10087,7 +10199,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                       onClick={function() {
                         var nuevas = comidasExt.filter(function(x) { return x.id !== extReemplazo.id; });
                         _guardarComidasExt(fechaHoyIso, nuevas);
-                        _eliminarAdherenciaExt(diaActual, extReemplazo.id);
+                        _eliminarAdherenciaExt(diaActual, extReemplazo.id, semanaVista);
                         setRefresh(function(r) { return r + 1; });
                       }}
                       aria-label={t('Deshacer reemplazo','Undo replacement')}
@@ -10242,51 +10354,48 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
 
         {/* ── Sub-sección 1: Recomendadas para hoy (solo en día actual) ── */}
         {esHoy && (function() {
-          var gapKcal = Math.round(metaKcalDia - consumidoHoy.calorias);
-          var gapProt = Math.round(metaProtDia - consumidoHoy.proteinas);
-          var pendientes = tiposOrden.filter(function(tp) {
-            if (!comidasHoy || !comidasHoy[tp]) return false;
-            var st = (window.adherencia && window.adherencia.estado) ? window.adherencia.estado(diaActual, tp, 1) : null;
-            return !(st && st.comido);
+          var slotsExtras = tiposOrden.filter(function(tp) {
+            return comidasHoy && comidasHoy[tp];
+          }).map(function(tp) {
+            var comida = comidasHoy[tp];
+            var st = (window.adherencia && window.adherencia.estado) ? window.adherencia.estado(diaActual, tp, semanaVista) : null;
+            var reempl = comidasExt && comidasExt.some(function(x) { return x.reemplaza === tp && !x.pendiente; });
+            return {
+              tipo: tp,
+              nombre: nombresComida[tp],
+              kcal: Math.round(comida.calorias_escaladas || comida.calorias || 0),
+              marcada: !!(st && st.comido) || !!reempl
+            };
           });
-          if (pendientes.length && consumidoHoy.calorias === 0) {
-            return (
-              <div className="px-5 py-3 text-sm text-ink-muted">
-                {t('Todavía no marcas ' + nombresComida[pendientes[0]].toLowerCase() + '.', 'You have not logged ' + nombresComida[pendientes[0]].toLowerCase() + ' yet.')}
-              </div>
-            );
+          var huecoInfo = evaluarHuecoExtras(slotsExtras, metaKcalDia);
+          if (!huecoInfo.ofrecer) {
+            if (huecoInfo.mensaje) {
+              return (
+                <div className="px-5 py-3 text-sm text-ink-muted">
+                  {t(huecoInfo.mensaje, huecoInfo.mensaje)}
+                </div>
+              );
+            }
+            return null;
           }
-          // Pasar comidasExt para que las recomendaciones excluyan lo ya registrado
-          // → el pool rota naturalmente a medida que el usuario loguea comidas.
-          var recom = (gapKcal >= 50) ? _getRecomendaciones(gapKcal, gapProt, comidasExt) : [];
+          var gapProt = Math.round(metaProtDia - consumidoHoy.proteinas);
+          var recom = _getRecomendaciones(huecoInfo.hueco, gapProt, comidasExt);
           return (
             <div className={`border-b border-default`}>
-              {/* Sub-header */}
               <div className={`px-5 py-2 flex items-center justify-between ${darkMode ? 'bg-teal-900/10' : 'bg-teal-50/50'}`}>
                 <span className={`text-[10px] font-bold uppercase tracking-wider ${darkMode ? 'text-teal-400' : 'text-teal-600'}`}>
                   <i className="fas fa-lightbulb mr-1.5" style={{fontSize:'9px'}}></i>
-                  {t('Recomendadas para hoy','Recommended for today')}
+                  {t('Si te queda hambre','If you are still hungry')}
                 </span>
-                {gapKcal > 0 && (
-                  <span className={`text-[10px] text-ink-faint`}>
-                    {t('Faltan','Remaining')}{' '}
-                    <span className={`font-semibold ${gapKcal <= 150 ? 'text-green-500' : (darkMode ? 'text-gray-300' : 'text-gray-600')}`}>{gapKcal}</span>
-                    {' kcal'}
-                  </span>
-                )}
+                <span className="text-[10px] text-ink-faint">
+                  {t('Después del plan,','After the plan,')}{' '}
+                  <span className="font-semibold">{huecoInfo.hueco}</span>
+                  {' kcal'}
+                </span>
               </div>
-              {gapKcal <= 0 ? (
-                <div className={`px-5 py-3 flex items-center gap-2 text-xs ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
-                  <i className="fas fa-circle-check"></i>
-                  <span>{t('¡Objetivo calórico alcanzado hoy!','Daily calorie goal reached!')}</span>
-                </div>
-              ) : gapKcal < 50 ? (
-                <div className={`px-5 py-3 text-xs text-ink-faint`}>
-                  {t('Casi listo','Almost there')} — {t('solo faltan','only')} {gapKcal} kcal.
-                </div>
-              ) : recom.length === 0 ? (
-                <div className={`px-5 py-3 text-xs text-ink-faint`}>
-                  {t('Registra tus comidas del plan para ver sugerencias.','Log your plan meals to see suggestions.')}
+              {recom.length === 0 ? (
+                <div className="px-5 py-3 text-xs text-ink-faint">
+                  {t('Con lo que falta del plan el día ya queda cubierto.','The remaining planned meals cover the day.')}
                 </div>
               ) : (
                 <div className={`divide-y cal-divide`}>
@@ -10316,7 +10425,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                             };
                             var actuales = _comidasExtFecha(fechaHoyIso);
                             _guardarComidasExt(fechaHoyIso, actuales.concat([nueva]));
-                            _agregarAdherenciaExt(diaActual, nueva);
+                            _agregarAdherenciaExt(diaActual, nueva, semanaVista);
                             window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
                             setRefresh(function(r) { return r + 1; });
                           }}
@@ -10372,7 +10481,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                         delete confirmada.pendiente;
                         var nuevas = comidasExt.map(function(x) { return x.id === c.id ? confirmada : x; });
                         _guardarComidasExt(fechaHoyIso, nuevas);
-                        _agregarAdherenciaExt(diaActual, confirmada);
+                        _agregarAdherenciaExt(diaActual, confirmada, semanaVista);
                         // Si la comida pendiente reemplazaba un slot, marcar adherencia del slot como comido
                         if (confirmada.reemplaza && typeof window.adherencia !== 'undefined' && window.adherencia.marcar) {
                           var planSlot = (comidasHoy && comidasHoy[confirmada.reemplaza]) || null;
@@ -10381,7 +10490,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                             kcal_plan: planSlot ? (planSlot.calorias_escaladas || planSlot.calorias || 0) : confirmada.kcal,
                             proteinas_plan: planSlot ? (planSlot.proteinas_escaladas || planSlot.proteinas || 0) : confirmada.proteinas_g,
                             nombre: confirmada.nombre
-                          }, 1);
+                          }, semanaVista);
                         }
                         // Disparar evento global para que toda la UI re-lea localStorage (mismo flujo que ejecutarTool)
                         window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
@@ -10445,7 +10554,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                       onClick={function() {
                         var nuevas = comidasExt.filter(function(x) { return x.id !== c.id; });
                         _guardarComidasExt(fechaHoyIso, nuevas);
-                        _eliminarAdherenciaExt(diaActual, c.id);
+                        _eliminarAdherenciaExt(diaActual, c.id, semanaVista);
                         setRefresh(function(r) { return r + 1; });
                       }}
                       aria-label={t('Eliminar comida adicional','Remove extra meal')}
@@ -10574,7 +10683,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             var c2 = Object.assign({ registradoEn: Date.now() }, comida);
             var nuevas = comidasExt.concat([c2]);
             _guardarComidasExt(fechaHoyIso, nuevas);
-            _agregarAdherenciaExt(diaActual, c2);
+            _agregarAdherenciaExt(diaActual, c2, semanaVista);
             setRefresh(function(r) { return r + 1; });
           }}
           onClose={function() { setShowScanner(false); }}
@@ -10592,7 +10701,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
             var comida = Object.assign({ registradoEn: Date.now() }, comida);
             var nuevas = comidasExt.concat([comida]);
             _guardarComidasExt(fechaHoyIso, nuevas);
-            _agregarAdherenciaExt(diaActual, comida);
+            _agregarAdherenciaExt(diaActual, comida, semanaVista);
             // Si reemplaza una comida planificada → marcarla como comida
             if (comida.reemplaza && typeof window.adherencia !== 'undefined') {
               var planReemplazada = comidasHoy[comida.reemplaza];
@@ -10600,7 +10709,7 @@ function HoyView({ perfil, darkMode, planSemanal, onNavigate, onSwapRecipe, swap
                 id: planReemplazada ? (planReemplazada.id || planReemplazada.recetaId || null) : null,
                 kcal_plan: planReemplazada ? (planReemplazada.calorias_escaladas || planReemplazada.calorias || 0) : 0,
                 proteinas_plan: planReemplazada ? (planReemplazada.proteinas_escaladas || planReemplazada.proteinas || 0) : 0
-              }, 1);
+              }, semanaVista);
             }
             setRefresh(function(r) { return r + 1; });
           }}
@@ -11115,7 +11224,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
                   {progreso.tendencia.deltaSemanal > 0 ? '+' : ''}{progreso.tendencia.deltaSemanal}
                 </div>
                 <div className="text-xs text-ink-faint mt-1.5 tabular-nums">
-                  target: -{roadmap.calculados.tasaSemanal} kg
+                  objetivo: -{roadmap.calculados.tasaSemanal} kg
                 </div>
               </>
             ) : (
@@ -11172,7 +11281,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
                 style={{ fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
                 {progreso.pesoInicial}<span className="text-sm font-medium text-ink-faint ml-1">kg</span>
               </div>
-              {progreso.bfInicial != null && <div className="text-xs text-ink-faint mt-1 tabular-nums">{progreso.bfInicial}% BF</div>}
+              {progreso.bfInicial != null && <div className="text-xs text-ink-faint mt-1 tabular-nums">{progreso.bfInicial}% de grasa</div>}
             </div>
             <div>
               <div className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: 'var(--color-accent-dark)' }}>
@@ -11183,16 +11292,16 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
                 {progreso.pesoActual}<span className="text-sm font-medium text-ink-faint ml-1">kg</span>
               </div>
               {progreso.bfActual != null && (
-                <div className="text-xs mt-1 tabular-nums" style={{ color: 'var(--color-accent-dark)' }}>{progreso.bfActual}% BF</div>
+                <div className="text-xs mt-1 tabular-nums" style={{ color: 'var(--color-accent-dark)' }}>{progreso.bfActual}% de grasa</div>
               )}
             </div>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-faint">Target</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-faint">Objetivo</div>
               <div className="text-ink-muted tabular-nums mt-2"
                 style={{ fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.025em', lineHeight: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
                 {progreso.pesoTarget}<span className="text-sm font-medium text-ink-faint ml-1">kg</span>
               </div>
-              {progreso.bfTarget != null && <div className="text-xs text-ink-faint mt-1 tabular-nums">{progreso.bfTarget}% BF</div>}
+              {progreso.bfTarget != null && <div className="text-xs text-ink-faint mt-1 tabular-nums">{progreso.bfTarget}% de grasa</div>}
             </div>
           </div>
           <div className="w-full h-2.5 rounded-full overflow-hidden surface-secondary">
@@ -11202,7 +11311,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
           <div className="flex justify-between text-xs mt-2.5 tabular-nums">
             <span className="text-ink-muted">{progreso.kgPerdidos} {t('kg perdidos','kg lost')}</span>
             <span className="text-ink font-semibold">{progreso.pctPeso}% {t('del camino','of the way')}</span>
-            <span className="text-ink-muted">{progreso.kgRestantes} {t('kg para target','kg to target')}</span>
+            <span className="text-ink-muted">{progreso.kgRestantes} {t('kg para el objetivo','kg to goal')}</span>
           </div>
         </div>
       )}
@@ -11225,7 +11334,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
       <div className={`rounded-2xl overflow-hidden surface-card-shadow`}>
         <div className={`px-5 py-3 border-b border-default`}>
           <h3 className={`text-sm font-bold uppercase tracking-wider text-ink-faint`}>{t('Fases del plan','Plan phases')}</h3>
-          <p className={`text-xs mt-0.5 text-ink-faint`}>{roadmap.calculados.semanasTotales} {t('semanas totales','total weeks')} · {roadmap.calculados.cantDietBreaks} diet breaks · ~{roadmap.calculados.mesesTotales} {t('meses','months')}</p>
+          <p className={`text-xs mt-0.5 text-ink-faint`}>{roadmap.calculados.semanasTotales} {t('semanas totales','total weeks')} · {roadmap.calculados.cantDietBreaks} {t('pausas','pauses')} · ~{roadmap.calculados.mesesTotales} {t('meses','months')}</p>
         </div>
         <div className={`divide-y cal-divide`}>
           {roadmap.fases.map((f, idx) => {
@@ -11250,12 +11359,12 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
                           ? 'bg-purple-500 text-white'
                           : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
                       }`}>{t('Mes','Month')} {f.mesInicio}{f.mesFin !== f.mesInicio ? '-'+f.mesFin : ''}</span>
-                      <span className={`text-sm font-semibold text-ink`}>{f.nombre}</span>
+                      <span className={`text-sm font-semibold text-ink`}>{textoVisible(f.nombre)}</span>
                       {esActiva && <span className="px-2 py-0.5 bg-orange-500 text-white text-[11px] font-bold rounded animate-pulse">{t('ACTUAL','CURRENT')}</span>}
                       {esCompletada && <span className="px-1.5 py-0.5 bg-green-500 text-white text-[11px] font-bold rounded">✓</span>}
                       {esDietBreak && <i className="fas fa-pause-circle text-purple-500 text-xs"></i>}
                     </div>
-                    <div className={`text-xs text-ink-faint`}>{f.foco}</div>
+                    <div className={`text-xs text-ink-faint`}>{textoVisible(f.foco)}</div>
                     {f.entrenamiento && (
                       <div className={`text-[11px] mt-1.5 flex items-center gap-1.5 flex-wrap text-info`}>
                         <i className="fas fa-dumbbell text-[10px] opacity-70"></i>
@@ -11263,7 +11372,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
                         <span className="opacity-60">·</span>
                         <span>{f.entrenamiento.volumenSets.split(' ')[0]} sets</span>
                         <span className="opacity-60">·</span>
-                        <span>RPE {f.entrenamiento.rpeObjetivo}</span>
+                        <span>esfuerzo {f.entrenamiento.rpeObjetivo}</span>
                         <span className="opacity-60">·</span>
                         <span>{f.entrenamiento.cardioMinSemana} min cardio/sem</span>
                       </div>
@@ -11300,7 +11409,7 @@ function FLRoadmapView({ perfil, darkMode, refresh, onGoToRegistros }) {
         }`}>
           <i className="fas fa-forward text-lg"></i>
           <div>
-            <div className="font-semibold">{t('Próximo:','Next:')} {faseInfo.proximoHito.nombre}</div>
+            <div className="font-semibold">{t('Próximo:','Next:')} {textoVisible(faseInfo.proximoHito.nombre)}</div>
             <div className="text-xs opacity-80">{t('En','In')} {faseInfo.proximoHito.enDias} {t('días','days')}</div>
           </div>
         </div>
@@ -11591,7 +11700,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
                   className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 cal-input`} placeholder="55" />
               </div>
               <div className="col-span-2">
-                <label className={`text-xs text-ink-faint`}>{t('BF% manual (opcional — sino se calcula Navy)', 'BF% manual (optional — Navy formula if blank)')}</label>
+                <label className={`text-xs text-ink-faint`}>{t('Grasa que ya mediste (opcional)', 'Body fat you already measured (optional)')}</label>
                 <input type="number" step="0.1" value={bfManualInput} onChange={e => setBfManualInput(e.target.value)}
                   className={`w-full px-3 py-2 rounded-lg border text-sm mt-1 cal-input`} placeholder="Ej: 18.5" />
               </div>
@@ -11618,11 +11727,11 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
               const lastBF = window.NP_BodyComp.ultima(entries, 'bf');
               return (
                 <div className={`col-span-2 rounded-lg p-2 surface-subtle`}>
-                  <div className="text-[11px] text-gray-400 uppercase">BF%</div>
+                  <div className="text-[11px] text-gray-400 uppercase">Grasa</div>
                   <div className={`font-bold text-ink`}>
                     {lastBF && lastBF.bf != null ? lastBF.bf + '%' : '—'}
                     {lastBF && lastBF.bfCalculado != null && lastBF.bf !== lastBF.bfCalculado && (
-                      <span className="text-[11px] text-gray-400 ml-2">(Navy: {lastBF.bfCalculado}%)</span>
+                      <span className="text-[11px] text-gray-400 ml-2">(estimado: {lastBF.bfCalculado}%)</span>
                     )}
                   </div>
                 </div>
@@ -11647,7 +11756,7 @@ function FLMetricasView({ perfil, darkMode, refresh, onRefresh }) {
                 <span className="text-xs text-gray-400">{e.fecha}</span>
                 <div className="flex items-center gap-3">
                   {e.peso != null && <span><b>{e.peso}</b> kg</span>}
-                  {e.bf != null && <span className="text-xs text-gray-400">{e.bf}% BF</span>}
+                  {e.bf != null && <span className="text-xs text-gray-400">{e.bf}% de grasa</span>}
                   {e.cintura != null && <span className="text-xs text-gray-400">C:{e.cintura}</span>}
                   <button onClick={async () => { if (await NP_confirm(t('¿Borrar el registro del ','Delete entry for ') + e.fecha + '?', { confirmar: t('Borrar','Delete'), destructivo: true })) { window.NP_BodyComp.eliminar(e.fecha); onRefresh(); } }}
                     className="text-xs text-red-400 hover:text-red-600">
@@ -13777,8 +13886,8 @@ function ChatPanel({ darkMode, activeTab }) {
     var plan   = (typeof cargarPlanSemanal === 'function') ? (cargarPlanSemanal() || {}) : {};
     var DIAS   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
     var diaActual = DIAS[new Date().getDay()];
-    var semana1   = plan.semana_1 || plan;
-    var planHoy   = (semana1 && semana1[diaActual]) || {};
+    var semanaVigente = _semanaVigenteObj(plan) || plan.semana_1 || plan;
+    var planHoy   = (semanaVigente && semanaVigente[diaActual]) || {};
     var rm    = perfil.roadmap || perfil.roadmapMantenimiento || perfil.roadmapVolumen;
     var calcs = rm && rm.calculados;
     var mg    = calcs && calcs.macrosGramos;
@@ -13857,8 +13966,8 @@ function ChatPanel({ darkMode, activeTab }) {
     var plan = typeof cargarPlanSemanal === 'function' ? cargarPlanSemanal() : null;
     if (!plan) return null;
 
-    var sem1 = plan.semana_1 || plan;
-    var comidasHoy = sem1[ctx.diaActual] || {};
+    var semVig = _semanaVigenteObj(plan) || plan.semana_1 || plan;
+    var comidasHoy = semVig[ctx.diaActual] || {};
 
     // Leer adherencia para saber qué ya comió
     var adherData = {};
@@ -14094,7 +14203,25 @@ function ChatPanel({ darkMode, activeTab }) {
     return mapa[s.toLowerCase().trim()] || s;
   }
 
-  function ejecutarTool(name, input_) {
+  async function _regenerarPlanComoBoton(perfil, kcal) {
+    if (window.lazyRecipes && !window.lazyRecipes.estaCargado()) {
+      await window.lazyRecipes.cargar();
+    }
+    if (typeof generarPlanSemanalAsync !== 'function') {
+      throw new Error('generarPlanSemanalAsync no está disponible');
+    }
+    var plan = await generarPlanSemanalAsync(perfil, kcal, function() {});
+    if (!plan) throw new Error('No se pudo regenerar el plan');
+    guardarPlanSemanal(plan);
+    if (window.NP_CloudStorage && window.NP_CloudStorage.syncNow) {
+      window.NP_CloudStorage.syncNow('nutriplan_plan_semanal');
+      window.NP_CloudStorage.syncNow('nutriplan_perfil');
+      window.NP_CloudStorage.syncNow('nutriplan_adherencia');
+    }
+    return plan;
+  }
+
+  async function ejecutarTool(name, input_) {
     if (name === 'registrar_comida') {
       var hoy = (input_.fecha && /^\d{4}-\d{2}-\d{2}$/.test(input_.fecha)) ? input_.fecha : _localDate();
       // Normalizar slot en caso de que el coach envíe 'once', 'colacion', etc.
@@ -14263,10 +14390,10 @@ function ChatPanel({ darkMode, activeTab }) {
       if (!plan) return { error: 'Sin plan semanal activo. Dile al usuario que genere su plan primero.' };
       var dias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
       var tipos = ['desayuno','almuerzo','once','cena','colacion'];
-      var sem1 = plan.semana_1 || plan;
+      var semVig = _semanaVigenteObj(plan) || plan.semana_1 || plan;
       var resultado = {};
       dias.forEach(function(dia) {
-        var comidasDia = sem1[dia];
+        var comidasDia = semVig[dia];
         if (!comidasDia || dia.startsWith('_')) return;
         resultado[dia] = {};
         tipos.forEach(function(tipo) {
@@ -14356,8 +14483,15 @@ function ChatPanel({ darkMode, activeTab }) {
       if (!dia || !tipo) return { ok: false, error: 'Falta dia o tipo.' };
       var plan = typeof cargarPlanSemanal === 'function' ? cargarPlanSemanal() : null;
       if (!plan) return { ok: false, error: 'Sin plan semanal activo.' };
-      var sem1 = plan.semana_1 || plan;
-      var comidasDia = sem1[dia];
+      var normPlan = (typeof _normalizarPlanMulti === 'function') ? _normalizarPlanMulti(plan) : plan;
+      var semN = (typeof _calcSemanaVigente === 'function') ? _calcSemanaVigente(normPlan) : 1;
+      if (input_.fecha && /^\d{4}-\d{2}-\d{2}$/.test(input_.fecha)) {
+        var semFecha = _semanaIndice(normPlan, new Date(input_.fecha + 'T12:00:00'));
+        var nMax = Object.keys(normPlan).filter(function(k) { return k.indexOf('semana_') === 0; }).length || 1;
+        if (semFecha >= 1 && semFecha <= nMax) semN = semFecha;
+      }
+      var semVig = normPlan['semana_' + semN] || normPlan.semana_1 || normPlan;
+      var comidasDia = semVig[dia];
       if (!comidasDia) return { ok: false, error: 'Día no encontrado: ' + dia };
       var comida = comidasDia[tipo];
       if (!comida) return { ok: false, error: 'Slot no encontrado: ' + tipo + ' del ' + dia };
@@ -14373,9 +14507,12 @@ function ChatPanel({ darkMode, activeTab }) {
               id: comida.id || comida.recetaId || null,
               kcal_plan: comida.calorias_escaladas || comida.calorias || 0,
               proteinas_plan: comida.proteinas_escaladas || comida.proteinas || 0,
-              nombre: comida.nombre, semana: 1
+              nombre: comida.nombre, semana: semN
             };
             localStorage.setItem('nutriplan_adherencia', JSON.stringify(_adhData));
+            if (window.NP_CloudStorage && window.NP_CloudStorage.syncNow) {
+              window.NP_CloudStorage.syncNow('nutriplan_adherencia');
+            }
           } catch(_e) {}
         } else {
           window.adherencia.marcar(dia, tipo, true, {
@@ -14383,7 +14520,7 @@ function ChatPanel({ darkMode, activeTab }) {
             kcal_plan: comida.calorias_escaladas || comida.calorias || 0,
             proteinas_plan: comida.proteinas_escaladas || comida.proteinas || 0,
             nombre: comida.nombre
-          }, 1);
+          }, semN);
         }
         window.dispatchEvent(new CustomEvent('calibrate_meal_logged'));
         _flushHoyView();
@@ -14483,7 +14620,11 @@ function ChatPanel({ darkMode, activeTab }) {
             })) || perfilNuevo;
           }
         } catch (recErr) {
-          console.warn('[ChatPanel] Recálculo de roadmap falló:', recErr.message);
+          return {
+            ok: false,
+            error: 'No se pudo recalcular el plan: ' + (recErr.message || String(recErr)),
+            plan_regenerado: false
+          };
         }
       }
 
@@ -14569,27 +14710,32 @@ function ChatPanel({ darkMode, activeTab }) {
 
       var planRegen = false;
       var planError = null;
-      if (debeRegenerar && typeof generarPlanSemanal === 'function') {
+      if (debeRegenerar) {
         try {
-          // Limpiar flag legacy si quedó persistido (mantenemos nutrient timing por entreno).
           delete perfilNuevo._kcalManualMode;
           guardarPerfil(perfilNuevo);
           var kcalPlan = perfilNuevo.caloriasObjetivo || perfilNuevo.caloriasManual || 2000;
           console.log('[CalibrateChat] Regenerando plan: kcal_promedio=' + kcalPlan);
-          var nuevoPlan = generarPlanSemanal(perfilNuevo, kcalPlan);
+          var nuevoPlan = await _regenerarPlanComoBoton(perfilNuevo, kcalPlan);
           if (nuevoPlan) {
-            guardarPlanSemanal(nuevoPlan);
             planRegen = true;
           } else {
-            planError = 'generarPlanSemanal devolvió null';
+            planError = 'No se pudo regenerar el plan';
           }
         } catch (planErr) {
           planError = planErr.message || String(planErr);
-          console.warn('[ChatPanel] Regeneración de plan falló:', planError);
         }
       }
 
       _flushHoyView();
+
+      if (debeRegenerar && !planRegen) {
+        return {
+          ok: false,
+          error: planError || 'No se pudo regenerar el plan',
+          plan_regenerado: false
+        };
+      }
 
       return {
         ok: true,
@@ -14610,22 +14756,19 @@ function ChatPanel({ darkMode, activeTab }) {
     if (name === 'regenerar_plan_semanal') {
       var perfilP = (typeof cargarPerfil === 'function') ? cargarPerfil() : null;
       if (!perfilP) return { ok: false, error: 'Sin perfil cargado' };
-      if (typeof generarPlanSemanal !== 'function') return { ok: false, error: 'Función generarPlanSemanal no disponible' };
       try {
-        // Limpiar flag legacy. El plan se regenera con nutrient timing normal (entreno ×1.1, descanso ×0.9).
         delete perfilP._kcalManualMode;
         guardarPerfil(perfilP);
         var kcalP = perfilP.caloriasObjetivo || perfilP.caloriasManual || 2000;
         console.log('[CalibrateChat] Regenerar simple: kcal_promedio=' + kcalP);
-        var planN = generarPlanSemanal(perfilP, kcalP);
+        var planN = await _regenerarPlanComoBoton(perfilP, kcalP);
         if (planN) {
-          guardarPlanSemanal(planN);
           _flushHoyView();
           return { ok: true, plan_regenerado: true };
         }
-        return { ok: false, error: 'generarPlanSemanal devolvió null' };
+        return { ok: false, error: 'No se pudo regenerar el plan', plan_regenerado: false };
       } catch (rpErr) {
-        return { ok: false, error: rpErr.message || String(rpErr) };
+        return { ok: false, error: rpErr.message || String(rpErr), plan_regenerado: false };
       }
     }
 
@@ -14771,10 +14914,13 @@ function ChatPanel({ darkMode, activeTab }) {
           // Agregar respuesta del asistente con tool_use al historial de API
           apiHistory = apiHistory.concat([{ role:'assistant', content: data.content }]);
           // Ejecutar tools y agregar tool_results
-          var toolResults = toolBlocks.map(function(tb) {
+          var toolResults = [];
+          for (var _ti = 0; _ti < toolBlocks.length; _ti++) {
+            var tb = toolBlocks[_ti];
             toolsEjecutadasTurno[tb.name] = true;
-            return { type:'tool_result', tool_use_id: tb.id, content: JSON.stringify(ejecutarTool(tb.name, tb.input)) };
-          });
+            var _outTool = await ejecutarTool(tb.name, tb.input);
+            toolResults.push({ type:'tool_result', tool_use_id: tb.id, content: JSON.stringify(_outTool) });
+          }
           apiHistory = apiHistory.concat([{ role:'user', content: toolResults }]);
           continue;
         }
@@ -15409,7 +15555,7 @@ function NotificationGrantedView({ darkMode }) {
       </button>
       {testResult === 'ok' && (
         <p className="text-xs text-center" style={{ color: 'var(--color-success)' }}>
-          <i className="fas fa-check mr-1"></i>{t('Push enviado. Si no llega en 10 segundos, revisá los permisos del sistema.','Push sent. If it doesn\'t arrive within 10 seconds, check your system notification settings.')}
+          <i className="fas fa-check mr-1"></i>{t('Push enviado. Si no llega en 10 segundos, revisa los permisos del sistema.','Push sent. If it doesn\'t arrive within 10 seconds, check your system notification settings.')}
         </p>
       )}
       {testResult === 'err' && (
@@ -16100,21 +16246,21 @@ function NotificationSetupModal({ darkMode }) {
                 color: 'var(--color-alert)', lineHeight: 1.5
               }}>
               <i className="fas fa-circle-info mt-1 flex-shrink-0"></i>
-              <span>{t('Tu navegador no soporta notificaciones. Probá Safari (iOS 16.4+), Chrome o Firefox.','Your browser doesn\'t support notifications. Try Safari (iOS 16.4+), Chrome, or Firefox.')}</span>
+              <span>{t('Tu navegador no soporta notificaciones. Prueba Safari (iOS 16.4+), Chrome o Firefox.','Your browser doesn\'t support notifications. Try Safari (iOS 16.4+), Chrome, or Firefox.')}</span>
             </div>
           )}
 
           {supported && isIOS && !isStandalone && (
             <div className="space-y-3">
               <p className="text-sm text-ink-muted" style={{ lineHeight: 1.6 }}>
-                {t('Para recibir notificaciones en iOS, primero instalá Calibrate en tu pantalla de inicio:','To receive notifications on iOS, first install Calibrate to your home screen:')}
+                {t('Para recibir notificaciones en iOS, primero instala Calibrate en tu pantalla de inicio:','To receive notifications on iOS, first install Calibrate to your home screen:')}
               </p>
               <ol className="space-y-2.5 text-sm text-ink" style={{ paddingLeft: '0' }}>
                 <li className="flex items-start gap-3">
                   <span className="inline-flex items-center justify-center flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold tabular-nums"
                     style={{ background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>1</span>
                   <span style={{ lineHeight: 1.5 }}>
-                    {t('Tocá el botón ','Tap the ')}
+                    {t('Toca el botón ','Tap the ')}
                     <i className="fas fa-arrow-up-from-bracket mx-1" style={{ color: 'var(--color-accent-dark)' }}></i>
                     {t('Compartir','Share')}{t(' en la barra de Safari.',' button in Safari.')}
                   </span>
@@ -16123,7 +16269,7 @@ function NotificationSetupModal({ darkMode }) {
                   <span className="inline-flex items-center justify-center flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold tabular-nums"
                     style={{ background: 'var(--color-accent-light)', color: 'var(--color-accent-dark)' }}>2</span>
                   <span style={{ lineHeight: 1.5 }}>
-                    {t('Elegí ','Choose ')}<b>{t('Agregar a inicio','Add to Home Screen')}</b>.
+                    {t('Elige ','Choose ')}<b>{t('Agregar a inicio','Add to Home Screen')}</b>.
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
@@ -16174,7 +16320,7 @@ function NotificationSetupModal({ darkMode }) {
                   color: 'var(--color-alert)', lineHeight: 1.5
                 }}>
                 <i className="fas fa-circle-xmark mt-1 flex-shrink-0"></i>
-                <span>{t('Bloqueaste las notificaciones. Para reactivarlas, andá a la configuración del navegador → Calibrate → Notificaciones → Permitir.','Notifications are blocked. To re-enable, go to browser settings → Calibrate → Notifications → Allow.')}</span>
+                <span>{t('Bloqueaste las notificaciones. Para reactivarlas, ve a la configuración del navegador → Calibrate → Notificaciones → Permitir.','Notifications are blocked. To re-enable, go to browser settings → Calibrate → Notifications → Allow.')}</span>
               </div>
             </div>
           )}
@@ -16579,7 +16725,7 @@ function App() {
         mostrarToast(t('Plan recalculado (offline)', 'Plan recalculated (offline)'), 'info');
       } catch (e2) {
         console.error('[NP] regen sync también falló:', e2);
-        mostrarToast(t('Error recalculando plan. Tocá Regenerar manualmente.', 'Plan recalc failed. Please regenerate manually.'), 'error');
+        mostrarToast(t('Error recalculando plan. Toca Regenerar manualmente.', 'Plan recalc failed. Please regenerate manually.'), 'error');
       }
     } finally {
       setCargando(false);

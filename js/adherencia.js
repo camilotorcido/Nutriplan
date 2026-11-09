@@ -32,6 +32,7 @@ var _localDate = window._localDate || function(d) {
   function guardar(data) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      _subirAdherencia();
       return true;
     } catch (e) {
       console.error('[Adherencia] Error guardando:', e);
@@ -43,28 +44,49 @@ var _localDate = window._localDate || function(d) {
     return _localDate(date);
   }
 
-  // Obtener la fecha correspondiente al día de la semana activo
-  // Devuelve la fecha del último día coincidente (hoy si es ese día, o el más reciente)
-  function fechaParaDia(diaNombre, numSemana) {
-    const DIAS_NUM = { Lunes: 1, Martes: 2, Miércoles: 3, Jueves: 4, Viernes: 5, Sábado: 6, Domingo: 0 };
-    const hoy = new Date();
-    const diaActual = hoy.getDay();
-    const diaObj = DIAS_NUM[diaNombre];
-    if (diaObj === undefined) return fechaISO(hoy);
+  function _lunesDeFecha(d) {
+    var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+    return x;
+  }
 
-    // Calcular offset: el día objetivo respecto a hoy (semana actual)
-    let offset = diaObj - diaActual;
-    if (diaObj === 0) offset = 7 - diaActual; // Domingo al final de la semana
-    if (offset > 0) offset -= 7; // mover a la semana pasada si aún no ha pasado esta semana
-
-    // Semanas adicionales
-    if (numSemana && numSemana > 1) {
-      offset += (numSemana - 1) * 7;
+  function _planGuardado() {
+    try {
+      var raw = localStorage.getItem('nutriplan_plan_semanal');
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
     }
+  }
 
-    const fecha = new Date(hoy);
-    fecha.setDate(hoy.getDate() + offset);
-    return fechaISO(fecha);
+  // Única fórmula de fecha del plan: lunes de creación + (semana - 1) * 7 + día.
+  // Sin fecha de creación, la semana 1 es la semana calendario actual.
+  // Una semana 0 (o menor) cae en la semana anterior: Hoy, al retroceder 7 días, no escribe hoy.
+  function fechaParaDia(diaNombre, numSemana, planNorm) {
+    var DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    var idx = DIAS.indexOf(diaNombre);
+    if (idx < 0) return fechaISO(new Date());
+    var plan = planNorm || _planGuardado();
+    var sem = (numSemana === 0 || numSemana) ? numSemana : 1;
+    if (plan && plan._fechaCreacion) {
+      var lunesInicio = _lunesDeFecha(new Date(plan._fechaCreacion + 'T00:00:00'));
+      var fecha = new Date(lunesInicio);
+      fecha.setDate(lunesInicio.getDate() + (sem - 1) * 7 + idx);
+      return fechaISO(fecha);
+    }
+    var hoy = new Date();
+    var idxHoy = (hoy.getDay() + 6) % 7;
+    var fechaCal = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    fechaCal.setDate(fechaCal.getDate() + (idx - idxHoy) + (sem - 1) * 7);
+    return fechaISO(fechaCal);
+  }
+
+  function _subirAdherencia() {
+    try {
+      if (window.NP_CloudStorage && typeof window.NP_CloudStorage.syncNow === 'function') {
+        window.NP_CloudStorage.syncNow(STORAGE_KEY);
+      }
+    } catch (e) {}
   }
 
   function marcarComida(dia, tipoComida, comido, datosExtra, numSemana) {

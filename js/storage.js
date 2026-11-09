@@ -52,8 +52,18 @@ function eliminarDatos(clave) {
 }
 
 // ─── Guardar perfil de usuario ───
+function _syncAhora(clave) {
+  try {
+    if (window.NP_CloudStorage && typeof window.NP_CloudStorage.syncNow === 'function') {
+      window.NP_CloudStorage.syncNow(clave);
+    }
+  } catch (e) {}
+}
+
 function guardarPerfil(perfil) {
-  return guardarDatos(STORAGE_KEYS.PERFIL, perfil);
+  var ok = guardarDatos(STORAGE_KEYS.PERFIL, perfil);
+  _syncAhora(STORAGE_KEYS.PERFIL);
+  return ok;
 }
 
 // ─── Cargar perfil de usuario ───
@@ -64,7 +74,9 @@ function cargarPerfil() {
 // ─── Guardar plan semanal ───
 function guardarPlanSemanal(plan) {
   _idbPut(STORAGE_KEYS.PLAN_SEMANAL, plan); // backup async fire-and-forget
-  return guardarDatos(STORAGE_KEYS.PLAN_SEMANAL, plan);
+  var ok = guardarDatos(STORAGE_KEYS.PLAN_SEMANAL, plan);
+  _syncAhora(STORAGE_KEYS.PLAN_SEMANAL);
+  return ok;
 }
 
 // ─── Cargar plan semanal ───

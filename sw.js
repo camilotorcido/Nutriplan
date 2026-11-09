@@ -94,7 +94,12 @@ self.addEventListener('fetch', (event) => {
 
   // 0) version.json: SIEMPRE de red, nunca del caché — usado para detección de updates
   if (esMismoOrigen && url.pathname.endsWith('/version.json')) {
-    event.respondWith(fetch(req, { cache: 'no-store' }).catch(() => new Response('{}', { status: 200 })));
+    event.respondWith(fetch(req, { cache: 'no-store' }).then(function(res) {
+      if (!res || !res.ok) throw new Error('version');
+      return res;
+    }).catch(function() {
+      return new Response('{}', { status: 504, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }));
     return;
   }
 

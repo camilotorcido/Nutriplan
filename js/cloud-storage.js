@@ -74,6 +74,7 @@
       _orig.set.call(this, _scope(key), value);
       // Sync async a Firestore solo para claves de NutriPlan
       if (key && key.startsWith(PREFIX)) {
+        _stampLocal(_userId, key, Date.now());
         _queueSync(key, value);
       }
     };
@@ -121,6 +122,30 @@
     }, SYNC_DELAY);
   }
 
+  function _tsKey(userId, key) {
+    return 'np_write_ts__' + userId + '__' + key;
+  }
+
+  function _stampLocal(userId, key, millis) {
+    if (!_orig || !userId || !key) return;
+    _orig.set.call(localStorage, _tsKey(userId, key), String(millis || Date.now()));
+  }
+
+  function _localTs(userId, key) {
+    if (!_orig || !userId || !key) return 0;
+    var raw = _orig.get.call(localStorage, _tsKey(userId, key));
+    var n = raw ? parseInt(raw, 10) : 0;
+    return isNaN(n) ? 0 : n;
+  }
+
+  function _cloudMillis(data) {
+    var t = data && data.t;
+    if (!t) return 0;
+    if (typeof t.toMillis === 'function') return t.toMillis();
+    if (typeof t.seconds === 'number') return t.seconds * 1000 + Math.floor((t.nanoseconds || 0) / 1e6);
+    return 0;
+  }
+
   function _doSync(userId, key, value) {
     if (!userId || typeof firebase === 'undefined') return;
     try {
@@ -150,13 +175,15 @@
 
       let count = 0;
       snap.forEach(function (doc) {
-        const val = doc.data().v;
-        if (val !== undefined && val !== null) {
-          // Escribir directo en localStorage con la clave ya scoped
-          // (evitar re-proceso por el proxy que ya está instalado)
-          _orig.set.call(localStorage, doc.id + '__' + userId, val);
-          count++;
-        }
+        const data = doc.data() || {};
+        const val = data.v;
+        if (val === undefined || val === null) return;
+        const cloudMs = _cloudMillis(data);
+        const localMs = _localTs(userId, doc.id);
+        if (localMs && cloudMs && localMs > cloudMs) return;
+        _orig.set.call(localStorage, doc.id + '__' + userId, val);
+        if (cloudMs) _stampLocal(userId, doc.id, cloudMs);
+        count++;
       });
       console.log('[CloudStorage] Hidratados ' + count + ' keys desde Firestore');
     } catch (e) {
@@ -187,7 +214,8 @@
         .collection('data').doc(key)
         .onSnapshot(function (doc) {
           if (!doc.exists || !_orig) return;
-          const val = doc.data().v;
+          const data = doc.data() || {};
+          const val = data.v;
           if (val === undefined || val === null) return;
 
           // Si ya tenemos este valor exacto → es nuestro propio write reflejado, ignorar
@@ -195,9 +223,16 @@
           const currentVal = _orig.get.call(localStorage, scopedKey);
           if (currentVal === val) return;
 
-          // Cambio remoto (otro dispositivo): escribir directo a localStorage
-          // sin pasar por el proxy → evita re-encolar sync a Firestore
+          const cloudMs = _cloudMillis(data);
+          const localMs = _localTs(userId, key);
+          if (localMs && cloudMs && localMs > cloudMs) {
+            if (currentVal !== null) _doSync(userId, key, currentVal);
+            return;
+          }
+
+          // Cambio remoto más nuevo: escribir directo, sin re-encolar el debounce
           _orig.set.call(localStorage, scopedKey, val);
+          if (cloudMs) _stampLocal(userId, key, cloudMs);
 
           // Notificar a los componentes React para que lean el nuevo valor
           window.dispatchEvent(

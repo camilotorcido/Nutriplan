@@ -6,6 +6,10 @@ _Convención: entradas nuevas al inicio (más reciente arriba), fecha YYYY-MM-DD
 
 ---
 
+## 2026-11-09 — Los 10 puntos de funcionamiento
+
+Se aplicaron los 10 puntos: fecha única (el check usa el lunes del plan, también si Hoy retrocede), extras con el plan descontado, racha sobre los slots del día, coach async con la semana vigente, sync que no pisa lo más nuevo y sube al marcar o regenerar, cierre del día abre las comidas sin calificar, copy humano al mostrar, lote manual si las proteínas no se repiten, entreno del día que se está viendo, y version.json que no cuenta un fallo como «no hay versión».
+
 ## 2026-11-09 — 34 recetas de despensa chilena
 
 34 platos nuevos en `js/recipes-despensa.js`, en el pool diferido (el loader los mezcla antes de generar, y antes del upgrade Thermomix). No van en el primer paint. Criterio: cocina de casa en Chile, una olla o sartén, ingredientes de despensa, útiles para bajar grasa. Desayuno y snacks también están ahí: el generador ya lee ese pool para esas comidas. Arvejas en lata no tenían precio CLP; se estimó en 4 pesos por gramo (lata ~1.600/400 g).
